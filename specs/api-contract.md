@@ -1,0 +1,1 @@
+Contrato único de comunicación entre frontend y backend: autenticación, convenciones, endpoints, parámetros, cuerpos de solicitud, respuestas, errores y ejemplos. Los endpoints pueden agruparse por funcionalidad.

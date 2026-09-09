@@ -1,0 +1,1 @@
+Reglas para mantener el repositorio: idioma, formato Markdown, convención de nombres, actualización del índice y prohibición de duplicar contratos.

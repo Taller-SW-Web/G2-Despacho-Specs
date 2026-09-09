@@ -1,0 +1,1 @@
+Indice de funcionalidades. Puede contener una tabla con ID, nombre, breve descripción, responsable, estado.

@@ -1,0 +1,1 @@
+Visión general del módulo: problema que resuelve, objetivos, alcance, actores, flujo general de despacho y entrega, relación con otros módulos y aquello que queda fuera del alcance.
