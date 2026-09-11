@@ -42,8 +42,6 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Especificaciones funcionales](./specs/funcionalidades/) | Requisitos, escenarios y criterios de completitud por funcionalidad. |
 | [Reglas del repositorio](./AGENTS.md) | Convenciones para crear y mantener la documentación. |
 
-El contrato ejecutable se definirá posteriormente en `specs/openapi.yaml`.
-
 ## 🗂️ Repositorios del módulo
 
 El módulo se divide en repositorios independientes que comparten las especificaciones de este proyecto.
@@ -78,6 +76,7 @@ La comunicación se realizará mediante APIs y sin compartir bases de datos entr
 - Spring Data JPA e Hibernate para persistencia.
 - Spring Security para autenticación y autorización.
 - PostgreSQL Driver, Lombok y Bean Validation.
+- Swagger UI para documentar y explorar la API desplegada.
 
 ### Frontend
 
@@ -95,14 +94,11 @@ La comunicación se realizará mediante APIs y sin compartir bases de datos entr
 
 Las dependencias específicas y sus versiones se documentarán en los repositorios de implementación correspondientes.
 
-## 📜 Contratos de API
+## 📜 Contrato y documentación de API
 
-El enfoque será **contract-first**: las operaciones se acordarán antes de depender de una implementación completa.
+El archivo [Contrato de API](./specs/api-contract.md) reúne las convenciones de comunicación, autenticación, errores y organización de los endpoints del módulo.
 
-- `specs/api-contract.md` explicará las convenciones generales del contrato.
-- `specs/openapi.yaml` contendrá la definición técnica y procesable de las APIs.
-- Swagger UI transformará el archivo OpenAPI en documentación interactiva.
-- Un servidor mock permitirá simular respuestas durante el desarrollo paralelo.
+Cuando el backend esté desplegado, publicará su documentación interactiva mediante Swagger UI. Esta documentación representará la API implementada y permitirá explorar sus operaciones disponibles. El enlace se incorporará cuando exista el entorno correspondiente.
 
 Los endpoints, modelos, códigos de respuesta y ejemplos no se duplicarán en este README.
 
@@ -118,6 +114,6 @@ Los endpoints, modelos, códigos de respuesta y ejemplos no se duplicarán en es
 
 ## 🚧 Evolución del proyecto
 
-La documentación evolucionará junto con el desarrollo. Se actualizarán progresivamente las especificaciones, el contrato OpenAPI, las decisiones de integración y los enlaces a los entornos desplegados.
+La documentación evolucionará junto con el desarrollo. Se actualizarán progresivamente las especificaciones, las decisiones de integración y los enlaces a los entornos desplegados.
 
 Ante cualquier diferencia entre este README y una especificación detallada, deberá revisarse y corregirse la documentación para mantener una única definición coherente del módulo.
