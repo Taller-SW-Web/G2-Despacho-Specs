@@ -233,7 +233,3 @@ La funcionalidad se considera completa cuando:
 - La interfaz muestra correctamente carga, estado vacío, validaciones, conflictos y errores.
 - No se han incorporado capacidades declaradas fuera de alcance.
 - La evidencia de pruebas puede relacionarse con cada criterio de aceptación.
-
-## 12. Referencia
-
-- Universidad Nacional Mayor de San Marcos, Taller de Construcción de Software Web, *Lineamientos del Proyecto del Curso*, ciclo 2026-II; apartados sobre módulos, integración, requisitos técnicos e hitos.

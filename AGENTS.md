@@ -58,7 +58,7 @@
 - Citar fuentes o documentos usando la notación `[cite: N]` para trazabilidad.
 
 ### 3.5 Formato de especificaciones funcionales
-- Cada especificación funcional sigue la plantilla establecida en `specs/funcionalidades/F-05-GestionEntregasFallidas.md` con las secciones:
+- Cada especificación funcional sigue la plantilla establecida en `specs/funcionalidades/F-04-GestionEntregasFallidas.md` con las secciones:
   1. Contexto
   2. Propósito
   3. Alcance
@@ -68,7 +68,7 @@
   7. Criterio de completitud
 
 ### 3.6 Nombres de archivos de especificaciones
-- Formato: `F-XX-NombreEnPascalCase.md` (ej. `F-01-Gestor_ZonasGeograficas.md`, `F-02-ProgramacionAsignacionDespachos.md`, `F-05-GestionEntregasFallidas.md`).
+- Formato: `F-XX-NombreEnPascalCase.md` (ej. `F-01-Gestor_ZonasGeograficas.md`, `F-02-ProgramacionAsignacionDespachos.md`, `F-04-GestionEntregasFallidas.md`).
 
 ---
 
