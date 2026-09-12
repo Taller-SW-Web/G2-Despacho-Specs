@@ -1,4 +1,4 @@
-# Especificación: F-06 - Panel de Monitoreo de Flota, Operadores y Capacidad Diaria
+# Especificación: F-05 - Panel de Monitoreo de Flota, Operadores y Capacidad Diaria
 
 ## 1. Contexto
 La operación de última milla depende críticamente de la gestión de los recursos físicos (vehículos) y humanos (conductores/repartidores). Sin un control centralizado de los turnos de trabajo, las capacidades de carga y el estado operativo diario, la asignación de pedidos corre el riesgo de sobrecargar a ciertos repartidores, asignar envíos a personal ausente o designar paquetes pesados a vehículos sin capacidad suficiente (ej. una moto).
