@@ -1,7 +1,7 @@
-# Especificación: Centro de Entregas Fallidas y Reprogramaciones
+# Especificación: F-05 - Centro de Entregas Fallidas y Reprogramaciones
 
 ## 1. Contexto
-En la logística de última milla, un porcentaje de las entregas no puede completarse debido a factores como la ausencia del cliente, direcciones inubicables o rechazo del paquete. Como el diseño exige una arquitectura orientada a microservicios donde no hay acceso a base de datos entre los módulos[cite: 2], el módulo de Despacho debe gestionar el ciclo de vida del transporte de forma autónoma. Se requiere una capacidad para que el Gestor resuelva estas excepciones y se comunique de forma asíncrona mediante APIs con el módulo de Ventas y Postventa (dueño de la entidad pedido)[cite: 2] cuando un paquete se declara como pérdida o devolución definitiva.
+En la logística de última milla, un porcentaje de las entregas no puede completarse debido a factores como la ausencia del cliente, direcciones inubicables o rechazo del paquete. Como el diseño exige una arquitectura orientada a microservicios donde no hay acceso a base de datos entre los módulos[cite: 2], el módulo de Despacho debe gestionar el ciclo de vida del transporte de forma autónoma. Se requiere una capacidad para que el Gestor resuelva estas excepciones en coordinación con el módulo de Devoluciones y se comunique de forma asíncrona mediante APIs con el módulo de Ventas y Postventa (dueño de la entidad pedido)[cite: 2] cuando un paquete se declara como pérdida o devolución definitiva a almacén.
 
 ## 2. Propósito
 Permitir al Gestor de Despacho visualizar las incidencias de ruta en tiempo real y tomar decisiones operativas sobre cada paquete fallido: reprogramar una nueva fecha de entrega o cancelar definitivamente el despacho, notificando de manera automatizada al módulo de Ventas.
@@ -71,3 +71,9 @@ La capacidad se considera correctamente implementada cuando:
 - Todos los escenarios definidos se cumplen.
 - Los requisitos no funcionales aplicables se cumplen.
 - No se han incorporado funcionalidades fuera del alcance.
+
+---
+
+## 7. Referencias
+- `[cite: 1]`: Especificación de Arquitectura de Microservicios e Integración Asíncrona (Taller de Desarrollo Web).
+- `[cite: 2]`: Documento de Límites de Dominio y Modelado de Datos del Módulo de Despacho frente a Ventas/Postventa y Devoluciones.
