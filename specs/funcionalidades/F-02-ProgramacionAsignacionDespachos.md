@@ -1,87 +1,214 @@
-# Especificación: F-02 - Panel de Programación y Asignación de Despachos
+# Especificación F-02: Programación y Asignación de Despachos
+
+**Responsable:** Tarqui
+**Estado:** En especificación
+**Actor principal:** Gestor de Despacho
 
 ## 1. Contexto
-En una arquitectura orientada a microservicios para la gestión logística de última milla, el módulo de Despacho debe gestionar de manera autónoma el ciclo de vida de los envíos sin depender directamente de las bases de datos de otros módulos como Ventas o Facturación[cite: 2].
 
-Una vez confirmado un pedido en el sistema comercial, este debe transformarse en una solicitud de despacho. Para asegurar la continuidad operativa y permitir el desarrollo e integración ágil sin bloqueos entre equipos de trabajo, el módulo de Despacho debe exponer una API receptora estándar y ofrecer una capacidad de generación directa de despachos de prueba (mediante herramientas como Postman o una acción en la interfaz de usuario). Asimismo, el Gestor de Despacho requiere de un panel centralizado que le permita evaluar la carga de trabajo pendiente y asignar eficientemente los despachos a los operadores logísticos según su disponibilidad de turno y capacidad de transporte (información provista por el subsistema de Flota, F-06).
+En la logística de última milla, una vez que un pedido es confirmado y pagado en los canales comerciales, debe incorporarse de forma inmediata y ordenada al flujo operativo de transporte. El módulo de Despacho y Entrega a Domicilio debe gestionar este proceso de manera autónoma, desacoplada y sin depender directamente de las bases de datos de otros módulos como Ventas, Inventario o Seguridad.
+
+Para asegurar un desarrollo ágil y permitir que las pruebas de integración del equipo se ejecuten sin bloqueos externos, el sistema debe exponer una API receptora estándar y ofrecer una capacidad de generación directa de órdenes de prueba simuladas. Asimismo, el Gestor de Despacho requiere de un panel operativo centralizado que le permita evaluar la cola de pedidos pendientes de entrega y asignarlos de forma balanceada a los operadores de transporte disponibles, respetando estrictamente los límites de peso y volumen de cada vehículo y su turno de trabajo.
 
 ## 2. Propósito
-Proveer al Gestor de Despacho de un panel operativo administrativo para monitorear la cola de pedidos pendientes de entrega y asignarlos de forma balanceada y controlada a los repartidores disponibles, garantizando el respeto de los límites de peso y volumen de cada vehículo y habilitando la generación independiente de órdenes de prueba para pruebas operativas.
+
+Permitir que el Gestor de Despacho visualice y administre la cola de pedidos pendientes de entrega, genere órdenes de prueba para validaciones técnicas autónomas, y asigne los despachos a los repartidores habilitados garantizando que no se sobrepasen las capacidades de carga vehicular ni se asigne personal fuera de servicio.
 
 ## 3. Alcance
-Incluye:
-- Endpoint receptor de solicitudes de despacho externas provenientes de sistemas de pedidos o ventas.
-- Mecanismo de generación de pedidos/despachos de prueba (mediante endpoint de testing o botón "Generar Pedido de Prueba" en la interfaz) para garantizar la independencia técnica del módulo.
-- Panel (Dashboard) administrativo de monitoreo de la cola de despachos en estado `PENDIENTE_ASIGNACION`.
-- Consumo del catálogo de repartidores con estado de turno (`DISPONIBLE`, `OCUPADO`, `FUERA_DE_TURNO`) y balance de capacidad operativa provisto por el componente de Monitoreo de Flota (F-06).
-- Asignación operativa de un despacho a un repartidor determinado, realizando la transición de estado a `ASIGNADO` y la reserva de capacidad del vehículo.
 
-## 4. Requisitos
+Esta funcionalidad incluye:
 
-### Requisito 1: Recepción y Generación de Solicitudes de Despacho
-El sistema DEBE proveer un mecanismo estándar para recibir solicitudes de despacho desde sistemas externos y permitir la generación autónoma de solicitudes de prueba con datos simulados válidos.
+- API receptora de solicitudes de despacho provenientes de módulos externos (Ventas y Postventa o canales de comercio electrónico).
+- Mecanismo de generación autónoma de despachos de prueba con datos simulados consistentes (mediante endpoint REST y acción directa en la interfaz de usuario).
+- Panel (Dashboard) administrativo con la lista paginada y filtrable de despachos en estado `PENDIENTE_ASIGNACION`.
+- Consulta en tiempo real de la disponibilidad de operadores y su balance de capacidad remanente (peso en kilogramos y volumen en metros cúbicos), consumiendo la información provista por Monitoreo de Flota (F-06).
+- Asignación manual o asistida de un despacho pendiente a un repartidor en turno, transicionando el estado a `ASIGNADO` y descontando la capacidad del vehículo.
+- Control de concurrencia y validación transaccional para impedir la doble asignación de un mismo despacho.
+- Registro de auditoría para cada orden recibida, simulada y asignada.
 
-#### Escenario: Recepción exitosa de solicitud de despacho
-- DADO que un sistema autorizado (o cliente REST) envía una solicitud de creación de despacho con identificador de pedido, dirección de destino, coordenadas geográficas, peso en kilogramos y volumen en metros cúbicos.
-- CUANDO la petición ingresa al endpoint receptor con un token de autenticación válido.
-- ENTONCES el sistema valida la completitud de los datos, registra el despacho en la base de datos con estado inicial `PENDIENTE_ASIGNACION` y retorna un código `201 Created` junto con el identificador único del despacho generado.
+## 4. Precondiciones, dependencias y resultados
 
-#### Escenario: Generación de pedido de prueba para desarrollo independiente
-- DADO que el Gestor de Despacho o desarrollador requiere generar carga de trabajo de prueba sin depender del módulo de Ventas.
-- CUANDO presiona el botón "Generar Pedido de Prueba" en el panel o invoca el endpoint de generación de prueba.
-- ENTONCES el sistema genera automáticamente un pedido con datos aleatorios consistentes dentro del rango operativo, crea el despacho asociado en estado `PENDIENTE_ASIGNACION` y actualiza inmediatamente la cola del panel.
+### 4.1. Precondiciones
 
-#### Escenario: Rechazo de solicitud con datos incompletos o inconsistentes
-- DADO que se envía una solicitud de despacho con peso menor o igual a cero o sin dirección de entrega.
-- CUANDO la petición es evaluada por la capa de validación del backend.
-- ENTONCES el sistema rechaza la solicitud con un código `400 Bad Request` y un mensaje descriptivo de las restricciones incumplidas.
+- El usuario debe estar autenticado y autorizado con el rol de Gestor de Despacho (`GESTOR_DESPACHO`).
+- Para la asignación, el despacho debe existir y encontrarse en estado `PENDIENTE_ASIGNACION`.
+- La solicitud de despacho debe incluir datos obligatorios: código de pedido, dirección de destino, coordenadas geográficas, peso mayor a cero y volumen mayor a cero.
+- El repartidor seleccionado debe existir, encontrarse en estado `DISPONIBLE` o `EN_RUTA` y contar con turno activo en la jornada.
+- La suma del peso y volumen del despacho no debe superar la capacidad remanente del vehículo asignado al repartidor.
 
-### Requisito 2: Monitoreo de Cola de Despachos Pendientes
-El sistema DEBE listar de forma paginada y en tiempo real los despachos cuyo estado sea `PENDIENTE_ASIGNACION`, permitiendo filtrar y ordenar por fecha estimada de entrega, zona y volumen/peso.
+### 4.2. Dependencias
 
-#### Escenario: Consulta exitosa de despachos pendientes
-- DADO que existen despachos registrados en estado `PENDIENTE_ASIGNACION`.
-- CUANDO el usuario con rol "Gestor de Despacho" ingresa a la vista del panel de programación.
-- ENTONCES el sistema despliega la lista de despachos pendientes mostrando identificador, pedido de origen, dirección de destino, peso, volumen, fecha límite de entrega y tiempo de espera en cola.
+| Dependencia | Responsabilidad |
+|---|---|
+| Seguridad y Usuarios | Proporcionar la identidad autenticada mediante token JWT y los permisos del Gestor de Despacho. |
+| Ventas y Postventa | Emitir las solicitudes de despacho formales tras la confirmación de compra. |
+| Monitoreo de Flota (F-06) | Proveer el catálogo de repartidores en turno con su vehículo y balance de capacidad (`GET /api/v1/repartidores/disponibles`). |
+| Operación del Repartidor (F-03) | Recibir los despachos en estado `ASIGNADO` para su ejecución en ruta. |
+| Entregas Fallidas (F-04) | Retornar a la cola de asignación (`PENDIENTE_ASIGNACION`) los despachos reprogramados tras un intento fallido. |
 
-#### Escenario: Restricción de acceso por rol no autorizado
-- DADO que un usuario autenticado pero sin rol de "Gestor de Despacho" (por ejemplo, rol "Repartidor" o usuario externo) intenta consultar la cola administrativa de asignación.
-- CUANDO realiza la petición al backend adjuntando su token JWT.
-- ENTONCES el sistema deniega el acceso respondiendo con código de estado `403 Forbidden`.
+### 4.3. Resultados
 
-### Requisito 3: Asignación de Despacho a Repartidor según Capacidad y Disponibilidad
-El sistema DEBE permitir al Gestor de Despacho asignar un despacho pendiente a un repartidor habilitado, comprobando que el repartidor esté disponible y que la adición del paquete no sobrepase sus capacidades máximas de carga (peso en kilogramos y volumen en metros cúbicos).
+- Una solicitud de despacho válida se registra en la base de datos con estado inicial `PENDIENTE_ASIGNACION`, código de rastreo único y marca temporal.
+- La generación de prueba produce un despacho inmediatamente visible en la cola sin requerir comunicación con Ventas.
+- Una asignación válida transiciona el estado del despacho a `ASIGNADO`, vincula el identificador del repartidor y descuenta su capacidad remanente.
+- Toda operación de asignación registra fecha, usuario gestor, identificador del despacho, identificador del operador y observaciones.
 
-#### Escenario: Asignación exitosa dentro de la capacidad disponible
-- DADO un despacho en estado `PENDIENTE_ASIGNACION` con peso de 15 kg y volumen de 0.1 m³, y un repartidor en estado `DISPONIBLE` con capacidad remanente de 50 kg y 0.8 m³.
-- CUANDO el Gestor selecciona al repartidor y confirma la acción "Asignar Despacho".
-- ENTONCES el sistema asocia el despacho al repartidor, transiciona el estado del despacho a `ASIGNADO`, descuenta la capacidad remanente del repartidor y emite un evento de confirmación de asignación.
+## 5. Requisitos y criterios de aceptación automatizables
 
-#### Escenario: Rechazo de asignación por superación de capacidad de carga
-- DADO un despacho con peso de 30 kg y un repartidor cuya capacidad remanente es de únicamente 20 kg.
-- CUANDO el Gestor intenta asignar dicho despacho al repartidor.
-- ENTONCES el sistema bloquea la operación, retorna un código `422 Unprocessable Entity` alertando "Capacidad de peso del repartidor excedida" y mantiene el despacho en estado `PENDIENTE_ASIGNACION`.
+### RF-01. Recepción y creación de solicitudes de despacho
 
-#### Escenario: Rechazo de asignación por operador no disponible
-- DADO un repartidor cuyo estado actual es `FUERA_DE_TURNO` u `OCUPADO`.
-- CUANDO el Gestor intenta seleccionarlo para una nueva asignación manual.
-- ENTONCES el sistema muestra el operador como deshabilitado y rechaza cualquier solicitud de asignación con código `409 Conflict`.
+El sistema DEBE permitir registrar solicitudes de despacho desde sistemas comerciales autorizados y proveer un mecanismo de simulación para desarrollo y pruebas independientes.
 
-## 5. Requisitos no funcionales
-- **Seguridad:** Todas las operaciones de consulta y asignación requieren autenticación obligatoria mediante token JWT con rol verificado `GESTOR_DESPACHO` emitido por el módulo central de Seguridad[cite: 2].
-- **Concurrencia e Integridad Transaccional:** La operación de asignación debe ejecutarse bajo control transaccional o bloqueo optimista para prevenir condiciones de carrera (evitar asignar el mismo despacho a dos repartidores de forma simultánea).
-- **Rendimiento:** El tiempo de respuesta para la carga del panel de despachos pendientes no debe exceder los 300 ms en condiciones normales para lotes de hasta 100 registros.
-- **Trazabilidad:** Cada asignación debe registrar la marca temporal exacta (timestamp ISO 8601) y el identificador del usuario gestor que realizó la asignación.
+#### CA-01. Recepción exitosa desde sistema comercial
 
-## 6. Fuera de alcance
-- **Cálculo y optimización de rutas dinámicas:** La generación de polilíneas y ordenamiento geográfico detallado de paradas corresponde al componente de ruteo/mapas.
-- **Ejecución y registro de entrega en campo:** El seguimiento en ruta, captura de firma y confirmación final de entrega corresponde a la App del Repartidor (Integrante 3).
-- **Gestión de incidencias y entregas fallidas:** La reprogramación y derivación a devolución tras intentos fallidos corresponde al Centro de Entregas Fallidas (F-05, Integrante 5)[cite: 2].
-- **Administración de catálogo de flota y vehículos:** El registro, altas/bajas y mantenimiento de operadores y unidades vehiculares corresponde al Monitoreo de Flota (F-06, Integrante 6).
+- **DADO** que un sistema externo envía una solicitud con identificador de pedido, datos del destinatario, dirección, coordenadas, peso y volumen válidos.
+- **CUANDO** la petición es procesada con un token de autorización válido.
+- **ENTONCES** el sistema guarda el despacho con estado `PENDIENTE_ASIGNACION`, genera un código de rastreo y responde con código `201 Created`.
 
-## Criterio de completitud
-La capacidad se considera correctamente implementada cuando:
-- Todos los requisitos están implementados.
-- Todos los escenarios definidos se cumplen.
-- Los requisitos no funcionales aplicables se cumplen.
-- No se han incorporado funcionalidades fuera del alcance.
+#### CA-02. Generación autónoma de pedidos de prueba (testing)
+
+- **DADO** que el Gestor de Despacho o desarrollador requiere generar carga de trabajo de prueba sin depender del módulo de Ventas.
+- **CUANDO** solicita la generación de prueba mediante la interfaz o el endpoint de simulación.
+- **ENTONCES** el sistema autogenera un pedido y despacho con datos consistentes en estado `PENDIENTE_ASIGNACION` y lo incorpora de inmediato a la cola de asignación.
+
+#### CA-03. Rechazo de solicitud con datos incompletos o inconsistentes
+
+- **DADO** que una solicitud carece de dirección de entrega o presenta un peso menor o igual a cero.
+- **CUANDO** la solicitud es evaluada por la capa de validación.
+- **ENTONCES** el sistema rechaza la operación con código `400 Bad Request`, detalla los campos inválidos y no persiste registros parciales.
+
+### RF-02. Consultar la cola de despachos pendientes
+
+El sistema DEBE permitir que el Gestor de Despacho consulte y filtre de forma paginada los despachos que esperan asignación de transporte.
+
+#### CA-04. Listado con despachos pendientes
+
+- **DADO** que existen despachos registrados en estado `PENDIENTE_ASIGNACION`.
+- **CUANDO** el Gestor accede a la vista de Programación y Asignación.
+- **ENTONCES** el sistema despliega la lista paginada mostrando código de rastreo, pedido, dirección, peso, volumen, fecha límite y tiempo en espera.
+
+#### CA-05. Listado sin despachos pendientes
+
+- **DADO** que no existen pedidos pendientes de asignación.
+- **CUANDO** el Gestor consulta la vista.
+- **ENTONCES** el sistema muestra un estado visual vacío indicando "No hay despachos pendientes de asignación".
+
+#### CA-06. Acceso sin permisos requeridos
+
+- **DADO** que un usuario sin el rol `GESTOR_DESPACHO` intenta acceder al listado.
+- **CUANDO** realiza la petición al backend.
+- **ENTONCES** el sistema rechaza la solicitud con código `403 Forbidden` y no expone información operativa.
+
+### RF-03. Asignar despacho a un repartidor
+
+El sistema DEBE permitir asignar un despacho en estado `PENDIENTE_ASIGNACION` a un repartidor disponible, verificando que no se exceda la capacidad de carga vehicular.
+
+#### CA-07. Asignación exitosa dentro de la capacidad disponible
+
+- **DADO** un despacho en estado `PENDIENTE_ASIGNACION` y un repartidor en estado `DISPONIBLE` cuya capacidad remanente cubre el peso y volumen del paquete.
+- **CUANDO** el Gestor selecciona al repartidor y confirma la asignación.
+- **ENTONCES** el sistema cambia el estado del despacho a `ASIGNADO`, descuenta la capacidad remanente del operador y registra la trazabilidad.
+
+#### CA-08. Rechazo por capacidad de peso o volumen excedida
+
+- **DADO** un despacho cuyo peso o volumen supera la capacidad remanente del repartidor seleccionado.
+- **CUANDO** el Gestor intenta confirmar la asignación.
+- **ENTONCES** el sistema bloquea la operación, responde con código `422 Unprocessable Entity`, alerta "Capacidad de carga del repartidor excedida" y mantiene el despacho en `PENDIENTE_ASIGNACION`.
+
+#### CA-09. Rechazo por repartidor no disponible o fuera de turno
+
+- **DADO** un repartidor que se encuentra en estado `FUERA_DE_TURNO`, `INACTIVO` o `SATURADO`.
+- **CUANDO** se intenta asignar un despacho a dicho operador.
+- **ENTONCES** el sistema rechaza la solicitud con código `409 Conflict` y mantiene el despacho en cola.
+
+#### CA-10. Despacho en estado incompatible o ya asignado
+
+- **DADO** un despacho que ya fue asignado previamente o cuyo estado no es `PENDIENTE_ASIGNACION`.
+- **CUANDO** se intenta ejecutar una asignación concurrente o desactualizada.
+- **ENTONCES** el sistema detecta el conflicto transaccional, rechaza la operación con `409 Conflict` y notifica que el despacho ya fue procesado.
+
+### RF-04. Mantener trazabilidad y auditoría
+
+El sistema DEBE registrar un historial auditable de cada asignación y cambio de estado realizado sobre el despacho.
+
+#### CA-11. Registro de auditoría y actualización de carga operativa
+
+- **DADO** que una asignación es aceptada exitosamente.
+- **CUANDO** finaliza la transacción en el backend.
+- **ENTONCES** se persiste un registro de auditoría con identificador del despacho, repartidor asignado, usuario gestor, marca temporal y nuevo balance de capacidad.
+
+## 6. Frontend
+
+La funcionalidad tendrá una experiencia web responsive compuesta por:
+
+| Elemento | Responsabilidad |
+|---|---|
+| Panel de Programación (Dashboard) | Mostrar la cola de despachos en `PENDIENTE_ASIGNACION` con filtros por fecha, zona y paginación. |
+| Modal de Asignación de Repartidor | Desplegar el catálogo de repartidores disponibles, mostrando vehículo, turno y barra de ocupación actual. |
+| Botón "Generar Pedido de Prueba" | Permitir la simulación inmediata de despachos para pruebas locales sin salir de la vista. |
+| Indicadores de Capacidad y Carga | Alertar visualmente si un paquete excede la capacidad del operador seleccionado antes de confirmar. |
+| Retroalimentación y Notificaciones | Informar resultados exitosos, validaciones de sobrecarga, conflictos de concurrencia y errores de red. |
+
+La interfaz debe deshabilitar acciones inválidas en cliente, pero todas las restricciones de negocio deben validarse de manera estricta en el backend.
+
+## 7. Backend
+
+El backend deberá cubrir las siguientes responsabilidades lógicas:
+
+| Componente lógico | Responsabilidad |
+|---|---|
+| Controlador Receptor de Despachos | Exponer el endpoint para recibir órdenes externas y validar estructura de datos (`POST /api/v1/despachos/solicitudes`). |
+| Servicio Generador de Simulación | Autogenerar datos válidos de prueba para permitir la autonomía del equipo (`POST /api/v1/despachos/solicitudes/simular`). |
+| Consulta de Cola de Pendientes | Recuperar despachos en estado `PENDIENTE_ASIGNACION` con ordenamiento por fecha límite y soporte de paginación. |
+| Caso de Uso de Asignación | Validar estado del despacho, disponibilidad del operador y capacidad de carga vehicular de forma transaccional. |
+| Cliente de Integración con Flota | Consumir la API de Monitoreo de Flota (F-06) para verificar disponibilidad y capacidades actualizadas. |
+| Persistencia y Auditoría | Almacenar transiciones de estado y registros de trazabilidad en PostgreSQL de forma consistente. |
+
+Las rutas, cuerpos, respuestas y códigos específicos se encuentran centralizados en `specs/api-contract.md` y se publicarán mediante Swagger UI desde el backend desplegado.
+
+## 8. Requisitos no funcionales
+
+- **Seguridad:** Todas las operaciones administrativas requieren autenticación obligatoria mediante token JWT con rol verificado `GESTOR_DESPACHO`.
+- **Aislamiento:** El módulo gestiona sus propios datos en PostgreSQL (Supabase) sin acceder directamente a bases de datos de otros módulos.
+- **Concurrencia e Integridad Transaccional:** La asignación debe aplicar control transaccional o bloqueo optimista para impedir que dos gestores asignen el mismo paquete de forma simultánea.
+- **Rendimiento:** El endpoint de consulta de cola de pendientes debe responder en menos de 250 ms para lotes de hasta 100 registros.
+- **Trazabilidad:** Cada asignación debe registrar la marca temporal exacta (UTC) y el identificador del usuario gestor.
+- **Usabilidad y Responsividad:** El panel debe ser adaptable a computadoras de escritorio y tablets operativas.
+
+## 9. Fuera de alcance
+
+- **Cálculo dinámico de rutas y optimización GPS:** La navegación calle por calle corresponde a herramientas cartográficas externas (Google Maps / Waze).
+- **Ejecución y confirmación de entrega en calle:** Corresponde exclusivamente a la App Móvil del Repartidor (F-03).
+- **Gestión de incidencias y entregas fallidas:** Las reprogramaciones y derivaciones a almacén corresponden a Entregas Fallidas (F-04).
+- **Administración del catálogo de flota y choferes:** El alta de repartidores, turnos y vehículos físicos corresponde a Monitoreo de Flota (F-06).
+- **Facturación y cobro:** Pertenecen al módulo comercial de Ventas y Finanzas.
+
+## 10. Estrategia de verificación
+
+| Criterios | Verificación automatizada | Nivel | Evidencia esperada |
+|---|---|---|---|
+| CA-01 a CA-03 | Enviar solicitudes válidas, simuladas e inválidas mediante HTTP client. | Integración y unitaria | Despacho creado con `201`, simulación autónoma exitosa y rechazo `400` para datos inválidos. |
+| CA-04 y CA-05 | Consultar listado con y sin despachos pendientes en base de datos. | Integración y frontend | Visualización correcta de la tabla paginada y estado vacío amigable. |
+| CA-06 | Invocar endpoints de asignación y cola sin credenciales o con rol incorrecto. | Integración de seguridad | Código `403 Forbidden` y bloqueo total de información sensible. |
+| CA-07 a CA-10 | Ejecutar pruebas de asignación con capacidad suficiente, sobrecarga, operador fuera de turno y conflicto concurrente. | Unitaria e integración | Transición exitosa a `ASIGNADO` y rechazo controlado con `409` y `422` según corresponda. |
+| CA-11 | Consultar la tabla de auditoría tras completar una asignación válida. | Integración con persistencia | Registro correcto de usuario gestor, despacho, chofer y nuevo balance de capacidad. |
+
+Además, se ejecutarán dos recorridos funcionales completos:
+
+1. `Recepción / Simulación de Pedido` → validación de datos → registro en cola con estado `PENDIENTE_ASIGNACION`.
+2. `Despacho en Cola` → selección de repartidor disponible con capacidad suficiente → confirmación de asignación → estado `ASIGNADO` y actualización de capacidad remanente.
+
+Las pruebas unitarias cubrirán las reglas de cálculo de capacidad y validación de estados; las pruebas de integración cubrirán seguridad, persistencia en Supabase y transaccionalidad; y las pruebas de frontend validarán el dashboard y diálogos de asignación.
+
+## 11. Criterio de completitud
+
+La funcionalidad se considera completa cuando:
+
+- Todos los criterios `CA-01` a `CA-11` están implementados y cuentan con pruebas automatizadas exitosas.
+- Los dos recorridos funcionales completos han sido verificados de extremo a extremo.
+- La generación de pedidos simulados opera de forma autónoma sin depender del módulo de Ventas.
+- La validación de capacidad (peso y volumen) previene sobrecargas en cualquier vehículo asignado.
+- La interfaz visual muestra correctamente estados de carga, lista paginada, alertas de sobrecarga y confirmaciones.
+- No se han incorporado capacidades declaradas fuera de alcance.
+- La evidencia de pruebas puede trazarse hacia cada criterio de aceptación.
+

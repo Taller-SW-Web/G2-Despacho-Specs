@@ -1,75 +1,102 @@
-# Especificación: F-06 - Panel de Monitoreo de Flota, Operadores y Capacidad Diaria
+# Especificación: F-05 - Panel de Monitoreo de Flota, Operadores y Capacidad Diaria
 
 ## 1. Contexto
-La operación de última milla depende críticamente de la gestión de los recursos físicos (vehículos) y humanos (conductores/repartidores). Sin un control centralizado de los turnos de trabajo, las capacidades de carga y el estado operativo diario, la asignación de pedidos corre el riesgo de sobrecargar a ciertos repartidores o asignar envíos a personal ausente o vehículos en mantenimiento.
+La operación de última milla depende críticamente de la gestión de los recursos físicos (vehículos) y humanos (conductores/repartidores). Sin un control centralizado de los turnos de trabajo, las capacidades de carga y el estado operativo diario, la asignación de pedidos corre el riesgo de sobrecargar a ciertos repartidores, asignar envíos a personal ausente o designar paquetes pesados a vehículos sin capacidad suficiente (ej. una moto).
 
-Este subsistema administra las tablas maestras de la flota y los repartidores de Despacho, operando como el proveedor oficial de información de disponibilidad para el Panel de Programación (F-02, Integrante 2) y para la validación de sesiones activas de la App Móvil del Repartidor (F-03, Integrante 3).
+Este subsistema administra las tablas maestras de la flota y los repartidores de Despacho. Opera como el núcleo de disponibilidad logística, proveyendo información esencial al **Panel de Programación y Asignación de Despachos** (F-02, a cargo de Tarqui) y sirviendo como base para el inicio de sesión de la **App Móvil del Repartidor** (F-03, a cargo de Max).
 
 ## 2. Propósito
-Proveer al Gestor de Flota de un panel administrativo para gestionar el ciclo de vida del personal de reparto y los vehículos asociados, configurar límites operativos diarios (máximo de paquetes, peso y volumen por turno) y supervisar en tiempo real el porcentaje de ocupación y saturación de la flota mediante métricas e indicadores gráficos.
+Proveer al Gestor de Flota (y al administrador del módulo de despacho) de un panel de control interactivo para:
+- Gestionar el ciclo de vida del personal de reparto y los vehículos.
+- Configurar límites operativos diarios y de turno (máximo de paquetes, peso y volumen).
+- Asignar qué vehículo usará qué repartidor en el día actual.
+- Supervisar en tiempo real la disponibilidad, ocupación y saturación de la flota mediante métricas, indicadores gráficos y alertas automáticas.
 
 ## 3. Alcance
-Incluye:
-- CRUD administrativo completo de Repartidores (registro, edición de datos personales, activación/desactivación y asignación de turnos).
-- CRUD administrativo completo de Vehículos (registro de tipo: moto/furgoneta/auto, placa, capacidad máxima de peso en kg y volumen en m³, estado de mantenimiento).
-- Asociación operativa entre repartidor, vehículo y turno de trabajo del día.
-- Panel gráfico de monitoreo de flota en tiempo real:
-  - Total de repartidores activos, en ruta, disponibles y fuera de servicio.
-  - Indicador de capacidad usada diaria (porcentaje de ocupación respecto al límite configurado).
-- Exposición de la API backend de alta disponibilidad: `GET /api/v1/repartidores/disponibles` para consumo directo del Integrante 2 al programar despachos.
+Esta especificación comprende:
+- **CRUD administrativo de Repartidores:** Registro, edición, cambios de estado (Activo, Inactivo, En Descanso) y asignación de turnos (Mañana, Tarde, Noche).
+- **CRUD administrativo de Vehículos:** Registro de unidades (moto, furgoneta, auto), placa, estado mecánico y establecimiento de su capacidad máxima (peso en kg, volumen en m³ y cantidad tope de paquetes).
+- **Asignación Operativa Diaria:** Interfaz para emparejar a un repartidor con un vehículo para su jornada actual.
+- **Panel Gráfico (Dashboard) en tiempo real:**
+  - Total de repartidores por estado (`ACTIVO`, `EN_RUTA`, `DISPONIBLE`, `SATURADO`, `INACTIVO`).
+  - Barra de progreso por repartidor mostrando la capacidad ocupada (ej. `30/40 paquetes (75%)`).
+- **Exposición de API (Backend):** Endpoint clave `GET /api/v1/repartidores/disponibles` para consumo directo por parte del servicio de programación (F-02).
 
-## 4. Requisitos
+## 4. Requisitos Funcionales
 
-### Requisito 1: Gestión de Repartidores y Asignación de Turnos
-El sistema DEBE permitir registrar, modificar y desactivar operadores de reparto, así como definir su horario y turno diario de operación.
+### Requisito 1: Gestión Integral de Repartidores
+El sistema DEBE permitir mantener un registro actualizado del personal, controlando quién puede recibir asignaciones.
 
-#### Escenario: Registro exitoso de un nuevo repartidor
-- DADO que un Gestor de Flota con rol administrativo ingresa los datos de un nuevo repartidor (nombre, DNI, teléfono, brevete/licencia de conducir y turno asignado).
-- CUANDO confirma el registro en el panel de flota.
-- ENTONCES el sistema valida que el documento de identidad no esté duplicado, guarda el registro con estado inicial `DISPONIBLE` y retorna el identificador único generado.
+#### Escenario 1.1: Alta de un nuevo operador
+- **DADO** que el Gestor de Flota requiere registrar a un nuevo operador.
+- **CUANDO** ingresa los datos personales (Nombres, Apellidos, DNI/CE, Teléfono, Brevete) y define su turno habitual.
+- **ENTONCES** el sistema valida que el documento de identidad no exista previamente, guarda el registro con estado `INACTIVO` (hasta que inicie turno) y autogenera sus credenciales de acceso para la App Móvil.
 
-#### Escenario: Desactivación temporal de operador por ausencia o descanso
-- DADO un repartidor que solicita permiso médico o no labora en el turno actual.
-- CUANDO el Gestor cambia su estado operativo a `FUERA_DE_TURNO` o inactivo.
-- ENTONCES el sistema actualiza de inmediato su disponibilidad y lo excluye automáticamente del catálogo de asignaciones disponibles.
+#### Escenario 1.2: Cambio de estado a No Disponible (Baja médica o término de turno)
+- **DADO** un repartidor que finalizó su jornada o reportó una emergencia.
+- **CUANDO** el Gestor cambia su estado operativo a `FUERA_DE_TURNO` o `INACTIVO`.
+- **ENTONCES** el sistema actualiza su disponibilidad en tiempo real, bloquea nuevas asignaciones automáticas y lo remueve de la lista de operadores disponibles que consume el F-02.
 
-### Requisito 2: Gestión de Flota Vehicular y Parámetros de Capacidad
-El sistema DEBE permitir registrar vehículos de reparto definiendo su tipo, placa de rodaje y topes máximos de capacidad física (peso y volumen).
+### Requisito 2: Gestión de Flota y Parámetros de Capacidad
+El sistema DEBE mantener el catálogo de vehículos, que determina la capacidad real de carga de cada operador asignado a ellos.
 
-#### Escenario: Configuración de límites de carga vehicular
-- DADO que se da de alta un vehículo de tipo "Furgoneta" con capacidad máxima de 500 kg y 4.0 m³.
-- CUANDO se asocia dicho vehículo al repartidor en su turno de trabajo.
-- ENTONCES el sistema registra estos valores como los límites de carga diarios para el operador asociado.
+#### Escenario 2.1: Registro de un vehículo de carga mayor
+- **DADO** que se da de alta una nueva "Furgoneta".
+- **CUANDO** el Gestor ingresa su placa "ABC-123", y define capacidades máximas: 500 kg, 4.0 m³ y tope de 150 paquetes diarios.
+- **ENTONCES** el sistema guarda la unidad con estado `DISPONIBLE`. 
 
-### Requisito 3: Panel Gráfico de Monitoreo y Saturación de la Flota
-El sistema DEBE presentar un tablero visual con el porcentaje de capacidad utilizada por repartidor y las alertas de saturación de carga diaria.
+#### Escenario 2.2: Emparejamiento Diario (Repartidor - Vehículo)
+- **DADO** que empieza el turno de la mañana.
+- **CUANDO** el Gestor vincula la furgoneta "ABC-123" al repartidor "Juan Pérez" para el día de hoy.
+- **ENTONCES** el sistema hereda los límites de carga de la furgoneta a "Juan Pérez", permitiéndole recibir hasta 150 paquetes o 500 kg en su ruta.
 
-#### Escenario: Alerta visual de repartidor saturado
-- DADO un repartidor que ha alcanzado el 90% o más de su capacidad máxima asignada para el día.
-- CUANDO el Gestor de Flota visualiza el panel de monitoreo.
-- ENTONCES el sistema destaca al operador con una barra de progreso en color rojo y una etiqueta de estado "Saturado", advirtiendo al equipo de programación.
+### Requisito 3: Panel Gráfico de Monitoreo y Alertas de Saturación
+El sistema DEBE calcular dinámicamente la saturación sumando el volumen, peso o cantidad de despachos actualmente asignados en estado `EN_CAMINO` o `ASIGNADO`.
 
-### Requisito 4: API de Consulta de Disponibilidad para Programación de Despachos
-El sistema DEBE proveer un endpoint eficiente `GET /api/v1/repartidores/disponibles` para que el Panel de Asignación (F-02) consulte qué operadores pueden recibir nuevos despachos sin incurrir en sobrecarga.
+#### Escenario 3.1: Alerta visual de repartidor saturado
+- **DADO** un repartidor con tope de 50 paquetes y se le han asignado 48 despachos.
+- **CUANDO** el Gestor visualiza el Dashboard de Flota.
+- **ENTONCES** la fila de ese operador muestra una barra de progreso en color rojo (96% de saturación) y muestra la etiqueta `SATURADO`.
 
-#### Escenario: Respuesta con catálogo de operadores disponibles y balance de carga
-- DADO que existen 5 repartidores en turno, de los cuales 3 están en estado `DISPONIBLE` con capacidad remanente.
-- CUANDO el frontend o backend del Integrante 2 invoca `GET /api/v1/repartidores/disponibles`.
-- ENTONCES el servicio retorna la lista de los 3 operadores habilitados, detallando su capacidad ocupada, remanente en kg/m³ y número de paquetes en curso.
+### Requisito 4: API de Disponibilidad para Programación (F-02)
+El sistema DEBE exponer un servicio para que el módulo de Programación filtre y elija repartidores idóneos sin sobrepasar sus límites.
+
+#### Escenario 4.1: Solicitud de repartidores disponibles
+- **DADO** que el sistema de asignación (F-02) necesita asignar 5 paquetes pequeños.
+- **CUANDO** invoca el endpoint `GET /api/v1/repartidores/disponibles`.
+- **ENTONCES** el API responde con un JSON que incluye únicamente a los operadores en estado `DISPONIBLE` o `EN_RUTA` cuya capacidad restante permita asumir más carga.
+- **Y** la respuesta excluye a operadores `SATURADOS` o `FUERA_DE_TURNO`.
+
+*Estructura esperada de respuesta (Ejemplo referencial):*
+```json
+{
+  "repartidores": [
+    {
+      "idRepartidor": 101,
+      "nombre": "Carlos Mendoza",
+      "vehiculo": "Moto (Placa XYZ-789)",
+      "capacidadMaxima": 40,
+      "paquetesAsignados": 25,
+      "porcentajeOcupacion": 62.5,
+      "estado": "EN_RUTA"
+    }
+  ]
+}
+```
 
 ## 5. Requisitos no funcionales
-- **Seguridad:** Operaciones del panel restringidas a roles `GESTOR_FLOTA` y `GESTOR_DESPACHO` mediante token JWT.
-- **Eficiencia y Concurrencia:** El endpoint de repartidores disponibles debe responder en menos de 150 ms para evitar retardos al momento de programar pedidos en la cola del Integrante 2.
-- **Integridad Referencial:** No se permite eliminar físicamente repartidores o vehículos que mantengan despachos históricos o activos asociados; únicamente se permite su desactivación lógica.
+- **Alta Disponibilidad y Concurrencia:** El endpoint `GET /api/v1/repartidores/disponibles` será consumido frecuentemente. Debe tener un tiempo de respuesta menor a 200 ms.
+- **Seguridad (Autenticación):** Todas las acciones del CRUD y consulta del dashboard están protegidas mediante un Token JWT, requiriendo el rol `GESTOR_FLOTA` o `ADMIN_DESPACHO`.
+- **Integridad Referencial de Auditoría (Soft Delete):** No se pueden eliminar físicamente de la base de datos repartidores ni vehículos que tengan historial de entregas. Se utilizará borrado lógico (`estado = ELIMINADO`).
 
-## 6. Fuera de alcance
-- **Mantenimiento mecánico y taller:** El registro de reparaciones mecánicas complejas o compras de repuestos se gestiona en el ERP general de la compañía.
-- **Monitoreo de telemetría OBD-II / Sensores IoT:** El cálculo de consumo de combustible o velocidad del vehículo físico no está comprendido en esta etapa.
-- **Asignación directa de despachos:** La acción de vincular un pedido a un repartidor corresponde al Panel de Programación y Asignación (F-02, Integrante 2).
+## 6. Fuera de Alcance
+- **Mantenimiento mecánico y costos:** Registrar gastos de gasolina, refacciones o revisiones técnicas vehiculares es competencia de un ERP externo.
+- **Rastreo GPS en tiempo real del vehículo:** El seguimiento punto a punto con telemetría no se incluye en esta fase. Solo se rastrean los "cambios de estado" de los paquetes.
+- **Asignación directa de pedidos:** Esta funcionalidad *prepara y provee* la lista de la flota, pero la acción de hacer "Match" entre un paquete y el repartidor es responsabilidad exclusiva del Panel de Programación (F-02).
 
-## Criterio de completitud
-La capacidad se considera correctamente implementada cuando:
-- El CRUD de repartidores y vehículos funciona con todas las validaciones de negocio.
-- El panel gráfico refleja en tiempo real el estado y porcentaje de ocupación de la flota.
-- El endpoint `GET /api/v1/repartidores/disponibles` suministra los datos correctos al Integrante 2.
-- No se incorporan alcances no especificados.
+## 7. Criterio de Completitud
+Se considerará aprobada esta funcionalidad cuando:
+1. El Gestor pueda realizar el CRUD completo de operadores y vehículos sin errores.
+2. El Dashboard calcule y pinte correctamente los porcentajes de saturación y cambie de colores (verde, amarillo, rojo) según la carga del día.
+3. El Integrante 2 (Tarqui) pueda consumir el endpoint `/disponibles` e integre la lista en su flujo de trabajo exitosamente.
+4. Existan pruebas unitarias comprobando el cálculo de la saturación y pruebas de integración para el endpoint de disponibilidad.

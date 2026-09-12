@@ -5,10 +5,10 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 | ID | Funcionalidad | Responsable | Estado | Especificación |
 |---|---|---|---|---|
 | **F-01** | Gestión de zonas geográficas y cotización | Valqui | Borrador inicial | [Ver especificación](./funcionalidades/F-01-Gestor_ZonasGeograficas.md) |
-| **F-02** | Programación y asignación de despachos | Tarqui | Pendiente | — |
-| **F-03** | Operación del repartidor y evidencia de entrega | Max | Pendiente | — |
+| **F-02** | Programación y asignación de despachos | Tarqui | En especificación | [Ver especificación](./funcionalidades/F-02-ProgramacionAsignacionDespachos.md) |
+| **F-03** | Operación del repartidor y evidencia de entrega | Max | Borrador inicial | [Ver especificación](./funcionalidades/F-03-AppMovilRepartidor.md) |
 | **F-04** | Entregas fallidas y reprogramaciones | Gerardo | En especificación | [Ver especificación](./funcionalidades/F-04-GestionEntregasFallidas.md) |
-| **F-05** | Gestión de flota, operadores y capacidad | Rhamses | Pendiente | — |
+| **F-05** | Panel de Monitoreo de Flota, Operadores y Capacidad Diaria | Rhamses | Borrador inicial | [Ver especificación](./funcionalidades/F-05-MonitoreoFlotaCapacidad.md) |
 
 ## Capacidad transversal
 
