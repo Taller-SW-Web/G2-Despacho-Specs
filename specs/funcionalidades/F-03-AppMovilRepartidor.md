@@ -1,4 +1,4 @@
-# Especificación: App Móvil del Repartidor y Evidencia de Entrega
+# Especificación F-03: Web Responsive del Repartidor y Evidencia de Entrega
 
 ## 1. Contexto
 La ejecución física de la entrega ocurre en calle, donde el repartidor no dispone de un equipo de escritorio. Dado que el diseño exige una arquitectura orientada a microservicios sin acceso directo a base de datos entre módulos, el módulo de Despacho debe ofrecer su propia interfaz operativa de campo, autónoma respecto de Ventas y Postventa. Esta capacidad corresponde al punto de origen de la información del ciclo de transporte: es aquí donde se generan los estados `EN_CAMINO`, `ENTREGADO` y `FALLIDO` que posteriormente consumen el Panel de Asignación y el Centro de Entregas Fallidas dentro del mismo módulo.

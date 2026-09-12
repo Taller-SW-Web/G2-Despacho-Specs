@@ -2,7 +2,7 @@
 # Visión General del Proyecto
 
 ## Descripción
-Sistema de logística de última milla orientado a microservicios. El proyecto gestiona el ciclo completo de entrega de paquetes: desde la cotización del envío hasta el cierre de la entrega o la resolución del incidente. El módulo en desarrollo actual es la **App Móvil del Repartidor y Evidencia de Entrega**, una aplicación web responsive (PWA) mediante la cual el repartidor en calle consulta su ruta del día, avanza el estado de cada despacho (`EN_CAMINO`, `ENTREGADO`, `FALLIDO`) y registra la evidencia que respalda el cierre: fotografía del paquete, firma y datos del receptor, o el motivo cuando la entrega no se concreta.
+Sistema de logística de última milla orientado a microservicios. El proyecto gestiona el ciclo completo de entrega de paquetes: desde la cotización del envío hasta el cierre de la entrega o la resolución del incidente. El módulo en desarrollo actual es la **Web Responsive del Repartidor y Evidencia de Entrega**, una interfaz web mobile-first mediante la cual el repartidor en calle consulta su ruta del día, avanza el estado de cada despacho (`EN_CAMINO`, `ENTREGADO`, `FALLIDO`) y registra la evidencia que respalda el cierre: fotografía del paquete, firma y datos del receptor, o el motivo cuando la entrega no se concreta.
 
 La capacidad no es dueña de la entidad `Despacho`: es el **punto de captura en campo** del estado real de la entrega. Su valor está en convertir un evento físico (el paquete se entregó o no) en un dato confiable, trazable y con respaldo probatorio dentro del sistema.
 
@@ -46,7 +46,7 @@ Se incluye dentro de esta capacidad:
 ## Stack Tecnológico
 | Capa | Tecnología |
 |---|---|
-| **Frontend** | React 18+ / TypeScript / Vite — PWA responsive, orientada a navegador móvil |
+| **Frontend** | React 18+ / TypeScript / Vite — web responsive, mobile-first y orientada a navegador móvil |
 | **Backend** | Java 21 / Spring Boot 3.x / Spring Security (Resource Server) |
 | **Base de datos** | PostgreSQL (propia del módulo de Despacho) |
 | **Autenticación** | JWT firmado con RS256 (Nimbus JOSE+JWT), emitido por el módulo de Seguridad; contraseñas con BCrypt |
@@ -57,7 +57,7 @@ Se incluye dentro de esta capacidad:
 ## Arquitectura
 El sistema está diseñado como un conjunto de **microservicios independientes que no comparten base de datos**. Cada módulo es dueño exclusivo de sus entidades y expone su información mediante APIs REST; la integración con módulos externos al de Despacho es asíncrona.
 
-La App del Repartidor es un **cliente puro**: no posee tablas propias ni lógica de negocio autoritativa. Todas las reglas de transición de estado y de obligatoriedad de evidencia residen en el backend del módulo de Despacho; la app las replica en la interfaz únicamente para dar retroalimentación inmediata al usuario.
+La Web Responsive del Repartidor es un **cliente puro**: no posee tablas propias ni lógica de negocio autoritativa. Todas las reglas de transición de estado y de obligatoriedad de evidencia residen en el backend del módulo de Despacho; la interfaz las replica únicamente para dar retroalimentación inmediata al usuario.
 
 ### Módulos del Sistema
 | Módulo | Responsabilidad | Relación con esta capacidad |
@@ -181,7 +181,7 @@ El proyecto sigue un enfoque donde las **especificaciones se escriben antes del 
 - **Registro de usuarios, recuperación de contraseña y gestión del segundo factor**: responsabilidad del módulo de Seguridad.
 - **Almacenamiento físico de fotos y firmas**: la app las captura y transmite; su persistencia es responsabilidad del backend de Despacho.
 - **Reembolsos, notas de crédito y cualquier flujo financiero**: responsabilidad de Ventas y Postventa.
-- **Aplicación móvil nativa**: la entrega es una PWA ejecutada en navegador móvil.
+- **Aplicación móvil nativa o instalable**: la operación se realiza desde una web responsive en el navegador móvil y no requiere instalación.
 =======
 # Visión General de Arquitectura: Módulo de Despacho
 
@@ -214,7 +214,7 @@ graph TD
         F01["F-01: Zonas y Cotizador<br>(VALQUI)"]
         F02["F-02: Programación y Asignación<br>(NICOLÁS)"]
         F06["F-06: Monitoreo de Flota y Capacidad<br>(RHAMSES)"]
-        F03["F-03: App Móvil Repartidor<br>(MAX ROJAS)"]
+        F03["F-03: Web Responsive Repartidor<br>(MAX ROJAS)"]
         F04["F-04: Portal Tracking Cliente<br>(INTEGRANTE 4)"]
         F05["F-05: Centro Entregas Fallidas<br>(GERARDO)"]
     end
@@ -234,7 +234,7 @@ graph TD
 | :--- | :--- | :--- |
 | **Integrante 1 (Valqui)** | `F-01`: Zonas y Cotizador | Catálogo de cobertura y cálculo del costo de envío para carritos de compra. |
 | **Integrante 2 (Nicolás)** | `F-02`: Programación y Asignación | Cola de pedidos pendientes, asignación según carga y pedidos de prueba para desarrollo. |
-| **Integrante 3 (Max Rojas)** | `F-03`: App Móvil del Repartidor | PWA en celular para el chofer: ruta diaria, transición de estados, fotos y firmas. |
+| **Integrante 3 (Max Rojas)** | `F-03`: Web Responsive del Repartidor | Interfaz web mobile-first para el repartidor: ruta diaria, transición de estados, fotos y firmas. |
 | **Integrante 4** | `F-04`: Portal Tracking Cliente | Consulta pública de rastreo con línea de tiempo cronológica y mapa referencial. |
 | **Integrante 5 (Gerardo)** | `F-05`: Centro de Entregas Fallidas | Resolución de paquetes no entregados, reprogramación de fecha o devolución a almacén. |
 | **Integrante 6 (Rhamses)** | `F-06`: Monitoreo de Flota y Capacidad | Gestión de choferes, turnos, límites de carga vehicular y API de disponibilidad. |
@@ -273,7 +273,7 @@ Dado que no existe un rol exclusivo de infraestructura, las responsabilidades tr
 - **Regla:** Para no duplicar código, el proyecto cuenta con un servicio o función común (`NotificadorEventosService`) que encapsula la emisión HTTP asíncrona (código `202 Accepted`) y el esquema de reintentos con reintentos exponenciales.
 
 ### 4.3 Despliegue Continuo en la Nube
-- Se designa a 1 integrante del equipo como **líder de despliegue** encargado de la configuración inicial de los proyectos en la nube (ej. Render para el backend Java/Spring Boot y Vercel para el frontend React/PWA).
+- Se designa a 1 integrante del equipo como **líder de despliegue** encargado de la configuración inicial de los proyectos en la nube (ej. Render para el backend Java/Spring Boot y Vercel para el frontend React).
 - Todo el equipo integra sus ramas sobre `main`, activando despliegues automatizados tras cada *merge* validado.
 
 ---
@@ -300,7 +300,7 @@ La selección de herramientas responde a criterios de rendimiento moderno, compa
   - `react-router-dom`: Enrutamiento y control de vistas en la Single Page Application (SPA).
   - `axios`: Cliente HTTP con interceptores para inyección del header `Authorization: Bearer <JWT>` y manejo homogéneo de errores.
   - `@tanstack/react-query`: Manejo de estado del servidor, caché inteligente y reintentos automáticos en segundo plano para consultas de ruta y tracking.
-  - `vite-plugin-pwa`: Configuración de Progressive Web App (Service Workers y manifest) para permitir la instalación y operación móvil de la App del Repartidor (F-03).
+  - Diseño mobile-first: estilos responsive y uso de capacidades estándar del navegador para la operación móvil del repartidor (F-03), sin instalación ni modo offline.
   - `react-signature-canvas`: Captura interactiva del trazo de firma digital del cliente en pantallas táctiles (F-03).
   - `browser-image-compression`: Compresión de fotografías en el cliente móvil antes del envío, minimizando el consumo de datos celulares a menos de 500 KB por paquete (F-03).
   - `leaflet` + `react-leaflet`: Renderizado de mapas interactivos basados en OpenStreetMap sin costo de licenciamiento para delimitación de zonas (F-01), tracking público (F-04) y monitoreo de flota (F-06).

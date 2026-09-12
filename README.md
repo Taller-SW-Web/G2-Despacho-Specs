@@ -39,8 +39,10 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Visión general](./specs/overview.md) | Problema, objetivos, alcance, actores y flujo general del módulo. |
 | [Índice de funcionalidades](./specs/funcionalidad.md) | Listado y estado de las especificaciones funcionales. |
 | [Contrato de API](./specs/api-contract.md) | Convenciones, autenticación, errores y organización de las APIs. |
+| [Modelo de datos](./specs/modelo-datos.md) | Base evolutiva de entidades, relaciones y decisiones de persistencia. |
 | [Especificaciones funcionales](./specs/funcionalidades/) | Requisitos, escenarios y criterios de completitud por funcionalidad. |
 | [Reglas del repositorio](./AGENTS.md) | Convenciones para crear y mantener la documentación. |
+| [Guía de contribución](./CONTRIBUTING.md) | Flujo de ramas, commits y revisión de cambios. |
 
 ## 🗂️ Repositorios del módulo
 
@@ -103,6 +105,8 @@ Cuando el backend esté desplegado, publicará su documentación interactiva med
 Los endpoints, modelos, códigos de respuesta y ejemplos no se duplicarán en este README.
 
 ## 👥 Equipo
+
+El equipo está conformado por 5 integrantes:
 
 | Integrante | Rol transversal |
 |---|---|

@@ -10,13 +10,13 @@
 - **Motor de Base de Datos:** PostgreSQL (v15/v16) alojado en **Supabase**.
 - **Nomenclatura:** Formato `snake_case` en minúsculas para nombres de tablas y columnas (ej. `id_despacho`, `fecha_creacion`, `peso_kg`).
 - **Marcas Temporales:** Atributos de auditoría en UTC utilizando `TIMESTAMPTZ` (`creado_en`, `actualizado_en`).
-- **Estados:** Restricciones de verificación (*CHECK constraints*) o tipos `ENUM` alineados con los valores oficiales de [specs/overview.md](overview.md) (`PENDIENTE_ASIGNACION`, `ASIGNADO`, `EN_CAMINO`, `ENTREGADO`, `FALLIDO`, `DEVUELTO_A_ALMACEN`).
+- **Estados:** Restricciones de verificación (*CHECK constraints*) o tipos `ENUM` alineados con las especificaciones funcionales y consolidados posteriormente en [specs/overview.md](overview.md) (`PENDIENTE_ASIGNACION`, `ASIGNADO`, `EN_CAMINO`, `ENTREGADO`, `FALLIDO`, `DEVUELTO_A_ALMACEN`).
 
 ---
 
 ## 2. Diagrama Entidad-Relación (ERD)
 
-*(Pendiente de modelado y consolidación con los 6 integrantes del equipo).*
+*(Pendiente de modelado y consolidación con los 5 integrantes del equipo).*
 
 ---
 
@@ -26,15 +26,15 @@
 - **`zonas`**: *(En definición)*
 - **`tarifas_zona`**: *(En definición)*
 
-### 3.2 Despachos y Trazabilidad (F-02: Nicolás / F-04: Tracking)
+### 3.2 Despachos y Trazabilidad (F-02: Tarqui / capacidad transversal de seguimiento)
 - **`despachos`**: *(En definición)*
 - **`historial_estados_despacho`**: *(En definición)*
 
-### 3.3 Evidencias e Incidencias en Ruta (F-03: Max Rojas / F-05: Gerardo)
+### 3.3 Evidencias e Incidencias en Ruta (F-03: Max / F-04: Gerardo)
 - **`evidencias_entrega`**: *(En definición)*
 - **`incidencias_entrega_fallida`**: *(En definición)*
 
-### 3.4 Flota, Operadores y Vehículos (F-06: Rhamses)
+### 3.4 Flota, Operadores y Vehículos (F-05: Rhamses)
 - **`repartidores`**: *(En definición)*
 - **`vehiculos`**: *(En definición)*
 - **`turnos_operador`**: *(En definición)*

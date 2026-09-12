@@ -1,6 +1,8 @@
 # Contrato Único de Comunicación API (Frontend - Backend)
 
-Este documento representa el **único contrato oficial de comunicación** entre las aplicaciones cliente (paneles web administrativos, PWA móvil del repartidor, portal público de tracking, integraciones externas) y los servicios backend del módulo de Despacho. Toda interacción HTTP debe ajustarse a las especificaciones aquí descritas.
+Este documento representa el **único contrato oficial de comunicación** entre las aplicaciones cliente (paneles web administrativos, web responsive del repartidor, consultas de seguimiento e integraciones externas) y los servicios backend del módulo de Despacho. Toda interacción HTTP debe ajustarse a las especificaciones aquí descritas.
+
+> **Estado:** En consolidación. La numeración y los responsables ya están alineados con el índice vigente; los detalles de cada endpoint se revisarán conforme se completen las especificaciones funcionales.
 
 ---
 
@@ -19,10 +21,10 @@ Authorization: Bearer <token_jwt>
 ```
 El token JWT emitido por el servicio central de Seguridad contiene los datos del usuario y su rol:
 - `ADMIN`: Control total de catálogos y zonas.
-- `GESTOR_DESPACHO`: Operación de programación, asignación e incidencias (F-02, F-05).
-- `GESTOR_FLOTA`: Administración de flota vehicular y conductores (F-06).
+- `GESTOR_DESPACHO`: Operación de programación, asignación e incidencias (F-02, F-04).
+- `GESTOR_FLOTA`: Administración de flota vehicular y conductores (F-05).
 - `REPARTIDOR`: Acceso exclusivo a su hoja de ruta y registro de evidencias (F-03).
-- **Acceso Público:** Los endpoints de cotización para clientes (F-01) y tracking público (F-04) no exigen token JWT de usuario.
+- **Acceso Público:** Los endpoints de cotización para clientes (F-01) y las consultas públicas de seguimiento no exigen token JWT de usuario. El seguimiento es una capacidad transversal y no constituye una funcionalidad numerada.
 
 ### 1.3 Estructura Estándar de Errores
 Cuando una operación no resulta exitosa (`4xx` o `5xx`), el cuerpo de respuesta adopta la siguiente estructura:
@@ -85,7 +87,7 @@ Calcula la tarifa de flete y plazo estimado a partir de la dirección o zona de 
 
 ---
 
-## 3. Endpoints: F-02 - Panel de Programación y Asignación de Despachos (Nicolás)
+## 3. Endpoints: F-02 - Panel de Programación y Asignación de Despachos (Tarqui)
 
 ### 3.1 Recepción de Solicitud de Despacho
 Registra una solicitud formal de despacho proveniente de Ventas o integraciones autorizadas.
@@ -181,7 +183,7 @@ Genera órdenes y despachos simulados con datos válidos para que el equipo pued
 
 ---
 
-## 4. Endpoints: F-03 - App Móvil del Repartidor y Evidencia de Entrega (Max Rojas)
+## 4. Endpoints: F-03 - Web Responsive del Repartidor y Evidencia de Entrega (Max)
 
 ### 4.1 Obtener Mi Ruta del Día
 Retorna los despachos asignados al repartidor autenticado.
@@ -286,7 +288,7 @@ Retorna los despachos asignados al repartidor autenticado.
 
 ---
 
-## 5. Endpoints: F-04 - Portal Web de Tracking de Envíos (Cliente Final)
+## 5. Endpoints: Seguimiento de Pedidos (Capacidad Transversal)
 
 ### 5.1 Consulta Pública de Rastreo
 Permite a cualquier cliente consultar el estado, línea de tiempo y ubicación de su paquete.
@@ -339,7 +341,7 @@ Permite a cualquier cliente consultar el estado, línea de tiempo y ubicación d
 
 ---
 
-## 6. Endpoints: F-05 - Centro de Entregas Fallidas y Reprogramaciones (Gerardo)
+## 6. Endpoints: F-04 - Centro de Entregas Fallidas y Reprogramaciones (Gerardo)
 
 ### 6.1 Listar Despachos Fallidos
 - **Método:** `GET`
@@ -375,7 +377,7 @@ Permite a cualquier cliente consultar el estado, línea de tiempo y ubicación d
 
 ---
 
-## 7. Endpoints: F-06 - Panel de Monitoreo de Flota, Operadores y Capacidad Diaria (Rhamses)
+## 7. Endpoints: F-05 - Panel de Monitoreo de Flota, Operadores y Capacidad Diaria (Rhamses)
 
 ### 7.1 Consultar Repartidores Disponibles con Balance de Capacidad
 Endpoint fundamental consumido por el Panel de Asignación (F-02) para decidir a qué repartidor programar despachos.

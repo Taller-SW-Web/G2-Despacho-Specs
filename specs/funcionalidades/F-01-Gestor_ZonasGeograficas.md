@@ -59,7 +59,7 @@ El sistema DEBE calcular y retornar el costo de envío estimado y los días háb
 ## 6. Fuera de alcance
 - **Procesamiento de pagos:** El cobro efectivo del costo de envío cotizado corresponde a la pasarela de pagos del módulo de Ventas.
 - **Generación de despachos:** La creación de la orden de envío formal se produce tras el pago y corresponde a la funcionalidad F-02.
-- **Ruteo y asignación:** La asignación de choferes para la zona corresponde a F-02 y F-06.
+- **Ruteo y asignación:** La asignación de choferes para la zona corresponde a F-02 y F-05.
 
 ## Criterio de completitud
 La capacidad se considera correctamente implementada cuando:

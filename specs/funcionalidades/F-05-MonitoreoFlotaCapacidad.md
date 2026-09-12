@@ -3,7 +3,7 @@
 ## 1. Contexto
 La operación de última milla depende críticamente de la gestión de los recursos físicos (vehículos) y humanos (conductores/repartidores). Sin un control centralizado de los turnos de trabajo, las capacidades de carga y el estado operativo diario, la asignación de pedidos corre el riesgo de sobrecargar a ciertos repartidores, asignar envíos a personal ausente o designar paquetes pesados a vehículos sin capacidad suficiente (ej. una moto).
 
-Este subsistema administra las tablas maestras de la flota y los repartidores de Despacho. Opera como el núcleo de disponibilidad logística, proveyendo información esencial al **Panel de Programación y Asignación de Despachos** (F-02, a cargo de Tarqui) y sirviendo como base para el inicio de sesión de la **App Móvil del Repartidor** (F-03, a cargo de Max).
+Este subsistema administra las tablas maestras de la flota y los repartidores de Despacho. Opera como el núcleo de disponibilidad logística, proveyendo información esencial al **Panel de Programación y Asignación de Despachos** (F-02, a cargo de Tarqui) y sirviendo como base para el inicio de sesión de la **Web Responsive del Repartidor** (F-03, a cargo de Max).
 
 ## 2. Propósito
 Proveer al Gestor de Flota (y al administrador del módulo de despacho) de un panel de control interactivo para:
@@ -30,7 +30,7 @@ El sistema DEBE permitir mantener un registro actualizado del personal, controla
 #### Escenario 1.1: Alta de un nuevo operador
 - **DADO** que el Gestor de Flota requiere registrar a un nuevo operador.
 - **CUANDO** ingresa los datos personales (Nombres, Apellidos, DNI/CE, Teléfono, Brevete) y define su turno habitual.
-- **ENTONCES** el sistema valida que el documento de identidad no exista previamente, guarda el registro con estado `INACTIVO` (hasta que inicie turno) y autogenera sus credenciales de acceso para la App Móvil.
+- **ENTONCES** el sistema valida que el documento de identidad no exista previamente, guarda el registro con estado `INACTIVO` (hasta que inicie turno) y autogenera sus credenciales de acceso para la web responsive.
 
 #### Escenario 1.2: Cambio de estado a No Disponible (Baja médica o término de turno)
 - **DADO** un repartidor que finalizó su jornada o reportó una emergencia.

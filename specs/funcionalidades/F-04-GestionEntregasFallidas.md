@@ -26,7 +26,7 @@ Esta funcionalidad incluye:
 - Comunicación obligatoria del resultado de la devolución a Ventas y Postventa.
 - Registro de auditoría para cada decisión y cambio de estado.
 
-El mecanismo de comunicación con Ventas y Postventa, incluido si será síncrono o asíncrono, se definirá en el contrato de integración correspondiente.
+El mecanismo de comunicación con Ventas y Postventa, incluido si será síncrono o asíncrono, se definirá en el contrato único `specs/api-contract.md`.
 
 ## 4. Precondiciones, dependencias y resultados
 

@@ -21,7 +21,7 @@ Esta funcionalidad incluye:
 - API receptora de solicitudes de despacho provenientes de módulos externos (Ventas y Postventa o canales de comercio electrónico).
 - Mecanismo de generación autónoma de despachos de prueba con datos simulados consistentes (mediante endpoint REST y acción directa en la interfaz de usuario).
 - Panel (Dashboard) administrativo con la lista paginada y filtrable de despachos en estado `PENDIENTE_ASIGNACION`.
-- Consulta en tiempo real de la disponibilidad de operadores y su balance de capacidad remanente (peso en kilogramos y volumen en metros cúbicos), consumiendo la información provista por Monitoreo de Flota (F-06).
+- Consulta en tiempo real de la disponibilidad de operadores y su balance de capacidad remanente (peso en kilogramos y volumen en metros cúbicos), consumiendo la información provista por Monitoreo de Flota (F-05).
 - Asignación manual o asistida de un despacho pendiente a un repartidor en turno, transicionando el estado a `ASIGNADO` y descontando la capacidad del vehículo.
 - Control de concurrencia y validación transaccional para impedir la doble asignación de un mismo despacho.
 - Registro de auditoría para cada orden recibida, simulada y asignada.
@@ -42,7 +42,7 @@ Esta funcionalidad incluye:
 |---|---|
 | Seguridad y Usuarios | Proporcionar la identidad autenticada mediante token JWT y los permisos del Gestor de Despacho. |
 | Ventas y Postventa | Emitir las solicitudes de despacho formales tras la confirmación de compra. |
-| Monitoreo de Flota (F-06) | Proveer el catálogo de repartidores en turno con su vehículo y balance de capacidad (`GET /api/v1/repartidores/disponibles`). |
+| Monitoreo de Flota (F-05) | Proveer el catálogo de repartidores en turno con su vehículo y balance de capacidad (`GET /api/v1/repartidores/disponibles`). |
 | Operación del Repartidor (F-03) | Recibir los despachos en estado `ASIGNADO` para su ejecución en ruta. |
 | Entregas Fallidas (F-04) | Retornar a la cola de asignación (`PENDIENTE_ASIGNACION`) los despachos reprogramados tras un intento fallido. |
 
@@ -161,7 +161,7 @@ El backend deberá cubrir las siguientes responsabilidades lógicas:
 | Servicio Generador de Simulación | Autogenerar datos válidos de prueba para permitir la autonomía del equipo (`POST /api/v1/despachos/solicitudes/simular`). |
 | Consulta de Cola de Pendientes | Recuperar despachos en estado `PENDIENTE_ASIGNACION` con ordenamiento por fecha límite y soporte de paginación. |
 | Caso de Uso de Asignación | Validar estado del despacho, disponibilidad del operador y capacidad de carga vehicular de forma transaccional. |
-| Cliente de Integración con Flota | Consumir la API de Monitoreo de Flota (F-06) para verificar disponibilidad y capacidades actualizadas. |
+| Cliente de Integración con Flota | Consumir la API de Monitoreo de Flota (F-05) para verificar disponibilidad y capacidades actualizadas. |
 | Persistencia y Auditoría | Almacenar transiciones de estado y registros de trazabilidad en PostgreSQL de forma consistente. |
 
 Las rutas, cuerpos, respuestas y códigos específicos se encuentran centralizados en `specs/api-contract.md` y se publicarán mediante Swagger UI desde el backend desplegado.
@@ -178,9 +178,9 @@ Las rutas, cuerpos, respuestas y códigos específicos se encuentran centralizad
 ## 9. Fuera de alcance
 
 - **Cálculo dinámico de rutas y optimización GPS:** La navegación calle por calle corresponde a herramientas cartográficas externas (Google Maps / Waze).
-- **Ejecución y confirmación de entrega en calle:** Corresponde exclusivamente a la App Móvil del Repartidor (F-03).
+- **Ejecución y confirmación de entrega en calle:** Corresponde exclusivamente a la Web Responsive del Repartidor (F-03).
 - **Gestión de incidencias y entregas fallidas:** Las reprogramaciones y derivaciones a almacén corresponden a Entregas Fallidas (F-04).
-- **Administración del catálogo de flota y choferes:** El alta de repartidores, turnos y vehículos físicos corresponde a Monitoreo de Flota (F-06).
+- **Administración del catálogo de flota y choferes:** El alta de repartidores, turnos y vehículos físicos corresponde a Monitoreo de Flota (F-05).
 - **Facturación y cobro:** Pertenecen al módulo comercial de Ventas y Finanzas.
 
 ## 10. Estrategia de verificación
