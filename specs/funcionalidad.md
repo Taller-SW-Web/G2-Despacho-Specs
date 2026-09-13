@@ -4,7 +4,7 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 
 | ID | Funcionalidad | Descripción breve | Responsable | Estado | Especificación |
 |---|---|---|---|---|---|
-| **F-01** | Gestión de zonas geográficas y cotización | Define cobertura geográfica y tarifas de entrega. | Valqui | Borrador inicial | [Ver especificación](./funcionalidades/F-01-Gestor_ZonasGeograficas.md) |
+| **F-01** | Gestión de zonas geográficas y cotización | Define cobertura geográfica y tarifas de entrega. | Valqui | En especificación | [Ver especificación](./funcionalidades/F-01-Gestor_ZonasGeograficas.md) |
 | **F-02** | Programación y asignación de despachos | Gestiona la cola y asigna despachos a repartidores disponibles. | Tarqui | En especificación | [Ver especificación](./funcionalidades/F-02-ProgramacionAsignacionDespachos.md) |
 | **F-03** | Operación del repartidor y evidencia de entrega | Permite ejecutar entregas y registrar estados y evidencias. | Max | Borrador inicial | [Ver especificación](./funcionalidades/F-03-AppMovilRepartidor.md) |
 | **F-04** | Entregas fallidas y reprogramaciones | Resuelve incidencias mediante reprogramación o devolución a almacén. | Gerardo | En especificación | [Ver especificación](./funcionalidades/F-04-GestionEntregasFallidas.md) |
