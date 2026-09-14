@@ -8,7 +8,7 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 | **F-02** | Programación y asignación de despachos | Gestiona la cola y asigna despachos a repartidores disponibles. | Tarqui | En especificación | [Ver especificación](./funcionalidades/F-02-ProgramacionAsignacionDespachos.md) |
 | **F-03** | Operación del repartidor y evidencia de entrega | Permite ejecutar entregas y registrar estados y evidencias. | Max | Borrador inicial | [Ver especificación](./funcionalidades/F-03-AppMovilRepartidor.md) |
 | **F-04** | Entregas fallidas y reprogramaciones | Resuelve incidencias mediante reprogramación o devolución a almacén. | Gerardo | En especificación | [Ver especificación](./funcionalidades/F-04-GestionEntregasFallidas.md) |
-| **F-05** | Monitoreo de flota, operadores y capacidad diaria | Administra disponibilidad, turnos, vehículos y capacidad operativa. | Rhamses | Borrador inicial | [Ver especificación](./funcionalidades/F-05-MonitoreoFlotaCapacidad.md) |
+| **F-05** | Monitoreo de flota, operadores y capacidad diaria | Administra disponibilidad, turnos, vehículos y capacidad operativa. | Rhamses | En especificación | [Ver especificación](./funcionalidades/F-05-MonitoreoFlotaCapacidad.md) |
 
 ## Capacidad transversal
 
