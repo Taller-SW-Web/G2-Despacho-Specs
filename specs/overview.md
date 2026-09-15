@@ -115,7 +115,7 @@ stateDiagram-v2
 
 ### 5.1 Backend
 - **Lenguaje:** **Java 21 (LTS)** — Aprovecha *Virtual Threads* (Project Loom) para I/O concurrente eficiente, *Records* para DTOs inmutables y *Pattern Matching*.
-- **Framework:** **Spring Boot 3.3.x** — Versión estable de producción plenamente compatible con Java 21, Spring Framework 6 y Jakarta EE 10.
+- **Framework:** **Spring Boot 4.1.1** — Versión unificada para el backend del proyecto, ejecutada sobre Java 21.
 - **Gestor de Dependencias:** **Maven** (`pom.xml`) unificado para todo el backend.
 - **Capa Web y Servicios:** `spring-boot-starter-web` (Spring MVC para controladores RESTful).
 - **Persistencia y ORM:** `spring-boot-starter-data-jpa` con Hibernate 6 para mapeo objeto-relacional y repositorios.

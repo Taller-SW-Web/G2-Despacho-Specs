@@ -51,7 +51,7 @@ El mecanismo de comunicación con Ventas y Postventa, incluido si será síncron
 
 - Una reprogramación válida cambia el estado a `PENDIENTE_ASIGNACION`, registra la nueva fecha y conserva el historial de intentos.
 - La reprogramación no incrementa el contador; un nuevo intento se registra cuando el repartidor vuelve a ejecutar la entrega.
-- Una derivación a almacén cambia el estado a `DEVUELTO_A_ALMACEN` y registra el resultado de su comunicación a Ventas y Postventa.
+- Una derivación a almacén cambia el estado a `DERIVADO_A_ALMACEN` y registra el resultado de su comunicación a Ventas y Postventa.
 - Toda operación registra fecha, usuario, estado anterior, estado nuevo y observaciones aplicables.
 
 ## 5. Requisitos y criterios de aceptación automatizables
@@ -130,7 +130,7 @@ El sistema DEBE permitir que el Gestor derive un despacho fallido a almacén y c
 
 - **DADO** que un despacho se encuentra en estado `FALLIDO`.
 - **CUANDO** el Gestor confirma su derivación a almacén.
-- **ENTONCES** el sistema cambia el estado a `DEVUELTO_A_ALMACEN`, registra la auditoría e inicia la comunicación del resultado a Ventas y Postventa.
+- **ENTONCES** el sistema cambia el estado a `DERIVADO_A_ALMACEN`, registra la auditoría e inicia la comunicación del resultado a Ventas y Postventa.
 
 #### CA-11. Operación repetida
 
@@ -218,7 +218,7 @@ Esta sección no prescribe nombres de clases, paquetes ni archivos. Las rutas, c
 Además, se ejecutarán dos recorridos funcionales completos:
 
 1. `FALLIDO` → reprogramación válida → `PENDIENTE_ASIGNACION`.
-2. `FALLIDO` → derivación a almacén → `DEVUELTO_A_ALMACEN`.
+2. `FALLIDO` → derivación a almacén → `DERIVADO_A_ALMACEN`.
 
 Las pruebas unitarias cubrirán las reglas de negocio; las pruebas de integración cubrirán seguridad, persistencia PostgreSQL, auditoría e interacción entre componentes; y las pruebas del frontend cubrirán los estados visuales y formularios.
 

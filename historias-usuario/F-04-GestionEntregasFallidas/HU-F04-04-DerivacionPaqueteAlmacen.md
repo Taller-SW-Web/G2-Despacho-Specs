@@ -32,7 +32,7 @@
   - Retroalimentación diferenciada para operación exitosa, decisión ya procesada y problema de comunicación externa.
 - **Reglas de negocio, idempotencia e integración:**
   - Solo puede derivarse un despacho cuyo estado vigente sea `FALLIDO`.
-  - Una decisión aceptada cambia el estado a `DEVUELTO_A_ALMACEN` y registra la auditoría.
+  - Una decisión aceptada cambia el estado a `DERIVADO_A_ALMACEN` y registra la auditoría.
   - Repetir la misma operación no debe duplicar el cambio de estado, la auditoría de negocio ni la comunicación externa.
   - Una falla al comunicar el resultado no debe revertir el estado local ya aceptado.
   - Todo intento de comunicación debe registrarse como exitoso, pendiente o fallido, con información suficiente para su tratamiento posterior.
@@ -46,7 +46,7 @@
 - [ ] **CA-10: Derivación exitosa**
   - **DADO** que un despacho se encuentra en estado `FALLIDO`.
   - **CUANDO** el Gestor confirma su derivación a almacén.
-  - **ENTONCES** el sistema cambia el estado a `DEVUELTO_A_ALMACEN`, registra la auditoría e inicia la comunicación del resultado a Ventas y Postventa.
+  - **ENTONCES** el sistema cambia el estado a `DERIVADO_A_ALMACEN`, registra la auditoría e inicia la comunicación del resultado a Ventas y Postventa.
 
 - [ ] **CA-11: Operación repetida**
   - **DADO** que el despacho ya fue derivado a almacén.
@@ -63,7 +63,7 @@
 ## 4. Definición de Terminado (Definition of Done - DoD)
 
 - [ ] Caso de uso de derivación implementado con validación del estado `FALLIDO`.
-- [ ] Cambio a `DEVUELTO_A_ALMACEN` y auditoría persistidos consistentemente.
+- [ ] Cambio a `DERIVADO_A_ALMACEN` y auditoría persistidos consistentemente.
 - [ ] Protección idempotente implementada para impedir efectos y comunicaciones duplicadas.
 - [ ] Intentos de comunicación externa persistidos con estado exitoso, pendiente o fallido.
 - [ ] Interfaz responsive implementada con confirmación y mensajes diferenciados para los resultados previstos.

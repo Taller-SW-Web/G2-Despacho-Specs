@@ -62,10 +62,14 @@
   1. Contexto
   2. Propósito
   3. Alcance
-  4. Requisitos (con escenarios en formato Gherkin: DADO/CUANDO/ENTONCES)
-  5. Requisitos no funcionales
-  6. Fuera de alcance
-  7. Criterio de completitud
+  4. Precondiciones, dependencias y resultados
+  5. Requisitos y criterios de aceptación automatizables (con escenarios en formato Gherkin: DADO/CUANDO/ENTONCES)
+  6. Frontend
+  7. Backend
+  8. Requisitos no funcionales
+  9. Fuera de alcance
+  10. Estrategia de verificación
+  11. Criterio de completitud
 
 ### 3.6 Nombres de archivos de especificaciones
 - Formato: `F-XX-NombreEnPascalCase.md` (ej. `F-01-Gestor_ZonasGeograficas.md`, `F-02-ProgramacionAsignacionDespachos.md`, `F-04-GestionEntregasFallidas.md`).

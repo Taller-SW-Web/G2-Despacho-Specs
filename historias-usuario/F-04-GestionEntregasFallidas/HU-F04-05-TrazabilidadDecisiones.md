@@ -14,7 +14,7 @@
 
 ## 1. Declaración de la Historia (User Story)
 
-**COMO** Gestor de Despacho y Auditor de Operaciones  
+**COMO** Gestor de Despacho  
 **QUIERO** que toda reprogramación o derivación a almacén quede registrada con su responsable, fecha y transición  
 **PARA** reconstruir las decisiones tomadas sobre una entrega fallida y garantizar su trazabilidad operativa.  
 
