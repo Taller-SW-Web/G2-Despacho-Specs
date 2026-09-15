@@ -11,7 +11,7 @@ Las historias están redactadas en un formato Markdown **100% compatible con Jir
 ```text
 historias-usuario/
 ├── README.md                                    # Guía general y plantilla estándar para Jira
-├── F-01-GestorZonasGeograficas/                 # HUs de Zonas de cobertura y matriz tarifaria (Valqui)
+├── F-01-Gestor_ZonasGeograficas/                # HUs de Zonas de cobertura y matriz tarifaria (Valqui)
 ├── F-02-ProgramacionAsignacionDespachos/        # HUs de Asignación y simulación de pedidos (Tarqui)
 ├── F-03-AppMovilRepartidor/                     # HUs de Web Responsive para repartidores (Max Rojas)
 ├── F-04-GestionEntregasFallidas/                # HUs de Incidencias y reprogramaciones (Gerardo)
@@ -75,10 +75,10 @@ Cada archivo de historia de usuario (`HU-F<XX>-<YY>-NombreCorto.md`) sigue la si
 
 | Funcionalidad | Responsable | Historias de Usuario | Estado |
 |---|---|---|---|
-| **F-01: Gestor de Zonas Geográficas** | Valqui | Pendiente de redacción | ⚪ Pendiente |
+| **F-01: Gestor de Zonas Geográficas** | Valqui | [HU-F01-01](./F-01-Gestor_ZonasGeograficas/HU-F01-01-AdministracionZonasCobertura.md)<br>[HU-F01-02](./F-01-Gestor_ZonasGeograficas/HU-F01-02-ConsultaEstadoZonas.md)<br>[HU-F01-03](./F-01-Gestor_ZonasGeograficas/HU-F01-03-ConfiguracionMatrizTarifaria.md)<br>[HU-F01-04](./F-01-Gestor_ZonasGeograficas/HU-F01-04-CotizacionEnviosTiempoReal.md)<br>[HU-F01-05](./F-01-Gestor_ZonasGeograficas/HU-F01-05-SeguridadTrazabilidadConfiguracion.md) | 🟢 Completado (5 HUs) |
 | **F-02: Programación y Asignación** | Tarqui | [HU-F02-01](./F-02-ProgramacionAsignacionDespachos/HU-F02-01-RecepcionSolicitudesDespacho.md)<br>[HU-F02-02](./F-02-ProgramacionAsignacionDespachos/HU-F02-02-GeneracionPedidosPrueba.md)<br>[HU-F02-03](./F-02-ProgramacionAsignacionDespachos/HU-F02-03-ConsultaColaPendientes.md)<br>[HU-F02-04](./F-02-ProgramacionAsignacionDespachos/HU-F02-04-AsignacionDespachoRepartidor.md)<br>[HU-F02-05](./F-02-ProgramacionAsignacionDespachos/HU-F02-05-TrazabilidadAuditoriaAsignacion.md) | 🟢 Completado (5 HUs) |
 | **F-03: Web Repartidor y Evidencia** | Max Rojas | Pendiente de redacción | ⚪ Pendiente |
-| **F-04: Entregas Fallidas** | Gerardo | Pendiente de redacción | ⚪ Pendiente |
+| **F-04: Entregas Fallidas** | Gerardo | [HU-F04-01](./F-04-GestionEntregasFallidas/HU-F04-01-ConsultaEntregasFallidas.md)<br>[HU-F04-02](./F-04-GestionEntregasFallidas/HU-F04-02-ConsultaDetalleIncidencia.md)<br>[HU-F04-03](./F-04-GestionEntregasFallidas/HU-F04-03-ReprogramacionDespachoFallido.md)<br>[HU-F04-04](./F-04-GestionEntregasFallidas/HU-F04-04-DerivacionPaqueteAlmacen.md)<br>[HU-F04-05](./F-04-GestionEntregasFallidas/HU-F04-05-TrazabilidadDecisiones.md) | 🟢 Completado (5 HUs) |
 | **F-05: Monitoreo de Flota** | Rhamses | Pendiente de redacción | ⚪ Pendiente |
 | **Transversal: Seguimiento** | Equipo | Pendiente de redacción | ⚪ Pendiente |
 
