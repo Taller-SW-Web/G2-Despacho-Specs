@@ -437,3 +437,37 @@ Endpoint fundamental consumido por el Panel de Asignación (F-02) para decidir a
 - `PUT /api/v1/repartidores/{idRepartidor}`: Modificación de operador y estado.
 - `GET /api/v1/vehiculos`: Catálogo de flota vehicular.
 - `POST /api/v1/vehiculos`: Registro de nuevo vehículo con límites de peso/volumen.
+
+### 7.4 Asignación Operativa Diaria (Repartidor – Vehículo)
+Vincula a un repartidor con un vehículo para la jornada en curso, activándolo con los límites de carga de esa unidad.
+
+- **Método:** `POST`
+- **Ruta:** `/api/v1/repartidores/{idRepartidor}/asignacion-diaria`
+- **Rol requerido:** `GESTOR_FLOTA`, `ADMIN_DESPACHO`
+- **Cuerpo de la Solicitud (Request Body):**
+```json
+{
+  "idVehiculo": "VEH-101",
+  "fechaJornada": "2026-09-15"
+}
+```
+- **Respuesta Exitosa (`201 Created`):**
+```json
+{
+  "idAsignacion": "ASIG-0023",
+  "idRepartidor": "REP-0012",
+  "nombreRepartidor": "Juan Pérez",
+  "idVehiculo": "VEH-101",
+  "tipoVehiculo": "FURGONETA",
+  "placa": "ABC-123",
+  "fechaJornada": "2026-09-15",
+  "estadoRepartidor": "DISPONIBLE",
+  "capacidadMaximaKg": 500.0,
+  "capacidadMaximaM3": 4.0,
+  "maximoPaquetesDiarios": 80
+}
+```
+- **Respuestas de Error:**
+  - `409 Conflict`: el repartidor ya tiene una asignación activa en la misma jornada.
+  - `404 Not Found`: repartidor o vehículo no encontrado.
+  - `422 Unprocessable Entity`: repartidor no está en estado `INACTIVO` o vehículo no está `DISPONIBLE`.
