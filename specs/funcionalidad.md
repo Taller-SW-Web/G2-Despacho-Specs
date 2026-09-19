@@ -14,4 +14,14 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 
 La gestión de estados del despacho y el seguimiento del pedido en ruta se especifican como requisitos transversales (RT-01 a RT-04) en la sección 6 de [overview.md](./overview.md). No constituyen una funcionalidad independiente.
 
+---
+
+## Especificaciones detalladas (Formularios y Procesos)
+
+Para evitar ambigüedades durante el desarrollo de frontend y backend, las macro-funcionalidades se desglosan en especificaciones técnicas a nivel de **Formularios/Vistas** y **Procesos Internos**.
+
+- **Catálogo y estado de asignación:** [Ver Especificaciones Detalladas](./especificaciones-detalladas/README.md)
+
+---
+
 Los responsables deben mantener este índice actualizado cuando una especificación sea creada, revisada o cambie de estado.
