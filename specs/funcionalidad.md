@@ -4,14 +4,14 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 
 | ID | Funcionalidad | Descripción breve | Responsable | Estado | Especificación |
 |---|---|---|---|---|---|
-| **F-01** | Gestión de zonas geográficas y cotización | Define cobertura geográfica y tarifas de entrega. | Valqui | En especificación | [Ver especificación](./funcionalidades/F-01-Gestor_ZonasGeograficas.md) |
-| **F-02** | Programación y asignación de despachos | Gestiona la cola y asigna despachos a repartidores disponibles. | Tarqui | En especificación | [Ver especificación](./funcionalidades/F-02-ProgramacionAsignacionDespachos.md) |
-| **F-03** | Operación del repartidor y evidencia de entrega | Permite ejecutar entregas y registrar estados y evidencias. | Max | Borrador inicial | [Ver especificación](./funcionalidades/F-03-AppMovilRepartidor.md) |
-| **F-04** | Entregas fallidas y reprogramaciones | Resuelve incidencias mediante reprogramación o devolución a almacén. | Gerardo | En especificación | [Ver especificación](./funcionalidades/F-04-GestionEntregasFallidas.md) |
-| **F-05** | Monitoreo de flota, operadores y capacidad diaria | Administra disponibilidad, turnos, vehículos y capacidad operativa. | Rhamses | En especificación | [Ver especificación](./funcionalidades/F-05-MonitoreoFlotaCapacidad.md) |
+| **F-01** | Gestión de zonas geográficas y cotización | Define cobertura, tarifas y la zona de cada despacho. | Valqui | En especificación | [Ver especificación](./funcionalidades/F-01-Gestor_ZonasGeograficas.md) |
+| **F-02** | Programación y asignación de despachos | Recibe solicitudes y asigna despachos con jornada y secuencia. | Tarqui | En especificación | [Ver especificación](./funcionalidades/F-02-ProgramacionAsignacionDespachos.md) |
+| **F-03** | Operación del repartidor y evidencia de entrega | Permite ejecutar entregas y registrar estados y evidencias. | Max | En especificación | [Ver especificación](./funcionalidades/F-03-AppMovilRepartidor.md) |
+| **F-04** | Entregas fallidas y reprogramaciones | Recibe en el centro los paquetes no entregados y decide su reprogramación o cierre. | Gerardo | En especificación | [Ver especificación](./funcionalidades/F-04-GestionEntregasFallidas.md) |
+| **F-05** | Monitoreo de flota, operadores y capacidad diaria | Administra repartidores, vehículos, jornadas y ocupación. | Rhamses | En especificación | [Ver especificación](./funcionalidades/F-05-MonitoreoFlotaCapacidad.md) |
 
-## Capacidad transversal
+## Requisitos transversales
 
-El seguimiento de pedidos se expondrá mediante API para los canales autorizados. No se registra como una sexta funcionalidad independiente, ya que será una capacidad compartida por el backend del módulo.
+La gestión de estados del despacho y el seguimiento del pedido en ruta se especifican como requisitos transversales (RT-01 a RT-04) en la sección 6 de [overview.md](./overview.md). No constituyen una funcionalidad independiente.
 
 Los responsables deben mantener este índice actualizado cuando una especificación sea creada, revisada o cambie de estado.

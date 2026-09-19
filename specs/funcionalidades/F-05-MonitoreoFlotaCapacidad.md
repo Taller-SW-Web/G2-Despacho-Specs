@@ -3,225 +3,269 @@
 **Responsable:** Rhamses
 **Estado:** En especificación
 **Actor principal:** Gestor de Flota
+**Lineamiento del curso:** Soporte a la asignación de despacho a operador/repartidor
 
 ## 1. Contexto
 
-El módulo de Despacho y Entrega opera con un equipo de repartidores y una flota de vehículos heterogénea (motos, autos, furgonetas). Sin un registro centralizado de quién está en turno, qué vehículo le corresponde y cuánta carga puede asumir durante el día, el Panel de Programación (F-02) no tiene información confiable para asignar pedidos: puede saturar a un operador, asignar un paquete pesado a una moto, o intentar enviar a alguien que no está trabajando ese día.
+El módulo opera con repartidores y una flota heterogénea (motos, autos, furgonetas). Sin un registro de quién está en turno, qué vehículo tiene y cuánta carga lleva, F-02 no puede asignar despachos sin riesgo de sobrecarga, y F-03 no puede saber si un repartidor está habilitado para operar.
 
-Este subsistema actúa como el proveedor oficial de disponibilidad operativa dentro del módulo. Administra las tablas maestras de repartidores y vehículos, y expone un servicio de consulta que F-02 consume en tiempo real antes de asignar cada despacho. La información de flota también determina qué repartidores pueden iniciar sesión en la App Móvil (F-03).
+Esta funcionalidad es la fuente única de disponibilidad y ocupación del módulo. Administra repartidores y vehículos, empareja a cada repartidor con un vehículo y una zona para la jornada, y calcula su ocupación a partir de los despachos que tiene en curso. Además, vincula a cada repartidor con su usuario en Seguridad y Usuarios, que es el dueño de las identidades.
 
 ## 2. Propósito
 
-Proveer al Gestor de Flota de un panel administrativo para gestionar el personal de reparto y los vehículos, configurar sus límites operativos diarios y supervisar en tiempo real el estado de ocupación de la flota, de modo que la asignación de despachos siempre ocurra sobre información actualizada y sin riesgo de sobrecarga.
+Proveer al Gestor de Flota un panel para administrar repartidores y vehículos, abrir y cerrar las jornadas operativas y supervisar la ocupación de la flota, y proveer a F-02 y F-03 información confiable de habilitación y capacidad remanente.
 
 ## 3. Alcance
 
 Esta funcionalidad incluye:
 
-- CRUD completo de repartidores: registro, edición de datos personales, cambio de estado operativo y asignación de turno de trabajo.
-- CRUD completo de vehículos: registro de unidades con su tipo, placa, estado mecánico y límites de carga (peso en kg, volumen en m³ y máximo de paquetes por jornada).
-- Asignación operativa diaria: emparejamiento de un repartidor con un vehículo para la jornada en curso.
-- Panel gráfico de monitoreo con indicadores por repartidor (estado, paquetes asignados, porcentaje de ocupación) y resumen global de la flota.
-- Endpoint `GET /api/v1/repartidores/disponibles` para proveer a F-02 el catálogo de operadores habilitados para recibir nuevos despachos.
+- Gestión de repartidores: registro, edición, baja lógica y vinculación con su usuario de Seguridad y Usuarios.
+- Gestión de vehículos: tipo, placa, estado y límites de carga (kg, m³ y máximo de paquetes en ruta).
+- Asignación operativa diaria: emparejamiento repartidor – vehículo – zona para la jornada.
+- Estado operativo del repartidor calculado a partir de su jornada y sus despachos.
+- Cálculo de ocupación en kg, m³ y paquetes a partir de los despachos en poder del repartidor: `ASIGNADO`, `EN_CAMINO` y `FALLIDO` aún no recibidos en el centro de despacho.
+- Panel de monitoreo con indicadores por repartidor y resumen de la flota.
+- Consulta de repartidores disponibles con su capacidad remanente para F-02.
+- Cierre de turno, invocado por F-03 al cerrar la jornada o por el Gestor de Flota.
 
 ## 4. Precondiciones, dependencias y resultados
 
 ### 4.1. Precondiciones
 
-- El usuario debe estar autenticado con el rol `GESTOR_FLOTA` o `ADMIN_DESPACHO` para cualquier operación de configuración.
-- Para registrar un repartidor, su documento de identidad no debe existir previamente en el sistema.
-- Para asociar un vehículo a un repartidor, ambos deben existir y encontrarse en estado activo.
-- Solo puede existir una asignación operativa activa por repartidor por jornada.
+- La configuración requiere JWT con rol `GESTOR_FLOTA` o `ADMIN`.
+- El documento de identidad de un repartidor y la placa de un vehículo son únicos.
+- Para la asignación diaria, el repartidor debe estar activo y vinculado, el vehículo `DISPONIBLE` y la zona activa en F-01.
+- Solo existe una asignación diaria activa por repartidor y por vehículo en cada jornada.
 
 ### 4.2. Dependencias
 
 | Dependencia | Responsabilidad |
 |---|---|
-| Seguridad y Usuarios | Proporcionar la identidad autenticada mediante token JWT y los permisos del Gestor de Flota. |
-| Programación y Asignación (F-02) | Consumir el endpoint `GET /api/v1/repartidores/disponibles` para filtrar a quién asignar pedidos. |
-| Operación del Repartidor (F-03) | Verificar que el repartidor está registrado y activo antes de permitirle iniciar sesión en la App Móvil. |
+| Seguridad y Usuarios | Emitir el JWT y crear el usuario con rol `REPARTIDOR` que se vincula a cada repartidor. |
+| Zonas y Cotizador (F-01) | Proveer las zonas activas para la asignación diaria. |
+| Programación y Asignación (F-02) | Consumir la disponibilidad y capacidad remanente antes de asignar. |
+| Web del Repartidor (F-03) | Consultar la habilitación del repartidor y solicitar el cierre de su turno. |
 
 ### 4.3. Resultados
 
-- Un repartidor registrado queda en estado `INACTIVO` hasta que inicie turno y se le asocie un vehículo.
-- La asignación operativa diaria activa al repartidor y le transfiere los límites de carga del vehículo asignado.
-- El cambio de estado de un repartidor a `FUERA_DE_TURNO` lo excluye inmediatamente de las respuestas del endpoint de disponibilidad.
-- El panel gráfico refleja en todo momento la suma de paquetes asignados (estado `ASIGNADO` o `EN_CAMINO`) frente al límite diario configurado.
+- Un repartidor registrado queda activo, en `FUERA_DE_TURNO`, con su usuario de Seguridad vinculado o con vinculación pendiente.
+- La asignación diaria pone al repartidor en `DISPONIBLE` con los límites del vehículo y la zona de trabajo.
+- La ocupación y el estado operativo se recalculan cada vez que cambia un despacho del repartidor.
+- El cierre de turno pone al repartidor en `FUERA_DE_TURNO` y libera el vehículo.
+
+### 4.4. Estados del repartidor
+
+| Dimensión | Estados | Cómo cambia |
+|---|---|---|
+| Registro | `ACTIVO`, `INACTIVO` | Acción del Gestor de Flota (baja lógica). |
+| Operativo en la jornada | `FUERA_DE_TURNO`, `DISPONIBLE`, `EN_RUTA`, `SATURADO` | Calculado: `FUERA_DE_TURNO` sin asignación diaria activa; `SATURADO` si alcanzó cualquiera de sus tres límites; `EN_RUTA` si tiene al menos un despacho `EN_CAMINO`; `DISPONIBLE` en los demás casos. |
 
 ## 5. Requisitos y criterios de aceptación automatizables
 
 ### RF-01. Gestión de repartidores
 
-El sistema DEBE permitir registrar, editar, cambiar el estado y consultar los operadores de reparto del módulo.
+El sistema DEBE permitir registrar, editar, dar de baja y consultar repartidores.
 
 #### CA-01. Registro exitoso de un nuevo repartidor
 
-- **DADO** que el Gestor de Flota ingresa los datos de un nuevo operador: nombres, apellidos, DNI, teléfono, número de brevete y turno habitual.
+- **DADO** que el Gestor de Flota ingresa nombres, apellidos, DNI, teléfono, correo, número de brevete y turno habitual.
 - **CUANDO** confirma el registro.
-- **ENTONCES** el sistema valida que el DNI no exista previamente, crea el repartidor con estado `INACTIVO` y devuelve su identificador único.
+- **ENTONCES** el sistema valida que el DNI no exista, crea el repartidor `ACTIVO` en `FUERA_DE_TURNO`, solicita a Seguridad y Usuarios la creación de su usuario y devuelve el identificador del repartidor.
 
-#### CA-02. Rechazo por documento de identidad duplicado
+#### CA-02. Rechazo por documento duplicado
 
-- **DADO** que ya existe un repartidor registrado con un DNI determinado.
-- **CUANDO** se intenta registrar otro operador con el mismo número de documento.
-- **ENTONCES** el sistema rechaza la operación con código `409 Conflict` e indica que el documento ya está registrado, sin persistir el duplicado.
+- **DADO** un repartidor existente con un DNI.
+- **CUANDO** se registra otro con el mismo DNI.
+- **ENTONCES** el sistema responde `409 Conflict` sin persistir el duplicado.
 
-#### CA-03. Desactivación de un repartidor con despachos históricos
+#### CA-03. Baja lógica de un repartidor
 
-- **DADO** que un repartidor tiene despachos finalizados asociados en el historial.
-- **CUANDO** el Gestor cambia su estado a `INACTIVO`.
-- **ENTONCES** el sistema aplica baja lógica (no elimina el registro), lo excluye de nuevas asignaciones y preserva su historial de entregas intacto.
+- **DADO** un repartidor con despachos históricos y sin despachos `ASIGNADO` ni `EN_CAMINO`.
+- **CUANDO** el Gestor lo cambia a `INACTIVO`.
+- **ENTONCES** el sistema conserva el registro y su historial, lo excluye de nuevas asignaciones y F-03 le niega el acceso. Si tuviera despachos en curso, la operación se rechaza con `409 Conflict`.
 
-#### CA-04. Acceso sin permisos requeridos
+#### CA-04. Acceso sin permisos
 
-- **DADO** que un usuario sin el rol `GESTOR_FLOTA` ni `ADMIN_DESPACHO` intenta registrar o modificar repartidores.
-- **CUANDO** realiza la petición al backend.
-- **ENTONCES** el sistema rechaza la solicitud con código `403 Forbidden` y no expone información del personal.
+- **DADO** un usuario sin rol `GESTOR_FLOTA` ni `ADMIN`.
+- **CUANDO** intenta registrar o modificar repartidores.
+- **ENTONCES** el sistema responde `403 Forbidden`.
 
 ### RF-02. Gestión de vehículos y capacidad
 
-El sistema DEBE permitir administrar el catálogo de vehículos con sus límites de carga y su estado de servicio.
+El sistema DEBE administrar los vehículos con sus límites y su estado.
 
-#### CA-05. Registro de vehículo con parámetros de capacidad
+#### CA-05. Registro de vehículo
 
-- **DADO** que el Gestor registra una furgoneta con placa "ABC-123", capacidad de 500 kg, 4.0 m³ y tope de 80 paquetes diarios.
-- **CUANDO** confirma el registro.
-- **ENTONCES** el sistema guarda la unidad con estado `DISPONIBLE` y sus límites de carga configurados.
+- **DADO** una furgoneta con placa "ABC-123", 500 kg, 4.0 m³ y máximo de 80 paquetes en ruta.
+- **CUANDO** el Gestor confirma el registro.
+- **ENTONCES** se guarda en `DISPONIBLE` con esos límites.
 
-#### CA-06. Rechazo de vehículo con placa duplicada
+#### CA-06. Placa duplicada
 
-- **DADO** que ya existe un vehículo registrado con la placa "ABC-123".
-- **CUANDO** se intenta registrar otro con la misma placa.
-- **ENTONCES** el sistema rechaza la operación con código `409 Conflict` y no persiste el duplicado.
+- **DADO** un vehículo existente con placa "ABC-123".
+- **CUANDO** se registra otro con la misma placa.
+- **ENTONCES** el sistema responde `409 Conflict`.
 
-#### CA-07. Desactivación de vehículo por mantenimiento
+#### CA-07. Vehículo a mantenimiento
 
-- **DADO** que un vehículo debe entrar a mantenimiento.
-- **CUANDO** el Gestor cambia su estado a `EN_MANTENIMIENTO`.
-- **ENTONCES** el sistema lo excluye de las asignaciones operativas disponibles y, si tenía un repartidor asociado en el turno activo, lo marca como sin vehículo asignado.
+- **DADO** un vehículo que debe entrar a mantenimiento.
+- **CUANDO** el Gestor lo cambia a `EN_MANTENIMIENTO`.
+- **ENTONCES** queda excluido de nuevas asignaciones diarias; si estaba en una jornada activa sin despachos en curso, esa jornada se cierra y el repartidor pasa a `FUERA_DE_TURNO`. Si el repartidor tiene despachos `ASIGNADO` o `EN_CAMINO`, la operación se rechaza con `409 Conflict` hasta que F-02 los reasigne o se cierren.
 
-### RF-03. Asignación operativa diaria (repartidor – vehículo)
+### RF-03. Asignación operativa diaria
 
-El sistema DEBE permitir vincular a cada repartidor un vehículo para la jornada en curso, heredándole sus límites de capacidad.
+El sistema DEBE vincular a cada repartidor con un vehículo y una zona para la jornada.
 
 #### CA-08. Asignación diaria exitosa
 
-- **DADO** que el Gestor inicia el turno de la mañana y selecciona al repartidor "Juan Pérez" y la furgoneta "ABC-123".
-- **CUANDO** confirma la asignación operativa del día.
-- **ENTONCES** el sistema activa al repartidor con estado `DISPONIBLE`, le asigna los límites de la furgoneta (500 kg, 4.0 m³, 80 paquetes) y lo incluye en las respuestas del endpoint de disponibilidad.
+- **DADO** el repartidor "Juan Pérez", activo y vinculado, la furgoneta "ABC-123" disponible y la zona activa "Lima Centro".
+- **CUANDO** el Gestor confirma la asignación del día.
+- **ENTONCES** el repartidor pasa a `DISPONIBLE` con límites de 500 kg, 4.0 m³ y 80 paquetes, zona "Lima Centro", y aparece en la consulta de disponibilidad.
 
-#### CA-09. Rechazo por asignación duplicada en la misma jornada
+#### CA-09. Asignación duplicada en la jornada
 
-- **DADO** que el repartidor "Juan Pérez" ya tiene una asignación operativa activa en la jornada actual.
-- **CUANDO** se intenta crear otra asignación para el mismo operador en el mismo día.
-- **ENTONCES** el sistema rechaza la operación con código `409 Conflict` e indica que el repartidor ya fue asignado en esta jornada.
+- **DADO** que "Juan Pérez" ya tiene una asignación activa hoy.
+- **CUANDO** se intenta crear otra.
+- **ENTONCES** el sistema responde `409 Conflict`.
 
-### RF-04. Panel gráfico de monitoreo de flota
+### RF-04. Panel de monitoreo de flota
 
-El sistema DEBE presentar al Gestor de Flota un tablero visual actualizado con el estado de ocupación de cada repartidor en tiempo real.
+El sistema DEBE mostrar la ocupación de cada repartidor y de la flota.
 
-#### CA-10. Visualización de repartidor saturado
+#### CA-10. Repartidor saturado
 
-- **DADO** que un repartidor tiene un tope de 50 paquetes y se le han asignado 48 despachos en estado `ASIGNADO` o `EN_CAMINO`.
-- **CUANDO** el Gestor de Flota consulta el panel de monitoreo.
-- **ENTONCES** el sistema muestra al operador con una barra de progreso en color rojo, etiqueta de estado `SATURADO` y la relación numérica `48/50 paquetes (96%)`.
+- **DADO** un repartidor con máximo de 50 paquetes y 50 despachos en `ASIGNADO` o `EN_CAMINO`.
+- **CUANDO** el Gestor consulta el panel.
+- **ENTONCES** se muestra con estado `SATURADO`, barra en rojo y la relación "50/50 paquetes (100 %)", junto a su ocupación en kg y m³. Las barras se muestran en verde por debajo de 70 %, en ámbar entre 70 % y 99 % y en rojo al 100 %.
 
-#### CA-11. Resumen global de disponibilidad de flota
+#### CA-11. Resumen global
 
-- **DADO** que existen 8 repartidores en turno con distintos estados de carga.
-- **CUANDO** el Gestor accede al panel de monitoreo.
-- **ENTONCES** el sistema muestra tarjetas de resumen con el total de repartidores `DISPONIBLES`, `EN_RUTA`, `SATURADOS` e `INACTIVOS`, actualizadas sin necesidad de recargar la página.
+- **DADO** ocho repartidores con distintos estados.
+- **CUANDO** el Gestor abre el panel.
+- **ENTONCES** se muestran los totales `DISPONIBLE`, `EN_RUTA`, `SATURADO` y `FUERA_DE_TURNO`, actualizados sin recargar la página.
 
-### RF-05. API de consulta de disponibilidad para programación
+### RF-05. Consulta de disponibilidad para programación
 
-El sistema DEBE exponer un endpoint que devuelva únicamente los operadores habilitados para recibir nuevos despachos, con su balance de capacidad actualizado.
+El sistema DEBE devolver los repartidores habilitados con su capacidad remanente.
 
-#### CA-12. Respuesta con operadores disponibles y su balance de carga
+#### CA-12. Repartidores disponibles
 
-- **DADO** que existen 5 repartidores en turno, de los cuales 3 tienen capacidad remanente (estados `DISPONIBLE` o `EN_RUTA`) y 2 están `SATURADOS` o `FUERA_DE_TURNO`.
-- **CUANDO** el servicio de F-02 invoca `GET /api/v1/repartidores/disponibles`.
-- **ENTONCES** el sistema retorna la lista de los 3 operadores habilitados, incluyendo por cada uno: identificador, nombre, tipo de vehículo, capacidad máxima, paquetes asignados, porcentaje de ocupación y estado.
+- **DADO** cinco repartidores en jornada, tres `DISPONIBLE` o `EN_RUTA` y dos `SATURADO`.
+- **CUANDO** F-02 consulta la disponibilidad.
+- **ENTONCES** recibe los tres habilitados con identificador, nombre, zona, tipo de vehículo, límites, capacidad remanente en kg, m³ y paquetes, porcentaje de ocupación y estado operativo.
 
-#### CA-13. Respuesta vacía cuando no hay repartidores disponibles
+#### CA-13. Sin repartidores disponibles
 
-- **DADO** que todos los repartidores en turno están `SATURADOS` o `FUERA_DE_TURNO`.
-- **CUANDO** F-02 invoca el endpoint de disponibilidad.
-- **ENTONCES** el sistema retorna código `200 OK` con una lista vacía, sin generar error.
+- **DADO** que todos los repartidores están `SATURADO` o `FUERA_DE_TURNO`.
+- **CUANDO** F-02 consulta la disponibilidad.
+- **ENTONCES** recibe `200 OK` con una lista vacía.
+
+### RF-06. Vinculación con el usuario de Seguridad
+
+El sistema DEBE asociar cada repartidor con su usuario en Seguridad y Usuarios, para que F-03 lo identifique desde el token.
+
+#### CA-14. Vinculación exitosa
+
+- **DADO** el registro de un nuevo repartidor.
+- **CUANDO** Seguridad y Usuarios confirma la creación del usuario con rol `REPARTIDOR`.
+- **ENTONCES** el sistema guarda el identificador de usuario en el repartidor y lo marca como vinculado.
+
+#### CA-15. Vinculación pendiente
+
+- **DADO** que Seguridad y Usuarios no responde o rechaza la creación del usuario.
+- **CUANDO** se registra el repartidor.
+- **ENTONCES** el repartidor se guarda con vinculación pendiente, no puede recibir asignación diaria y el panel ofrece reintentar la vinculación.
+
+### RF-07. Estado operativo y cierre de turno
+
+El sistema DEBE mantener el estado operativo coherente con los despachos y cerrar los turnos de forma segura.
+
+#### CA-16. Paso a `EN_RUTA` y retorno a `DISPONIBLE`
+
+- **DADO** un repartidor `DISPONIBLE`.
+- **CUANDO** F-03 registra su primer despacho `EN_CAMINO` y, más tarde, ya no le queda ningún despacho `EN_CAMINO`.
+- **ENTONCES** el repartidor pasa a `EN_RUTA` y luego vuelve a `DISPONIBLE`, y su ocupación se recalcula en cada cambio.
+
+#### CA-17. Cierre de turno con despachos en curso
+
+- **DADO** un repartidor con despachos `ASIGNADO` o `EN_CAMINO`.
+- **CUANDO** el Gestor de Flota intenta cerrar su turno manualmente.
+- **ENTONCES** el sistema responde `409 Conflict`; el cierre con pendientes solo lo ejecuta F-03, que primero los resuelve como `NO_INTENTADO`.
+
+#### CA-18. Saturación por peso o volumen
+
+- **DADO** un repartidor con 20 paquetes de un máximo de 80, pero con 500 kg de 500 kg.
+- **CUANDO** se calcula su estado operativo.
+- **ENTONCES** el repartidor queda `SATURADO` y se excluye de la consulta de disponibilidad.
 
 ## 6. Frontend
 
-La funcionalidad tendrá una experiencia web responsive compuesta por:
-
 | Elemento | Responsabilidad |
 |---|---|
-| Panel de Repartidores | Mostrar el listado paginado con filtros por estado y turno, y acciones para registrar, editar o cambiar el estado de un operador. |
-| Formulario de Repartidor | Registrar o editar datos personales, brevete y turno habitual del operador. |
-| Panel de Vehículos | Mostrar el catálogo con filtros por tipo, estado mecánico y placa, con acciones de alta, edición y cambio de estado. |
-| Formulario de Vehículo | Registrar o editar tipo, placa, estado y límites de capacidad (kg, m³, paquetes). |
-| Asignación Diaria | Interfaz de emparejamiento repartidor–vehículo con validación de disponibilidad antes de confirmar. |
-| Dashboard de Monitoreo | Tarjetas de resumen global de flota y tabla por repartidor con barra de progreso coloreada por nivel de ocupación. |
-| Retroalimentación | Informar resultados exitosos, conflictos de duplicidad, validaciones de capacidad y errores de red. |
-
-La interfaz debe impedir acciones conocidas como inválidas, pero las mismas reglas deben validarse siempre en el backend.
+| Panel de Repartidores | Listado con filtros por estado, turno y vinculación; acciones de alta, edición, baja y reintento de vinculación. |
+| Formulario de Repartidor | Datos personales, correo, brevete y turno habitual. |
+| Panel de Vehículos | Catálogo con filtros por tipo, estado y placa. |
+| Formulario de Vehículo | Tipo, placa, estado y límites. |
+| Asignación Diaria | Emparejamiento repartidor – vehículo – zona con validación previa. |
+| Dashboard de Monitoreo | Resumen de flota y tabla por repartidor con barras de ocupación en kg, m³ y paquetes. |
+| Retroalimentación | Éxito, duplicados, conflictos y errores de red. |
 
 ## 7. Backend
 
-El backend deberá cubrir las siguientes responsabilidades lógicas:
-
 | Componente lógico | Responsabilidad |
 |---|---|
-| Controlador de Repartidores | Exponer el CRUD de operadores (`/api/v1/repartidores`) con validación de unicidad de documento y autorización. |
-| Controlador de Vehículos | Exponer el CRUD de vehículos (`/api/v1/vehiculos`) con validación de unicidad de placa y estado mecánico. |
-| Servicio de Asignación Diaria | Crear y validar la asignación operativa repartidor–vehículo para la jornada activa sin duplicar. |
-| Motor de Ocupación | Calcular en tiempo real el porcentaje de ocupación de cada repartidor sumando sus despachos activos. |
-| Endpoint de Disponibilidad | Resolver `GET /api/v1/repartidores/disponibles` filtrando por estado y capacidad remanente con latencia menor a 200 ms. |
-| Persistencia y Auditoría | Registrar en PostgreSQL todos los cambios de estado de repartidores y vehículos con usuario y marca temporal. |
+| Gestión de repartidores | CRUD con unicidad de DNI, baja lógica y autorización. |
+| Vinculación con Seguridad | Solicitar la creación del usuario, guardar su identificador y permitir reintentos. |
+| Gestión de vehículos | CRUD con unicidad de placa y estado. |
+| Asignación diaria | Crear y cerrar jornadas repartidor – vehículo – zona. |
+| Motor de ocupación | Calcular kg, m³ y paquetes a partir de los despachos en poder del repartidor (`ASIGNADO`, `EN_CAMINO` y `FALLIDO` no recibidos en el centro) y derivar el estado operativo. |
+| Consulta de disponibilidad | Devolver los repartidores habilitados con capacidad remanente en menos de 200 ms. |
+| Persistencia y auditoría | Registrar cambios con usuario y marca temporal en UTC. |
 
-Las rutas, cuerpos, respuestas y códigos específicos se centralizan en `specs/api-contract.md` y se publicarán mediante Swagger UI desde el backend desplegado.
+Las rutas, cuerpos y códigos se centralizan en `specs/api-contract.md`.
 
 ## 8. Requisitos no funcionales
 
-- **Rendimiento:** El endpoint `GET /api/v1/repartidores/disponibles` debe responder en menos de 200 ms para no agregar latencia al flujo de asignación de F-02.
-- **Seguridad:** Todas las operaciones de configuración y consulta del panel requieren autenticación con token JWT y rol `GESTOR_FLOTA` o `ADMIN_DESPACHO`. El endpoint de disponibilidad es de uso interno entre servicios del módulo.
-- **Aislamiento:** El módulo administra sus propios datos sin acceder directamente a bases de datos de otros módulos.
-- **Integridad referencial:** Los repartidores y vehículos con historial de despachos solo pueden desactivarse lógicamente; no se permite su eliminación física.
-- **Trazabilidad:** Cada cambio de estado o asignación operativa debe registrar el usuario gestor y la marca temporal exacta en UTC.
-- **Escalabilidad:** El panel de monitoreo debe soportar paginación para equipos con más de 50 operadores activos simultáneos.
+- **Rendimiento:** la consulta de disponibilidad responde en menos de 200 ms.
+- **Seguridad:** la configuración requiere rol `GESTOR_FLOTA` o `ADMIN`; la consulta de disponibilidad admite además `GESTOR_DESPACHO`.
+- **Fuente única:** ninguna otra funcionalidad mantiene saldos de capacidad; la ocupación se calcula siempre desde el estado de los despachos.
+- **Aislamiento:** no se accede a bases de datos de otros módulos.
+- **Integridad referencial:** repartidores y vehículos con historial solo admiten baja lógica.
+- **Trazabilidad:** cambios de estado y asignaciones registran usuario y marca temporal en UTC.
+- **Escalabilidad:** el panel pagina a partir de 50 repartidores.
 
 ## 9. Fuera de alcance
 
-- **Mantenimiento mecánico y costos:** El registro de reparaciones, gastos de combustible o compra de repuestos corresponde al ERP de la empresa.
-- **Rastreo GPS en tiempo real del vehículo:** El seguimiento punto a punto con telemetría o sensores IoT no está comprendido en esta fase.
-- **Asignación de despachos a repartidores:** Vincular un pedido a un operador es responsabilidad exclusiva del Panel de Programación (F-02); F-05 solo provee el catálogo de disponibilidad.
-- **Autenticación de repartidores:** La validación del token JWT del repartidor en la App Móvil es responsabilidad del módulo de Seguridad y Usuarios.
+- **Mantenimiento, combustible y costos:** fuera del sistema.
+- **Rastreo GPS del vehículo:** no comprendido.
+- **Asignación de despachos:** corresponde a F-02.
+- **Autenticación y gestión de credenciales:** corresponden a Seguridad y Usuarios; F-05 solo solicita el alta del usuario y guarda el vínculo.
 
 ## 10. Estrategia de verificación
 
 | Criterios | Verificación automatizada | Nivel | Evidencia esperada |
 |---|---|---|---|
-| CA-01 y CA-02 | Registrar operadores válidos y con DNI duplicado. | Integración y unitaria | Registro exitoso con identificador único y rechazo `409` para duplicados. |
-| CA-03 | Desactivar un repartidor con historial y verificar que el registro persiste. | Integración | Baja lógica aplicada, historial intacto y operador excluido del endpoint de disponibilidad. |
-| CA-04 | Invocar endpoints de repartidores sin credenciales o con rol incorrecto. | Integración de seguridad | Código `403 Forbidden` y bloqueo total de información. |
-| CA-05 a CA-07 | Registrar vehículos válidos, con placa duplicada y aplicar cambio de estado por mantenimiento. | Integración y unitaria | Registro exitoso, rechazo `409` para placa duplicada y exclusión del catálogo de asignación. |
-| CA-08 y CA-09 | Crear asignación operativa válida y repetir la operación en la misma jornada. | Unitaria e integración | Activación correcta del repartidor con límites del vehículo y rechazo `409` para duplicado. |
-| CA-10 y CA-11 | Consultar el panel con repartidores en distintos niveles de carga. | Integración y frontend | Barras de progreso correctas, colores y resumen global coherente con los datos de la base de datos. |
-| CA-12 y CA-13 | Invocar el endpoint de disponibilidad con operadores disponibles y sin ninguno disponible. | Integración | Lista filtrada correctamente y respuesta `200 OK` con lista vacía cuando no hay disponibles. |
+| CA-01 a CA-04 | Registrar, duplicar, dar de baja con y sin despachos en curso, y acceder sin permisos. | Integración y unitaria | Registro `ACTIVO`, `409` y `403` según corresponda. |
+| CA-05 a CA-07 | Registrar vehículos, duplicar placa y pasar a mantenimiento con y sin despachos en curso. | Integración y unitaria | Registro, `409` y cierre de jornada coherente. |
+| CA-08 y CA-09 | Crear asignación diaria y repetirla. | Unitaria e integración | `DISPONIBLE` con límites y zona; `409`. |
+| CA-10 y CA-11 | Consultar el panel con distintos niveles de carga. | Integración y frontend | Colores y totales correctos. |
+| CA-12 y CA-13 | Consultar disponibilidad con y sin habilitados. | Integración | Lista filtrada con remanentes y lista vacía. |
+| CA-14 y CA-15 | Registrar con Seguridad disponible y no disponible. | Integración con doble de prueba | Vinculación exitosa o pendiente sin asignación posible. |
+| CA-16 a CA-18 | Simular transiciones de despachos, cierre manual con pendientes y saturación por peso. | Unitaria e integración | Estados operativos derivados correctamente y `409` en el cierre. |
 
 Además, se ejecutarán dos recorridos funcionales completos:
 
-1. `Alta de repartidor` → asignación de vehículo para la jornada → aparición en el endpoint de disponibilidad → confirmación de asignación desde F-02 → actualización de porcentaje de ocupación.
-2. `Saturación de operador` → cambio automático a estado `SATURADO` → exclusión del endpoint de disponibilidad → cambio visual en el panel de monitoreo.
-
-Las pruebas unitarias cubrirán el motor de cálculo de ocupación y las reglas de unicidad; las pruebas de integración cubrirán seguridad, persistencia PostgreSQL y el endpoint de disponibilidad; las pruebas de frontend validarán el panel de monitoreo, formularios y la asignación diaria.
+1. Alta de repartidor → vinculación → asignación diaria → aparición en disponibilidad → asignación desde F-02 → ocupación actualizada.
+2. Ocupación al 100 % en cualquier límite → `SATURADO` → exclusión de disponibilidad → entrega en F-03 → vuelve a `DISPONIBLE` o `EN_RUTA`.
 
 ## 11. Criterio de completitud
 
 La funcionalidad se considera completa cuando:
 
-- Todos los criterios `CA-01` a `CA-13` están implementados y cuentan con pruebas automatizadas exitosas.
-- Los dos recorridos funcionales completos han sido verificados de extremo a extremo.
-- F-02 consume correctamente el endpoint `/api/v1/repartidores/disponibles` y la asignación de despachos respeta los límites provistos por F-05.
-- El panel de monitoreo refleja en tiempo real el estado de ocupación de cada repartidor con los colores y etiquetas correctos.
-- La baja lógica de repartidores y vehículos preserva el historial de entregas asociado.
+- Los criterios `CA-01` a `CA-18` están implementados y cuentan con pruebas automatizadas exitosas.
+- Los dos recorridos funcionales han sido verificados.
+- F-02 asigna respetando los tres límites informados por F-05.
+- F-03 identifica al repartidor a partir del usuario vinculado.
+- La baja lógica preserva el historial.
 - No se han incorporado capacidades declaradas fuera de alcance.
 - La evidencia de pruebas puede trazarse hacia cada criterio de aceptación.

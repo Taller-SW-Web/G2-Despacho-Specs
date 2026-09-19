@@ -1,285 +1,303 @@
 # Especificación F-03: Web Responsive del Repartidor y Evidencia de Entrega
 
+**Responsable:** Max Rojas
+**Estado:** En especificación
+**Actor principal:** Repartidor
+**Lineamientos del curso:** Registro de entrega y evidencia de recepción; Gestión de entregas fallidas (registro en campo)
+
 ## 1. Contexto
 
-La ejecución física de la entrega ocurre en calle, donde el repartidor no dispone de un equipo de escritorio. Dado que el diseño exige una arquitectura orientada a microservicios sin acceso directo a base de datos entre módulos, el módulo de Despacho debe ofrecer su propia interfaz operativa de campo, autónoma respecto de Ventas y Postventa.
+La entrega ocurre en calle, donde el repartidor no dispone de un equipo de escritorio. El módulo de Despacho ofrece su propia interfaz de campo, autónoma respecto de Ventas y Postventa, implementada como vista web mobile-first y no como aplicación nativa, de modo que comparte backend y autenticación con el resto del módulo.
 
-Esta capacidad es el **punto de origen de la información del ciclo de transporte**: aquí se generan las transiciones `EN_CAMINO`, `ENTREGADO` y `FALLIDO` que posteriormente consumen el Panel de Programación y Asignación (F-02), el Centro de Entregas Fallidas (F-04) y el Panel de Monitoreo de Flota (F-05) dentro del mismo módulo. F-03 no crea despachos ni los asigna: únicamente ejecuta y registra el resultado de los despachos que F-02 le entrega.
+El repartidor recoge en el centro de despacho los paquetes sellados que F-02 le asignó y los lleva a destino. Los paquetes que no logra entregar regresan con él al centro de despacho.
 
-La interfaz se implementa como una vista web adaptada a dispositivos móviles (mobile-first, responsive), no como aplicación nativa, de modo que comparte backend y esquema de autenticación con el resto del módulo de Despacho.
+Esta funcionalidad es el origen de las transiciones `EN_CAMINO`, `ENTREGADO` y `FALLIDO`. F-03 no crea ni asigna despachos: ejecuta y registra el resultado de los despachos que F-02 asigna al repartidor, en el orden que F-02 define. Los despachos fallidos que genera son resueltos por F-04, y la ocupación que liberan al cerrarse es recalculada por F-05 a partir del estado de los despachos.
 
 ## 2. Propósito
 
-Permitir al Repartidor consultar los despachos asignados a su ruta de la jornada en curso, actualizar el estado de cada paquete en tiempo real desde su celular, registrar evidencia fotográfica obligatoria del resultado de la entrega y cerrar su jornada dejando todo despacho en un estado terminal, garantizando la trazabilidad de quién ejecutó cada transición y en qué momento.
+Permitir al repartidor consultar los despachos de su jornada, actualizar su estado desde el celular, registrar evidencia fotográfica obligatoria del resultado y cerrar su jornada sin dejar despachos en `ASIGNADO` ni `EN_CAMINO`, con trazabilidad de quién ejecutó cada transición y cuándo.
 
 ## 3. Alcance
 
 Esta funcionalidad incluye:
 
-- Autenticación del repartidor mediante token JWT emitido por el módulo de Seguridad y validación de su habilitación operativa contra F-05.
-- Listado ordenado de despachos asignados al repartidor autenticado para la jornada en curso, sin arrastre de jornadas anteriores.
-- Detalle del despacho con dirección, referencia, destinatario, teléfono de contacto, número de intento y fecha de entrega comprometida.
-- Transición de estado a `EN_CAMINO` al iniciar el traslado de un paquete.
-- Registro de entrega exitosa (`ENTREGADO`) con evidencia fotográfica obligatoria.
-- Registro de entrega fallida (`FALLIDO`) con motivo tipificado de catálogo, evidencia fotográfica y comentario opcional.
-- Incremento del contador de intentos únicamente cuando existió intento real de entrega.
-- Compresión de la imagen en el cliente, eliminación de metadatos EXIF y carga hacia el servicio de almacenamiento de objetos.
-- Provisión de URL firmada bajo demanda para que F-04 visualice la evidencia sin exponer el objeto públicamente.
-- Cierre de jornada con resolución obligatoria de los despachos pendientes y corte automático de respaldo.
+- Acceso del repartidor con el JWT emitido por Seguridad y Usuarios, y validación de su habilitación operativa en F-05.
+- Ruta de la jornada en curso, ordenada según la secuencia definida por F-02.
+- Detalle del despacho con los datos necesarios para entregar y contactar al destinatario.
+- Transición a `EN_CAMINO` al iniciar el traslado.
+- Registro de entrega exitosa (`ENTREGADO`) con fotografía obligatoria y nombre opcional de quien recibe.
+- Registro de entrega fallida (`FALLIDO`) con motivo del catálogo, fotografía obligatoria y comentario opcional.
+- Incremento del contador de intentos solo cuando existió un intento real de entrega.
+- Compresión de la imagen en el cliente, eliminación de metadatos EXIF y carga en almacenamiento privado.
+- Emisión de URL firmadas bajo demanda para visualizar la evidencia.
+- Cierre de jornada con resolución obligatoria de pendientes y corte automático de respaldo.
 - Resumen de jornada del propio repartidor.
-- Exposición de la carga operativa vigente por repartidor para consumo de F-05.
-- Exposición del catálogo de motivos de fallo para consumo de F-04.
-- Validación de transiciones de estado permitidas y garantía de idempotencia en las operaciones de cambio de estado.
-- Registro de bitácora auditable de cada transición.
-
-Las rutas, cuerpos, respuestas y códigos específicos se definirán en el contrato único `specs/api-contract.md` y se publicarán mediante Swagger UI desde el backend desplegado.
+- Catálogo único de motivos de fallo para el módulo.
+- Idempotencia en las operaciones de cambio de estado.
 
 ## 4. Precondiciones, dependencias y resultados
 
 ### 4.1. Precondiciones
 
-- El usuario debe estar autenticado con un token JWT válido emitido por el módulo de Seguridad, con rol `REPARTIDOR`.
-- El identificador de repartidor contenido en el token debe corresponder a un repartidor registrado en F-05.
-- El repartidor debe encontrarse en un estado operativo habilitante (`DISPONIBLE` o `EN_RUTA`) para ejecutar transiciones de estado.
-- El despacho debe existir, estar asignado al repartidor del token y pertenecer a la jornada en curso.
-- La transición solicitada debe ser válida según la máquina de estados del Anexo A.
-- Para cerrar un despacho como `ENTREGADO` o `FALLIDO` debe existir evidencia fotográfica cargada correctamente.
-- Debe existir conexión activa; el sistema no opera sin red.
+- El usuario está autenticado con un JWT válido con rol `REPARTIDOR`.
+- El identificador de usuario del token está vinculado a un repartidor registrado en F-05.
+- Para ejecutar transiciones, el repartidor tiene una asignación diaria activa y un estado operativo `DISPONIBLE`, `EN_RUTA` o `SATURADO`.
+- El despacho existe, está asignado al repartidor del token y pertenece a la jornada en curso.
+- La transición es válida según la máquina de estados común (Anexo A).
+- Para cerrar un despacho como `ENTREGADO` o como `FALLIDO` por incidencia existe una fotografía cargada correctamente.
+- Existe conexión activa; el sistema no opera sin red.
 
 ### 4.2. Dependencias
 
 | Dependencia | Responsabilidad |
 |---|---|
-| Seguridad y Usuarios | Emitir y validar el token JWT del repartidor, con `idRepartidor` y rol embebidos. |
-| Monitoreo de Flota (F-05) | Mantener el alta del repartidor, su estado operativo y turno vigente; solicitar a Seguridad el alta de credenciales. F-03 consulta esta información para habilitar o bloquear la operación. |
-| Programación y Asignación (F-02) | Crear los despachos, asignarlos al repartidor y definir la secuencia de ruta que F-03 respeta al ordenar la lista. |
-| Entregas Fallidas (F-04) | Consumir los despachos en estado `FALLIDO` generados por F-03, junto con su motivo, contador de intentos y evidencia. |
-| Ventas y Postventa (indirecta) | Origen de los datos del destinatario (nombre, dirección, teléfono) que viajan dentro del despacho creado por F-02. F-03 no consulta a Ventas directamente. |
-| Servicio de almacenamiento de objetos | Alojar las fotografías de evidencia en un bucket privado y emitir URL firmadas con expiración. |
+| Seguridad y Usuarios | Emitir y validar el JWT con el identificador de usuario y el rol `REPARTIDOR`. |
+| Monitoreo de Flota (F-05) | Resolver el repartidor vinculado al usuario del token, informar su estado operativo y cerrar su turno al finalizar la jornada. |
+| Programación y Asignación (F-02) | Asignar los despachos con jornada, secuencia, destinatario, dirección y teléfono; reasignarlos o cancelarlos antes del traslado. |
+| Entregas Fallidas (F-04) | Consumir los despachos `FALLIDO` con su motivo, contador de intentos y evidencia. |
+| Requisitos transversales (overview, sección 6) | Validar cada transición, registrar el historial y publicar el evento hacia Ventas y Postventa. |
+| Almacenamiento de objetos | Alojar las fotografías en un bucket privado y emitir URL firmadas con expiración. |
 
 ### 4.3. Resultados
 
-- Un inicio de sesión válido devuelve la ruta de la jornada en curso ordenada por secuencia de entrega.
-- Una transición aceptada cambia el estado del despacho, persiste timestamp de servidor e identificador del repartidor, y queda registrada en la bitácora con estado anterior y estado nuevo.
-- Un cierre como `ENTREGADO` persiste la referencia de la evidencia asociada al despacho.
-- Un cierre como `FALLIDO` con intento real persiste motivo, evidencia, comentario opcional e incrementa en uno el contador de intentos, dejando el despacho disponible para F-04.
-- Un cierre de jornada deja todo despacho pendiente en estado `FALLIDO` con motivo `NO_INTENTADO`, sin incrementar el contador de intentos.
-- La carga operativa vigente del repartidor queda disponible para consulta de F-05 inmediatamente después de cada transición.
+- Un acceso válido presenta la ruta de la jornada ordenada por secuencia.
+- Una transición aceptada cambia el estado, persiste la marca temporal del servidor y el repartidor ejecutor, y queda en el historial común.
+- Un cierre como `ENTREGADO` persiste la referencia de la evidencia y, si se informa, el nombre de quien recibe.
+- Un cierre como `FALLIDO` con intento real persiste motivo, evidencia y comentario, e incrementa el contador de intentos en uno.
+- Un cierre de jornada deja todo despacho pendiente en `FALLIDO` con motivo `NO_INTENTADO`, sin incrementar el contador, y pone al repartidor en `FUERA_DE_TURNO`.
+- Un despacho `ENTREGADO` deja de contar en la ocupación del repartidor; uno `FALLIDO` sigue contando hasta que el Gestor confirma su recepción en el centro de despacho (F-04).
 
 ## 5. Requisitos y criterios de aceptación automatizables
 
 ### RF-01. Autenticación y habilitación operativa
 
-El sistema DEBE permitir el acceso únicamente a usuarios con rol `REPARTIDOR` y restringir las operaciones de escritura a quienes se encuentren habilitados operativamente según F-05.
+El sistema DEBE permitir el acceso solo a usuarios con rol `REPARTIDOR` vinculados a un repartidor activo, y restringir las transiciones a quienes estén en turno.
 
-#### CA-01. Inicio de sesión exitoso
-- **DADO** un repartidor registrado, con turno vigente y estado operativo habilitante.
+#### CA-01. Acceso exitoso
+
+- **DADO** un repartidor vinculado, con asignación diaria activa y estado operativo `DISPONIBLE`.
 - **CUANDO** se autentica desde su celular.
-- **ENTONCES** el sistema le concede acceso a la vista "Mi Ruta" y habilita las acciones de cambio de estado.
+- **ENTONCES** el sistema muestra la vista "Mi Ruta" y habilita las acciones de cambio de estado.
 
 #### CA-02. Credencial ausente o expirada
-- **DADO** que la solicitud no incluye token o el token venció.
+
+- **DADO** una solicitud sin token o con token vencido.
 - **CUANDO** se invoca cualquier recurso de la funcionalidad.
 - **ENTONCES** el backend responde `401 Unauthorized` y no expone información de despachos.
 
-#### CA-03. Rol distinto al requerido
-- **DADO** un token válido cuyo rol no es `REPARTIDOR`.
+#### CA-03. Rol distinto o usuario no vinculado
+
+- **DADO** un token válido cuyo rol no es `REPARTIDOR`, o cuyo usuario no está vinculado a un repartidor activo en F-05.
 - **CUANDO** se invocan los recursos de operación de campo.
 - **ENTONCES** el backend responde `403 Forbidden`.
 
-#### CA-04. Repartidor sin turno activo
-- **DADO** un repartidor cuyo estado en F-05 es `FUERA_DE_TURNO`, `EN_DESCANSO` o `INACTIVO`.
+#### CA-04. Repartidor fuera de turno
+
+- **DADO** un repartidor activo cuyo estado operativo en F-05 es `FUERA_DE_TURNO`.
 - **CUANDO** accede a la aplicación.
-- **ENTONCES** el sistema permite la consulta de su historial del día pero rechaza toda transición de estado, informando que su turno no se encuentra activo.
+- **ENTONCES** el sistema permite consultar su ruta y su resumen del día, pero rechaza toda transición con `409 Conflict` e informa que su turno no está activo.
 
 ### RF-02. Consulta de la ruta asignada
 
-El sistema DEBE mostrar al repartidor autenticado únicamente los despachos asignados a su persona para la jornada en curso, ordenados según la secuencia definida por F-02.
+El sistema DEBE mostrar al repartidor solo sus despachos de la jornada en curso, en el orden definido por F-02.
 
 #### CA-05. Carga exitosa de la ruta del día
-- **DADO** que el repartidor posee despachos en estado `ASIGNADO` o `EN_CAMINO` para la fecha actual.
-- **CUANDO** accede a la vista "Mi Ruta".
-- **ENTONCES** el sistema despliega la lista con código de rastreo, dirección de destino, nombre del destinatario, estado actual, número de intento y posición en la secuencia de entrega.
+
+- **DADO** que el repartidor tiene despachos de la jornada actual.
+- **CUANDO** abre "Mi Ruta".
+- **ENTONCES** el sistema lista los despachos ordenados por secuencia con código de rastreo, dirección, destinatario, estado, número de intento y posición, y excluye los despachos `CANCELADO` o reasignados a otro repartidor.
 
 #### CA-06. Jornada sin asignaciones
-- **DADO** que el repartidor no tiene despachos asignados para la fecha actual.
-- **CUANDO** accede a la vista "Mi Ruta".
-- **ENTONCES** el sistema muestra un mensaje informativo de ruta vacía en lugar de una tabla sin registros.
+
+- **DADO** que el repartidor no tiene despachos en la jornada actual.
+- **CUANDO** abre "Mi Ruta".
+- **ENTONCES** el sistema muestra un mensaje de ruta vacía.
 
 #### CA-07. Acceso a despachos de otro repartidor
-- **DADO** que un repartidor manipula la petición para solicitar despachos asignados a un compañero.
-- **CUANDO** el backend recibe la solicitud con un identificador distinto al contenido en el token.
-- **ENTONCES** el sistema rechaza la petición con `403 Forbidden` y no expone ningún dato del despacho solicitado.
 
-#### CA-08. Ausencia de arrastre de jornadas anteriores
-- **DADO** que existen despachos de fechas anteriores que quedaron sin cierre por una falla del proceso de corte.
-- **CUANDO** el repartidor carga su ruta del día.
-- **ENTONCES** el sistema no los incorpora a la ruta vigente y los expone en una bandeja separada de "pendientes de regularización", sin permitir su entrega directa.
+- **DADO** que un repartidor manipula la petición para consultar la ruta de otro.
+- **CUANDO** el backend recibe un identificador distinto al resuelto desde su token.
+- **ENTONCES** responde `403 Forbidden` sin exponer datos.
+
+#### CA-08. Despachos de jornadas anteriores
+
+- **DADO** despachos de fechas anteriores que quedaron sin cierre por una falla del corte automático.
+- **CUANDO** el repartidor carga su ruta.
+- **ENTONCES** el sistema no los incorpora a la ruta vigente, los muestra en una bandeja de "pendientes de regularización" y no permite operarlos.
 
 ### RF-03. Consulta del detalle de un despacho
 
-El sistema DEBE mostrar la información necesaria para ejecutar la entrega y contactar al destinatario.
+El sistema DEBE mostrar la información necesaria para ejecutar la entrega.
 
 #### CA-09. Detalle exitoso
-- **DADO** un despacho asignado al repartidor autenticado.
-- **CUANDO** abre su detalle.
-- **ENTONCES** visualiza dirección completa, referencia, nombre del destinatario, teléfono de contacto habilitado para llamada directa, número de intento actual sobre el máximo configurado, fecha de entrega comprometida y estado vigente.
 
-#### CA-10. Despacho no perteneciente al repartidor
-- **DADO** un código de despacho asignado a otro repartidor.
+- **DADO** un despacho asignado al repartidor en `ASIGNADO` o `EN_CAMINO`.
+- **CUANDO** abre su detalle.
+- **ENTONCES** ve dirección, referencia, destinatario, teléfono con llamada directa, intento actual sobre el máximo configurado, fecha programada y estado.
+
+#### CA-10. Despacho de otro repartidor
+
+- **DADO** un despacho asignado a otro repartidor.
 - **CUANDO** se solicita su detalle.
-- **ENTONCES** el backend responde `403 Forbidden` sin revelar dato alguno del despacho.
+- **ENTONCES** el backend responde `403 Forbidden`.
 
 #### CA-11. Despacho inexistente
-- **DADO** un código de rastreo que no corresponde a ningún despacho.
+
+- **DADO** un código que no corresponde a ningún despacho.
 - **CUANDO** se solicita su detalle.
-- **ENTONCES** el sistema informa que el recurso no existe y no presenta datos parciales.
+- **ENTONCES** el backend responde `404 Not Found` sin datos parciales.
 
-### RF-04. Marcado de inicio de traslado
+### RF-04. Inicio de traslado
 
-El sistema DEBE permitir al repartidor declarar que inició el traslado de un paquete, cambiando su estado a `EN_CAMINO`.
+El sistema DEBE permitir declarar el inicio del traslado de un despacho.
 
 #### CA-12. Inicio de traslado exitoso
-- **DADO** que un despacho se encuentra en estado `ASIGNADO`.
-- **CUANDO** el repartidor pulsa "En camino" sobre ese despacho.
-- **ENTONCES** el sistema cambia el estado a `EN_CAMINO`, registra timestamp de servidor e identificador del repartidor, actualiza el indicador visual y refleja la nueva carga operativa para consulta de F-05.
 
-#### CA-13. Transición de estado no permitida
-- **DADO** que un despacho ya fue marcado previamente como `ENTREGADO`.
-- **CUANDO** el repartidor intenta marcarlo nuevamente como "En camino".
-- **ENTONCES** el backend rechaza la operación con `409 Conflict`, conserva el estado original y notifica que el despacho ya fue cerrado.
+- **DADO** un despacho en `ASIGNADO`.
+- **CUANDO** el repartidor pulsa "En camino".
+- **ENTONCES** el estado cambia a `EN_CAMINO` con marca temporal del servidor y repartidor ejecutor, y la vista se actualiza sin recargarse por completo.
 
-#### CA-14. Despacho retirado de la ruta durante la jornada
-- **DADO** que F-02 reasignó el despacho a otro repartidor o F-04 lo derivó a almacén mientras permanecía en pantalla.
-- **CUANDO** el repartidor intenta operarlo con información desactualizada.
-- **ENTONCES** el sistema rechaza la operación, informa que el despacho fue actualizado y fuerza el refresco de la ruta sin aplicar ningún cambio local.
+#### CA-13. Transición no permitida
+
+- **DADO** un despacho ya `ENTREGADO`.
+- **CUANDO** el repartidor intenta marcarlo "En camino".
+- **ENTONCES** el backend responde `409 Conflict` y conserva el estado.
+
+#### CA-14. Despacho reasignado o cancelado durante la jornada
+
+- **DADO** que F-02 reasignó el despacho a otro repartidor o lo canceló por anulación del pedido mientras seguía en pantalla.
+- **CUANDO** el repartidor intenta operarlo.
+- **ENTONCES** el backend responde `409 Conflict`, la interfaz informa que el despacho fue actualizado y refresca la ruta sin aplicar cambios. Si el despacho fue cancelado y el paquete ya estaba en su poder, la interfaz le indica devolverlo al centro de despacho.
 
 ### RF-05. Registro de entrega exitosa con evidencia
 
-El sistema DEBE exigir evidencia fotográfica para cerrar un despacho como entregado; sin imagen cargada correctamente no se permite la confirmación.
+El sistema DEBE exigir una fotografía para cerrar un despacho como entregado.
 
-#### CA-15. Confirmación de entrega con evidencia válida
-- **DADO** que un despacho se encuentra en estado `EN_CAMINO`.
-- **CUANDO** el repartidor captura una fotografía desde la cámara del dispositivo y pulsa "Confirmar entrega".
-- **ENTONCES** el sistema comprime la imagen, elimina sus metadatos EXIF, la carga en el almacenamiento de objetos, persiste la referencia resultante junto al despacho, cambia el estado a `ENTREGADO` y registra timestamp e identificador del repartidor.
+#### CA-15. Confirmación con evidencia válida
 
-#### CA-16. Intento de confirmación sin evidencia
-- **DADO** que el repartidor abre el formulario de entrega sin adjuntar fotografía.
-- **CUANDO** pulsa "Confirmar entrega".
-- **ENTONCES** el sistema mantiene deshabilitado el botón, muestra el mensaje de evidencia obligatoria y no emite petición al backend.
+- **DADO** un despacho en `EN_CAMINO`.
+- **CUANDO** el repartidor captura la fotografía, opcionalmente registra el nombre de quien recibe y pulsa "Confirmar entrega".
+- **ENTONCES** el sistema comprime la imagen, elimina los metadatos EXIF, la carga en el almacenamiento, persiste su referencia y cambia el estado a `ENTREGADO`.
+
+#### CA-16. Confirmación sin evidencia
+
+- **DADO** el formulario de entrega sin fotografía.
+- **CUANDO** el repartidor intenta confirmar.
+- **ENTONCES** el botón permanece deshabilitado, se muestra el mensaje de evidencia obligatoria y no se envía la petición.
 
 #### CA-17. Fallo en la carga de la imagen
-- **DADO** que el repartidor confirma la entrega con una fotografía adjunta.
-- **CUANDO** el servicio de almacenamiento responde con error o agota el tiempo de espera.
-- **ENTONCES** el sistema NO modifica el estado del despacho, informa que la evidencia no pudo cargarse y conserva la imagen seleccionada en el formulario para permitir un reintento manual.
 
-#### CA-18. Archivo inválido detectado en backend
-- **DADO** que se envía un archivo con tipo no permitido o que excede el tamaño máximo aceptado.
-- **CUANDO** el backend recibe la solicitud.
-- **ENTONCES** rechaza la operación con `400 Bad Request`, no persiste el archivo y conserva el estado del despacho.
+- **DADO** una confirmación con fotografía adjunta.
+- **CUANDO** el almacenamiento responde con error o excede el tiempo de espera.
+- **ENTONCES** el estado no cambia, se informa el error y la imagen se conserva en el formulario para reintentar.
+
+#### CA-18. Archivo inválido
+
+- **DADO** un archivo de tipo no permitido o mayor a 2 MB.
+- **CUANDO** llega al backend.
+- **ENTONCES** se responde `400 Bad Request`, no se guarda el archivo y el estado no cambia.
 
 ### RF-06. Registro de entrega fallida
 
-El sistema DEBE permitir declarar una entrega como fallida seleccionando un motivo del catálogo predefinido, adjuntando evidencia fotográfica e incrementando el contador de intentos del despacho.
+El sistema DEBE permitir declarar una entrega fallida con motivo del catálogo, fotografía obligatoria y comentario opcional.
 
-#### CA-19. Reporte de incidencia con motivo tipificado
-- **DADO** que el repartidor no logra completar la entrega de un despacho en estado `EN_CAMINO`.
-- **CUANDO** selecciona "Marcar como fallido", elige el motivo `CLIENTE_AUSENTE`, adjunta la fotografía del domicilio y confirma.
-- **ENTONCES** el sistema cambia el estado a `FALLIDO`, almacena motivo, referencia de evidencia y comentario opcional, incrementa en uno el contador de intentos y deja el registro disponible para F-04.
+#### CA-19. Incidencia con motivo tipificado
+
+- **DADO** un despacho en `EN_CAMINO` que no pudo entregarse.
+- **CUANDO** el repartidor elige "Marcar como fallido", selecciona `CLIENTE_AUSENTE`, adjunta la fotografía del domicilio y confirma.
+- **ENTONCES** el estado cambia a `FALLIDO` ("No entregado, regresa al centro de despacho"), se guardan motivo, evidencia y comentario, el contador de intentos aumenta en uno, la interfaz recuerda al repartidor que debe devolver el paquete al centro y el despacho queda disponible para F-04.
 
 #### CA-20. Motivo no seleccionado
-- **DADO** que el repartidor abre el formulario de incidencia.
-- **CUANDO** intenta confirmar sin haber elegido un motivo del catálogo.
-- **ENTONCES** el sistema bloquea el envío y resalta el campo de motivo como obligatorio.
+
+- **DADO** el formulario de incidencia sin motivo.
+- **CUANDO** el repartidor intenta confirmar.
+- **ENTONCES** el envío se bloquea y el campo de motivo se resalta como obligatorio.
 
 #### CA-21. Pérdida de conexión durante el envío
-- **DADO** que el repartidor confirma una entrega fallida.
-- **CUANDO** la petición no alcanza el backend por ausencia de señal.
-- **ENTONCES** el sistema muestra un aviso explícito de que el cambio no se registró, conserva el estado anterior en la interfaz y exige un reintento explícito del usuario.
 
-#### CA-22. Reintento idempotente de la misma operación
-- **DADO** que el repartidor reintenta una operación cuyo resultado no conoce por corte de red.
+- **DADO** que el repartidor confirma una operación.
+- **CUANDO** la petición no llega al backend por falta de señal.
+- **ENTONCES** la interfaz informa que el cambio no se registró, conserva el estado anterior y exige un reintento explícito.
+
+#### CA-22. Reintento idempotente
+
+- **DADO** un reintento de una operación cuyo resultado se desconoce.
 - **CUANDO** el backend recibe una segunda solicitud con la misma clave de idempotencia.
-- **ENTONCES** devuelve el resultado de la operación original sin duplicar el cambio de estado, el incremento del contador ni el registro en la bitácora.
+- **ENTONCES** devuelve el resultado original sin duplicar la transición, el incremento del contador ni el registro en el historial.
 
-### RF-07. Cierre de jornada y resolución de pendientes
+### RF-07. Cierre de jornada
 
-El sistema DEBE garantizar que ningún despacho permanezca en estado no terminal al finalizar la jornada del repartidor, distinguiendo los intentos reales de entrega de los paquetes que nunca fueron intentados.
+El sistema DEBE garantizar que ningún despacho quede en `ASIGNADO` ni `EN_CAMINO` al finalizar la jornada, distinguiendo intentos reales de paquetes no intentados.
 
 #### CA-23. Cierre con despachos pendientes
-- **DADO** que el repartidor conserva despachos en estado `ASIGNADO` o `EN_CAMINO` al terminar su turno.
-- **CUANDO** confirma el cierre de jornada, advertido de la cantidad de paquetes afectados.
-- **ENTONCES** el sistema cambia esos despachos a `FALLIDO` con motivo `NO_INTENTADO`, **no** incrementa el contador de intentos, registra la bitácora correspondiente y los deja disponibles para F-04.
+
+- **DADO** despachos en `ASIGNADO` o `EN_CAMINO` al terminar el turno.
+- **CUANDO** el repartidor confirma el cierre, advertido de la cantidad de despachos afectados.
+- **ENTONCES** esos despachos pasan a `FALLIDO` con motivo `NO_INTENTADO` sin incrementar el contador, la interfaz lista los paquetes que el repartidor debe devolver al centro de despacho, quedan disponibles para F-04 y F-05 pone al repartidor en `FUERA_DE_TURNO`.
 
 #### CA-24. Corte automático de respaldo
-- **DADO** que el repartidor no ejecutó el cierre de jornada antes de la hora de corte configurada.
-- **CUANDO** se ejecuta el proceso automático de cierre.
-- **ENTONCES** el sistema aplica el mismo tratamiento de CA-23, identifica la operación como automática en la bitácora y libera la carga operativa del repartidor.
+
+- **DADO** que el repartidor no cerró su jornada antes de la hora de corte configurada.
+- **CUANDO** se ejecuta el proceso automático.
+- **ENTONCES** se aplica el tratamiento de CA-23 y el historial identifica la operación como automática.
 
 #### CA-25. Cierre sin pendientes
-- **DADO** que todos los despachos de la jornada se encuentran en estado terminal.
+
+- **DADO** que ningún despacho de la jornada está en `ASIGNADO` ni `EN_CAMINO`.
 - **CUANDO** el repartidor confirma el cierre.
-- **ENTONCES** el sistema registra el cierre y presenta el resumen de la jornada sin generar registros de fallo.
+- **ENTONCES** se registra el cierre, el repartidor pasa a `FUERA_DE_TURNO` y se muestra el resumen sin generar fallos.
 
 ### RF-08. Resumen de la jornada
 
-El sistema DEBE ofrecer al repartidor la consolidación de su propio desempeño del día.
+El sistema DEBE mostrar al repartidor el consolidado de su propio día.
 
 #### CA-26. Consolidado correcto
-- **DADO** un repartidor con despachos en distintos estados durante la jornada.
+
+- **DADO** un repartidor con despachos en distintos estados.
 - **CUANDO** consulta el resumen.
-- **ENTONCES** visualiza el total asignado, entregados, fallidos con intento, no intentados y pendientes, con cifras coincidentes con su bitácora.
+- **ENTONCES** ve total asignado, entregados, fallidos con intento, no intentados y pendientes, coincidentes con el historial.
 
-### RF-09. Acceso controlado a la evidencia fotográfica
+### RF-09. Acceso controlado a la evidencia
 
-El sistema DEBE permitir la visualización posterior de la evidencia sin exponer públicamente los objetos almacenados.
+El sistema DEBE permitir ver la evidencia sin exponer públicamente los objetos almacenados.
 
-#### CA-27. Emisión de enlace firmado bajo demanda
-- **DADO** un despacho con evidencia registrada.
-- **CUANDO** un usuario autorizado solicita visualizarla.
-- **ENTONCES** el sistema emite en ese momento una URL firmada con expiración corta, válida para una única visualización razonable.
+#### CA-27. Enlace firmado bajo demanda
 
-#### CA-28. Acceso directo al objeto sin firma
-- **DADO** que se intenta acceder a la ruta del objeto sin firma válida o con firma vencida.
+- **DADO** un despacho con evidencia.
+- **CUANDO** el repartidor propietario o un usuario con rol `GESTOR_DESPACHO` solicita verla.
+- **ENTONCES** el sistema emite una URL firmada con vigencia de 5 minutos.
+
+#### CA-28. Acceso sin firma válida
+
+- **DADO** un acceso al objeto sin firma o con firma vencida.
 - **CUANDO** se realiza la petición al almacenamiento.
 - **ENTONCES** el acceso es denegado.
 
-#### CA-29. Solicitud por usuario no autorizado
-- **DADO** un usuario que no es el repartidor propietario del despacho ni posee el rol `GESTOR_DESPACHO`.
-- **CUANDO** solicita el enlace de evidencia.
+#### CA-29. Usuario no autorizado
+
+- **DADO** un usuario que no es el repartidor propietario ni tiene rol `GESTOR_DESPACHO`.
+- **CUANDO** solicita el enlace.
 - **ENTONCES** el backend responde `403 Forbidden`.
 
-### RF-10. Exposición de la carga operativa para monitoreo
+### RF-10. Catálogo de motivos de fallo
 
-El sistema DEBE exponer la información de despachos vigentes por repartidor para que F-05 calcule la saturación de la flota, sin que F-05 acceda a la base de datos de F-03.
+El sistema DEBE mantener el catálogo de motivos como fuente única para el campo y para F-04.
 
-#### CA-30. Consulta de carga vigente
-- **DADO** que F-05 requiere calcular la ocupación de un repartidor.
-- **CUANDO** consulta el servicio expuesto por F-03.
-- **ENTONCES** recibe la cantidad, peso y volumen de los despachos en estado `ASIGNADO` y `EN_CAMINO` de ese repartidor para la jornada en curso.
+#### CA-30. Consulta del catálogo
 
-#### CA-31. Exclusión de despachos terminales
-- **DADO** que un despacho pasó a `ENTREGADO` o `FALLIDO`.
-- **CUANDO** F-05 vuelve a consultar la carga del repartidor.
-- **ENTONCES** ese despacho ya no se contabiliza en la ocupación vigente.
+- **DADO** que la vista de campo o F-04 necesitan los motivos vigentes.
+- **CUANDO** consultan el catálogo.
+- **ENTONCES** reciben los motivos seleccionables con código y etiqueta (Anexo B), sin los de uso exclusivo del sistema.
 
-### RF-11. Catálogo de motivos de fallo
+### RF-11. Trazabilidad de las transiciones
 
-El sistema DEBE mantener y exponer el catálogo tipificado de motivos, como fuente única para la captura en campo y para la visualización en F-04.
+El sistema DEBE registrar cada transición ejecutada en campo en el historial común del módulo (overview, RT-02).
 
-#### CA-32. Consulta del catálogo
-- **DADO** que el cliente móvil o F-04 requieren los motivos vigentes.
-- **CUANDO** consultan el servicio de catálogo.
-- **ENTONCES** reciben el listado de motivos seleccionables con su código y etiqueta, excluyendo los motivos de uso exclusivo del sistema.
+#### CA-31. Registro en el historial
 
-### RF-12. Trazabilidad de las transiciones
-
-El sistema DEBE conservar una bitácora auditable de cada cambio de estado ejecutado en campo.
-
-#### CA-33. Registro de bitácora
-- **DADO** que se acepta cualquier transición de estado.
-- **CUANDO** la operación se persiste.
-- **ENTONCES** se registran identificador del despacho, usuario ejecutor, origen manual o automático, timestamp de servidor, estado anterior, estado nuevo, motivo y observaciones cuando apliquen.
+- **DADO** una transición aceptada.
+- **CUANDO** se persiste.
+- **ENTONCES** el historial guarda despacho, ejecutor, origen manual o automático, marca temporal del servidor, estado anterior, estado nuevo, motivo y observaciones.
 
 ## 6. Frontend
 
@@ -287,101 +305,92 @@ La funcionalidad tendrá una experiencia web mobile-first compuesta por:
 
 | Elemento | Responsabilidad |
 |---|---|
-| Pantalla de acceso | Autenticar al repartidor y comunicar con claridad el bloqueo por turno inactivo o rol incorrecto. |
-| Vista "Mi Ruta" | Listar los despachos de la jornada en orden de secuencia, con estados de carga, vacío y error, e indicador visual por estado. |
-| Detalle del despacho | Presentar dirección, referencia, destinatario, acción de llamada directa, intento actual y fecha comprometida. |
-| Acción "En camino" | Confirmar el inicio de traslado y reflejar el nuevo estado sin recargar la vista completa. |
-| Formulario de entrega | Capturar la fotografía, comprimirla, previsualizarla y mantener deshabilitada la confirmación mientras no exista evidencia válida. |
-| Formulario de incidencia | Obligar la selección de motivo del catálogo, adjuntar evidencia y admitir comentario libre opcional. |
-| Cierre de jornada | Advertir la cantidad de despachos que quedarán como no intentados antes de confirmar. |
-| Resumen de jornada | Mostrar el consolidado del día del propio repartidor. |
-| Retroalimentación | Informar éxito, validaciones, conflictos de estado, ausencia de red y errores de carga de evidencia. |
+| Pantalla de acceso | Autenticar y comunicar el bloqueo por turno inactivo, rol incorrecto o usuario no vinculado. |
+| Vista "Mi Ruta" | Listar los despachos por secuencia, con estados de carga, vacío y error, e indicador visual de estado. |
+| Detalle del despacho | Dirección, referencia, destinatario, llamada directa, intento y fecha programada. |
+| Acción "En camino" | Confirmar el inicio del traslado y actualizar el estado sin recargar toda la vista. |
+| Formulario de entrega | Capturar, comprimir y previsualizar la fotografía; campo opcional para quien recibe. |
+| Formulario de incidencia | Motivo obligatorio, fotografía y comentario opcional. |
+| Cierre de jornada | Advertir cuántos despachos quedarán como no intentados antes de confirmar. |
+| Resumen de jornada | Consolidado del día. |
+| Retroalimentación | Éxito, validaciones, conflictos, ausencia de red y errores de evidencia. |
 
-La interfaz debe impedir acciones conocidas como inválidas, pero las mismas reglas siempre deben volver a validarse en el backend.
+La interfaz debe impedir acciones conocidas como inválidas, pero las reglas siempre se validan en el backend.
 
 ## 7. Backend
 
 | Componente lógico | Responsabilidad |
 |---|---|
-| Validación de identidad y habilitación | Verificar el token, extraer el identificador del repartidor y confirmar su estado operativo vigente contra F-05. |
-| Consulta de ruta | Recuperar exclusivamente los despachos del repartidor del token para la jornada en curso, ordenados por secuencia. |
-| Máquina de estados | Validar que la transición solicitada sea permitida y rechazar con conflicto cualquier transición fuera del Anexo A. |
-| Caso de uso de entrega | Verificar la existencia de evidencia, persistir su referencia y cerrar el despacho como entregado. |
-| Caso de uso de incidencia | Validar el motivo, persistir evidencia y comentario, e incrementar el contador de intentos. |
-| Caso de uso de cierre de jornada | Resolver los despachos pendientes como no intentados sin consumir intentos. |
-| Proceso programado de corte | Ejecutar el cierre automático a la hora configurada para los repartidores que no lo hicieron. |
-| Gestión de evidencia | Recibir la imagen, validar tipo y tamaño, delegar el almacenamiento y emitir enlaces firmados bajo demanda. |
-| Control de idempotencia | Registrar la clave de operación y devolver el resultado original ante reintentos equivalentes. |
-| Servicio de carga operativa | Exponer a F-05 la ocupación vigente del repartidor. |
-| Servicio de catálogo | Exponer los motivos tipificados a la vista de campo y a F-04. |
-| Persistencia y bitácora | Guardar el estado y su trazabilidad de manera consistente en PostgreSQL. |
+| Identidad y habilitación | Validar el token, resolver el repartidor vinculado en F-05 y su estado operativo. |
+| Consulta de ruta | Recuperar los despachos del repartidor para la jornada en curso, ordenados por secuencia. |
+| Caso de uso de traslado | Solicitar a la máquina de estados común la transición a `EN_CAMINO`. |
+| Caso de uso de entrega | Verificar la evidencia, persistir su referencia y solicitar la transición a `ENTREGADO`. |
+| Caso de uso de incidencia | Validar el motivo, persistir evidencia y comentario, incrementar el contador y solicitar la transición a `FALLIDO`. |
+| Cierre de jornada | Resolver pendientes como `NO_INTENTADO` y solicitar a F-05 el cierre del turno. |
+| Proceso programado de corte | Ejecutar el cierre automático a la hora configurada. |
+| Gestión de evidencia | Validar tipo y tamaño, delegar el almacenamiento y emitir URL firmadas. |
+| Control de idempotencia | Registrar la clave de operación y devolver el resultado original ante reintentos. |
+| Catálogo de motivos | Exponer los motivos tipificados. |
 
-Esta sección no prescribe nombres de clases, paquetes ni archivos. Las rutas, cuerpos, respuestas y códigos específicos se definirán en `specs/api-contract.md`.
+Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `specs/api-contract.md`.
 
 ## 8. Requisitos no funcionales
 
-- **Seguridad:** toda petición requiere token JWT válido con rol `REPARTIDOR`. El backend debe validar que el despacho solicitado esté efectivamente asignado al usuario del token, sin confiar en identificadores enviados por el cliente.
-- **Protección de datos del destinatario:** el teléfono y la dirección se muestran únicamente al repartidor propietario del despacho y únicamente mientras el despacho permanece en un estado no terminal. Todo acceso queda registrado. La aplicación no ofrece exportación ni copia masiva de estos datos.
-- **Almacenamiento de evidencia:** las fotografías se alojan en un bucket privado y la base de datos de Despacho persiste únicamente la referencia del objeto. El acceso se realiza siempre mediante URL firmada con expiración, emitida en el momento de la solicitud.
-- **Privacidad de la imagen:** la compresión en cliente debe eliminar los metadatos EXIF, evitando que la evidencia transporte coordenadas geográficas que la funcionalidad declara fuera de alcance.
-- **Usabilidad móvil:** interfaz operable con una sola mano, áreas táctiles de al menos 44x44 px y contraste suficiente para lectura bajo luz solar directa.
-- **Rendimiento:** la imagen debe comprimirse en el cliente antes de la carga, con máximo aproximado de 1 MB y 1280 px en el lado mayor. Toda transición de estado debe responder en menos de 2 segundos bajo red móvil 4G.
-- **Conectividad:** el sistema asume conexión activa. Ante ausencia de red falla de forma explícita y no simula un cambio de estado local; no se implementa cola de sincronización diferida.
-- **Idempotencia:** los endpoints de cambio de estado y de cierre de jornada deben tolerar reintentos del mismo cliente mediante una clave de idempotencia generada por operación, sin duplicar transiciones, intentos ni registros de bitácora.
-- **Consistencia:** el cambio de estado, el incremento del contador y su bitácora deben persistirse en una misma unidad transaccional.
-- **Aislamiento:** no se accede directamente a bases de datos de otros módulos; toda información externa se obtiene por API.
-- **Trazabilidad:** cada transición debe registrar timestamp generado por el servidor y el identificador del repartidor o del proceso automático que la ejecutó.
+- **Seguridad:** toda petición requiere JWT con rol `REPARTIDOR`; el backend resuelve el repartidor desde el token y no confía en identificadores enviados por el cliente.
+- **Protección de datos del destinatario:** teléfono y dirección se muestran solo al repartidor propietario y solo mientras el despacho está en `ASIGNADO` o `EN_CAMINO`. No se ofrece exportación ni copia masiva.
+- **Almacenamiento de evidencia:** bucket privado; la base de datos guarda solo la referencia; el acceso es siempre por URL firmada.
+- **Privacidad de la imagen:** la compresión en cliente elimina los metadatos EXIF, de modo que la evidencia no transporta coordenadas.
+- **Usabilidad móvil:** operable con una mano, áreas táctiles de al menos 44 × 44 px y contraste suficiente bajo luz solar.
+- **Rendimiento:** imagen comprimida a aproximadamente 1 MB y 1280 px en el lado mayor; toda transición responde en menos de 2 segundos en red 4G.
+- **Conectividad:** se asume conexión activa; ante falta de red se falla de forma explícita, sin cola de sincronización.
+- **Idempotencia:** los cambios de estado y el cierre de jornada toleran reintentos mediante clave de idempotencia.
+- **Consistencia:** el cambio de estado, el contador y el historial se persisten en una misma transacción.
+- **Trazabilidad:** cada transición registra marca temporal del servidor y ejecutor (repartidor o proceso automático).
 
 ## 9. Fuera de alcance
 
-- **Resolución de incidencias (reprogramar o derivar a almacén):** corresponde a F-04. F-03 solo genera el estado `FALLIDO`.
-- **Asignación de despachos y optimización de la secuencia de ruta:** corresponde a F-02. F-03 respeta el orden recibido y no lo modifica.
-- **Administración de repartidores, vehículos, turnos y cálculo de saturación:** corresponde a F-05. F-03 solo consulta la habilitación y expone su carga vigente.
-- **Cotización, cobertura y tarifas:** corresponde a F-01.
-- **Notificación al cliente final y gestión financiera del pedido:** el dueño de la entidad pedido es Ventas y Postventa.
-- **Geolocalización y navegación asistida:** no se captura GPS ni se ofrece guiado turn-by-turn; el repartidor utiliza aplicaciones externas de mapas.
-- **Operación sin conexión:** no se implementa almacenamiento local ni sincronización diferida de estados o imágenes.
-- **Firma digital del destinatario:** la evidencia de conformidad se limita a la fotografía.
-- **Recepción física en almacén de los paquetes no intentados:** F-03 registra el estado lógico; el movimiento de inventario corresponde al módulo de Almacén.
+- **Resolución de incidencias:** confirmar la recepción del paquete en el centro, reprogramar o cerrar como `DEVUELTO_A_ORIGEN` corresponde a F-04.
+- **Asignación, reasignación, secuencia y cancelación:** corresponden a F-02.
+- **Repartidores, vehículos, turnos y cálculo de ocupación:** corresponden a F-05.
+- **Publicación de eventos a otros módulos:** corresponde al requisito transversal RT-03 del overview.
+- **Cotización y cobertura:** corresponden a F-01.
+- **Notificación al cliente final:** corresponde a los canales y a Ventas y Postventa.
+- **Geolocalización y navegación:** no se captura GPS; se usan aplicaciones externas de mapas.
+- **Operación sin conexión:** no hay almacenamiento local ni sincronización diferida.
+- **Firma digital y documento de identidad del receptor:** la evidencia se limita a la fotografía y al nombre opcional de quien recibe.
 
 ## 10. Estrategia de verificación
 
 | Criterios | Verificación automatizada | Nivel | Evidencia esperada |
 |---|---|---|---|
-| CA-01 a CA-04 | Autenticar con token válido, ausente, de rol incorrecto y de repartidor sin turno. | Integración de seguridad | Acceso concedido en el caso válido; `401` y `403` en los inválidos; bloqueo de escritura con turno inactivo. |
-| CA-05 a CA-08 | Consultar rutas con y sin asignaciones, con identificador ajeno y con despachos de fechas anteriores. | Integración y frontend | Lista ordenada por secuencia, estado vacío, `403` y ausencia de arrastre. |
-| CA-09 a CA-11 | Consultar detalle propio, ajeno e inexistente. | Integración y frontend | Datos completos en el caso válido, `403` y error controlado en los demás. |
-| CA-12 a CA-14 | Ejecutar transiciones válidas, inválidas y sobre despachos modificados por F-02 o F-04. | Unitaria e integración | Cambio aplicado en el caso válido y `409` con estado conservado en los conflictos. |
-| CA-15 a CA-18 | Confirmar entrega con evidencia válida, sin evidencia, con almacenamiento caído y con archivo inválido. | Unitaria, integración y frontend | Estado `ENTREGADO` solo con evidencia persistida; sin cambio de estado en los fallos. |
-| CA-19 a CA-22 | Registrar incidencias con y sin motivo, simular corte de red y repetir la operación con la misma clave. | Unitaria e integración | Contador incrementado una sola vez y ausencia de registros duplicados. |
-| CA-23 a CA-25 | Cerrar jornada con pendientes, dejar vencer el corte automático y cerrar sin pendientes. | Integración con proceso programado | Despachos en `FALLIDO` con motivo `NO_INTENTADO` y contador de intentos inalterado. |
-| CA-26 | Consultar el resumen tras una jornada con estados mixtos. | Integración | Cifras coincidentes con la bitácora. |
-| CA-27 a CA-29 | Solicitar enlace firmado, acceder al objeto sin firma y solicitarlo con usuario no autorizado. | Integración de seguridad | Enlace válido solo para usuarios autorizados y acceso denegado en el resto. |
-| CA-30 y CA-31 | Consultar la carga operativa antes y después de cerrar despachos. | Integración | Ocupación consistente con los estados vigentes. |
-| CA-32 | Consultar el catálogo de motivos. | Integración | Listado tipificado sin motivos de uso exclusivo del sistema. |
-| CA-33 | Consultar la bitácora tras cada transición aceptada. | Integración con persistencia | Usuario, origen, fecha y transición almacenados correctamente. |
+| CA-01 a CA-04 | Acceder con token válido, ausente, de otro rol, no vinculado y fuera de turno. | Integración de seguridad | Acceso concedido; `401`, `403` y solo lectura fuera de turno. |
+| CA-05 a CA-08 | Consultar rutas con y sin asignaciones, ajenas, con cancelados y con despachos antiguos. | Integración y frontend | Lista ordenada sin cancelados, estado vacío, `403` y bandeja de regularización. |
+| CA-09 a CA-11 | Consultar detalle propio, ajeno e inexistente. | Integración y frontend | Datos completos, `403` y `404`. |
+| CA-12 a CA-14 | Ejecutar transiciones válidas, inválidas y sobre despachos reasignados o cancelados. | Unitaria e integración | Cambio aplicado o `409` con estado conservado. |
+| CA-15 a CA-18 | Entregar con evidencia válida, sin evidencia, con almacenamiento caído y con archivo inválido. | Unitaria, integración y frontend | `ENTREGADO` solo con evidencia persistida. |
+| CA-19 a CA-22 | Registrar incidencias con y sin motivo, cortar la red y repetir la operación. | Unitaria e integración | Contador incrementado una sola vez. |
+| CA-23 a CA-25 | Cerrar jornada con pendientes, por corte automático y sin pendientes. | Integración con proceso programado | `NO_INTENTADO` sin consumir intentos y repartidor `FUERA_DE_TURNO`. |
+| CA-26 | Consultar el resumen tras una jornada mixta. | Integración | Cifras coincidentes con el historial. |
+| CA-27 a CA-29 | Solicitar enlaces firmados autorizados y no autorizados. | Integración de seguridad | Enlace solo para autorizados. |
+| CA-30 | Consultar el catálogo. | Integración | Motivos seleccionables sin `NO_INTENTADO`. |
+| CA-31 | Revisar el historial tras cada transición. | Integración con persistencia | Registro completo en el historial común. |
 
-Adicionalmente se ejecutarán tres recorridos funcionales completos:
+Además, se ejecutarán tres recorridos funcionales completos:
 
 1. `ASIGNADO` → `EN_CAMINO` → entrega con evidencia → `ENTREGADO`.
 2. `ASIGNADO` → `EN_CAMINO` → incidencia con motivo y evidencia → `FALLIDO` con intento incrementado y visible para F-04.
-3. `ASIGNADO` → cierre de jornada → `FALLIDO` con motivo `NO_INTENTADO` y contador de intentos sin variación.
-
-Las pruebas unitarias cubrirán la máquina de estados, el control de intentos y la idempotencia; las pruebas de integración cubrirán seguridad, persistencia, bitácora y manejo de evidencia; las pruebas de frontend cubrirán estados visuales, validaciones de formulario y comportamiento ante ausencia de red.
-
+3. `ASIGNADO` → cierre de jornada → `FALLIDO` con motivo `NO_INTENTADO`, contador sin variación y repartidor `FUERA_DE_TURNO`.
 
 ## 11. Criterio de completitud
 
 La funcionalidad se considera completa cuando:
 
-- Todos los criterios `CA-01` a `CA-33` están implementados y cuentan con pruebas exitosas.
-- Los tres recorridos funcionales completos han sido verificados.
-- Ninguna transición inválida de la máquina de estados es aceptada por el backend.
-- El contador de intentos se incrementa exclusivamente ante intentos reales de entrega y nunca de forma duplicada ante reintentos.
-- Ningún despacho permanece en estado no terminal tras el cierre de jornada o el corte automático.
-- La evidencia es inaccesible sin enlace firmado vigente y accesible para F-04 cuando lo solicita.
-- La carga operativa expuesta a F-05 refleja los estados vigentes.
-- La interfaz comunica correctamente carga, vacío, validaciones, conflictos, errores de evidencia y ausencia de red.
+- Los criterios `CA-01` a `CA-31` están implementados y cuentan con pruebas exitosas.
+- Los tres recorridos funcionales han sido verificados.
+- Ninguna transición fuera del Anexo A es aceptada.
+- El contador de intentos aumenta solo ante intentos reales y nunca por reintentos.
+- Ningún despacho queda en `ASIGNADO` ni `EN_CAMINO` tras el cierre o el corte automático.
+- La evidencia es inaccesible sin URL firmada vigente y accesible para F-04.
 - No se han incorporado capacidades declaradas fuera de alcance.
 - La evidencia de pruebas puede relacionarse con cada criterio de aceptación.
 
@@ -394,7 +403,7 @@ La funcionalidad se considera completa cuando:
 | `EN_CAMINO` | `FALLIDO` | Incidencia con motivo y evidencia | Incrementa en uno |
 | `ASIGNADO` o `EN_CAMINO` | `FALLIDO` (`NO_INTENTADO`) | Cierre de jornada o corte automático | Sin efecto |
 
-Cualquier otra transición es rechazada con conflicto. Los estados `PENDIENTE_ASIGNACION` y `DEVUELTO_A_ALMACEN` no son producidos por F-03; corresponden a F-02 y F-04 respectivamente.
+Cualquier otra transición desde F-03 es rechazada con `409 Conflict`. La máquina de estados completa del módulo está definida en el overview (sección 5).
 
 ## Anexo B. Catálogo de motivos de fallo
 
@@ -408,13 +417,9 @@ Cualquier otra transición es rechazada con conflicto. Los estados `PENDIENTE_AS
 | `PAQUETE_DANADO` | Paquete dañado antes de la entrega | Sí | Sí |
 | `NO_INTENTADO` | No intentado por fin de jornada | No | No |
 
-## Anexo C. Integraciones requeridas para `specs/api-contract.md`
+## Anexo C. Acuerdos de integración pendientes con otros módulos
 
-| Nº | Dirección | Propósito | Acuerdo pendiente |
-|---|---|---|---|
-| 1 | F-03 consulta a F-05 | Validar estado operativo y turno del repartidor autenticado. | Definir si se consulta por repartidor o si el dato viaja en el token. |
-| 2 | F-05 consulta a F-03 | Obtener la carga vigente por repartidor para el cálculo de saturación. | Definir forma de la respuesta y frecuencia de consulta bajo el límite de 200 ms de F-05. |
-| 3 | F-03 consume datos de F-02 | Recibir despachos asignados con secuencia de ruta, destinatario, dirección y teléfono. | Confirmar que F-02 incluye el teléfono del destinatario en el payload del despacho. |
-| 4 | F-04 consume de F-03 | Leer despachos `FALLIDO` con motivo, intento y evidencia. | Confirmar que F-04 usa el catálogo del Anexo B y no uno propio. |
-| 5 | F-04 consulta a F-03 | Obtener enlace firmado de evidencia bajo demanda. | Definir vigencia del enlace y rol autorizado. |
-| 6 | Seguridad emite para F-03 | Token JWT con `idRepartidor` y rol embebidos. | Confirmar los claims exactos del token con el responsable de Seguridad. |
+| Nº | Módulo | Acuerdo pendiente |
+|---|---|---|
+| 1 | Seguridad y Usuarios | Confirmar que el JWT incluye el identificador de usuario y el rol `REPARTIDOR`. El identificador de repartidor se resuelve dentro del módulo mediante F-05. |
+| 2 | Ventas y Postventa | Confirmar que la solicitud de despacho incluye el teléfono del destinatario y la referencia de la dirección. |

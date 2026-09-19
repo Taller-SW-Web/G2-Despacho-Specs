@@ -1,157 +1,378 @@
-# Visión General de Arquitectura: Módulo de Despacho y Entrega a Domicilio
+# Visión General: Módulo de Despacho y Entrega a Domicilio
 
-Este documento presenta la visión técnica y arquitectónica integral del **Módulo de Despacho y Entrega a Domicilio**: los problemas de negocio que resuelve, la interacción sistémica entre sus áreas funcionales, los actores involucrados, la máquina de estados integral, las directrices transversales de seguridad/comunicación y la especificación detallada del stack tecnológico unificado.
+Este documento describe el módulo de Despacho y Entrega a Domicilio del Marketplace Multicanal de productos deportivos: su propósito, la trazabilidad con los lineamientos del curso, la relación entre sus funcionalidades, el ciclo de vida del despacho y los requisitos transversales que todas las funcionalidades deben cumplir.
 
----
-
-## 1. Propósito y Problema de Negocio
-
-El módulo de Despacho tiene la misión de orquestar y controlar el ciclo de vida del transporte de paquetes desde el momento en que un pedido es confirmado en los canales comerciales (Ventas, tienda web, marketplace o chatbot) hasta que se entrega de manera efectiva en manos del cliente final o se gestiona su devolución controlada hacia el almacén.
-
-### Problemas que Resuelve
-1. **Desfase de Información en Ruta:** Permite conocer en tiempo real el estado de avance de cada paquete mediante la sincronización continua de la operación en calle y un canal de rastreo para el cliente final.
-2. **Entregas sin Respaldo Probatorio:** Asegura que toda entrega concluida cuente con evidencia física incuestionable (fotografía georreferenciada y firma digitalizada del receptor) antes de ser declarada como entregada.
-3. **Gestión Desestructurada de Excepciones:** Proporciona un canal estructurado con catálogo tipificado para registrar incidencias en campo, permitiendo al gestor reprogramar una nueva fecha o derivar a devolución a almacén con notificación automatizada hacia Ventas y Devoluciones.
-
-### Principios Arquitectónicos
-- **Arquitectura de Microservicios Desacoplada:** El módulo opera con su propia base de datos aislada (PostgreSQL en Supabase), sin compartir tablas ni esquemas directamente con Ventas, Inventario o Facturación.
-- **Autonomía Operativa e Independencia:** Cada área funcional administra sus propios recursos y datos maestros. Se proveen mecanismos de simulación de pedidos y pruebas desacopladas para evitar bloqueos entre equipos.
+El detalle de cada funcionalidad vive en `specs/funcionalidades/`, los endpoints en `specs/api-contract.md` y la persistencia en `specs/modelo-datos.md`. Ante una diferencia entre este documento y una especificación funcional, prevalece la especificación y este documento debe corregirse.
 
 ---
 
-## 2. Mapa de Funcionalidades y Responsabilidades
+## 1. Propósito y contexto
 
-El módulo se compone de **5 funcionalidades especializadas** lideradas por un integrante y **1 capacidad transversal** de seguimiento compartida:
+El módulo de Despacho y Entrega es uno de los siete módulos del Marketplace Multicanal. Su actor principal es el **Gestor de Despacho**.
+
+Todos los pedidos de la tienda, sin importar el canal por el que se vendieron, se preparan en un **único centro de despacho**. Cuando un pedido ya fue pagado y su paquete está sellado en ese centro, Ventas y Postventa solicita el despacho. Desde ese momento el módulo se encarga de **enviar el paquete**: asignarlo a un repartidor, llevarlo al domicilio del cliente y, si la entrega no se concreta, traerlo de vuelta al centro de despacho.
+
+El módulo es **dueño de la entidad despacho**. No es dueño del pedido ni del pago (Ventas y Postventa), del producto ni del stock (Productos y Ofertas), ni de los usuarios (Seguridad y Usuarios); esa información se obtiene exclusivamente mediante APIs.
+
+### 1.1. Problemas que resuelve
+
+- **Cobertura y costo de envío inciertos:** los canales necesitan saber, antes de confirmar un pedido, si el destino está cubierto y cuánto cuesta el envío.
+- **Asignación sin información de capacidad:** sin saber quién está en turno y cuánta carga lleva, se sobrecarga a los repartidores o se asignan paquetes a vehículos inadecuados.
+- **Entregas sin respaldo:** toda entrega, exitosa o fallida, queda respaldada por una fotografía trazable al repartidor que la registró.
+- **Paquetes no entregados sin control:** todo paquete no entregado regresa al centro de despacho, su recepción se confirma y el Gestor decide si se reintenta o se cierra.
+- **Falta de visibilidad del pedido:** Ventas y Postventa, los canales y el Gestor conocen cada avance del despacho a partir de sus cambios de estado.
+
+### 1.2. Principios arquitectónicos
+
+- **Microservicio con base de datos propia:** el módulo usa su propia base PostgreSQL y no accede a bases de datos de otros módulos.
+- **Integración asíncrona entre módulos:** los cambios de estado se comunican mediante eventos asíncronos. Las solicitudes entrantes (cotización, solicitud y cancelación de despacho, seguimiento) se responden de inmediato, sin que Despacho quede a la espera de otro módulo.
+- **Un solo backend para el módulo:** las cinco funcionalidades comparten backend y base de datos. Entre ellas no se exponen APIs internas; cada una respeta la propiedad de los datos de las demás.
+- **Fuentes únicas:** F-01 es la única fuente de cobertura, F-05 la única de disponibilidad y ocupación, F-03 la única del catálogo de motivos de fallo, y la máquina de estados común (sección 6) la única vía para cambiar el estado de un despacho.
+- **Desarrollo guiado por especificaciones (SDD):** las especificaciones son la fuente para el desarrollo asistido con IA y deben mantenerse coherentes entre sí.
+- **Autonomía de pruebas:** el módulo genera despachos simulados para probarse sin depender de Ventas y Postventa.
+
+---
+
+## 2. Trazabilidad con los lineamientos del curso
+
+| Lineamiento del curso | Dónde se cubre |
+|---|---|
+| Generación de solicitud de despacho a partir de un pedido | F-02 (RF-01, RF-05) |
+| Asignación de despacho a operador/repartidor | F-02 (RF-03, RF-06, RF-07), apoyado por F-05 |
+| Gestión de estados del despacho | Requisitos transversales RT-01 a RT-03 (sección 6) |
+| Gestión de zonas y tarifas de entrega | F-01 |
+| Seguimiento del pedido en ruta | Requisito transversal RT-04 (sección 6) |
+| Registro de entrega y evidencia de recepción | F-03 (RF-05, RF-09) |
+| Gestión de entregas fallidas/reprogramaciones | F-03 (RF-06, RF-07) y F-04 |
+
+F-05 no figura como lineamiento propio; existe para que la asignación se haga sobre información confiable de disponibilidad y capacidad.
+
+---
+
+## 3. Funcionalidades y responsables
+
+| ID | Funcionalidad | Responsable | Actor principal | Rol en el módulo |
+|---|---|---|---|---|
+| **F-01** | [Gestor de zonas geográficas y cotizador de envíos](funcionalidades/F-01-Gestor_ZonasGeograficas.md) | Valqui | Gestor de Despacho / Administrador | Zonas, tarifas, cotización para canales y resolución de zona para el módulo. |
+| **F-02** | [Programación y asignación de despachos](funcionalidades/F-02-ProgramacionAsignacionDespachos.md) | Tarqui | Gestor de Despacho | Recepción, simulación, cola, asignación, secuencia, reasignación, cancelación y vista de ruta por repartidor. |
+| **F-03** | [Web responsive del repartidor y evidencia de entrega](funcionalidades/F-03-AppMovilRepartidor.md) | Max Rojas | Repartidor | Ruta de la jornada, transiciones en campo, evidencia, cierre de jornada y catálogo de motivos. |
+| **F-04** | [Entregas fallidas y reprogramaciones](funcionalidades/F-04-GestionEntregasFallidas.md) | Gerardo | Gestor de Despacho | Recepción de paquetes no entregados en el centro, reprogramación y cierre como devuelto a origen. |
+| **F-05** | [Monitoreo de flota, operadores y capacidad diaria](funcionalidades/F-05-MonitoreoFlotaCapacidad.md) | Rhamses | Gestor de Flota | Repartidores, vehículos, jornadas, ocupación y disponibilidad. |
+
+Los requisitos transversales de la sección 6 no constituyen una funcionalidad aparte: son un componente común del backend que F-02, F-03 y F-04 utilizan, y cada una verifica en sus pruebas las transiciones que ejecuta.
+
+### 3.1. Flujo entre funcionalidades
 
 ```mermaid
 graph TD
-    subgraph Canales_Externos [Ecosistema Comercial]
-        Ventas[Módulo de Ventas / Carrito]
-        Devoluciones[Módulo de Devoluciones]
-        Seguridad[Módulo de Seguridad / Auth]
+    subgraph Externos [Otros módulos del Marketplace]
+        MKT[Canal Marketplace]
+        CHT[Canal Chatbot]
+        VEN[Ventas y Postventa]
+        SEG[Seguridad y Usuarios]
     end
 
-    subgraph Modulo_Despacho [Módulo de Despacho y Entrega]
-        F01["F-01: Zonas y Cotizador<br>(Valqui)"]
-        F02["F-02: Programación y Asignación<br>(Tarqui)"]
-        F05["F-05: Monitoreo de Flota y Capacidad<br>(Rhamses)"]
-        F03["F-03: Web Responsive Repartidor<br>(Max Rojas)"]
-        F04["F-04: Entregas Fallidas y Reprogramación<br>(Gerardo)"]
-        Transversal["Capacidad Transversal:<br>Seguimiento de Pedidos (API/Tracking)"]
+    subgraph Despacho [Módulo de Despacho y Entrega]
+        F01["F-01 Zonas y cotizador"]
+        F02["F-02 Programación y asignación"]
+        F03["F-03 Web del repartidor"]
+        F04["F-04 Entregas fallidas"]
+        F05["F-05 Flota y capacidad"]
+        RT["Requisitos transversales:<br>estados, historial, eventos y seguimiento"]
     end
 
-    Seguridad -.->|Emite y valida JWT| Modulo_Despacho
-    Ventas -->|1. Cotizar flete| F01
-    Ventas -->|2. Crear solicitud despacho| F02
-    F05 -->|Disponibilidad y carga remanente| F02
-    F02 -->|Asigna despacho a ruta| F03
-    F03 -->|Actualiza hitos en ruta| Transversal
-    F03 -->|Reporta fallo con motivo| F04
-    F04 -->|Reprogramar para reintento| F02
-    F04 -->|Devolución a almacén| Devoluciones
-    F03 -->|Webhook entrega confirmada| Ventas
+    MKT -->|Cotizar envío| F01
+    CHT -->|Cotizar envío| F01
+    VEN -->|Solicitud de paquete sellado y cancelación| F02
+    F02 -->|Resolver zona| F01
+    F05 -->|Disponibilidad y capacidad remanente| F02
+    F02 -->|Despacho ASIGNADO con jornada y secuencia| F03
+    F05 -->|Habilitación del repartidor| F03
+    F03 -->|Cierre de turno| F05
+    F03 -->|FALLIDO: paquete regresa al centro| F04
+    F04 -->|Recepción confirmada: libera ocupación| F05
+    F04 -->|Reprogramado| F02
+    F02 -->|Transiciones| RT
+    F03 -->|Transiciones| RT
+    F04 -->|Transiciones| RT
+    RT -->|Eventos de estado| VEN
+    MKT -->|Consultar seguimiento| RT
+    CHT -->|Consultar seguimiento| RT
+    SEG -.->|JWT, tokens de servicio y usuarios repartidor| Despacho
+    F05 -->|Alta de usuario repartidor| SEG
 ```
 
-### Tabla de Distribución de Áreas
+### 3.2. Relaciones internas
 
-| ID | Funcionalidad | Responsable | Rol Operativo Principal |
-| :---: | :--- | :--- | :--- |
-| **F-01** | [Gestor de Zonas Geográficas y Cotizador](funcionalidades/F-01-Gestor_ZonasGeograficas.md) | **Valqui** | Matriz tarifaria por peso/volumen y endpoint público de cotización para carritos de venta. |
-| **F-02** | [Programación y Asignación de Despachos](funcionalidades/F-02-ProgramacionAsignacionDespachos.md) | **Tarqui** | Cola de pendientes, simulación de órdenes de prueba y asignación según capacidad vehicular. |
-| **F-03** | [Web Responsive del Repartidor y Evidencia](funcionalidades/F-03-AppMovilRepartidor.md) | **Max Rojas** | Interfaz web mobile-first para choferes: ruta diaria, transición de estados, fotos y firmas. |
-| **F-04** | [Entregas Fallidas y Reprogramaciones](funcionalidades/F-04-GestionEntregasFallidas.md) | **Gerardo** | Resolución de incidencias en ruta, control de reintentos máximos, reprogramación y devolución. |
-| **F-05** | [Monitoreo de Flota, Operadores y Capacidad](funcionalidades/F-05-MonitoreoFlotaCapacidad.md) | **Rhamses** | CRUD de choferes y flota vehicular, control de turnos y servicio de disponibilidad remanente. |
-| **Transversal** | Seguimiento de Pedidos (Tracking) | Backend Despacho | Endpoint de consulta pública y timeline de hitos consumible por clientes y canales autorizados. |
+| Origen | Destino | Qué se transfiere | Fuente |
+|---|---|---|---|
+| F-01 | F-02 | Zona del destino al registrar un despacho; rechazo si no hay cobertura. | F-01 RF-04, F-02 RF-05 |
+| F-01 | F-05 | Zonas activas para la asignación diaria del repartidor. | F-05 RF-03 |
+| F-05 | F-02 | Repartidores habilitados con capacidad remanente en kg, m³ y paquetes. | F-05 RF-05 |
+| F-02 | F-03 | Despachos `ASIGNADO` con jornada, secuencia, destinatario, dirección y teléfono. | F-02 RF-06 |
+| F-05 | F-03 | Repartidor vinculado al usuario del token y su estado operativo. | F-05 RF-06, RF-07 |
+| F-03 | F-05 | Solicitud de cierre de turno al cerrar la jornada. | F-03 RF-07 |
+| F-03 | F-04 | Despachos `FALLIDO` con motivo, contador, evidencia y catálogo de motivos. | F-03 RF-06, RF-09, RF-10 |
+| F-04 | F-05 | Recepción del paquete en el centro, que deja de contar en la ocupación del repartidor. | F-04 RF-07 |
+| F-04 | F-02 | Despachos reprogramados con nueva fecha programada. | F-04 RF-03 |
+| F-02 | F-04 | Anulación del pedido sobre un despacho fallido. | F-02 CA-20, F-04 CA-15 |
+| F-02, F-03, F-04 | Requisitos transversales | Solicitudes de transición de estado. | Sección 6 |
 
 ---
 
-## 3. Ciclo de Vida y Máquina de Estados del Despacho
+## 4. Actores y roles
 
-Cada paquete gestionado por el módulo sigue una secuencia formal de transiciones gobernada por el backend:
+| Rol | Actor | Uso |
+|---|---|---|
+| `GESTOR_DESPACHO` | Gestor de Despacho (actor principal) | F-01 (configuración), F-02, F-04 y consulta de disponibilidad de F-05 |
+| `GESTOR_FLOTA` | Gestor de Flota | F-05 |
+| `REPARTIDOR` | Repartidor en campo | F-03 |
+| `ADMIN` | Administrador del módulo | Configuración de F-01 y F-05 |
+| `SERVICIO_INTEGRACION` | Ventas y Postventa, Marketplace, Chatbot | Solicitud y cancelación de despachos (F-02) y consulta de seguimiento (RT-04) |
+| Sin autenticación | Canales | Cotización (F-01), con límite de solicitudes |
+
+Todos los roles son emitidos por Seguridad y Usuarios. El JWT del repartidor contiene su identificador de usuario; el módulo resuelve el repartidor correspondiente mediante el vínculo que mantiene F-05.
+
+---
+
+## 5. Ciclo de vida del despacho
+
+El despacho tiene siete estados. Cada uno tiene una etiqueta pensada para el cliente y el Gestor, y responde a una pregunta simple: ¿dónde está el paquete?
+
+| Estado | Etiqueta para el usuario | Dónde está el paquete | ¿Final? |
+|---|---|---|---|
+| `PENDIENTE_ASIGNACION` | En centro de despacho | Sellado en el centro, esperando repartidor | No |
+| `ASIGNADO` | Asignado a repartidor | Listo para salir con un repartidor | No |
+| `EN_CAMINO` | En camino | Con el repartidor, rumbo al destino | No |
+| `ENTREGADO` | Entregado | Con el cliente | Sí |
+| `FALLIDO` | No entregado, regresando al centro | Con el repartidor, de vuelta al centro | No |
+| `DEVUELTO_A_ORIGEN` | De vuelta en el centro de despacho | En el centro, a disposición de Ventas y Postventa | Sí |
+| `CANCELADO` | Cancelado | En el centro; el pedido fue anulado antes del traslado | Sí |
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> PENDIENTE_ASIGNACION: Solicitud recibida (Ventas / Simulación F-02)
-    PENDIENTE_ASIGNACION --> ASIGNADO: Asignación a repartidor (F-02 consume F-05)
-    ASIGNADO --> EN_CAMINO: Repartidor inicia viaje (F-03)
-    EN_CAMINO --> ENTREGADO: Foto + Firma mandatorias (F-03)
-    EN_CAMINO --> FALLIDO: Incidencia con motivo del catálogo (F-03)
-    FALLIDO --> PENDIENTE_ASIGNACION: Gestor reprograma fecha (F-04)
-    FALLIDO --> DEVUELTO_A_ALMACEN: Límite superado o inubicable (F-04)
-    ENTREGADO --> [*]: Notificación asíncrona a Ventas
-    DEVUELTO_A_ALMACEN --> [*]: Notificación a Devoluciones y Ventas
+    [*] --> PENDIENTE_ASIGNACION: Paquete sellado en el centro (F-02)
+    PENDIENTE_ASIGNACION --> ASIGNADO: Asignación a repartidor (F-02)
+    PENDIENTE_ASIGNACION --> CANCELADO: Pedido anulado (F-02)
+    ASIGNADO --> CANCELADO: Pedido anulado (F-02)
+    ASIGNADO --> EN_CAMINO: Sale a entregar (F-03)
+    EN_CAMINO --> ENTREGADO: Entrega con foto (F-03)
+    EN_CAMINO --> FALLIDO: Incidencia con motivo y foto (F-03)
+    ASIGNADO --> FALLIDO: Cierre de jornada, NO_INTENTADO (F-03)
+    EN_CAMINO --> FALLIDO: Cierre de jornada, NO_INTENTADO (F-03)
+    FALLIDO --> PENDIENTE_ASIGNACION: Recibido en centro y reprogramado (F-04)
+    FALLIDO --> DEVUELTO_A_ORIGEN: Recibido en centro y cerrado (F-04)
+    ENTREGADO --> [*]
+    DEVUELTO_A_ORIGEN --> [*]
+    CANCELADO --> [*]
 ```
 
-### Reglas de Transición Inviolables
-1. **Avance Estricto en Campo:** El repartidor solo puede avanzar hacia adelante: `ASIGNADO` $\rightarrow$ `EN_CAMINO` $\rightarrow$ `ENTREGADO` o `FALLIDO`.
-2. **Cierre Exitoso con Evidencia:** No se permite pasar a `ENTREGADO` sin adjuntar fotografía del paquete, firma digitalizada y datos del receptor.
-3. **Tipificación Obligatoria de Incidencias:** No se permite transicionar a `FALLIDO` sin seleccionar un motivo válido del catálogo oficial (`CLIENTE_AUSENTE`, `DIRECCION_NO_UBICADA`, `PAQUETE_RECHAZADO`, `ZONA_INACCESIBLE`).
-4. **Política de Reintentos:** Si un despacho supera el límite de reintentos configurado (inicialmente 2), se bloquea la reprogramación y únicamente se permite la derivación a `DEVUELTO_A_ALMACEN`.
+| Origen | Destino | Ejecuta | Contador de intentos |
+|---|---|---|---|
+| — | `PENDIENTE_ASIGNACION` | F-02 | Inicia en cero |
+| `PENDIENTE_ASIGNACION` | `ASIGNADO` | F-02 | Sin efecto |
+| `PENDIENTE_ASIGNACION` o `ASIGNADO` | `CANCELADO` | F-02 | Sin efecto |
+| `ASIGNADO` | `EN_CAMINO` | F-03 | Sin efecto |
+| `EN_CAMINO` | `ENTREGADO` | F-03 | Sin efecto |
+| `EN_CAMINO` | `FALLIDO` | F-03 | Incrementa en uno |
+| `ASIGNADO` o `EN_CAMINO` | `FALLIDO` (`NO_INTENTADO`) | F-03 | Sin efecto |
+| `FALLIDO` (recibido en centro) | `PENDIENTE_ASIGNACION` | F-04 | Sin efecto |
+| `FALLIDO` (recibido en centro) | `DEVUELTO_A_ORIGEN` | F-04 | Sin efecto |
+
+La reasignación de F-02 cambia el repartidor de un despacho `ASIGNADO` sin cambiar su estado. La recepción del paquete en el centro (F-04) tampoco cambia el estado: es una confirmación registrada sobre el despacho `FALLIDO` que habilita la decisión del Gestor.
+
+### 5.1. Reglas del ciclo de vida
+
+1. **Origen único:** todo despacho nace de un pedido pagado cuyo paquete está sellado en el centro de despacho; hay un solo despacho por pedido.
+2. **Cobertura obligatoria:** no se registra un despacho cuyo destino no esté cubierto por una zona activa.
+3. **Jornada y secuencia:** solo se asignan despachos programados para hoy o antes; cada asignación define la jornada y la posición en la ruta.
+4. **Capacidad:** ninguna asignación supera la capacidad remanente en kg, m³ o paquetes, calculada por F-05 a partir de los paquetes en poder del repartidor (`ASIGNADO`, `EN_CAMINO` y `FALLIDO` aún no recibidos en el centro).
+5. **Evidencia obligatoria:** no se registra `ENTREGADO` ni `FALLIDO` por incidencia sin fotografía. No se captura firma ni geolocalización.
+6. **Motivo tipificado:** todo `FALLIDO` lleva un motivo del catálogo de F-03: `CLIENTE_AUSENTE`, `DIRECCION_NO_UBICADA`, `RECHAZO_DEL_PAQUETE`, `DATOS_DE_CONTACTO_ERRONEOS`, `ZONA_INACCESIBLE`, `PAQUETE_DANADO`, y `NO_INTENTADO` como motivo exclusivo del sistema.
+7. **Retorno al centro:** todo paquete no entregado regresa al centro de despacho; el Gestor no puede reprogramar ni cerrar un despacho sin confirmar esa recepción.
+8. **Política de intentos:** el máximo es configurable, con valor inicial de dos. Al alcanzarlo, solo se permite cerrar como `DEVUELTO_A_ORIGEN`. Los `NO_INTENTADO` no consumen intentos.
+9. **Cierre de jornada:** ningún despacho queda en `ASIGNADO` o `EN_CAMINO` al terminar la jornada del repartidor.
+10. **Anulación del pedido:** antes del traslado se cancela el despacho; durante el traslado se rechaza; si el despacho está `FALLIDO`, solo puede cerrarse como `DEVUELTO_A_ORIGEN`.
 
 ---
 
-## 4. Acuerdos Transversales (DevOps, Seguridad y Arquitectura)
+## 6. Requisitos transversales
 
-### 4.1 Seguridad y Autenticación JWT
-- El módulo de Despacho no emite credenciales primarias; delega la autenticación en el **Módulo de Seguridad**.
-- Todas las peticiones protegidas deben incluir el encabezado HTTP:
-  ```http
-  Authorization: Bearer <token_jwt>
-  ```
-- Cada desarrollador protege sus endpoints inyectando la configuración común de validación de firma y control de acceso basado en roles (`GESTOR_DESPACHO`, `GESTOR_FLOTA`, `REPARTIDOR`, `ADMIN`).
+Estos requisitos aplican a todo el módulo. Se implementan como un componente común del backend y no pertenecen a una sola funcionalidad.
 
-### 4.2 Integración Asíncrona / Webhooks Comunes
-- Al completarse una entrega (`ENTREGADO`) o confirmarse una devolución definitiva (`DEVUELTO_A_ALMACEN`), el backend emite un evento asíncrono hacia los módulos interesados (Ventas/Postventa y Devoluciones).
-- Para evitar duplicidad de código, se provee un servicio común en el backend (`NotificadorEventosService`) que encapsula la llamada HTTP asíncrona (código `202 Accepted`) y el esquema de reintentos con respaldo en base de datos.
+### RT-01. Máquina de estados común
 
-### 4.3 Despliegue Continuo en la Nube
-- Un integrante del equipo actúa como **líder de despliegue** para vincular el repositorio a las plataformas de nube (Render para el backend Spring Boot y Vercel para el frontend React).
-- La integración sobre la rama `main` dispara construcciones y pruebas automáticas.
+El sistema DEBE validar toda transición contra la tabla de la sección 5 y rechazar cualquier otra.
+
+#### RT-CA-01. Transición válida
+
+- **DADO** un despacho en `ASIGNADO`.
+- **CUANDO** F-03 solicita la transición a `EN_CAMINO`.
+- **ENTONCES** el estado cambia y se registra en el historial (RT-02).
+
+#### RT-CA-02. Transición inválida
+
+- **DADO** un despacho en `ENTREGADO`.
+- **CUANDO** cualquier funcionalidad solicita una transición no prevista.
+- **ENTONCES** se responde `409 Conflict`, el estado se conserva y no se registran historial ni evento.
+
+#### RT-CA-03. Transiciones concurrentes
+
+- **DADO** dos solicitudes simultáneas sobre el mismo despacho (por ejemplo, una cancelación de F-02 y un inicio de traslado de F-03).
+- **CUANDO** ambas se procesan.
+- **ENTONCES** solo una se aplica y la otra recibe `409 Conflict`.
+
+### RT-02. Historial del despacho
+
+El sistema DEBE conservar un historial único de cada despacho.
+
+#### RT-CA-04. Registro del historial
+
+- **DADO** una transición aceptada, una reasignación o una recepción en el centro.
+- **CUANDO** se persiste.
+- **ENTONCES** el historial guarda estado anterior, estado nuevo, funcionalidad origen, ejecutor, origen manual o automático, marca temporal del servidor en UTC, motivo y observaciones, en la misma transacción que el cambio.
+
+### RT-03. Eventos hacia Ventas y Postventa
+
+El sistema DEBE comunicar de forma asíncrona cada cambio de estado a Ventas y Postventa, dueño del ciclo de vida del pedido.
+
+#### RT-CA-05. Evento por transición
+
+- **DADO** una transición aceptada de un despacho no simulado.
+- **CUANDO** se confirma la transacción.
+- **ENTONCES** se registra un evento con identificador único, pedido, código de rastreo, estado nuevo y marca temporal, y se envía sin bloquear la operación que lo originó.
+
+#### RT-CA-06. Ventas y Postventa no disponible
+
+- **DADO** un evento pendiente.
+- **CUANDO** Ventas y Postventa no responde o responde con error.
+- **ENTONCES** se reintenta con espera creciente hasta cinco veces; si todos fallan, queda como `ENVIO_FALLIDO`, visible para el Gestor con opción de reenvío manual.
+
+#### RT-CA-07. Duplicados y simulaciones
+
+- **DADO** un reenvío o un despacho simulado.
+- **CUANDO** se procesa el evento.
+- **ENTONCES** el reenvío conserva el mismo identificador para que Ventas y Postventa descarte duplicados, y los despachos simulados no emiten eventos.
+
+| Estado nuevo | Evento | Datos propios |
+|---|---|---|
+| `ASIGNADO` | `DESPACHO_ASIGNADO` | Fecha programada |
+| `EN_CAMINO` | `DESPACHO_EN_CAMINO` | — |
+| `ENTREGADO` | `DESPACHO_ENTREGADO` | Fecha y nombre de quien recibe, si se registró |
+| `FALLIDO` | `DESPACHO_FALLIDO` | Motivo y número de intento |
+| `PENDIENTE_ASIGNACION` (reprogramado) | `DESPACHO_REPROGRAMADO` | Nueva fecha programada |
+| `DEVUELTO_A_ORIGEN` | `DESPACHO_DEVUELTO_A_ORIGEN` | Motivo del cierre |
+| `CANCELADO` | `DESPACHO_CANCELADO` | — |
+
+### RT-04. Seguimiento del pedido en ruta
+
+El sistema DEBE permitir que los canales y el Gestor conozcan el avance de cada despacho a partir de sus estados. No incluye rastreo GPS.
+
+#### RT-CA-08. Consulta de un canal
+
+- **DADO** un despacho en `EN_CAMINO`.
+- **CUANDO** un canal lo consulta por código de rastreo o por identificador de pedido con un token de servicio válido.
+- **ENTONCES** recibe la etiqueta del estado ("En camino"), la fecha programada, el distrito de destino y los hitos con fecha, sin coordenadas, teléfono, dirección completa ni datos del repartidor.
+
+#### RT-CA-09. Consulta inválida
+
+- **DADO** un código o pedido sin despacho, o una consulta sin token de servicio.
+- **CUANDO** llega al backend.
+- **ENTONCES** se responde `404 Not Found` o `401 Unauthorized` respectivamente.
+
+#### RT-CA-10. Hitos de un despacho no entregado
+
+- **DADO** un despacho que falló y fue reprogramado.
+- **CUANDO** se consulta.
+- **ENTONCES** los hitos muestran "No entregado, regresando al centro" y "Entrega reprogramada para [fecha]", sin exponer el motivo ni el comentario del repartidor.
+
+#### RT-CA-11. Seguimiento para el Gestor
+
+- **DADO** una jornada en curso.
+- **CUANDO** el Gestor abre la vista de ruta por repartidor de F-02 o el detalle de un despacho en F-02 o F-04.
+- **ENTONCES** ve el estado actual de cada despacho, la hora de su último cambio y su historial completo, actualizados como máximo cada 30 segundos sin recargar la página.
 
 ---
 
-## 5. Stack Tecnológico y Herramientas del Proyecto
+## 7. Integración con otros módulos
 
-### 5.1 Backend
-- **Lenguaje:** **Java 21 (LTS)** — Aprovecha *Virtual Threads* (Project Loom) para I/O concurrente eficiente, *Records* para DTOs inmutables y *Pattern Matching*.
-- **Framework:** **Spring Boot 4.1.1** — Versión unificada para el backend del proyecto, ejecutada sobre Java 21.
-- **Gestor de Dependencias:** **Maven** (`pom.xml`) unificado para todo el backend.
-- **Capa Web y Servicios:** `spring-boot-starter-web` (Spring MVC para controladores RESTful).
-- **Persistencia y ORM:** `spring-boot-starter-data-jpa` con Hibernate 6 para mapeo objeto-relacional y repositorios.
-- **Productividad:** `org.projectlombok:lombok` (`@Getter`, `@Setter`, `@Builder`, `@RequiredArgsConstructor`) para reducir código repetitivo.
-- **Driver de Base de Datos:** `org.postgresql:postgresql` (driver JDBC oficial).
-- **Seguridad:** `spring-boot-starter-security` con validación sin estado de tokens Bearer JWT (`io.jsonwebtoken:jjwt`).
-- **Pruebas y Calidad:** JUnit 5 (`junit-jupiter`), Mockito y AssertJ mediante `spring-boot-starter-test` para pruebas unitarias y de integración (`@WebMvcTest`, `@SpringBootTest`).
+Según la matriz cruzada del curso, Despacho y Entrega se integra con Marketplace, Chatbot, Ventas y Postventa, Productos y Ofertas y Seguridad y Usuarios. No se integra con Retail.
 
-### 5.2 Frontend
-- **Framework & Tooling:** **React 18/19** configurado con **Vite** para compilación ultrarrápida y Hot Module Replacement (HMR).
-- **Estilos:** **Tailwind CSS** para un diseño utilitario, modular y responsivo adaptado tanto a pantallas móviles como a dashboards administrativos.
-- **Suite de Dependencias Evaluadas y Justificadas:**
-  - `react-router-dom`: Enrutamiento SPA entre vistas (Login, Dashboards, Hoja de Ruta, Tracking y Flota).
-  - `axios`: Cliente HTTP con interceptores para inyección del header `Authorization: Bearer <JWT>` y manejo estándar de errores.
-  - `@tanstack/react-query`: Manejo de estado del servidor, caché inteligente y reintentos automáticos en segundo plano para consultas de ruta y tracking.
-  - `vite-plugin-pwa`: Soporte de Progressive Web App (Service Workers y manifest) para la web responsive del repartidor (F-03).
-  - `react-signature-canvas`: Captura interactiva del trazo de firma digital del cliente en pantallas táctiles (F-03).
-  - `browser-image-compression`: Compresión de fotografías en el cliente móvil antes del envío (< 500 KB por imagen) para optimizar datos móviles (F-03).
-  - `leaflet` + `react-leaflet`: Renderizado de mapas interactivos basados en OpenStreetMap sin costo de licenciamiento para zonas (F-01), tracking público y monitoreo de flota (F-05).
-  - `lucide-react`: Iconografía SVG ligera, moderna y accesible.
-
-### 5.3 Base de Datos
-- **Motor:** **PostgreSQL (v15/v16)** alojado sobre **Supabase**.
-- **Infraestructura Cloud:** Conexión gestionada mediante *Connection Pooling* (Supavisor en puerto 6543 para despliegues sin saturar conexiones directas).
-- **Soporte Geoespacial:** Extensión `PostGIS` activada para almacenamiento y cálculo optimizado de coordenadas geográficas (`latitud`, `longitud`) y polígonos de cobertura.
-
-### 5.4 Mensajería Asincrónica y Eventos
-- **Estrategia Desacoplada (`IEventoPublisher`):**
-  - **Fase 1 (Línea Base / MVP):** Emisión mediante **Webhooks asíncronos** (`@Async` de Spring con esquema de reintentos) para notificar a Ventas (`DESPACHO_ENTREGADO`) y a Devoluciones (`DESPACHO_DEVUELTO_ALMACEN`), sin costo adicional de servidores ni brokers dedicados.
-  - **Fase 2 (Escalabilidad):** El sistema queda arquitectónicamente listo para activar `spring-boot-starter-amqp` (RabbitMQ en CloudAMQP) mediante configuración sin requerir reescritura del dominio.
+| Módulo | Dirección | Propósito | Dónde |
+|---|---|---|---|
+| Canal Marketplace | Entrante | Cotizar el envío y consultar el seguimiento del pedido. | F-01, RT-04 |
+| Canal Chatbot | Entrante | Cotizar el envío y consultar el estado del pedido. | F-01, RT-04 |
+| Ventas y Postventa | Entrante | Solicitar el despacho de un pedido pagado con paquete sellado, y su cancelación por anulación. | F-02 |
+| Ventas y Postventa | Saliente | Recibir un evento por cada cambio de estado del despacho. | RT-03 |
+| Productos y Ofertas | Sin intercambio directo previsto | El peso y el volumen del paquete sellado llegan en la solicitud; el reintegro de stock de un paquete devuelto lo gestiona Ventas y Postventa. | — |
+| Seguridad y Usuarios | Bidireccional | Emitir JWT y tokens de servicio; crear los usuarios de los repartidores. | Todas, F-05 |
 
 ---
 
-## 6. Fuera del Alcance del Módulo
+## 8. Acuerdos transversales
 
-- **Gestión financiera y cobros:** El cobro del pedido, facturación electrónica, notas de crédito y reembolsos corresponden al módulo de Ventas y Finanzas.
-- **Ruteo dinámico con optimización GPS por IA:** El despacho planifica por zonas y asignación directa; el cálculo de trayectorias calle por calle se delega a herramientas externas de navegación (Google Maps / Waze).
-- **Taller mecánico y mantenimiento vehicular:** La adquisición de vehículos, seguros y revisiones físicas se controlan en los sistemas corporativos de activos.
-- **Gestión de identidad y usuarios:** El alta de cuentas y generación de credenciales reside en el módulo central de Seguridad.
+### 8.1. Seguridad
+
+- El módulo no emite credenciales. Toda petición protegida incluye `Authorization: Bearer <token>` emitido por Seguridad y Usuarios.
+- El backend valida rol y propiedad de los datos; un repartidor solo accede a sus despachos.
+- Las evidencias se guardan en un bucket privado; la base de datos guarda la referencia y el acceso es por URL firmada de corta vigencia.
+
+### 8.2. Convenciones de API
+
+- JSON en `camelCase`, enumeraciones en `UPPER_SNAKE_CASE` y fechas ISO 8601 en UTC.
+- Estructura común de errores definida en `specs/api-contract.md`.
+- Listados paginados; operaciones de cambio de estado idempotentes y protegidas con bloqueo optimista.
+- Los eventos se envían por webhook en la fase inicial; el publicador permite migrar a un broker de mensajería sin cambiar el dominio.
+
+### 8.3. Despliegue
+
+- Backend en Render, frontend en Vercel y base de datos en Supabase. La integración sobre `main` dispara construcción y pruebas automáticas.
+
+---
+
+## 9. Stack tecnológico
+
+| Capa | Tecnología |
+|---|---|
+| Backend | Java 21, Spring Boot 4.1.1, Maven, Spring Web MVC, Spring Data JPA con Hibernate, Spring Security con JWT, Bean Validation, Lombok |
+| Frontend | React con Vite y Tailwind CSS; dependencias en `specs/stack-frontend.md` |
+| Base de datos | PostgreSQL en Supabase, conexión mediante pooler y PostGIS para la cobertura de F-01 |
+| Evidencias | Almacenamiento de objetos privado con URL firmadas; compresión en cliente y eliminación de EXIF |
+| Mapas | Leaflet con OpenStreetMap para la delimitación de zonas |
+| Pruebas | JUnit 5, Mockito, Spring Boot Test y Testcontainers |
+| Documentación de API | Swagger UI desde el backend desplegado |
+| Diseño | Figma |
+
+---
+
+## 10. Acuerdos pendientes
+
+### 10.1. Con otros módulos
+
+| Módulo | Acuerdo |
+|---|---|
+| Seguridad y Usuarios | Emisión de tokens de servicio con rol `SERVICIO_INTEGRACION`; API para crear usuarios con rol `REPARTIDOR`; contenido del JWT del repartidor. |
+| Ventas y Postventa | Formato de la solicitud de despacho (paquete sellado, teléfono y referencia incluidos), de la cancelación y de los eventos; dirección de recepción de eventos. |
+| Canal Marketplace y Canal Chatbot | Uso de la cotización pública y de la consulta de seguimiento con token de servicio. |
+
+### 10.2. Dentro del equipo
+
+- Acordar quién construye el componente común de la sección 6 (máquina de estados, historial, eventos y consulta de seguimiento), que las demás funcionalidades reutilizan.
+- Actualizar `specs/api-contract.md`: estados `DEVUELTO_A_ORIGEN` y `CANCELADO`, catálogo de motivos, cuerpo de la evidencia (sin firma ni coordenadas), recepción en centro, endpoints nuevos de F-02 y F-05, y seguimiento con token de servicio.
+- Actualizar `specs/modelo-datos.md`: estados, jornada y secuencia del despacho, datos de recepción en centro, vínculo repartidor – usuario, zona de la asignación diaria y tabla de eventos.
+- Actualizar el skill `.agent/skills/despacho-context`, el `README.md` y las historias de usuario afectadas.
+
+---
+
+## 11. Fuera del alcance del módulo
+
+- **Preparación y sellado de paquetes:** ocurren en el centro de despacho antes de la solicitud.
+- **Pagos, facturación, reembolsos, cambios, devoluciones comerciales y reclamos:** pertenecen a Ventas y Postventa.
+- **Stock, inventario y catálogo de productos:** pertenecen a Productos y Ofertas.
+- **Gestión de identidad y credenciales:** pertenece a Seguridad y Usuarios.
+- **Notificación al cliente final:** corresponde a los canales y a Ventas y Postventa a partir de los eventos.
+- **Ruteo optimizado y navegación:** el orden lo define el Gestor y la navegación usa aplicaciones externas.
+- **Rastreo GPS en tiempo real:** el seguimiento se basa en los cambios de estado.
+- **Operación sin conexión:** la web del repartidor requiere red activa.
+- **Mantenimiento, seguros y costos de la flota:** se gestionan fuera del sistema.
