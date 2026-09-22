@@ -21,7 +21,7 @@ Esta funcionalidad incluye:
 
 - Panel de despachos en `FALLIDO`, distinguiendo los paquetes pendientes de retorno de los ya recibidos en el centro.
 - Confirmación de la recepción del paquete en el centro de despacho.
-- Detalle del despacho con historial de estados e intentos, y visualización de la evidencia mediante URL firmada.
+- Detalle del despacho con historial de estados e intentos, y visualización autorizada de la evidencia mediante el mecanismo que se defina en F-03.
 - Política de intentos configurable, con valor inicial de dos.
 - Reprogramación con nueva fecha y retorno a la cola de F-02.
 - Tratamiento diferenciado de los despachos `NO_INTENTADO`, que no consumen intentos.
@@ -45,7 +45,7 @@ Esta funcionalidad incluye:
 | Dependencia | Responsabilidad |
 |---|---|
 | Seguridad y Usuarios | Proporcionar la identidad y el rol `GESTOR_DESPACHO`. |
-| Web del Repartidor (F-03) | Registrar el fallo, su motivo, la evidencia y el contador; proveer el catálogo de motivos y las URL firmadas de evidencia. |
+| Web del Repartidor (F-03) | Registrar el fallo, su motivo, la evidencia y el contador; proveer el catálogo de motivos y el acceso autorizado a la evidencia. |
 | Programación y Asignación (F-02) | Recibir los despachos reprogramados en la cola y registrar la anulación de pedidos sobre despachos fallidos. |
 | Monitoreo de Flota (F-05) | Dejar de contar el paquete en la ocupación del repartidor cuando se confirma su recepción. |
 | Requisitos transversales (overview, sección 6) | Validar las transiciones, registrar el historial y publicar los eventos hacia Ventas y Postventa. |
@@ -90,7 +90,7 @@ El sistema DEBE mostrar la información necesaria para decidir.
 
 - **DADO** un despacho en `FALLIDO`.
 - **CUANDO** el Gestor abre su detalle.
-- **ENTONCES** ve motivo, comentario del repartidor, fecha, repartidor, intento actual, datos de recepción, historial de estados y la fotografía cargada mediante una URL firmada emitida por F-03 en ese momento.
+- **ENTONCES** ve motivo, comentario del repartidor, fecha, repartidor, intento actual, datos de recepción, historial de estados y la fotografía mediante el mecanismo de acceso autorizado definido por F-03.
 
 #### CA-05. Despacho inexistente
 
@@ -213,7 +213,7 @@ El sistema DEBE registrar el retorno físico del paquete antes de cualquier deci
 |---|---|
 | Consulta de incidencias | Recuperar despachos `FALLIDO` con filtros y paginación. |
 | Registro de recepción | Marcar el paquete como recibido en el centro y registrar la auditoría. |
-| Consulta de detalle | Obtener historial, motivo, intentos, recepción y solicitar a F-03 la URL firmada de la evidencia. |
+| Consulta de detalle | Obtener historial, motivo, intentos, recepción y solicitar a F-03 el acceso autorizado a la evidencia. |
 | Caso de uso de reprogramación | Validar estado, recepción, fecha, límite de intentos y anulación antes de solicitar la transición. |
 | Caso de uso de cierre | Validar recepción y solicitar la transición a `DEVUELTO_A_ORIGEN`. |
 | Política de intentos | Leer y aplicar el máximo configurable. |
@@ -237,6 +237,8 @@ Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se 
 - **Registro del fallo en campo:** corresponde a F-03.
 - **Asignación del nuevo intento a un repartidor:** corresponde a F-02.
 - **Transporte y reintentos de los eventos:** corresponden al requisito transversal RT-03 del overview.
+
+La posible logística inversa posterior a una entrega está centralizada en [Pendientes](../pendiente.md), sección F-04. No forma parte de esta funcionalidad mientras no exista un acuerdo con Ventas y Postventa.
 
 ## 10. Estrategia de verificación
 
