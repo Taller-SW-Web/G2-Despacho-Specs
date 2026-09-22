@@ -41,6 +41,7 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Contrato de API](./specs/api-contract.md) | Convenciones, autenticación, errores y organización de las APIs. |
 | [Modelo de datos](./specs/modelo-datos.md) | Base evolutiva de entidades, relaciones y decisiones de persistencia. |
 | [Especificaciones funcionales](./specs/funcionalidades/) | Requisitos, escenarios y criterios de completitud por funcionalidad. |
+| [Especificaciones atómicas](./especificaciones/) | Casos de uso concretos derivados de las funcionalidades y su plantilla común. |
 | [Historias de usuario](./historias-usuario/) | Historias en formato Jira (COMO/QUIERO/PARA) con criterios de aceptación Gherkin y DoD. |
 | [Reglas del repositorio](./AGENTS.md) | Convenciones para crear y mantener la documentación. |
 | [Guía de contribución](./CONTRIBUTING.md) | Flujo de ramas, commits y revisión de cambios. |

@@ -74,6 +74,13 @@
 ### 3.6 Nombres de archivos de especificaciones
 - Formato: `F-XX-NombreEnPascalCase.md` (ej. `F-01-Gestor_ZonasGeograficas.md`, `F-02-ProgramacionAsignacionDespachos.md`, `F-04-GestionEntregasFallidas.md`).
 
+### 3.7 Especificaciones atómicas
+- Las especificaciones derivadas de las funcionalidades se guardan juntas en `especificaciones/`, sin subcarpetas por funcionalidad.
+- Cada archivo describe un único comportamiento concreto, implementable y verificable.
+- Se usa como base `especificaciones/PLANTILLA-ESPECIFICACION.md`.
+- El nombre sigue el formato `ES-FXX-NN-NombreEnPascalCase.md` (ej. `ES-F04-01-ConfirmarRecepcionPaquete.md`).
+- La especificación referencia su funcionalidad padre y el contrato de API; no duplica el contenido completo de esos documentos.
+
 ---
 
 ## 4. Actualización del índice
@@ -86,6 +93,7 @@
 - **Toda vez que se cree, renombre o elimine** un archivo de especificación funcional dentro de `specs/funcionalidades/`, se debe actualizar el índice en `specs/funcionalidad.md`.
 - Toda vez que se agregue una sección relevante al repositorio, se debe actualizar `README.md`.
 - No se permite agregar archivos de especificación sin actualizar el índice correspondiente.
+- Toda vez que se cree, renombre o elimine una especificación atómica en `especificaciones/`, se debe actualizar su trazabilidad en `specs/funcionalidad.md`.
 
 ---
 
@@ -94,6 +102,7 @@
 ### 5.1 Un solo contrato por funcionalidad
 - Cada funcionalidad del sistema tiene **un único archivo de especificación funcional** en `specs/funcionalidades/`.
 - Está **prohibido** crear dos o más archivos que describan la misma funcionalidad con diferente nombre o en diferente ubicación.
+- Las especificaciones atómicas de `especificaciones/` detallan casos de uso de la funcionalidad padre y no la reemplazan ni repiten su alcance general.
 
 ### 5.2 Reutilización en lugar de duplicación
 - Si una funcionalidad es compartida entre módulos, se referencia el archivo original usando `[cite: N]` en vez de copiar el contenido.
