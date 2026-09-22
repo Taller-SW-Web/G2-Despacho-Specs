@@ -22,9 +22,9 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../specs/funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-01`, Criterio `CA-02`).
+- **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-01`, Criterio `CA-02`).
 - **Endpoints asociados:**
-  - `GET /api/v1/zonas` (detallado en [specs/api-contract.md](../../specs/api-contract.md)).
+  - `GET /api/v1/zonas` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
   - Parámetros de consulta: `pagina` (int, default 1), `limite` (int, default 10 o 20), `nombre` (string opcional), `distrito` (string opcional), `estado` (enum `ACTIVO` / `INACTIVO` opcional).
 - **Roles requeridos:** `ADMIN` o `GESTOR_DESPACHO` (autenticación JWT). Usuarios sin estos roles deben recibir `403 Forbidden`.
 - **Componentes de Frontend:**
@@ -34,7 +34,7 @@
   - Cada fila debe mostrar: identificador, nombre de la zona, distritos comprendidos, código postal representativo y estado actual.
   - Si no existen zonas o el filtro no arroja resultados, se debe mostrar un estado visual vacío amigable: *"No hay zonas de cobertura registradas"*.
   - Al activar o desactivar una cobertura se debe confirmar la acción y reflejar el cambio de estado en la lista.
-- **Entidades de datos involucradas:** `zonas` (ver [specs/modelo-datos.md](../../specs/modelo-datos.md)).
+- **Entidades de datos involucradas:** `zonas` (ver [arquitectura/modelo-datos.md](../../arquitectura/modelo-datos.md)).
 
 ---
 

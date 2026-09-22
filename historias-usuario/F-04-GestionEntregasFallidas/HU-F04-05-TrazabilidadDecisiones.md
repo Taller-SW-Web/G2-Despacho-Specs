@@ -22,7 +22,7 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../specs/funcionalidades/F-04-GestionEntregasFallidas.md) (Requisito `RF-05`, Criterio `CA-13`).
+- **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md) (Requisito `RF-05`, Criterio `CA-13`).
 - **Mecanismo de captura:**
   - Se ejecuta automáticamente cuando una reprogramación o derivación a almacén es aceptada.
   - La identidad del usuario debe obtenerse de la sesión autenticada y no de un identificador libre enviado por el cliente.

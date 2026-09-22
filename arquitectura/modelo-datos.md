@@ -1,6 +1,6 @@
 # Modelo de Datos: Módulo de Despacho y Entrega a Domicilio
 
-Este documento define el modelo relacional de la base de datos del módulo de Despacho y Entrega, derivado de las especificaciones funcionales F-01 a F-05 y de los requisitos transversales RT-01 a RT-04 del [overview](overview.md). La base de datos es exclusiva del módulo: no se comparten tablas con otros módulos y los datos externos (pedido, usuario) se guardan solo como identificadores de referencia.
+Este documento define el modelo relacional de la base de datos del módulo de Despacho y Entrega, derivado de las especificaciones funcionales F-01 a F-05 y de los requisitos transversales RT-01 a RT-04 del [overview](../overview.md). La base de datos es exclusiva del módulo: no se comparten tablas con otros módulos y los datos externos (pedido, usuario) se guardan solo como identificadores de referencia.
 
 ---
 

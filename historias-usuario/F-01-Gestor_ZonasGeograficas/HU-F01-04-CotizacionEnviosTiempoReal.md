@@ -22,9 +22,9 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../specs/funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-03`, Criterios `CA-07`, `CA-08`, `CA-09`, `CA-10`).
+- **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-03`, Criterios `CA-07`, `CA-08`, `CA-09`, `CA-10`).
 - **Endpoints asociados:**
-  - `POST /api/v1/zonas/cotizar` (detallado en [specs/api-contract.md](../../specs/api-contract.md)).
+  - `POST /api/v1/zonas/cotizar` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
 - **Autenticación:** Pública o mediante API Key de canal comercial; no requiere token JWT de usuario.
 - **Cuerpo de la solicitud:** `distrito`, `codigoPostal`, `coordenadas` (`latitud`, `longitud`), `pesoKg`, `volumenM3`.
 - **Reglas de negocio:**
@@ -34,7 +34,7 @@
   - Si el destino se encuentra fuera de todas las zonas activas, se responde `200 OK` con `coberturaDisponible: false`, sin costo de envío ni plazo estimado y el mensaje "La dirección se encuentra fuera de nuestra zona de cobertura".
   - El motor de cálculo opera sobre sus propias tablas maestras de zonas y tarifas (caché o base de datos local) sin acoplamientos externos.
   - Rendimiento: tiempo de respuesta menor a 100 ms.
-- **Entidades de datos involucradas:** `zonas`, `tarifas_zona` (lectura, ver [specs/modelo-datos.md](../../specs/modelo-datos.md)).
+- **Entidades de datos involucradas:** `zonas`, `tarifas_zona` (lectura, ver [arquitectura/modelo-datos.md](../../arquitectura/modelo-datos.md)).
 
 ---
 
@@ -66,6 +66,6 @@
 
 - [ ] Motor de cotización implementado en Spring Boot sobre tablas maestras propias (caché o base de datos local).
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) de cálculo tarifario y validación de cobertura geográfica.
-- [ ] Prueba de integración del endpoint `POST /api/v1/zonas/cotizar` validando respuestas `200` y `400` según [specs/api-contract.md](../../specs/api-contract.md).
+- [ ] Prueba de integración del endpoint `POST /api/v1/zonas/cotizar` validando respuestas `200` y `400` según [integraciones/api-contract.md](../../integraciones/api-contract.md).
 - [ ] Verificación automatizada del tiempo de respuesta menor a 100 ms.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

@@ -22,17 +22,17 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../specs/funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisitos `RF-01` y `RF-03`, Criterios `CA-04`, `CA-11`).
+- **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisitos `RF-01` y `RF-03`, Criterios `CA-04`, `CA-11`).
 - **Endpoints asociados:**
   - Administrativos de zonas y tarifas (requieren token JWT con rol `ADMIN` o `GESTOR_DESPACHO`).
-  - `POST /api/v1/zonas/cotizar` (público o protegido por API Key de canal comercial; detallado en [specs/api-contract.md](../../specs/api-contract.md)).
+  - `POST /api/v1/zonas/cotizar` (público o protegido por API Key de canal comercial; detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
 - **Roles requeridos:** `ADMIN` o `GESTOR_DESPACHO` para todas las operaciones de registro o modificación de zonas y tarifas.
 - **Reglas de negocio y persistencia:**
   - Un usuario sin los roles `ADMIN` ni `GESTOR_DESPACHO` que intente registrar o modificar zonas o tarifas recibe `403 Forbidden` y no accede a información de configuración.
   - El endpoint de cotización procesa las solicitudes sin exigir autenticación de usuario; la protección, cuando aplique, se realiza mediante API Key de canal comercial.
   - Cada creación, modificación o desactivación de zonas y tarifas DEBE registrar el usuario autenticado y la marca temporal correspondiente (UTC).
   - Las marcas temporales de auditoría se persisten en `TIMESTAMPTZ` y los registros son de solo inserción.
-- **Entidades de datos involucradas:** `zonas`, `tarifas_zona` (ver [specs/modelo-datos.md](../../specs/modelo-datos.md)).
+- **Entidades de datos involucradas:** `zonas`, `tarifas_zona` (ver [arquitectura/modelo-datos.md](../../arquitectura/modelo-datos.md)).
 
 ---
 

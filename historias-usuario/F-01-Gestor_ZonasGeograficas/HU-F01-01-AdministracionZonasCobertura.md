@@ -22,9 +22,9 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../specs/funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-01`, Criterios `CA-01`, `CA-03`).
+- **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-01`, Criterios `CA-01`, `CA-03`).
 - **Endpoints asociados:**
-  - CRUD de zonas de cobertura bajo `/api/v1/zonas` (creación `POST /api/v1/zonas` y listado `GET /api/v1/zonas`, a consolidar en [specs/api-contract.md](../../specs/api-contract.md)).
+  - CRUD de zonas de cobertura bajo `/api/v1/zonas` (creación `POST /api/v1/zonas` y listado `GET /api/v1/zonas`, a consolidar en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
 - **Roles requeridos:** `ADMIN` o `GESTOR_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
   - Formulario de Zona: registrar o editar una zona con nombre, distritos comprendidos, códigos postales y estado.
@@ -34,7 +34,7 @@
   - Si la zona o su delimitación ya se encuentran cubiertos, se responde `409 Conflict` con detalle del solapamiento y no se persiste.
   - Toda zona creada se guarda con identificador único y estado `ACTIVO`.
   - La validación de solapamiento se realiza mediante cálculo geoespacial (PostGIS).
-- **Entidades de datos involucradas:** `zonas` (ver [specs/modelo-datos.md](../../specs/modelo-datos.md)).
+- **Entidades de datos involucradas:** `zonas` (ver [arquitectura/modelo-datos.md](../../arquitectura/modelo-datos.md)).
 
 ---
 
@@ -58,5 +58,5 @@
 - [ ] Validación de solapamiento geoespacial con PostGIS cubierta por pruebas unitarias e integración.
 - [ ] Pruebas de integración del CRUD verificando la creación exitosa de zonas válidas y el rechazo `409` para duplicadas o solapadas.
 - [ ] Formulario de Zona y Mapa de Delimitación (Leaflet) implementados en React + Tailwind con previsualización del área registrada.
-- [ ] Respuestas HTTP alineadas al contrato en [specs/api-contract.md](../../specs/api-contract.md).
+- [ ] Respuestas HTTP alineadas al contrato en [integraciones/api-contract.md](../../integraciones/api-contract.md).
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

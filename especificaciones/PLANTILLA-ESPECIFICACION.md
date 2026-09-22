@@ -45,7 +45,7 @@ Describir en uno o dos párrafos el resultado concreto que debe conseguir esta e
 ### Integraciones
 
 - Funcionalidades o módulos que proporcionan o consumen información.
-- Referenciar `specs/api-contract.md` cuando exista comunicación mediante API o eventos; no duplicar aquí el contrato completo.
+- Referenciar `integraciones/api-contract.md` cuando exista comunicación mediante API o eventos; no duplicar aquí el contrato completo.
 
 ## 6. Criterios de aceptación
 
@@ -69,6 +69,6 @@ Describir en uno o dos párrafos el resultado concreto que debe conseguir esta e
 
 ### Referencias
 
-- Especificación de la funcionalidad padre en `specs/funcionalidades/`.
-- Contrato aplicable en `specs/api-contract.md`.
+- Especificación de la funcionalidad padre en `funcionalidades/`.
+- Contrato aplicable en `integraciones/api-contract.md`.
 - Diseño o flujo de interfaz relacionado, cuando corresponda.

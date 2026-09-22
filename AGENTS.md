@@ -58,7 +58,7 @@
 - Citar fuentes o documentos usando la notación `[cite: N]` para trazabilidad.
 
 ### 3.5 Formato de especificaciones funcionales
-- Cada especificación funcional sigue la plantilla establecida en `specs/funcionalidades/F-04-GestionEntregasFallidas.md` con las secciones:
+- Cada especificación funcional sigue la plantilla establecida en `funcionalidades/F-04-GestionEntregasFallidas.md` con las secciones:
   1. Contexto
   2. Propósito
   3. Alcance
@@ -87,26 +87,26 @@
 
 ### 4.1 Archivos índice
 - `README.md`: índice principal del repositorio. Debe contener la descripción general, links a specs y guía de navegación.
-- `specs/funcionalidad.md`: índice de todas las especificaciones funcionales. Debe contener una tabla con: ID, nombre, descripción breve, responsable y estado.
+- `funcionalidades/funcionalidad.md`: índice de todas las especificaciones funcionales. Debe contener una tabla con: ID, nombre, descripción breve, responsable y estado.
 
 ### 4.2 Regla de actualización
-- **Toda vez que se cree, renombre o elimine** un archivo de especificación funcional dentro de `specs/funcionalidades/`, se debe actualizar el índice en `specs/funcionalidad.md`.
+- **Toda vez que se cree, renombre o elimine** un archivo de especificación funcional dentro de `funcionalidades/`, se debe actualizar el índice en `funcionalidades/funcionalidad.md`.
 - Toda vez que se agregue una sección relevante al repositorio, se debe actualizar `README.md`.
 - No se permite agregar archivos de especificación sin actualizar el índice correspondiente.
-- Toda vez que se cree, renombre o elimine una especificación atómica en `especificaciones/`, se debe actualizar su trazabilidad en `specs/funcionalidad.md`.
+- Toda vez que se cree, renombre o elimine una especificación atómica en `especificaciones/`, se debe actualizar su trazabilidad en `funcionalidades/funcionalidad.md`.
 
 ---
 
 ## 5. Prohibición de duplicar contratos
 
 ### 5.1 Un solo contrato por funcionalidad
-- Cada funcionalidad del sistema tiene **un único archivo de especificación funcional** en `specs/funcionalidades/`.
+- Cada funcionalidad del sistema tiene **un único archivo de especificación funcional** en `funcionalidades/`.
 - Está **prohibido** crear dos o más archivos que describan la misma funcionalidad con diferente nombre o en diferente ubicación.
 - Las especificaciones atómicas de `especificaciones/` detallan casos de uso de la funcionalidad padre y no la reemplazan ni repiten su alcance general.
 
 ### 5.2 Reutilización en lugar de duplicación
 - Si una funcionalidad es compartida entre módulos, se referencia el archivo original usando `[cite: N]` en vez de copiar el contenido.
-- Si existe duda sobre si una funcionalidad ya fue documentada, **consultar el índice** (`specs/funcionalidad.md`) antes de crear un nuevo archivo.
+- Si existe duda sobre si una funcionalidad ya fue documentada, **consultar el índice** (`funcionalidades/funcionalidad.md`) antes de crear un nuevo archivo.
 
 ### 5.3 Contrato único de comunicación
-- El archivo `specs/api-contract.md` es el **único** contrato de comunicación entre frontend y backend. No se crearán contratos adicionales fuera de este archivo.
+- El archivo `integraciones/api-contract.md` es el **único** contrato de comunicación entre frontend y backend. No se crearán contratos adicionales fuera de este archivo.

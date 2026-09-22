@@ -219,7 +219,7 @@ El sistema DEBE registrar el retorno físico del paquete antes de cualquier deci
 | Política de intentos | Leer y aplicar el máximo configurable. |
 | Persistencia y auditoría | Guardar recepciones y decisiones de manera consistente. |
 
-Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `specs/api-contract.md`.
+Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `integraciones/api-contract.md`.
 
 ## 8. Requisitos no funcionales
 
@@ -238,7 +238,7 @@ Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se 
 - **Asignación del nuevo intento a un repartidor:** corresponde a F-02.
 - **Transporte y reintentos de los eventos:** corresponden al requisito transversal RT-03 del overview.
 
-La posible logística inversa posterior a una entrega está centralizada en [Pendientes](../pendiente.md), sección F-04. No forma parte de esta funcionalidad mientras no exista un acuerdo con Ventas y Postventa.
+La posible logística inversa posterior a una entrega está centralizada en [Pendientes](./pendiente.md), sección F-04. No forma parte de esta funcionalidad mientras no exista un acuerdo con Ventas y Postventa.
 
 ## 10. Estrategia de verificación
 

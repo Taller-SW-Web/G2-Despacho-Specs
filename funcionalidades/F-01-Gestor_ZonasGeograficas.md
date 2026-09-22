@@ -186,7 +186,7 @@ La interfaz debe impedir acciones conocidas como inválidas, pero las mismas reg
 | Control de límite de solicitudes | Aplicar el límite configurado a la cotización pública. |
 | Persistencia y auditoría | Almacenar zonas, tarifas y sus cambios con usuario y marca temporal. |
 
-Las rutas, cuerpos, respuestas y códigos específicos se centralizan en `specs/api-contract.md` y se publicarán mediante Swagger UI desde el backend desplegado.
+Las rutas, cuerpos, respuestas y códigos específicos se centralizan en `integraciones/api-contract.md` y se publicarán mediante Swagger UI desde el backend desplegado.
 
 ## 8. Requisitos no funcionales
 
@@ -203,7 +203,7 @@ Las rutas, cuerpos, respuestas y códigos específicos se centralizan en `specs/
 - **Asignación de repartidores:** corresponde a F-02 con información de F-05.
 - **Ejecución de la entrega:** corresponde a F-03.
 
-Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendientes](../pendiente.md), sección F-01. No forman parte de los criterios de completitud actuales.
+Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendientes](./pendiente.md), sección F-01. No forman parte de los criterios de completitud actuales.
 
 ## 10. Estrategia de verificación
 

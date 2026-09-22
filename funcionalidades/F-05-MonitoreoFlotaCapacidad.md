@@ -222,7 +222,7 @@ El sistema DEBE mantener el estado operativo coherente con los despachos y cerra
 | Consulta de disponibilidad | Devolver los repartidores habilitados con capacidad remanente en menos de 200 ms. |
 | Persistencia y auditoría | Registrar cambios con usuario y marca temporal en UTC. |
 
-Las rutas, cuerpos y códigos se centralizan en `specs/api-contract.md`.
+Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract.md`.
 
 ## 8. Requisitos no funcionales
 
@@ -239,7 +239,7 @@ Las rutas, cuerpos y códigos se centralizan en `specs/api-contract.md`.
 - **Asignación de despachos:** corresponde a F-02.
 - **Autenticación y gestión de credenciales:** corresponden a Seguridad y Usuarios; F-05 solo solicita el alta del usuario y guarda el vínculo.
 
-Las ampliaciones y decisiones sobre tipos de vehículo, despacho express y gestión avanzada de flota están centralizadas en [Pendientes](../pendiente.md), sección F-05. No forman parte de los criterios de completitud actuales.
+Las ampliaciones y decisiones sobre tipos de vehículo, despacho express y gestión avanzada de flota están centralizadas en [Pendientes](./pendiente.md), sección F-05. No forman parte de los criterios de completitud actuales.
 
 ## 10. Estrategia de verificación
 

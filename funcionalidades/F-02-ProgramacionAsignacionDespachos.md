@@ -232,7 +232,7 @@ La interfaz debe deshabilitar acciones inválidas, pero todas las reglas se vali
 | Integración con F-05 | Consultar disponibilidad y capacidad remanente antes de confirmar. |
 | Persistencia y auditoría | Guardar despachos y auditoría en PostgreSQL; las transiciones se registran mediante la máquina de estados común. |
 
-Las rutas, cuerpos, respuestas y códigos se centralizan en `specs/api-contract.md`.
+Las rutas, cuerpos, respuestas y códigos se centralizan en `integraciones/api-contract.md`.
 
 ## 8. Requisitos no funcionales
 
@@ -254,7 +254,7 @@ Las rutas, cuerpos, respuestas y códigos se centralizan en `specs/api-contract.
 - **Preparación y sellado del paquete:** ocurren en el centro de despacho antes de la solicitud; el módulo recibe el paquete listo para enviar.
 - **Cobros y facturación:** corresponden a Ventas y Postventa.
 
-Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendientes](../pendiente.md), sección F-02. No forman parte de los criterios de completitud actuales.
+Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendientes](./pendiente.md), sección F-02. No forman parte de los criterios de completitud actuales.
 
 ## 10. Estrategia de verificación
 

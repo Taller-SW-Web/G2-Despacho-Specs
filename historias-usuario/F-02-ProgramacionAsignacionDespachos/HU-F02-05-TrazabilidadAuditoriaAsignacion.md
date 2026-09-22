@@ -22,7 +22,7 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../specs/funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-04`, Criterio `CA-11`).
+- **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-04`, Criterio `CA-11`).
 - **Mecanismo de captura:**
   - Se ejecuta automáticamente durante el flujo de asignación (`POST /api/v1/despachos/{idDespacho}/asignar`).
   - La identidad del usuario gestor se extrae directamente del token JWT (`SecurityContextHolder`).

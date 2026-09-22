@@ -331,7 +331,7 @@ La interfaz debe impedir acciones conocidas como inválidas, pero las reglas sie
 | Control de idempotencia | Registrar la clave de operación y devolver el resultado original ante reintentos. |
 | Catálogo de motivos | Exponer los motivos tipificados. |
 
-Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `specs/api-contract.md`.
+Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `integraciones/api-contract.md`.
 
 ## 8. Requisitos no funcionales
 
@@ -357,7 +357,7 @@ Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se 
 - **Operación sin conexión:** no hay almacenamiento local ni sincronización diferida.
 - **Firma digital y documento de identidad del receptor:** la evidencia se limita a la fotografía y al nombre opcional de quien recibe.
 
-La decisión técnica sobre fotografías y sus posibles ampliaciones están centralizadas en [Pendientes](../pendiente.md), sección F-03. La aplicación no calculará rutas ni ofrecerá navegación propia; el repartidor utilizará aplicaciones externas.
+La decisión técnica sobre fotografías y sus posibles ampliaciones están centralizadas en [Pendientes](./pendiente.md), sección F-03. La aplicación no calculará rutas ni ofrecerá navegación propia; el repartidor utilizará aplicaciones externas.
 
 ## 10. Estrategia de verificación
 

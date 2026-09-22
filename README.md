@@ -36,11 +36,11 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 
 | Documento | Contenido |
 |---|---|
-| [Visión general](./specs/overview.md) | Problema, objetivos, alcance, actores y flujo general del módulo. |
-| [Índice de funcionalidades](./specs/funcionalidad.md) | Listado y estado de las especificaciones funcionales. |
-| [Contrato de API](./specs/api-contract.md) | Convenciones, autenticación, errores y organización de las APIs. |
-| [Modelo de datos](./specs/modelo-datos.md) | Base evolutiva de entidades, relaciones y decisiones de persistencia. |
-| [Especificaciones funcionales](./specs/funcionalidades/) | Requisitos, escenarios y criterios de completitud por funcionalidad. |
+| [Visión general](./overview.md) | Problema, objetivos, alcance, actores y flujo general del módulo. |
+| [Índice de funcionalidades](./funcionalidades/funcionalidad.md) | Listado y estado de las especificaciones funcionales. |
+| [Contrato de API](./integraciones/api-contract.md) | Convenciones, autenticación, errores y organización de las APIs. |
+| [Modelo de datos](./arquitectura/modelo-datos.md) | Base evolutiva de entidades, relaciones y decisiones de persistencia. |
+| [Especificaciones funcionales](./funcionalidades/) | Requisitos, escenarios y criterios de completitud por funcionalidad. |
 | [Especificaciones atómicas](./especificaciones/) | Casos de uso concretos derivados de las funcionalidades y su plantilla común. |
 | [Historias de usuario](./historias-usuario/) | Historias en formato Jira (COMO/QUIERO/PARA) con criterios de aceptación Gherkin y DoD. |
 | [Reglas del repositorio](./AGENTS.md) | Convenciones para crear y mantener la documentación. |
@@ -100,7 +100,7 @@ Las dependencias específicas y sus versiones se documentarán en los repositori
 
 ## 📜 Contrato y documentación de API
 
-El archivo [Contrato de API](./specs/api-contract.md) reúne las convenciones de comunicación, autenticación, errores y organización de los endpoints del módulo.
+El archivo [Contrato de API](./integraciones/api-contract.md) reúne las convenciones de comunicación, autenticación, errores y organización de los endpoints del módulo.
 
 Cuando el backend esté desplegado, publicará su documentación interactiva mediante Swagger UI. Esta documentación representará la API implementada y permitirá explorar sus operaciones disponibles. El enlace se incorporará cuando exista el entorno correspondiente.
 

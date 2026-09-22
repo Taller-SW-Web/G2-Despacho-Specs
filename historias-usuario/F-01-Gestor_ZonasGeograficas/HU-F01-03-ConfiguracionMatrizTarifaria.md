@@ -22,9 +22,9 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../specs/funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-02`, Criterios `CA-05`, `CA-06`).
+- **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-02`, Criterios `CA-05`, `CA-06`).
 - **Endpoints asociados:**
-  - Administración de tarifas bajo `/api/v1/zonas/{idZona}/tarifas` (a consolidar en [specs/api-contract.md](../../specs/api-contract.md)).
+  - Administración de tarifas bajo `/api/v1/zonas/{idZona}/tarifas` (a consolidar en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
 - **Roles requeridos:** `ADMIN` o `GESTOR_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
   - Formulario de Tarifas: configurar tarifa base, recargo por kilogramo, rangos de peso y factor de cubicaje por zona.
@@ -34,7 +34,7 @@
   - Se soportan esquemas de costo base, recargo por kilogramo adicional, factor de cubicaje volumétrico y tarifa plana por zona.
   - Si la regla es inválida (tarifa negativa, zona inexistente o rangos inconsistentes), se responde `400 Bad Request` detallando los campos inválidos y no se persiste.
   - La regla guardada aplica a todas las cotizaciones futuras para esa zona.
-- **Entidades de datos involucradas:** `tarifas_zona`, `zonas` (ver [specs/modelo-datos.md](../../specs/modelo-datos.md)).
+- **Entidades de datos involucradas:** `tarifas_zona`, `zonas` (ver [arquitectura/modelo-datos.md](../../arquitectura/modelo-datos.md)).
 
 ---
 
