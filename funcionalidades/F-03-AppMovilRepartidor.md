@@ -9,7 +9,7 @@
 
 La entrega ocurre en calle, donde el repartidor no dispone de un equipo de escritorio. El módulo de Despacho ofrece su propia interfaz de campo, autónoma respecto de Ventas y Postventa, implementada como vista web mobile-first y no como aplicación nativa, de modo que comparte backend y autenticación con el resto del módulo.
 
-El repartidor recoge en el centro de despacho los paquetes sellados que F-02 le asignó y los lleva a destino. Los paquetes que no logra entregar regresan con él al centro de despacho.
+El repartidor recoge en el centro de despacho los paquetes sellados que F-02 le asignó y los lleva a destino. En el momento en que recoge un paquete y sale del centro, debe cambiar el despacho de `ASIGNADO` a `EN_CAMINO`. Los paquetes que no logra entregar regresan con él al centro de despacho.
 
 Esta funcionalidad es el origen de las transiciones `EN_CAMINO`, `ENTREGADO` y `FALLIDO`. F-03 no crea ni asigna despachos: ejecuta y registra el resultado de los despachos que F-02 asigna al repartidor, en el orden que F-02 define. Los despachos fallidos que genera son resueltos por F-04, y la ocupación que liberan al cerrarse es recalculada por F-05 a partir del estado de los despachos.
 
@@ -153,8 +153,8 @@ El sistema DEBE permitir declarar el inicio del traslado de un despacho.
 #### CA-12. Inicio de traslado exitoso
 
 - **DADO** un despacho en `ASIGNADO`.
-- **CUANDO** el repartidor pulsa "En camino".
-- **ENTONCES** el estado cambia a `EN_CAMINO` con marca temporal del servidor y repartidor ejecutor, y la vista se actualiza sin recargarse por completo.
+- **CUANDO** el repartidor recoge el paquete y sale del centro de despacho, y pulsa "En camino".
+- **ENTONCES** el estado cambia a `EN_CAMINO` con marca temporal del servidor y repartidor ejecutor, y la vista se actualiza sin recargarse por completo. La acción confirma que el paquete ya está físicamente en poder del repartidor y fuera del centro.
 
 #### CA-13. Transición no permitida
 
@@ -166,7 +166,7 @@ El sistema DEBE permitir declarar el inicio del traslado de un despacho.
 
 - **DADO** que F-02 reasignó el despacho a otro repartidor o lo canceló por anulación del pedido mientras seguía en pantalla.
 - **CUANDO** el repartidor intenta operarlo.
-- **ENTONCES** el backend responde `409 Conflict`, la interfaz informa que el despacho fue actualizado y refresca la ruta sin aplicar cambios. Si el despacho fue cancelado y el paquete ya estaba en su poder, la interfaz le indica devolverlo al centro de despacho.
+- **ENTONCES** el backend responde `409 Conflict`, la interfaz informa que el despacho fue actualizado y refresca la ruta sin aplicar cambios. La cancelación solo puede haber ocurrido mientras el despacho permanecía en `ASIGNADO` y físicamente en el centro.
 
 ### RF-05. Registro de entrega exitosa con evidencia
 

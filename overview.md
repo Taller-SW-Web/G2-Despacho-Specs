@@ -142,8 +142,8 @@ El despacho tiene siete estados. Cada uno tiene una etiqueta pensada para el cli
 | Estado | Etiqueta para el usuario | Dónde está el paquete | ¿Final? |
 |---|---|---|---|
 | `PENDIENTE_ASIGNACION` | En centro de despacho | Sellado en el centro, esperando repartidor | No |
-| `ASIGNADO` | Asignado a repartidor | Listo para salir con un repartidor | No |
-| `EN_CAMINO` | En camino | Con el repartidor, rumbo al destino | No |
+| `ASIGNADO` | Asignado a repartidor | Reservado para un repartidor, pero todavía en el centro de despacho | No |
+| `EN_CAMINO` | En camino | Recogido por el repartidor y fuera del centro, rumbo al destino | No |
 | `ENTREGADO` | Entregado | Con el cliente | Sí |
 | `FALLIDO` | No entregado, regresando al centro | Con el repartidor, de vuelta al centro | No |
 | `DEVUELTO_A_ORIGEN` | De vuelta en el centro de despacho | En el centro, a disposición de Ventas y Postventa | Sí |
@@ -194,6 +194,7 @@ La reasignación de F-02 cambia el repartidor de un despacho `ASIGNADO` sin camb
 8. **Política de intentos:** el máximo es configurable, con valor inicial de dos. Al alcanzarlo, solo se permite cerrar como `DEVUELTO_A_ORIGEN`. Los `NO_INTENTADO` no consumen intentos.
 9. **Cierre de jornada:** ningún despacho queda en `ASIGNADO` o `EN_CAMINO` al terminar la jornada del repartidor.
 10. **Anulación del pedido:** antes del traslado se cancela el despacho; durante el traslado se rechaza; si el despacho está `FALLIDO`, solo puede cerrarse como `DEVUELTO_A_ORIGEN`.
+11. **Inicio físico del traslado:** mientras el despacho está `ASIGNADO`, el paquete permanece en el centro. En el momento en que el repartidor lo recoge y sale del centro, F-03 debe cambiarlo a `EN_CAMINO`.
 
 ---
 

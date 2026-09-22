@@ -106,7 +106,7 @@ El sistema DEBE permitir fijar una nueva fecha mientras no se haya alcanzado el 
 
 - **DADO** un despacho fallido, recibido en el centro, con un intento y máximo configurado de dos.
 - **CUANDO** el Gestor selecciona una fecha futura y confirma.
-- **ENTONCES** el estado cambia a `PENDIENTE_ASIGNACION` ("En centro de despacho"), se guarda la nueva fecha programada, el contador se mantiene en uno y se registra la auditoría.
+- **ENTONCES** el estado cambia a `PENDIENTE_ASIGNACION` ("En centro de despacho"), se guarda la nueva fecha programada, el contador se mantiene en uno y se registra la auditoría. El despacho conserva la zona registrada originalmente y no vuelve a validar que siga activa, porque no se trata de una solicitud nueva.
 
 #### CA-07. Fecha inválida
 

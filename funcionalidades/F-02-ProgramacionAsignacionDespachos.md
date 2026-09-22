@@ -34,7 +34,7 @@ Esta funcionalidad incluye:
 - Las operaciones del panel requieren un token JWT con rol `GESTOR_DESPACHO`.
 - La recepción y la cancelación desde Ventas y Postventa requieren un token de servicio con rol `SERVICIO_INTEGRACION` emitido por Seguridad y Usuarios.
 - Una solicitud de despacho corresponde a un pedido pagado con paquete sellado en el centro de despacho, e incluye: identificador de pedido, nombre y teléfono del destinatario, dirección, distrito, peso y volumen del paquete sellado (ambos mayores a cero) y fecha de entrega comprometida. Las coordenadas son opcionales.
-- El destino debe estar cubierto por una zona activa de F-01.
+- Al crear un despacho nuevo, el destino debe estar cubierto por una zona activa de F-01. Los despachos existentes conservan la zona registrada y pueden continuar su ciclo o ser reprogramados aunque posteriormente esa zona sea desactivada.
 - Solo se asignan despachos en `PENDIENTE_ASIGNACION` cuya fecha de entrega programada sea igual o anterior a la fecha actual.
 - El repartidor debe tener una asignación diaria activa en F-05 y un estado operativo `DISPONIBLE` o `EN_RUTA`.
 - El peso, el volumen y la cantidad de paquetes del despacho no deben superar la capacidad remanente del repartidor.
@@ -46,7 +46,7 @@ Esta funcionalidad incluye:
 | Seguridad y Usuarios | Emitir el JWT del Gestor y el token de servicio de Ventas y Postventa. |
 | Ventas y Postventa | Enviar solicitudes de despacho y solicitudes de cancelación por anulación del pedido. |
 | Zonas y Cotizador (F-01) | Resolver la zona del destino y rechazar destinos sin cobertura. |
-| Monitoreo de Flota (F-05) | Proveer los repartidores disponibles con su capacidad remanente en kg, m³ y paquetes. |
+| Monitoreo de Flota (F-05) | Calcular y proveer los repartidores disponibles con su capacidad remanente en kg, m³ y paquetes. F-02 conserva la responsabilidad de ejecutar la asignación del despacho. |
 | Web del Repartidor (F-03) | Recibir los despachos `ASIGNADO` con su jornada y secuencia. |
 | Entregas Fallidas (F-04) | Devolver a la cola los despachos reprogramados, con su nueva fecha programada. |
 | Requisitos transversales (overview, sección 6) | Validar cada transición en la máquina de estados común, registrar el historial y publicar el evento hacia Ventas y Postventa. |
@@ -193,7 +193,7 @@ El sistema DEBE atender las solicitudes de cancelación que Ventas y Postventa e
 
 - **DADO** un despacho en `PENDIENTE_ASIGNACION` o `ASIGNADO`.
 - **CUANDO** Ventas y Postventa solicita su cancelación indicando el pedido anulado.
-- **ENTONCES** el sistema cambia el estado a `CANCELADO`, lo retira de la cola o de la ruta del repartidor, registra la auditoría y responde con el estado resultante. Si el repartidor ya había recogido el paquete, su ruta le indica devolverlo al centro de despacho.
+- **ENTONCES** el sistema cambia el estado a `CANCELADO`, lo retira de la cola o de la ruta del repartidor, registra la auditoría y responde con el estado resultante. Un despacho `ASIGNADO` todavía permanece físicamente en el centro de despacho; si el repartidor ya lo recogió y salió, debe encontrarse en `EN_CAMINO` y se aplica el rechazo definido en CA-18.
 
 #### CA-18. Cancelación de un despacho en traslado o cerrado
 

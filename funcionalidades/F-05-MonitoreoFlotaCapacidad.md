@@ -43,8 +43,9 @@ Esta funcionalidad incluye:
 |---|---|
 | Seguridad y Usuarios | Emitir el JWT y crear el usuario con rol `REPARTIDOR` que se vincula a cada repartidor. |
 | Zonas y Cotizador (F-01) | Proveer las zonas activas para la asignación diaria. |
-| Programación y Asignación (F-02) | Consumir la disponibilidad y capacidad remanente antes de asignar. |
+| Programación y Asignación (F-02) | Consumir la disponibilidad y capacidad remanente antes de asignar. F-02 ejecuta la asignación; F-05 solo calcula e informa la capacidad. |
 | Web del Repartidor (F-03) | Consultar la habilitación del repartidor y solicitar el cierre de su turno. |
+| Entregas Fallidas (F-04) | Confirmar la recepción en el centro de los paquetes `FALLIDO`, para que dejen de contar en la ocupación del repartidor y la furgoneta. |
 
 ### 4.3. Resultados
 
@@ -59,6 +60,18 @@ Esta funcionalidad incluye:
 |---|---|---|
 | Registro | `ACTIVO`, `INACTIVO` | Acción del Gestor de Flota (baja lógica). |
 | Operativo en la jornada | `FUERA_DE_TURNO`, `DISPONIBLE`, `EN_RUTA`, `SATURADO` | Calculado: `FUERA_DE_TURNO` sin asignación diaria activa; `SATURADO` si alcanzó cualquiera de sus tres límites; `EN_RUTA` si tiene al menos un despacho `EN_CAMINO`; `DISPONIBLE` en los demás casos. |
+
+### 4.5. Regla de cálculo de ocupación
+
+F-02 es responsable de asignar los despachos. Antes de confirmar una asignación, consulta la capacidad remanente calculada por F-05. F-05 no decide ni ejecuta la asignación: calcula la ocupación sumando el peso, el volumen y la cantidad de paquetes según estas reglas:
+
+- Un despacho `ASIGNADO` ocupa capacidad.
+- Un despacho `EN_CAMINO` ocupa capacidad.
+- Un despacho `FALLIDO` sin recepción confirmada en el centro ocupa capacidad.
+- Un despacho `FALLIDO` recibido en el centro deja de ocupar capacidad, aunque todavía esté pendiente de reprogramación o cierre por F-04.
+- Los despachos `ENTREGADO`, `CANCELADO` y `DEVUELTO_A_ORIGEN` no ocupan capacidad.
+
+Cuando F-04 confirma la recepción de un paquete fallido, F-05 refleja la capacidad liberada en el siguiente cálculo. Esta relación pertenece al mismo backend del módulo y no exige una integración externa adicional.
 
 ## 5. Requisitos y criterios de aceptación automatizables
 
