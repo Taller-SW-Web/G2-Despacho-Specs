@@ -15,7 +15,7 @@ historias-usuario/
 ├── F-02-ProgramacionAsignacionDespachos/        # HUs de Asignación y simulación de pedidos (Tarqui)
 ├── F-03-AppMovilRepartidor/                     # HUs de Web Responsive para repartidores (Max Rojas)
 ├── F-04-GestionEntregasFallidas/                # HUs de Incidencias y reprogramaciones (Gerardo)
-├── F-05-MonitoreoFlotaCapacidad/                # HUs de Choferes, vehículos y capacidad (Rhamses)
+├── F-05-MonitoreoFlotaCapacidad/                # HUs de repartidores, furgonetas y capacidad (Rhamses)
 └── transversal-seguimiento/                     # HUs del canal de rastreo para clientes
 ```
 

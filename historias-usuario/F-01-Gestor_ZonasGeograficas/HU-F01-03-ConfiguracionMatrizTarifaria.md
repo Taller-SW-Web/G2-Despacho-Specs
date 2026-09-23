@@ -25,7 +25,7 @@
 - **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-02`, Criterios `CA-05`, `CA-06`).
 - **Endpoints asociados:**
   - Administración de tarifas bajo `/api/v1/zonas/{idZona}/tarifas` (a consolidar en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
-- **Roles requeridos:** `ADMIN` o `GESTOR_DESPACHO` (autenticación JWT).
+- **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
   - Formulario de Tarifas: configurar tarifa base, recargo por kilogramo, rangos de peso y factor de cubicaje por zona.
 - **Reglas de negocio:**

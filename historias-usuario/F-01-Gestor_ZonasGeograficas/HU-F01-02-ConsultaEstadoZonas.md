@@ -26,7 +26,7 @@
 - **Endpoints asociados:**
   - `GET /api/v1/zonas` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
   - Parámetros de consulta: `pagina` (int, default 1), `limite` (int, default 10 o 20), `nombre` (string opcional), `distrito` (string opcional), `estado` (enum `ACTIVO` / `INACTIVO` opcional).
-- **Roles requeridos:** `ADMIN` o `GESTOR_DESPACHO` (autenticación JWT). Usuarios sin estos roles deben recibir `403 Forbidden`.
+- **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT). Usuarios sin este rol deben recibir `403 Forbidden`.
 - **Componentes de Frontend:**
   - Panel de Gestión de Zonas: listado paginado con filtros por nombre, distrito y estado, y acciones para activar o desactivar coberturas.
 - **Reglas de negocio y visuales:**
@@ -51,7 +51,7 @@
 
 - [ ] Repositorio Spring Data JPA con consulta paginada (`Pageable`) y filtros por nombre, distrito y estado.
 - [ ] Pruebas unitarias en backend (`JUnit 5 + Mockito`) verificando paginación, filtros y ordenamiento.
-- [ ] Pruebas de seguridad (`Spring Security Test`) verificando acceso con rol `ADMIN` o `GESTOR_DESPACHO` y rechazo `403` para otros roles o usuarios anónimos.
+- [ ] Pruebas de seguridad (`Spring Security Test`) verificando acceso con `GESTOR_DESPACHO` y rechazo `403` para otros roles o usuarios anónimos.
 - [ ] Componente React de Panel de Gestión de Zonas con tabla responsive, filtros, controles de paginación y skeleton loaders durante la carga.
 - [ ] Estado visual amigable cuando la lista está vacía implementado con Tailwind CSS.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

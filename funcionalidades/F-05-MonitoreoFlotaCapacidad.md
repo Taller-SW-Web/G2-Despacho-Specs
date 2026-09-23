@@ -2,7 +2,7 @@
 
 **Responsable:** Rhamses
 **Estado:** En especificación
-**Actor principal:** Gestor de Flota
+**Actor principal:** Gestor de Despacho
 **Lineamiento del curso:** Soporte a la asignación de despacho a operador/repartidor
 
 ## 1. Contexto
@@ -13,7 +13,7 @@ Esta funcionalidad es la fuente única de disponibilidad y ocupación del módul
 
 ## 2. Propósito
 
-Proveer al Gestor de Flota un panel para administrar repartidores y furgonetas, abrir y cerrar las jornadas operativas y supervisar la ocupación de la flota, y proveer a F-02 y F-03 información confiable de habilitación y capacidad remanente.
+Proveer al Gestor de Despacho un panel para administrar repartidores y furgonetas, abrir y cerrar las jornadas operativas y supervisar la ocupación de la flota, y proveer a F-02 y F-03 información confiable de habilitación y capacidad remanente.
 
 ## 3. Alcance
 
@@ -26,13 +26,13 @@ Esta funcionalidad incluye:
 - Cálculo de ocupación en kg, m³ y paquetes a partir de los despachos en poder del repartidor: `ASIGNADO`, `EN_CAMINO` y `FALLIDO` aún no recibidos en el centro de despacho.
 - Panel de monitoreo con indicadores por repartidor y resumen de la flota.
 - Consulta de repartidores disponibles con su capacidad remanente para F-02.
-- Cierre de turno, invocado por F-03 al cerrar la jornada o por el Gestor de Flota.
+- Cierre de turno, invocado por F-03 al cerrar la jornada o por el Gestor de Despacho.
 
 ## 4. Precondiciones, dependencias y resultados
 
 ### 4.1. Precondiciones
 
-- La configuración requiere JWT con rol `GESTOR_FLOTA` o `ADMIN`.
+- La configuración requiere JWT con rol `GESTOR_DESPACHO`.
 - El documento de identidad de un repartidor y la placa de una furgoneta son únicos.
 - Para la asignación diaria, el repartidor debe estar activo y vinculado, la furgoneta `DISPONIBLE` y la zona activa en F-01.
 - Solo existe una asignación diaria activa por repartidor y por furgoneta en cada jornada.
@@ -41,7 +41,7 @@ Esta funcionalidad incluye:
 
 | Dependencia | Responsabilidad |
 |---|---|
-| Seguridad y Usuarios | Emitir el JWT y crear el usuario con rol `REPARTIDOR` que se vincula a cada repartidor. |
+| Seguridad y Usuarios | Incorporar `REPARTIDOR`, crear la cuenta pendiente, gestionar su activación y comunicar el identificador y estado. |
 | Zonas y Cotizador (F-01) | Proveer las zonas activas para la asignación diaria. |
 | Programación y Asignación (F-02) | Consumir la disponibilidad y capacidad remanente antes de asignar. F-02 ejecuta la asignación; F-05 solo calcula e informa la capacidad. |
 | Web del Repartidor (F-03) | Consultar la habilitación del repartidor y solicitar el cierre de su turno. |
@@ -49,7 +49,7 @@ Esta funcionalidad incluye:
 
 ### 4.3. Resultados
 
-- Un repartidor registrado queda activo, en `FUERA_DE_TURNO`, con su usuario de Seguridad vinculado o con vinculación pendiente.
+- Un repartidor registrado queda activo, en `FUERA_DE_TURNO` y con vinculación `PENDIENTE`, `PENDIENTE_ACTIVACION`, `VINCULADO` o `ERROR`.
 - La asignación diaria pone al repartidor en `DISPONIBLE` con los límites de la furgoneta y la zona de trabajo.
 - La ocupación y el estado operativo se recalculan cada vez que cambia un despacho del repartidor.
 - El cierre de turno pone al repartidor en `FUERA_DE_TURNO` y libera la furgoneta.
@@ -58,7 +58,8 @@ Esta funcionalidad incluye:
 
 | Dimensión | Estados | Cómo cambia |
 |---|---|---|
-| Registro | `ACTIVO`, `INACTIVO` | Acción del Gestor de Flota (baja lógica). |
+| Registro | `ACTIVO`, `INACTIVO` | Acción del Gestor de Despacho (baja lógica). |
+| Vinculación | `PENDIENTE`, `PENDIENTE_ACTIVACION`, `VINCULADO`, `ERROR` | Resultado de la integración y activación de la cuenta en Seguridad. |
 | Operativo en la jornada | `FUERA_DE_TURNO`, `DISPONIBLE`, `EN_RUTA`, `SATURADO` | Calculado: `FUERA_DE_TURNO` sin asignación diaria activa; `SATURADO` si alcanzó cualquiera de sus tres límites; `EN_RUTA` si tiene al menos un despacho `EN_CAMINO`; `DISPONIBLE` en los demás casos. |
 
 ### 4.5. Regla de cálculo de ocupación
@@ -71,7 +72,7 @@ F-02 es responsable de asignar los despachos. Antes de confirmar una asignación
 - Un despacho `FALLIDO` recibido en el centro deja de ocupar capacidad, aunque todavía esté pendiente de reprogramación o cierre por F-04.
 - Los despachos `ENTREGADO`, `CANCELADO` y `DEVUELTO_A_ORIGEN` no ocupan capacidad.
 
-Cuando F-04 confirma la recepción de un paquete fallido, F-05 refleja la capacidad liberada en el siguiente cálculo. Esta relación pertenece al mismo backend del módulo y no exige una integración externa adicional.
+Cuando F-04 confirma la recepción de un paquete fallido, Gestión de Despachos solicita a Operación liberar la reserva de capacidad. F-05 refleja la liberación en el siguiente cálculo; la comunicación usa la API interna definida en el contrato.
 
 ## 5. Requisitos y criterios de aceptación automatizables
 
@@ -81,7 +82,7 @@ El sistema DEBE permitir registrar, editar, dar de baja y consultar repartidores
 
 #### CA-01. Registro exitoso de un nuevo repartidor
 
-- **DADO** que el Gestor de Flota ingresa nombres, apellidos, DNI, teléfono, correo, número de brevete y turno habitual.
+- **DADO** que el Gestor de Despacho ingresa nombres, apellidos, DNI, teléfono, correo, número de brevete y turno habitual.
 - **CUANDO** confirma el registro.
 - **ENTONCES** el sistema valida que el DNI no exista, crea el repartidor `ACTIVO` en `FUERA_DE_TURNO`, solicita a Seguridad y Usuarios la creación de su usuario y devuelve el identificador del repartidor.
 
@@ -99,7 +100,7 @@ El sistema DEBE permitir registrar, editar, dar de baja y consultar repartidores
 
 #### CA-04. Acceso sin permisos
 
-- **DADO** un usuario sin rol `GESTOR_FLOTA` ni `ADMIN`.
+- **DADO** un usuario sin rol `GESTOR_DESPACHO`.
 - **CUANDO** intenta registrar o modificar repartidores.
 - **ENTONCES** el sistema responde `403 Forbidden`.
 
@@ -177,17 +178,17 @@ El sistema DEBE devolver los repartidores habilitados con su capacidad remanente
 
 El sistema DEBE asociar cada repartidor con su usuario en Seguridad y Usuarios, para que F-03 lo identifique desde el token.
 
-#### CA-14. Vinculación exitosa
+#### CA-14. Vinculación y activación exitosas
 
 - **DADO** el registro de un nuevo repartidor.
-- **CUANDO** Seguridad y Usuarios confirma la creación del usuario con rol `REPARTIDOR`.
-- **ENTONCES** el sistema guarda el identificador de usuario en el repartidor y lo marca como vinculado.
+- **CUANDO** Seguridad crea la cuenta, devuelve su identificador y posteriormente confirma que puede iniciar sesión con rol `REPARTIDOR`.
+- **ENTONCES** el sistema guarda el identificador, pasa primero por `PENDIENTE_ACTIVACION` y finalmente marca al repartidor como `VINCULADO`.
 
 #### CA-15. Vinculación pendiente
 
-- **DADO** que Seguridad y Usuarios no responde o rechaza la creación del usuario.
+- **DADO** que Seguridad no responde, rechaza la creación o la cuenta todavía no fue activada.
 - **CUANDO** se registra el repartidor.
-- **ENTONCES** el repartidor se guarda con vinculación pendiente, no puede recibir asignación diaria y el panel ofrece reintentar la vinculación.
+- **ENTONCES** el repartidor queda en `PENDIENTE`, `ERROR` o `PENDIENTE_ACTIVACION` según corresponda, no puede recibir una jornada y el panel ofrece reintentar cuando sea aplicable.
 
 ### RF-07. Estado operativo y cierre de turno
 
@@ -202,7 +203,7 @@ El sistema DEBE mantener el estado operativo coherente con los despachos y cerra
 #### CA-17. Cierre de turno con despachos en curso
 
 - **DADO** un repartidor con despachos `ASIGNADO` o `EN_CAMINO`.
-- **CUANDO** el Gestor de Flota intenta cerrar su turno manualmente.
+- **CUANDO** el Gestor de Despacho intenta cerrar su turno manualmente.
 - **ENTONCES** el sistema responde `409 Conflict`; el cierre con pendientes solo lo ejecuta F-03, que primero los resuelve como `NO_INTENTADO`.
 
 #### CA-18. Saturación por peso o volumen
@@ -240,7 +241,7 @@ Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract.md`.
 ## 8. Requisitos no funcionales
 
 - **Rendimiento:** la consulta de disponibilidad responde en menos de 200 ms.
-- **Seguridad:** la configuración requiere rol `GESTOR_FLOTA` o `ADMIN`; la consulta de disponibilidad admite además `GESTOR_DESPACHO`.
+- **Seguridad:** toda la configuración y la consulta administrativa requieren `GESTOR_DESPACHO`.
 - **Fuente única:** ninguna otra funcionalidad mantiene saldos de capacidad; la ocupación se calcula siempre desde el estado de los despachos.
 - **Aislamiento:** no se accede a bases de datos de otros módulos.
 - **Integridad referencial:** repartidores y furgonetas con historial solo admiten baja lógica.
@@ -252,7 +253,7 @@ Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract.md`.
 - **Asignación de despachos:** corresponde a F-02.
 - **Autenticación y gestión de credenciales:** corresponden a Seguridad y Usuarios; F-05 solo solicita el alta del usuario y guarda el vínculo.
 
-Las ampliaciones y decisiones sobre tipos de vehículo, despacho express y gestión avanzada de flota están centralizadas en [Pendientes](./pendiente.md), sección F-05. No forman parte de los criterios de completitud actuales.
+Motocicletas, automóviles, despacho express y gestión avanzada de flota quedan fuera del alcance aprobado. F-05 administra únicamente furgonetas.
 
 ## 10. Estrategia de verificación
 

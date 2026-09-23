@@ -9,7 +9,7 @@
 
 Todos los pedidos de la tienda se preparan en un único centro de despacho. Cuando un pedido ya fue pagado y su paquete está sellado en ese centro, el módulo de Ventas y Postventa, dueño de la entidad pedido, solicita a Despacho su entrega a domicilio. A partir de esa solicitud nace el despacho, entidad cuyo dueño es este módulo, en estado `PENDIENTE_ASIGNACION` ("En centro de despacho").
 
-El Gestor de Despacho necesita un panel donde ver la cola de despachos pendientes y asignarlos a los repartidores en turno, sin sobrepasar la capacidad de sus vehículos. La asignación define además la jornada y el orden en que el repartidor atenderá cada despacho, información que consume la web del repartidor (F-03).
+El Gestor de Despacho necesita un panel donde ver la cola de despachos pendientes y asignarlos a los repartidores en turno, sin sobrepasar la capacidad de sus furgonetas. La asignación define además la jornada y el orden en que el repartidor atenderá cada despacho, información que consume la web del repartidor (F-03).
 
 ## 2. Propósito
 
@@ -32,8 +32,8 @@ Esta funcionalidad incluye:
 ### 4.1. Precondiciones
 
 - Las operaciones del panel requieren un token JWT con rol `GESTOR_DESPACHO`.
-- La recepción y la cancelación desde Ventas y Postventa requieren un token de servicio con rol `SERVICIO_INTEGRACION` emitido por Seguridad y Usuarios.
-- Una solicitud de despacho corresponde a un pedido pagado con paquete sellado en el centro de despacho, e incluye: identificador de pedido, nombre y teléfono del destinatario, dirección, distrito, peso y volumen del paquete sellado (ambos mayores a cero) y fecha de entrega comprometida. Las coordenadas son opcionales.
+- La recepción y la cancelación desde Ventas y Postventa requieren un token de servicio de `modulo-ventas` con `despachos:crear` o `despachos:cancelar`, respectivamente.
+- Una solicitud de despacho corresponde a un pedido pagado ya preparado y sellado, e incluye: identificador de pedido, destinatario, destino, peso, volumen, cantidad de paquetes físicos y fecha comprometida. Las coordenadas son opcionales y `cantidadPaquetes` normalmente vale `1`.
 - Al crear un despacho nuevo, el destino debe estar cubierto por una zona activa de F-01. Los despachos existentes conservan la zona registrada y pueden continuar su ciclo o ser reprogramados aunque posteriormente esa zona sea desactivada.
 - Solo se asignan despachos en `PENDIENTE_ASIGNACION` cuya fecha de entrega programada sea igual o anterior a la fecha actual.
 - El repartidor debe tener una asignación diaria activa en F-05 y un estado operativo `DISPONIBLE` o `EN_RUTA`.
@@ -53,7 +53,7 @@ Esta funcionalidad incluye:
 
 ### 4.3. Resultados
 
-- Una solicitud válida crea un despacho en `PENDIENTE_ASIGNACION` con código de rastreo único, zona, fecha programada igual a la fecha comprometida y contador de intentos en cero.
+- Una solicitud válida crea un despacho en `PENDIENTE_ASIGNACION` con código operativo interno único, zona, fecha programada igual a la fecha comprometida y contador de intentos en cero.
 - Una solicitud repetida para el mismo pedido no crea un segundo despacho.
 - Una asignación válida cambia el estado a `ASIGNADO`, registra repartidor, jornada y secuencia, y se refleja en la ocupación calculada por F-05.
 - Una cancelación válida cambia el estado a `CANCELADO` y libera la capacidad del repartidor si el despacho estaba asignado.
@@ -67,9 +67,9 @@ El sistema DEBE registrar las solicitudes de despacho recibidas desde Ventas y P
 
 #### CA-01. Recepción exitosa desde Ventas y Postventa
 
-- **DADO** que Ventas y Postventa envía una solicitud con identificador de pedido, destinatario, dirección, distrito, peso, volumen y fecha comprometida válidos, y el destino está cubierto por una zona activa.
+- **DADO** que Ventas y Postventa envía una solicitud con identificador de pedido, destinatario, dirección, distrito, peso, volumen, cantidad de paquetes y fecha comprometida válidos, y el destino está cubierto por una zona activa.
 - **CUANDO** la solicitud se procesa con un token de servicio válido.
-- **ENTONCES** el sistema crea el despacho en `PENDIENTE_ASIGNACION` con la zona resuelta por F-01, genera un código de rastreo y responde `201 Created` con el identificador del despacho y el código de rastreo.
+- **ENTONCES** el sistema crea el despacho en `PENDIENTE_ASIGNACION`, genera un código operativo interno y responde `201 Created` con ambos identificadores; los canales consultan el seguimiento por `idPedido`.
 
 #### CA-02. Rechazo de solicitud con datos incompletos o inconsistentes
 
@@ -85,7 +85,7 @@ El sistema DEBE permitir al Gestor consultar y filtrar de forma paginada los des
 
 - **DADO** que existen despachos en `PENDIENTE_ASIGNACION`.
 - **CUANDO** el Gestor abre la vista de Programación y Asignación.
-- **ENTONCES** el sistema muestra código de rastreo, pedido, zona, dirección, peso, volumen, fecha programada, número de intento y tiempo en espera, ordenados por fecha programada.
+- **ENTONCES** el sistema muestra código interno, pedido, zona, dirección, peso, volumen, cantidad de paquetes, fecha programada, número de intento y tiempo en espera, ordenados por fecha programada.
 
 #### CA-04. Listado sin despachos pendientes
 
@@ -105,7 +105,7 @@ El sistema DEBE asignar un despacho pendiente a un repartidor habilitado para la
 
 #### CA-06. Asignación exitosa dentro de la capacidad disponible
 
-- **DADO** un despacho en `PENDIENTE_ASIGNACION` programado para hoy y un repartidor `DISPONIBLE` cuya capacidad remanente cubre el peso, el volumen y un paquete adicional.
+- **DADO** un despacho en `PENDIENTE_ASIGNACION` programado para hoy y un repartidor `DISPONIBLE` cuya capacidad remanente cubre su peso, volumen y cantidad de paquetes.
 - **CUANDO** el Gestor confirma la asignación.
 - **ENTONCES** el sistema cambia el estado a `ASIGNADO`, registra el repartidor y la jornada actual, asigna la siguiente posición de la secuencia de ruta y la ocupación del repartidor en F-05 refleja el nuevo despacho.
 
@@ -145,7 +145,7 @@ El sistema DEBE impedir despachos duplicados y despachos sin cobertura.
 
 - **DADO** que ya existe un despacho para el pedido `PED-2026-00891`.
 - **CUANDO** Ventas y Postventa vuelve a enviar una solicitud con ese identificador de pedido.
-- **ENTONCES** el sistema no crea un nuevo despacho y responde `200 OK` con el despacho existente, su código de rastreo y su estado actual.
+- **ENTONCES** el sistema no crea un nuevo despacho y responde `200 OK` con el despacho existente, su código interno y su estado actual.
 
 #### CA-12. Destino sin cobertura
 
@@ -212,7 +212,7 @@ El sistema DEBE atender las solicitudes de cancelación que Ventas y Postventa e
 | Elemento | Responsabilidad |
 |---|---|
 | Panel de Programación | Cola de `PENDIENTE_ASIGNACION` con filtros por fecha, zona e intento, y paginación. |
-| Modal de Asignación | Catálogo de repartidores disponibles, priorizando los de la zona del despacho, con vehículo y barras de ocupación en kg, m³ y paquetes. |
+| Modal de Asignación | Catálogo de repartidores disponibles, priorizando los de la zona del despacho, con furgoneta y barras de ocupación en kg, m³ y paquetes. |
 | Ruta por repartidor | Despachos de cada repartidor en la jornada con su estado actual y hora del último cambio (seguimiento en ruta, overview RT-04), con reordenamiento y reasignación. |
 | Indicadores de capacidad | Alerta previa cuando un despacho excede la capacidad del repartidor seleccionado. |
 | Retroalimentación | Éxito, sobrecarga, conflictos de concurrencia, despachos programados a futuro y errores de red. |
@@ -236,7 +236,7 @@ Las rutas, cuerpos, respuestas y códigos se centralizan en `integraciones/api-c
 
 ## 8. Requisitos no funcionales
 
-- **Seguridad:** el panel requiere JWT con rol `GESTOR_DESPACHO`; la recepción y la cancelación requieren token de servicio con rol `SERVICIO_INTEGRACION`.
+- **Seguridad:** el panel requiere JWT con rol `GESTOR_DESPACHO`; la recepción y la cancelación requieren los scopes de servicio `despachos:crear` y `despachos:cancelar`.
 - **Aislamiento:** el módulo no accede a bases de datos de otros módulos.
 - **Concurrencia:** la asignación, la reasignación y la cancelación usan bloqueo optimista para impedir operaciones simultáneas sobre el mismo despacho.
 - **Idempotencia:** la recepción es idempotente por identificador de pedido.
@@ -249,7 +249,7 @@ Las rutas, cuerpos, respuestas y códigos se centralizan en `integraciones/api-c
 - **Optimización automática de rutas:** el orden lo define el Gestor; la navegación usa herramientas externas.
 - **Ejecución de la entrega:** corresponde a F-03.
 - **Resolución de entregas fallidas:** corresponde a F-04.
-- **Administración de repartidores, vehículos y turnos:** corresponde a F-05.
+- **Administración de repartidores, furgonetas y jornadas:** corresponde a F-05.
 - **Anulación del pedido:** la decide Ventas y Postventa; F-02 solo aplica su efecto sobre el despacho.
 - **Preparación y sellado del paquete:** ocurren en el centro de despacho antes de la solicitud; el módulo recibe el paquete listo para enviar.
 - **Cobros y facturación:** corresponden a Ventas y Postventa.

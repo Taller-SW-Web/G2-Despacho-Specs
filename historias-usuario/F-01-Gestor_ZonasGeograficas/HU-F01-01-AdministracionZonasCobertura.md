@@ -25,7 +25,7 @@
 - **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-01`, Criterios `CA-01`, `CA-03`).
 - **Endpoints asociados:**
   - CRUD de zonas de cobertura bajo `/api/v1/zonas` (creación `POST /api/v1/zonas` y listado `GET /api/v1/zonas`, a consolidar en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
-- **Roles requeridos:** `ADMIN` o `GESTOR_DESPACHO` (autenticación JWT).
+- **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
   - Formulario de Zona: registrar o editar una zona con nombre, distritos comprendidos, códigos postales y estado.
   - Mapa de Delimitación: dibujar o seleccionar polígonos de cobertura sobre un mapa (ej. Leaflet) y previsualizar el área registrada.

@@ -32,8 +32,8 @@ Esta funcionalidad incluye:
 
 ### 4.1. Precondiciones
 
-- Las operaciones de configuración requieren un token JWT con rol `ADMIN` o `GESTOR_DESPACHO`.
-- La cotización es de acceso público, sujeta a límite de solicitudes; no requiere token de usuario.
+- Las operaciones de configuración requieren un token JWT con rol `GESTOR_DESPACHO`.
+- La cotización requiere un token de servicio con scope `cotizaciones:calcular`; no requiere token de usuario humano.
 - Cada producto cotizable debe tener identificador, peso mayor a cero y dimensiones válidas en Productos y Ofertas.
 - Una solicitud de cotización debe incluir los productos y cantidades, además de un destino identificable mediante distrito o código postal.
 - Solo se cotiza contra zonas en estado `ACTIVO`.
@@ -43,7 +43,7 @@ Esta funcionalidad incluye:
 
 | Dependencia | Responsabilidad |
 |---|---|
-| Seguridad y Usuarios | Emitir el token JWT y los roles `ADMIN` y `GESTOR_DESPACHO`. |
+| Seguridad y Usuarios | Emitir el JWT humano con `GESTOR_DESPACHO` y los tokens de servicio con scopes. |
 | Productos y Ofertas | Proveer para cada producto su identificador, peso y dimensiones vigentes. |
 | Ventas y Postventa | Consumir la cotización e incorporar el costo de despacho al total del pedido. |
 | Canal Marketplace y Canal Chatbot | Solicitar o mostrar la cotización durante el checkout o la conversación, según el acuerdo de integración con Ventas y Postventa. |
@@ -66,7 +66,7 @@ El sistema DEBE permitir registrar zonas por distritos o códigos postales, y ma
 
 #### CA-01. Creación exitosa de una zona de cobertura
 
-- **DADO** que un usuario con rol `ADMIN` o `GESTOR_DESPACHO` ingresa el nombre de la zona ("Lima Centro"), los distritos comprendidos (Miraflores, San Isidro, Lince) y el estado "Activo".
+- **DADO** que un usuario con rol `GESTOR_DESPACHO` ingresa el nombre de la zona ("Lima Centro"), los distritos comprendidos (Miraflores, San Isidro, Lince) y el estado "Activo".
 - **CUANDO** confirma la creación.
 - **ENTONCES** el backend valida que los distritos no pertenezcan a otra zona activa y registra la zona con identificador único y estado `ACTIVO`.
 
@@ -84,7 +84,7 @@ El sistema DEBE permitir registrar zonas por distritos o códigos postales, y ma
 
 #### CA-04. Acceso sin permisos requeridos
 
-- **DADO** que un usuario sin rol `ADMIN` ni `GESTOR_DESPACHO` intenta registrar o modificar zonas o tarifas.
+- **DADO** que un usuario sin rol `GESTOR_DESPACHO` intenta registrar o modificar zonas o tarifas.
 - **CUANDO** realiza la petición.
 - **ENTONCES** el sistema responde `403 Forbidden` y no expone información de configuración.
 
@@ -132,11 +132,11 @@ El sistema DEBE calcular el costo de envío y el plazo estimado a partir del des
 - **CUANDO** se envía la cotización.
 - **ENTONCES** el sistema responde `200 OK` con `coberturaDisponible: false`, sin costo ni plazo, y con el mensaje de destino fuera de cobertura.
 
-#### CA-11. Cotización sin token de usuario
+#### CA-11. Cotización con token de servicio
 
-- **DADO** que la cotización es de acceso público.
-- **CUANDO** un canal envía la solicitud sin token JWT.
-- **ENTONCES** el sistema procesa la cotización normalmente.
+- **DADO** que un canal obtuvo un token técnico con `cotizaciones:calcular`.
+- **CUANDO** envía la solicitud con `Authorization: Bearer <token>`.
+- **ENTONCES** el sistema procesa la cotización sin requerir una sesión de usuario humano.
 
 ### RF-04. Resolución de zona para el módulo
 
@@ -183,7 +183,7 @@ La interfaz debe impedir acciones conocidas como inválidas, pero las mismas reg
 | Integración con Productos y Ofertas | Obtener o validar el identificador, peso y dimensiones de los productos cotizados. |
 | Motor de cotización | Calcular costo y plazo a partir del destino y los datos físicos de los productos. |
 | Resolución de zona | Determinar la zona activa que contiene el distrito o código postal; servicio interno para F-02. |
-| Control de límite de solicitudes | Aplicar el límite configurado a la cotización pública. |
+| Control de límite de solicitudes | Aplicar el límite configurado por `sub` del cliente técnico e IP. |
 | Persistencia y auditoría | Almacenar zonas, tarifas y sus cambios con usuario y marca temporal. |
 
 Las rutas, cuerpos, respuestas y códigos específicos se centralizan en `integraciones/api-contract.md` y se publicarán mediante Swagger UI desde el backend desplegado.
@@ -192,7 +192,7 @@ Las rutas, cuerpos, respuestas y códigos específicos se centralizan en `integr
 
 - **Rendimiento:** la cotización y la resolución de zona deben responder en menos de 100 ms.
 - **Aislamiento:** no se accede a bases de datos de otros módulos; los datos físicos se obtienen mediante el contrato acordado con Productos y Ofertas.
-- **Seguridad:** la configuración requiere JWT con rol `ADMIN` o `GESTOR_DESPACHO`. La cotización es pública con límite de solicitudes y no expone información de configuración interna.
+- **Seguridad:** la configuración requiere JWT con rol `GESTOR_DESPACHO`. La cotización requiere token de servicio con `cotizaciones:calcular` y no expone configuración interna.
 - **Comunicación:** la cotización es la única integración con otros módulos que responde de forma síncrona, porque el canal la necesita para mostrar el costo al cliente.
 - **Trazabilidad:** toda creación, modificación o desactivación de zonas y tarifas registra usuario y marca temporal en UTC.
 

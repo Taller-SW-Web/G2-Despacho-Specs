@@ -16,7 +16,7 @@
 
 **COMO** Gestor de Despacho  
 **QUIERO** asignar un despacho en cola a un repartidor disponible y en turno activo validando su capacidad de carga remanente  
-**PARA** garantizar que el pedido sea transportado de forma segura y oportuna sin exceder los límites físicos del vehículo ni provocar dobles asignaciones.  
+**PARA** garantizar que el pedido sea transportado sin exceder los límites físicos de la furgoneta ni provocar dobles asignaciones.
 
 ---
 
@@ -35,7 +35,7 @@
   - El despacho DEBE estar en estado `PENDIENTE_ASIGNACION`. Si se encuentra en otro estado (`ASIGNADO`, `EN_CAMINO`, `ENTREGADO`), se responde `409 Conflict`.
   - El repartidor DEBE existir, tener turno activo en la fecha y estar en estado `DISPONIBLE` o `EN_RUTA`. Si está `FUERA_DE_TURNO`, `INACTIVO` o `SATURADO`, se responde `409 Conflict`.
   - Se debe verificar que `pesoDespacho <= capacidadPesoRemanente` y `volumenDespacho <= capacidadVolumenRemanente`. Si se excede cualquiera, se responde `422 Unprocessable Entity` con mensaje "Capacidad de carga del repartidor excedida".
-  - Al confirmarse, el despacho transiciona a estado `ASIGNADO`, se descuenta la capacidad del vehículo y se persiste de manera atómica (transacción `@Transactional`).
+  - Al confirmarse, Operación reserva capacidad en la furgoneta y Gestión cambia el despacho a `ASIGNADO`; una compensación libera la reserva si el segundo paso falla.
   - Control de concurrencia: uso de bloqueo optimista (`@Version`) o bloqueo pesimista en base de datos para impedir que dos gestores asignen simultáneamente el mismo despacho.
 - **Entidades de datos involucradas:** `despachos`, `historial_estados_despacho`, `repartidores` (lectura/balance).
 
