@@ -22,8 +22,8 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../specs/funcionalidades/F-04-GestionEntregasFallidas.md) (Requisito `RF-01`, Criterios `CA-01`, `CA-02`, `CA-03`).
-- **Endpoints asociados:** pendientes de validación en el contrato único [specs/api-contract.md](../../specs/api-contract.md). Esta historia no establece rutas ni estructuras de respuesta.
+- **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md) (Requisito `RF-01`, Criterios `CA-01`, `CA-02`, `CA-03`).
+- **Endpoints asociados:** pendientes de validación en el contrato único [integraciones/api-contract.md](../../integraciones/api-contract.md). Esta historia no establece rutas ni estructuras de respuesta.
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada. Un usuario sin el rol requerido no debe acceder a la información.
 - **Componentes de Frontend:**
   - Pantalla responsive de Entregas Fallidas.
@@ -64,5 +64,5 @@
 - [ ] Pantalla responsive implementada con estados de carga, vacío, error y éxito.
 - [ ] Pruebas unitarias y de integración cubren el listado con datos, el estado vacío y el acceso sin permisos.
 - [ ] Pruebas de frontend verifican la información mínima y los estados visuales definidos.
-- [ ] Contrato HTTP validado y actualizado en [specs/api-contract.md](../../specs/api-contract.md) antes de cerrar la historia.
+- [ ] Contrato HTTP validado y actualizado en [integraciones/api-contract.md](../../integraciones/api-contract.md) antes de cerrar la historia.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

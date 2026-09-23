@@ -1,4 +1,4 @@
-﻿# [HU-F05-04] Panel Gráfico de Monitoreo de Ocupación de Flota
+# [HU-F05-04] Panel Gráfico de Monitoreo de Ocupación de Flota
 
 | Campo Jira | Valor |
 |---|---|
@@ -22,9 +22,9 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-05-MonitoreoFlotaCapacidad.md](../../specs/funcionalidades/F-05-MonitoreoFlotaCapacidad.md) (Requisito `RF-04`, Criterios `CA-10`, `CA-11`).
+- **Especificación origen:** [F-05-MonitoreoFlotaCapacidad.md](../../funcionalidades/F-05-MonitoreoFlotaCapacidad.md) (Requisito `RF-04`, Criterios `CA-10`, `CA-11`).
 - **Endpoints asociados:**
-  - `GET /api/v1/flota/resumen-capacidad` — Panel resumen global de ocupación (detallado en [specs/api-contract.md](../../specs/api-contract.md) §7.2).
+  - `GET /api/v1/flota/resumen-capacidad` — Panel resumen global de ocupación (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md) §7.2).
   - `GET /api/v1/repartidores/disponibles` — Datos individuales por repartidor con porcentaje de ocupación (§7.1).
 - **Roles requeridos:** `GESTOR_FLOTA` o `GESTOR_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
@@ -57,7 +57,7 @@
 
 - [ ] Código implementado en Java 21 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
 - [ ] Motor de cálculo de ocupación implementado en backend: suma de despachos activos (`ASIGNADO` + `EN_CAMINO`) por repartidor frente a su límite diario configurado.
-- [ ] Endpoint `GET /api/v1/flota/resumen-capacidad` implementado y documentado en [specs/api-contract.md](../../specs/api-contract.md).
+- [ ] Endpoint `GET /api/v1/flota/resumen-capacidad` implementado y documentado en [integraciones/api-contract.md](../../integraciones/api-contract.md).
 - [ ] Tiempo de respuesta de `GET /api/v1/flota/resumen-capacidad` menor a 300 ms para 50 repartidores activos.
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) del motor de cálculo de ocupación y las reglas de coloreado por umbral.
 - [ ] Prueba de integración verificando los conteos correctos por estado con datos en base de datos.

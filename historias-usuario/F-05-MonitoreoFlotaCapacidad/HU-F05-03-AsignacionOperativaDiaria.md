@@ -1,4 +1,4 @@
-﻿# [HU-F05-03] Asignación Operativa Diaria Repartidor–Vehículo
+# [HU-F05-03] Asignación Operativa Diaria Repartidor–Vehículo
 
 | Campo Jira | Valor |
 |---|---|
@@ -22,9 +22,9 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-05-MonitoreoFlotaCapacidad.md](../../specs/funcionalidades/F-05-MonitoreoFlotaCapacidad.md) (Requisito `RF-03`, Criterios `CA-08`, `CA-09`).
+- **Especificación origen:** [F-05-MonitoreoFlotaCapacidad.md](../../funcionalidades/F-05-MonitoreoFlotaCapacidad.md) (Requisito `RF-03`, Criterios `CA-08`, `CA-09`).
 - **Endpoints asociados:**
-  - `POST /api/v1/repartidores/{idRepartidor}/asignacion-diaria` — Vincular repartidor con vehículo para la jornada activa (a consolidar en [specs/api-contract.md](../../specs/api-contract.md)).
+  - `POST /api/v1/repartidores/{idRepartidor}/asignacion-diaria` — Vincular repartidor con vehículo para la jornada activa (a consolidar en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
 - **Roles requeridos:** `GESTOR_FLOTA` o `ADMIN_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
   - Interfaz de Asignación Diaria: selector de repartidor y vehículo disponibles con validación de disponibilidad antes de confirmar.
@@ -34,7 +34,7 @@
   - Al confirmar la asignación, el repartidor transiciona a estado `DISPONIBLE` y hereda los límites de carga del vehículo asignado (peso en kg, volumen en m³ y tope de paquetes diarios).
   - Solo pueden participar repartidores en estado `INACTIVO` (sin turno activo) y vehículos en estado `DISPONIBLE`.
   - La asignación diaria activa al operador y lo incluye inmediatamente en las respuestas de `GET /api/v1/repartidores/disponibles`.
-- **Entidades de datos involucradas:** `repartidores`, `vehiculos`, `turnos_operador` (ver [specs/modelo-datos.md](../../specs/modelo-datos.md)).
+- **Entidades de datos involucradas:** `repartidores`, `vehiculos`, `turnos_operador` (ver [arquitectura/modelo-datos.md](../../arquitectura/modelo-datos.md)).
 
 ---
 
@@ -60,5 +60,5 @@
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) cubriendo los 2 escenarios (`CA-08`, `CA-09`).
 - [ ] Prueba de integración verificando que el repartidor asignado aparece en `GET /api/v1/repartidores/disponibles` con los límites correctos.
 - [ ] Interfaz de Asignación Diaria implementada en React + Tailwind con validación de disponibilidad antes de confirmar.
-- [ ] Endpoint de asignación diaria consolidado en [specs/api-contract.md](../../specs/api-contract.md) antes de cerrar la historia.
+- [ ] Endpoint de asignación diaria consolidado en [integraciones/api-contract.md](../../integraciones/api-contract.md) antes de cerrar la historia.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

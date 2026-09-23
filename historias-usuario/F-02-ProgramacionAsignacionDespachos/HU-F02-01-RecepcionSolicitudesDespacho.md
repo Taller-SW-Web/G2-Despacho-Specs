@@ -22,9 +22,9 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../specs/funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-01`).
+- **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-01`).
 - **Endpoints asociados:**
-  - `POST /api/v1/despachos/solicitudes` (detallado en [specs/api-contract.md](../../specs/api-contract.md)).
+  - `POST /api/v1/despachos/solicitudes` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
 - **Roles requeridos:** `GESTOR_DESPACHO` o `SISTEMA_VENTAS` (autenticación JWT).
 - **Reglas de negocio:**
   - El payload debe incluir obligatoriamente: `idPedido`, datos de destinatario (`nombre`, `telefono`, `email`), `direccionEntrega`, `coordenadas` (`latitud`, `longitud`), `pesoKg` > 0 y `volumenM3` > 0.
@@ -54,5 +54,5 @@
 - [ ] Código implementado en Java 21 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
 - [ ] DTOs de entrada validados con anotaciones `@NotNull`, `@NotBlank`, `@Positive` (`jakarta.validation`).
 - [ ] Pruebas unitarias de validación y de servicio con `JUnit 5 + Mockito` aprobadas con cobertura >= 80%.
-- [ ] Prueba de integración del endpoint `POST /api/v1/despachos/solicitudes` validada contra [specs/api-contract.md](../../specs/api-contract.md).
+- [ ] Prueba de integración del endpoint `POST /api/v1/despachos/solicitudes` validada contra [integraciones/api-contract.md](../../integraciones/api-contract.md).
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

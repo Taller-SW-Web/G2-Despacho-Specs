@@ -22,8 +22,8 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../specs/funcionalidades/F-04-GestionEntregasFallidas.md) (Requisito `RF-04`, Criterios `CA-10`, `CA-11`, `CA-12`).
-- **Endpoints asociados:** pendientes de validación en el contrato único [specs/api-contract.md](../../specs/api-contract.md). Esta historia no determina la ruta ni el transporte de integración.
+- **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md) (Requisito `RF-04`, Criterios `CA-10`, `CA-11`, `CA-12`).
+- **Endpoints asociados:** pendientes de validación en el contrato único [integraciones/api-contract.md](../../integraciones/api-contract.md). Esta historia no determina la ruta ni el transporte de integración.
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada.
 - **Dependencia externa:** Ventas y Postventa debe recibir el resultado de la devolución. El mecanismo síncrono o asíncrono, el contrato de datos y la autenticación entre módulos deben acordarse antes de cerrar la historia.
 - **Componentes de Frontend:**
@@ -68,6 +68,6 @@
 - [ ] Intentos de comunicación externa persistidos con estado exitoso, pendiente o fallido.
 - [ ] Interfaz responsive implementada con confirmación y mensajes diferenciados para los resultados previstos.
 - [ ] Pruebas unitarias y de integración cubren la derivación exitosa, la repetición y la indisponibilidad de Ventas y Postventa.
-- [ ] Contrato de integración con Ventas y Postventa acordado y documentado únicamente en [specs/api-contract.md](../../specs/api-contract.md).
+- [ ] Contrato de integración con Ventas y Postventa acordado y documentado únicamente en [integraciones/api-contract.md](../../integraciones/api-contract.md).
 - [ ] Verificado que una falla externa conserva el estado local y no se pierde silenciosamente.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

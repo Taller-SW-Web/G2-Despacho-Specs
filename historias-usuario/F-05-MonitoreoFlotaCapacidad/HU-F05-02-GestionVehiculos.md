@@ -1,4 +1,4 @@
-﻿# [HU-F05-02] Registro y Gestión de Vehículos de Flota
+# [HU-F05-02] Registro y Gestión de Vehículos de Flota
 
 | Campo Jira | Valor |
 |---|---|
@@ -22,9 +22,9 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-05-MonitoreoFlotaCapacidad.md](../../specs/funcionalidades/F-05-MonitoreoFlotaCapacidad.md) (Requisito `RF-02`, Criterios `CA-05`, `CA-06`, `CA-07`).
+- **Especificación origen:** [F-05-MonitoreoFlotaCapacidad.md](../../funcionalidades/F-05-MonitoreoFlotaCapacidad.md) (Requisito `RF-02`, Criterios `CA-05`, `CA-06`, `CA-07`).
 - **Endpoints asociados:**
-  - `POST /api/v1/vehiculos` — Registro de nuevo vehículo con límites de carga (detallado en [specs/api-contract.md](../../specs/api-contract.md) §7.3).
+  - `POST /api/v1/vehiculos` — Registro de nuevo vehículo con límites de carga (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md) §7.3).
   - `GET /api/v1/vehiculos` — Catálogo de flota vehicular con filtros por tipo, estado y placa.
   - `PUT /api/v1/vehiculos/{idVehiculo}` — Edición de datos y cambio de estado mecánico.
 - **Roles requeridos:** `GESTOR_FLOTA` o `ADMIN_DESPACHO` (autenticación JWT).
@@ -36,7 +36,7 @@
   - Un vehículo recién registrado queda en estado `DISPONIBLE`.
   - Un vehículo en estado `EN_MANTENIMIENTO` se excluye del catálogo de asignaciones operativas disponibles y, si tenía un repartidor vinculado en el turno activo, ese repartidor queda marcado sin vehículo asignado.
   - La desactivación aplica baja lógica para preservar el historial de asignaciones.
-- **Entidades de datos involucradas:** `vehiculos`, `turnos_operador` (ver [specs/modelo-datos.md](../../specs/modelo-datos.md)).
+- **Entidades de datos involucradas:** `vehiculos`, `turnos_operador` (ver [arquitectura/modelo-datos.md](../../arquitectura/modelo-datos.md)).
 
 ---
 
@@ -68,5 +68,5 @@
 - [ ] Prueba de integración verificando que al poner un vehículo `EN_MANTENIMIENTO` se desvincula del repartidor activo.
 - [ ] Panel de Vehículos implementado en React + Tailwind con tabla responsive y filtros por tipo, estado y placa.
 - [ ] Formulario de Vehículo con validación de capacidad en tiempo real (valores positivos).
-- [ ] Respuestas HTTP alineadas al contrato en [specs/api-contract.md](../../specs/api-contract.md).
+- [ ] Respuestas HTTP alineadas al contrato en [integraciones/api-contract.md](../../integraciones/api-contract.md).
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

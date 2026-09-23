@@ -1,4 +1,4 @@
-﻿# [HU-F05-05] API de Disponibilidad de Repartidores para Programación
+# [HU-F05-05] API de Disponibilidad de Repartidores para Programación
 
 | Campo Jira | Valor |
 |---|---|
@@ -22,9 +22,9 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-05-MonitoreoFlotaCapacidad.md](../../specs/funcionalidades/F-05-MonitoreoFlotaCapacidad.md) (Requisito `RF-05`, Criterios `CA-12`, `CA-13`).
+- **Especificación origen:** [F-05-MonitoreoFlotaCapacidad.md](../../funcionalidades/F-05-MonitoreoFlotaCapacidad.md) (Requisito `RF-05`, Criterios `CA-12`, `CA-13`).
 - **Endpoints asociados:**
-  - `GET /api/v1/repartidores/disponibles` (detallado en [specs/api-contract.md](../../specs/api-contract.md) §7.1).
+  - `GET /api/v1/repartidores/disponibles` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md) §7.1).
   - Parámetros de consulta opcionales: `zona` (string) y `pesoRequeridoKg` (float).
 - **Roles requeridos:** `GESTOR_DESPACHO` o `GESTOR_FLOTA` (autenticación JWT). Endpoint de uso interno entre componentes del módulo.
 - **Reglas de negocio y rendimiento:**
@@ -59,5 +59,5 @@
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) cubriendo los 2 escenarios (`CA-12`, `CA-13`) y el filtro por peso.
 - [ ] Prueba de rendimiento verificando tiempo de respuesta menor a 200 ms para al menos 30 repartidores activos.
 - [ ] Prueba de integración con F-02: verificar que `HU-F02-04` consume este endpoint correctamente antes de asignar un despacho.
-- [ ] Respuesta JSON alineada al contrato en [specs/api-contract.md](../../specs/api-contract.md) §7.1.
+- [ ] Respuesta JSON alineada al contrato en [integraciones/api-contract.md](../../integraciones/api-contract.md) §7.1.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

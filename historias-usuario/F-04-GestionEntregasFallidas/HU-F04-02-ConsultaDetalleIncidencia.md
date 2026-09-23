@@ -22,8 +22,8 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../specs/funcionalidades/F-04-GestionEntregasFallidas.md) (Requisito `RF-02`, Criterios `CA-04`, `CA-05`).
-- **Endpoints asociados:** pendientes de validación en el contrato único [specs/api-contract.md](../../specs/api-contract.md). Esta historia no establece rutas ni estructuras de respuesta.
+- **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md) (Requisito `RF-02`, Criterios `CA-04`, `CA-05`).
+- **Endpoints asociados:** pendientes de validación en el contrato único [integraciones/api-contract.md](../../integraciones/api-contract.md). Esta historia no establece rutas ni estructuras de respuesta.
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada.
 - **Componentes de Frontend:**
   - Vista responsive de detalle de la incidencia.
@@ -60,5 +60,5 @@
 - [ ] Pruebas unitarias y de integración cubren un despacho existente y uno inexistente.
 - [ ] Pruebas de frontend verifican la presentación de toda la información requerida y la ausencia de datos parciales ante error.
 - [ ] Integración con el mecanismo autorizado de consulta de evidencia de F-03 verificada cuando exista evidencia.
-- [ ] Contrato HTTP validado y actualizado en [specs/api-contract.md](../../specs/api-contract.md) antes de cerrar la historia.
+- [ ] Contrato HTTP validado y actualizado en [integraciones/api-contract.md](../../integraciones/api-contract.md) antes de cerrar la historia.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

@@ -22,9 +22,9 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../specs/funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-02`, Criterios `CA-04`, `CA-05`, `CA-06`).
+- **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-02`, Criterios `CA-04`, `CA-05`, `CA-06`).
 - **Endpoints asociados:**
-  - `GET /api/v1/despachos/pendientes` (detallado en [specs/api-contract.md](../../specs/api-contract.md)).
+  - `GET /api/v1/despachos/pendientes` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
   - Parámetros de consulta: `pagina` (int, default 1), `limite` (int, default 10 o 20), `zona` (string opcional), `ordenarPor` (enum: `FECHA_LIMITE`, `FECHA_CREACION`, `PESO`).
 - **Roles requeridos:** `GESTOR_DESPACHO` (autenticación JWT). Usuarios sin este rol deben recibir `403 Forbidden`.
 - **Reglas de negocio y visuales:**

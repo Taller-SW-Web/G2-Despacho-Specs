@@ -71,8 +71,8 @@ Todos los mensajes de commit deben redactarse **en español** y utilizar el est�
 ## 4. Reglas para Pull Requests (PR) y Code Review
 
 Antes de solicitar la aprobación de un Pull Request:
-- [ ] **Contrato Único:** Si se modificaron o crearon endpoints, verificar que estén debidamente documentados en `specs/api-contract.md`.
-- [ ] **Matriz de Funcionalidades:** Actualizar el estado correspondiente en `specs/funcionalidad.md` si la tarea representa un cambio de fase.
+- [ ] **Contrato Único:** Si se modificaron o crearon endpoints, verificar que estén debidamente documentados en `integraciones/api-contract.md`.
+- [ ] **Matriz de Funcionalidades:** Actualizar el estado correspondiente en `funcionalidades/funcionalidad.md` si la tarea representa un cambio de fase.
 - [ ] **Calidad de Código:** El proyecto debe compilar sin errores y superar las pruebas unitarias existentes.
 - [ ] **Revisión por Pares:** Al menos 1 compañero de equipo debe revisar y aprobar el PR antes del merge a `main`.
 - [ ] **Sin Merge Commits Sucios:** Preferir *Squash and Merge* o *Rebase* para mantener un historial lineal y limpio en `main`.

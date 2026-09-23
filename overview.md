@@ -2,7 +2,7 @@
 
 Este documento describe el módulo de Despacho y Entrega a Domicilio del Marketplace Multicanal de productos deportivos: su propósito, la trazabilidad con los lineamientos del curso, la relación entre sus funcionalidades, el ciclo de vida del despacho y los requisitos transversales que todas las funcionalidades deben cumplir.
 
-El detalle de cada funcionalidad vive en `specs/funcionalidades/`, los endpoints en `specs/api-contract.md` y la persistencia en `specs/modelo-datos.md`. Ante una diferencia entre este documento y una especificación funcional, prevalece la especificación y este documento debe corregirse.
+El detalle de cada funcionalidad vive en `funcionalidades/`, los endpoints en `integraciones/api-contract.md` y la persistencia en `arquitectura/modelo-datos.md`. Ante una diferencia entre este documento y una especificación funcional, prevalece la especificación y este documento debe corregirse.
 
 ---
 
@@ -142,8 +142,8 @@ El despacho tiene siete estados. Cada uno tiene una etiqueta pensada para el cli
 | Estado | Etiqueta para el usuario | Dónde está el paquete | ¿Final? |
 |---|---|---|---|
 | `PENDIENTE_ASIGNACION` | En centro de despacho | Sellado en el centro, esperando repartidor | No |
-| `ASIGNADO` | Asignado a repartidor | Listo para salir con un repartidor | No |
-| `EN_CAMINO` | En camino | Con el repartidor, rumbo al destino | No |
+| `ASIGNADO` | Asignado a repartidor | Reservado para un repartidor, pero todavía en el centro de despacho | No |
+| `EN_CAMINO` | En camino | Recogido por el repartidor y fuera del centro, rumbo al destino | No |
 | `ENTREGADO` | Entregado | Con el cliente | Sí |
 | `FALLIDO` | No entregado, regresando al centro | Con el repartidor, de vuelta al centro | No |
 | `DEVUELTO_A_ORIGEN` | De vuelta en el centro de despacho | En el centro, a disposición de Ventas y Postventa | Sí |
@@ -194,6 +194,7 @@ La reasignación de F-02 cambia el repartidor de un despacho `ASIGNADO` sin camb
 8. **Política de intentos:** el máximo es configurable, con valor inicial de dos. Al alcanzarlo, solo se permite cerrar como `DEVUELTO_A_ORIGEN`. Los `NO_INTENTADO` no consumen intentos.
 9. **Cierre de jornada:** ningún despacho queda en `ASIGNADO` o `EN_CAMINO` al terminar la jornada del repartidor.
 10. **Anulación del pedido:** antes del traslado se cancela el despacho; durante el traslado se rechaza; si el despacho está `FALLIDO`, solo puede cerrarse como `DEVUELTO_A_ORIGEN`.
+11. **Inicio físico del traslado:** mientras el despacho está `ASIGNADO`, el paquete permanece en el centro. En el momento en que el repartidor lo recoge y sale del centro, F-03 debe cambiarlo a `EN_CAMINO`.
 
 ---
 
@@ -321,7 +322,7 @@ Según la matriz cruzada del curso, Despacho y Entrega se integra con Marketplac
 ### 8.2. Convenciones de API
 
 - JSON en `camelCase`, enumeraciones en `UPPER_SNAKE_CASE` y fechas ISO 8601 en UTC.
-- Estructura común de errores definida en `specs/api-contract.md`.
+- Estructura común de errores definida en `integraciones/api-contract.md`.
 - Listados paginados; operaciones de cambio de estado idempotentes y protegidas con bloqueo optimista.
 - Los eventos se envían por webhook en la fase inicial; el publicador permite migrar a un broker de mensajería sin cambiar el dominio.
 
@@ -336,7 +337,7 @@ Según la matriz cruzada del curso, Despacho y Entrega se integra con Marketplac
 | Capa | Tecnología |
 |---|---|
 | Backend | Java 21, Spring Boot 4.1.1, Maven, Spring Web MVC, Spring Data JPA con Hibernate, Spring Security con JWT, Bean Validation, Lombok |
-| Frontend | React con Vite y Tailwind CSS; dependencias en `specs/stack-frontend.md` |
+| Frontend | React con Vite y Tailwind CSS; dependencias en `arquitectura/stack-frontend.md` |
 | Base de datos | PostgreSQL en Supabase, conexión mediante pooler y PostGIS para la cobertura de F-01 |
 | Evidencias | Almacenamiento de objetos privado con URL firmadas; compresión en cliente y eliminación de EXIF |
 | Mapas | Leaflet con OpenStreetMap para la delimitación de zonas |
@@ -359,8 +360,8 @@ Según la matriz cruzada del curso, Despacho y Entrega se integra con Marketplac
 ### 10.2. Dentro del equipo
 
 - Acordar quién construye el componente común de la sección 6 (máquina de estados, historial, eventos y consulta de seguimiento), que las demás funcionalidades reutilizan.
-- Actualizar `specs/api-contract.md`: estados `DEVUELTO_A_ORIGEN` y `CANCELADO`, catálogo de motivos, cuerpo de la evidencia (sin firma ni coordenadas), recepción en centro, endpoints nuevos de F-02 y F-05, y seguimiento con token de servicio.
-- Actualizar `specs/modelo-datos.md`: estados, jornada y secuencia del despacho, datos de recepción en centro, vínculo repartidor – usuario, zona de la asignación diaria y tabla de eventos.
+- Actualizar `integraciones/api-contract.md`: estados `DEVUELTO_A_ORIGEN` y `CANCELADO`, catálogo de motivos, cuerpo de la evidencia (sin firma ni coordenadas), recepción en centro, endpoints nuevos de F-02 y F-05, y seguimiento con token de servicio.
+- Actualizar `arquitectura/modelo-datos.md`: estados, jornada y secuencia del despacho, datos de recepción en centro, vínculo repartidor – usuario, zona de la asignación diaria y tabla de eventos.
 - Actualizar el skill `.agent/skills/despacho-context`, el `README.md` y las historias de usuario afectadas.
 
 ---

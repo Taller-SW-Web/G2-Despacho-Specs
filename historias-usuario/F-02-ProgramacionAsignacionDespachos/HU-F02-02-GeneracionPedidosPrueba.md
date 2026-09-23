@@ -22,9 +22,9 @@
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../specs/funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-01`, Criterio `CA-02`).
+- **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-01`, Criterio `CA-02`).
 - **Endpoints asociados:**
-  - `POST /api/v1/despachos/solicitudes/simular` (detallado en [specs/api-contract.md](../../specs/api-contract.md)).
+  - `POST /api/v1/despachos/solicitudes/simular` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
 - **Componentes de Frontend:**
   - Botón "Generar Pedido de Prueba" ubicado en la barra superior o cabecera del Panel de Programación.
 - **Roles requeridos:** `GESTOR_DESPACHO` (autenticación JWT).

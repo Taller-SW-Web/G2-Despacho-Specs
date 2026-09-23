@@ -9,7 +9,7 @@
 
 La entrega ocurre en calle, donde el repartidor no dispone de un equipo de escritorio. El módulo de Despacho ofrece su propia interfaz de campo, autónoma respecto de Ventas y Postventa, implementada como vista web mobile-first y no como aplicación nativa, de modo que comparte backend y autenticación con el resto del módulo.
 
-El repartidor recoge en el centro de despacho los paquetes sellados que F-02 le asignó y los lleva a destino. Los paquetes que no logra entregar regresan con él al centro de despacho.
+El repartidor recoge en el centro de despacho los paquetes sellados que F-02 le asignó y los lleva a destino. En el momento en que recoge un paquete y sale del centro, debe cambiar el despacho de `ASIGNADO` a `EN_CAMINO`. Los paquetes que no logra entregar regresan con él al centro de despacho.
 
 Esta funcionalidad es el origen de las transiciones `EN_CAMINO`, `ENTREGADO` y `FALLIDO`. F-03 no crea ni asigna despachos: ejecuta y registra el resultado de los despachos que F-02 asigna al repartidor, en el orden que F-02 define. Los despachos fallidos que genera son resueltos por F-04, y la ocupación que liberan al cerrarse es recalculada por F-05 a partir del estado de los despachos.
 
@@ -28,8 +28,7 @@ Esta funcionalidad incluye:
 - Registro de entrega exitosa (`ENTREGADO`) con fotografía obligatoria y nombre opcional de quien recibe.
 - Registro de entrega fallida (`FALLIDO`) con motivo del catálogo, fotografía obligatoria y comentario opcional.
 - Incremento del contador de intentos solo cuando existió un intento real de entrega.
-- Compresión de la imagen en el cliente, eliminación de metadatos EXIF y carga en almacenamiento privado.
-- Emisión de URL firmadas bajo demanda para visualizar la evidencia.
+- Registro y consulta autorizada de la evidencia fotográfica; la estrategia de compresión, metadatos, límites y almacenamiento está pendiente de decisión del equipo.
 - Cierre de jornada con resolución obligatoria de pendientes y corte automático de respaldo.
 - Resumen de jornada del propio repartidor.
 - Catálogo único de motivos de fallo para el módulo.
@@ -56,7 +55,7 @@ Esta funcionalidad incluye:
 | Programación y Asignación (F-02) | Asignar los despachos con jornada, secuencia, destinatario, dirección y teléfono; reasignarlos o cancelarlos antes del traslado. |
 | Entregas Fallidas (F-04) | Consumir los despachos `FALLIDO` con su motivo, contador de intentos y evidencia. |
 | Requisitos transversales (overview, sección 6) | Validar cada transición, registrar el historial y publicar el evento hacia Ventas y Postventa. |
-| Almacenamiento de objetos | Alojar las fotografías en un bucket privado y emitir URL firmadas con expiración. |
+| Servicio de evidencia por definir | Almacenar y permitir la consulta autorizada de las fotografías según la decisión técnica pendiente. |
 
 ### 4.3. Resultados
 
@@ -154,8 +153,8 @@ El sistema DEBE permitir declarar el inicio del traslado de un despacho.
 #### CA-12. Inicio de traslado exitoso
 
 - **DADO** un despacho en `ASIGNADO`.
-- **CUANDO** el repartidor pulsa "En camino".
-- **ENTONCES** el estado cambia a `EN_CAMINO` con marca temporal del servidor y repartidor ejecutor, y la vista se actualiza sin recargarse por completo.
+- **CUANDO** el repartidor recoge el paquete y sale del centro de despacho, y pulsa "En camino".
+- **ENTONCES** el estado cambia a `EN_CAMINO` con marca temporal del servidor y repartidor ejecutor, y la vista se actualiza sin recargarse por completo. La acción confirma que el paquete ya está físicamente en poder del repartidor y fuera del centro.
 
 #### CA-13. Transición no permitida
 
@@ -167,7 +166,7 @@ El sistema DEBE permitir declarar el inicio del traslado de un despacho.
 
 - **DADO** que F-02 reasignó el despacho a otro repartidor o lo canceló por anulación del pedido mientras seguía en pantalla.
 - **CUANDO** el repartidor intenta operarlo.
-- **ENTONCES** el backend responde `409 Conflict`, la interfaz informa que el despacho fue actualizado y refresca la ruta sin aplicar cambios. Si el despacho fue cancelado y el paquete ya estaba en su poder, la interfaz le indica devolverlo al centro de despacho.
+- **ENTONCES** el backend responde `409 Conflict`, la interfaz informa que el despacho fue actualizado y refresca la ruta sin aplicar cambios. La cancelación solo puede haber ocurrido mientras el despacho permanecía en `ASIGNADO` y físicamente en el centro.
 
 ### RF-05. Registro de entrega exitosa con evidencia
 
@@ -177,7 +176,7 @@ El sistema DEBE exigir una fotografía para cerrar un despacho como entregado.
 
 - **DADO** un despacho en `EN_CAMINO`.
 - **CUANDO** el repartidor captura la fotografía, opcionalmente registra el nombre de quien recibe y pulsa "Confirmar entrega".
-- **ENTONCES** el sistema comprime la imagen, elimina los metadatos EXIF, la carga en el almacenamiento, persiste su referencia y cambia el estado a `ENTREGADO`.
+- **ENTONCES** el sistema registra la evidencia mediante el mecanismo aprobado, persiste su referencia y cambia el estado a `ENTREGADO`.
 
 #### CA-16. Confirmación sin evidencia
 
@@ -193,7 +192,7 @@ El sistema DEBE exigir una fotografía para cerrar un despacho como entregado.
 
 #### CA-18. Archivo inválido
 
-- **DADO** un archivo de tipo no permitido o mayor a 2 MB.
+- **DADO** un archivo que incumple el formato o el tamaño que el equipo defina para la evidencia.
 - **CUANDO** llega al backend.
 - **ENTONCES** se responde `400 Bad Request`, no se guarda el archivo y el estado no cambia.
 
@@ -259,18 +258,18 @@ El sistema DEBE mostrar al repartidor el consolidado de su propio día.
 
 ### RF-09. Acceso controlado a la evidencia
 
-El sistema DEBE permitir ver la evidencia sin exponer públicamente los objetos almacenados.
+El sistema DEBE permitir ver la evidencia únicamente a usuarios autorizados, sin exponerla de forma pública.
 
-#### CA-27. Enlace firmado bajo demanda
+#### CA-27. Consulta autorizada de evidencia
 
 - **DADO** un despacho con evidencia.
 - **CUANDO** el repartidor propietario o un usuario con rol `GESTOR_DESPACHO` solicita verla.
-- **ENTONCES** el sistema emite una URL firmada con vigencia de 5 minutos.
+- **ENTONCES** el sistema permite visualizar la evidencia mediante el mecanismo de acceso autorizado que defina el equipo.
 
-#### CA-28. Acceso sin firma válida
+#### CA-28. Acceso sin autorización válida
 
-- **DADO** un acceso al objeto sin firma o con firma vencida.
-- **CUANDO** se realiza la petición al almacenamiento.
+- **DADO** un acceso directo o con una autorización ausente o vencida.
+- **CUANDO** se solicita la evidencia.
 - **ENTONCES** el acceso es denegado.
 
 #### CA-29. Usuario no autorizado
@@ -309,7 +308,7 @@ La funcionalidad tendrá una experiencia web mobile-first compuesta por:
 | Vista "Mi Ruta" | Listar los despachos por secuencia, con estados de carga, vacío y error, e indicador visual de estado. |
 | Detalle del despacho | Dirección, referencia, destinatario, llamada directa, intento y fecha programada. |
 | Acción "En camino" | Confirmar el inicio del traslado y actualizar el estado sin recargar toda la vista. |
-| Formulario de entrega | Capturar, comprimir y previsualizar la fotografía; campo opcional para quien recibe. |
+| Formulario de entrega | Capturar y previsualizar la fotografía; campo opcional para quien recibe. El tratamiento técnico de la imagen queda pendiente de decisión. |
 | Formulario de incidencia | Motivo obligatorio, fotografía y comentario opcional. |
 | Cierre de jornada | Advertir cuántos despachos quedarán como no intentados antes de confirmar. |
 | Resumen de jornada | Consolidado del día. |
@@ -328,20 +327,19 @@ La interfaz debe impedir acciones conocidas como inválidas, pero las reglas sie
 | Caso de uso de incidencia | Validar el motivo, persistir evidencia y comentario, incrementar el contador y solicitar la transición a `FALLIDO`. |
 | Cierre de jornada | Resolver pendientes como `NO_INTENTADO` y solicitar a F-05 el cierre del turno. |
 | Proceso programado de corte | Ejecutar el cierre automático a la hora configurada. |
-| Gestión de evidencia | Validar tipo y tamaño, delegar el almacenamiento y emitir URL firmadas. |
+| Gestión de evidencia | Aplicar las validaciones acordadas, delegar el almacenamiento y controlar el acceso según la decisión técnica pendiente. |
 | Control de idempotencia | Registrar la clave de operación y devolver el resultado original ante reintentos. |
 | Catálogo de motivos | Exponer los motivos tipificados. |
 
-Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `specs/api-contract.md`.
+Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `integraciones/api-contract.md`.
 
 ## 8. Requisitos no funcionales
 
 - **Seguridad:** toda petición requiere JWT con rol `REPARTIDOR`; el backend resuelve el repartidor desde el token y no confía en identificadores enviados por el cliente.
 - **Protección de datos del destinatario:** teléfono y dirección se muestran solo al repartidor propietario y solo mientras el despacho está en `ASIGNADO` o `EN_CAMINO`. No se ofrece exportación ni copia masiva.
-- **Almacenamiento de evidencia:** bucket privado; la base de datos guarda solo la referencia; el acceso es siempre por URL firmada.
-- **Privacidad de la imagen:** la compresión en cliente elimina los metadatos EXIF, de modo que la evidencia no transporta coordenadas.
+- **Evidencia fotográfica:** la fotografía es obligatoria, pero la compresión, el tratamiento de metadatos, los límites de archivo y el mecanismo de almacenamiento están pendientes de decisión.
 - **Usabilidad móvil:** operable con una mano, áreas táctiles de al menos 44 × 44 px y contraste suficiente bajo luz solar.
-- **Rendimiento:** imagen comprimida a aproximadamente 1 MB y 1280 px en el lado mayor; toda transición responde en menos de 2 segundos en red 4G.
+- **Rendimiento:** toda transición responde en menos de 2 segundos en red 4G, sin fijar todavía un algoritmo ni tamaño final para la fotografía.
 - **Conectividad:** se asume conexión activa; ante falta de red se falla de forma explícita, sin cola de sincronización.
 - **Idempotencia:** los cambios de estado y el cierre de jornada toleran reintentos mediante clave de idempotencia.
 - **Consistencia:** el cambio de estado, el contador y el historial se persisten en una misma transacción.
@@ -359,6 +357,8 @@ Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se 
 - **Operación sin conexión:** no hay almacenamiento local ni sincronización diferida.
 - **Firma digital y documento de identidad del receptor:** la evidencia se limita a la fotografía y al nombre opcional de quien recibe.
 
+La decisión técnica sobre fotografías y sus posibles ampliaciones están centralizadas en [Pendientes](./pendiente.md), sección F-03. La aplicación no calculará rutas ni ofrecerá navegación propia; el repartidor utilizará aplicaciones externas.
+
 ## 10. Estrategia de verificación
 
 | Criterios | Verificación automatizada | Nivel | Evidencia esperada |
@@ -371,7 +371,7 @@ Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se 
 | CA-19 a CA-22 | Registrar incidencias con y sin motivo, cortar la red y repetir la operación. | Unitaria e integración | Contador incrementado una sola vez. |
 | CA-23 a CA-25 | Cerrar jornada con pendientes, por corte automático y sin pendientes. | Integración con proceso programado | `NO_INTENTADO` sin consumir intentos y repartidor `FUERA_DE_TURNO`. |
 | CA-26 | Consultar el resumen tras una jornada mixta. | Integración | Cifras coincidentes con el historial. |
-| CA-27 a CA-29 | Solicitar enlaces firmados autorizados y no autorizados. | Integración de seguridad | Enlace solo para autorizados. |
+| CA-27 a CA-29 | Consultar evidencias con usuarios autorizados y no autorizados. | Integración de seguridad | Evidencia disponible solo para autorizados. |
 | CA-30 | Consultar el catálogo. | Integración | Motivos seleccionables sin `NO_INTENTADO`. |
 | CA-31 | Revisar el historial tras cada transición. | Integración con persistencia | Registro completo en el historial común. |
 
@@ -390,7 +390,7 @@ La funcionalidad se considera completa cuando:
 - Ninguna transición fuera del Anexo A es aceptada.
 - El contador de intentos aumenta solo ante intentos reales y nunca por reintentos.
 - Ningún despacho queda en `ASIGNADO` ni `EN_CAMINO` tras el cierre o el corte automático.
-- La evidencia es inaccesible sin URL firmada vigente y accesible para F-04.
+- La evidencia es inaccesible sin autorización vigente y está disponible para F-04 mediante el mecanismo que defina el equipo.
 - No se han incorporado capacidades declaradas fuera de alcance.
 - La evidencia de pruebas puede relacionarse con cada criterio de aceptación.
 
