@@ -13,11 +13,12 @@ Las decisiones adoptadas en este borrador son:
 3. Para cotizar, Despacho consulta en lote a Productos y Ofertas los datos físicos vigentes de cada SKU.
 4. La cotización se protege con un token de servicio y el scope `cotizaciones:calcular`. No requiere un JWT de usuario ni una API key adicional.
 5. El seguimiento para canales se unifica por `idPedido`, exige un token de servicio con el scope `seguimientos:leer` y no expone coordenadas ni datos personales.
-6. Ventas y Postventa solicita el despacho solamente después de que el pedido esté pagado y el paquete se encuentre sellado. Esa solicitud contiene el peso y volumen confirmados del paquete final.
+6. Ventas y Postventa solicita el despacho solamente después de que el pedido esté pagado, preparado y listo para entrega. La solicitud contiene las líneas del pedido (`sku` y `cantidad`); Despacho obtiene de Productos los datos físicos y calcula el peso y volumen operativos.
 7. Cada `idPedido` puede originar como máximo un despacho.
 8. Despacho no emite credenciales. Seguridad y Usuarios emite los JWT de usuario y los tokens de servicio OAuth 2.0 mediante `client_credentials`.
 9. Gestión de Despachos es la única fuente del estado canónico del despacho.
 10. Los cambios de estado se comunican a Ventas y Postventa de manera asíncrona e idempotente.
+11. Para el alcance inicial, cada pedido representa un despacho y un paquete lógico; `cantidadPaquetes` se registra internamente con valor `1` y no forma parte de la solicitud de Ventas.
 
 ## 2. Límites y responsabilidades
 
@@ -25,13 +26,13 @@ Las decisiones adoptadas en este borrador son:
 |---|---|---|---|
 | Marketplace | Experiencia del canal | Destino, SKU y cantidad; `idPedido` para seguimiento | Cobertura, cotización, plazo y estado resumido |
 | Chatbot | Conversación con el cliente | Destino, SKU y cantidad; `idPedido` para seguimiento | Cobertura, cotización, plazo y estado resumido |
-| Ventas y Postventa | Pedido, pago, anulaciones y tratamiento comercial | Solicitud del paquete sellado y cancelaciones | Identificador del despacho y eventos de estado |
+| Ventas y Postventa | Pedido, pago, preparación, anulaciones y tratamiento comercial | Pedido listo para entrega con destinatario, destino y líneas (`sku`, `cantidad`); cancelaciones | Identificador del despacho y eventos de estado |
 | Productos y Ofertas | Catálogo, SKU, peso y dimensiones del producto | Datos físicos vigentes consultados por Despacho | Consulta de SKUs realizada por Despacho |
 | Seguridad y Usuarios | Identidades, credenciales y roles | JWT de usuario, tokens de servicio, JWKS e identificadores de usuario | Solicitud de creación o vinculación de repartidores, pendiente de acuerdo |
 | Gestión de Despachos | Zonas, tarifas, despacho, estado e historial | Comandos y estados confirmados para Operación | Disponibilidad, capacidad y transiciones solicitadas |
 | Operación de Reparto y Flota | Repartidores, furgonetas, jornadas, capacidad y evidencias | Disponibilidad y comandos de transición de campo | Asignaciones y estados confirmados |
 
-Despacho no administra pagos, stock, embalaje, cuentas de usuario, navegación GPS, reembolsos ni notificaciones al cliente final.
+Despacho no administra pagos, stock, embalaje, cuentas de usuario, navegación GPS, guías de remisión, reembolsos ni notificaciones al cliente final. Una solicitud autenticada de Ventas declara que el pedido ya cumple las condiciones comerciales y de preparación; Despacho no consulta el estado interno del pedido ni modifica sus existencias.
 
 ## 3. Convenciones comunes
 
@@ -82,7 +83,7 @@ El valor definitivo de `iss` y la representación del scope dentro del JWT (`sco
 |---|---|---|
 | `cotizaciones:calcular` | Marketplace, Chatbot y, si lo requiere, Ventas | Calcular cobertura, costo y plazo |
 | `seguimientos:leer` | Marketplace, Chatbot y Ventas | Consultar seguimiento por `idPedido` |
-| `despachos:crear` | Ventas | Crear un despacho para un paquete sellado |
+| `despachos:crear` | Ventas | Crear un despacho para un pedido pagado, preparado y listo para entrega |
 | `despachos:cancelar` | Ventas | Solicitar cancelación por anulación del pedido |
 
 Estos scopes pertenecen a la API de Despacho: Despacho define su significado y Seguridad los registra y concede a cada `client_id`. En cambio, `usuarios:leer` y `direcciones:leer` pertenecen a la API de Seguridad y ya están concedidos a `modulo-despacho`. El acceso de Despacho a datos físicos deberá usar el scope que defina Productos y Ofertas, propuesto provisionalmente como `productos:fisicos:leer`.
@@ -128,9 +129,9 @@ Las respuestas de error usan `Content-Type: application/problem+json`, siguiendo
 | Marketplace o Chatbot | Despacho | Solicitar cotización | Token de servicio con `cotizaciones:calcular` | REST síncrono |
 | Marketplace o Chatbot | Despacho | Consultar seguimiento por `idPedido` | Token de servicio con `seguimientos:leer` | REST síncrono |
 | Despacho | Productos y Ofertas | Consultar datos físicos por SKU | Token de `modulo-despacho` con scope definido por Productos | REST síncrono en lote |
-| Ventas y Postventa | Despacho | Crear despacho de paquete sellado | Token de servicio con `despachos:crear` | REST síncrono e idempotente |
+| Ventas y Postventa | Despacho | Crear despacho de pedido listo para entrega | Token de servicio con `despachos:crear` | REST síncrono e idempotente |
 | Ventas y Postventa | Despacho | Cancelar por anulación | Token de servicio con `despachos:cancelar` | REST síncrono e idempotente |
-| Despacho | Ventas y Postventa | Informar cambios de estado | Credencial de servicio | Webhook con outbox y reintentos |
+| Despacho | Ventas y Postventa | Informar cambios de estado | Token de servicio con scope definido por Ventas | Webhook con outbox y reintentos |
 | Despacho | Seguridad y Usuarios | Obtener claves públicas | HTTPS | JWKS con caché |
 | Despacho | Seguridad y Usuarios | Crear o vincular usuario de repartidor | Token de servicio; ruta y scope pendientes | REST síncrono con reintento manual |
 
@@ -185,6 +186,7 @@ Respuesta con cobertura:
   "costoEnvio": 14.5,
   "moneda": "PEN",
   "plazoEstimadoDiasHabiles": 2,
+  "fechaEstimadaEntrega": "2026-09-25",
   "cotizadoEn": "2026-09-23T18:30:00Z"
 }
 ```
@@ -197,9 +199,12 @@ Respuesta sin cobertura:
   "costoEnvio": null,
   "moneda": "PEN",
   "plazoEstimadoDiasHabiles": null,
+  "fechaEstimadaEntrega": null,
   "mensaje": "La dirección se encuentra fuera de nuestra zona de cobertura"
 }
 ```
+
+Despacho calcula tanto el plazo como la fecha estimada de entrega. Los canales pueden comunicar `fechaEstimadaEntrega` al cliente y Ventas puede conservarla como referencia, pero no debe enviarla al crear el despacho. Las promociones, incluido el envío gratuito, y el importe finalmente cobrado al cliente pertenecen a Ventas y Postventa y no modifican el costo logístico calculado por Despacho.
 
 Errores propios:
 
@@ -286,7 +291,7 @@ Despacho no reenvía a Productos el token recibido de Marketplace o Chatbot. Obt
   "idPedido": "PED-2026-00891",
   "estado": "EN_CAMINO",
   "estadoEtiqueta": "En camino",
-  "fechaProgramada": "2026-09-24",
+  "fechaProgramada": "2026-09-25",
   "distrito": "San Borja",
   "hitos": [
     {
@@ -322,7 +327,7 @@ Un fallo reprogramado muestra hitos con etiquetas públicas como `No entregado, 
 
 ## 7. F-02: integración con Ventas y Postventa
 
-### 7.1. Crear un despacho para un paquete sellado
+### 7.1. Crear un despacho para un pedido listo para entrega
 
 - **Método:** `POST`
 - **Ruta:** `/api/v1/despachos`
@@ -339,6 +344,8 @@ Un fallo reprogramado muestra hitos con etiquetas públicas como `No entregado, 
   "destino": {
     "direccion": "Av. Javier Prado Este 2465",
     "referencia": "Frente al parque",
+    "departamento": "Lima",
+    "provincia": "Lima",
     "distrito": "San Borja",
     "codigoPostal": "15036",
     "coordenadas": {
@@ -346,16 +353,28 @@ Un fallo reprogramado muestra hitos con etiquetas públicas como `No entregado, 
       "longitud": -77.00342
     }
   },
-  "paquete": {
-    "pesoKg": 2.8,
-    "volumenM3": 0.02,
-    "cantidadPaquetes": 1
-  },
-  "fechaComprometida": "2026-09-24"
+  "lineas": [
+    {
+      "sku": "POL-NEG-M",
+      "cantidad": 5
+    },
+    {
+      "sku": "ZAP-RUN-42",
+      "cantidad": 1
+    }
+  ]
 }
 ```
 
-Las coordenadas son opcionales. El peso, volumen y `cantidadPaquetes` corresponden al pedido final ya preparado, no a la estimación utilizada durante la cotización. `cantidadPaquetes` es obligatorio y mayor que cero; normalmente vale `1`. Cuenta cajas o bolsas selladas, no productos: cinco polos juntos en una bolsa siguen siendo un paquete.
+`lineas` es el arreglo de todos los productos incluidos en el pedido. Cada elemento identifica un producto por `sku` y expresa cuántas unidades contiene mediante `cantidad`. Las líneas no representan paquetes físicos: por ejemplo, cinco polos dentro de una misma bolsa se informan como una línea con cantidad `5` y el despacho continúa consumiendo un solo paquete lógico.
+
+Las coordenadas y `codigoPostal` son opcionales. Debe enviarse al menos una línea, cada `sku` es obligatorio y cada `cantidad` debe ser mayor que cero.
+
+La llamada autenticada con `sub=modulo-ventas` declara que el pedido está pagado, preparado y listo para entrega. Despacho no consulta el estado del pedido en Ventas: valida su propia cobertura y los datos recibidos y, si son correctos, crea inmediatamente el despacho en `PENDIENTE_ASIGNACION`. La creación no asigna todavía un repartidor ni incorpora el pedido a una ruta.
+
+Antes de persistir el despacho, Despacho consulta en lote a Productos los datos físicos de las líneas y calcula `pesoTotalKg` y `volumenTotalM3` conforme a la sección 5.2. Esos valores se guardan para la asignación y el control de capacidad de la furgoneta. `cantidadPaquetes` no se recibe de Ventas: se registra internamente con valor `1`. Esta consulta obtiene únicamente datos físicos; Despacho no consulta, reserva ni modifica stock.
+
+Despacho calcula `fechaProgramada` al crear el despacho a partir de la zona, el plazo aplicable y el calendario operativo.
 
 Respuesta de creación, `201 Created`:
 
@@ -366,12 +385,12 @@ Respuesta de creación, `201 Created`:
   "codigoRastreoInterno": "TRK-78901",
   "estado": "PENDIENTE_ASIGNACION",
   "idZona": "ZONA-LIMA-CENTRO",
-  "fechaProgramada": "2026-09-24",
+  "fechaProgramada": "2026-09-25",
   "creadoEn": "2026-09-23T18:45:00Z"
 }
 ```
 
-Si el pedido ya tiene despacho, se responde `200 OK` con el recurso existente y no se crea otro. Si el destino no tiene cobertura, se responde `422` con `DESP_ERROR_SIN_COBERTURA`.
+Si el pedido ya tiene despacho, se responde `200 OK` con el recurso existente y no se crea otro. Si el destino no tiene cobertura, se responde `422` con `DESP_ERROR_SIN_COBERTURA`. Los SKU inexistentes o sin datos físicos responden con los errores definidos en la sección 5.1; si Productos no está disponible, se responde `503` y no se crea el despacho.
 
 ### 7.2. Cancelar por anulación del pedido
 
@@ -412,7 +431,7 @@ Despacho registra el evento en una bandeja de salida dentro de la misma transacc
 
 - **Método esperado:** `POST`
 - **Ruta propuesta de Ventas:** `/api/v1/integraciones/despachos/eventos`
-- **Autenticación:** credencial técnica de Despacho.
+- **Autenticación:** token de servicio de `modulo-despacho` emitido por Seguridad, con el scope de recepción que defina Ventas.
 - **Idempotencia:** Ventas deduplica por `idEvento`.
 
 ```json
@@ -437,6 +456,10 @@ Despacho registra el evento en una bandeja de salida dentro de la misma transacc
 | `PENDIENTE_ASIGNACION` reprogramado | `DESPACHO_REPROGRAMADO` | `nuevaFechaProgramada` |
 | `DEVUELTO_A_ORIGEN` | `DESPACHO_DEVUELTO_A_ORIGEN` | `motivoCierre` |
 | `CANCELADO` | `DESPACHO_CANCELADO` | Ninguno |
+
+La política de intentos pertenece a Despacho: el máximo inicial es `2`, puede configurarse dentro del módulo y no se recibe desde Ventas. `DESPACHO_FALLIDO` informa un intento no exitoso, pero no representa necesariamente un cierre definitivo. Solo `DESPACHO_DEVUELTO_A_ORIGEN` comunica que la operación logística terminó sin entrega y permite que Ventas y Postventa decida la anulación, devolución comercial o reembolso que corresponda.
+
+Despacho no envía una `guiaRemision`, no solicita reembolsos y no informa importes a devolver. Esas responsabilidades permanecen fuera de este contrato.
 
 Si Ventas no responde con `2xx`, Despacho realiza hasta cinco reintentos con espera creciente. El mismo `idEvento` se conserva. Tras agotarlos, el evento queda como `ENVIO_FALLIDO` y puede reenviarse manualmente. Los despachos simulados no generan eventos externos.
 
@@ -908,7 +931,7 @@ Gestión valida la máquina de estados, modifica el estado, incrementa el intent
     "referencia": "Frente al parque",
     "distrito": "San Borja"
   },
-  "fechaProgramada": "2026-09-24",
+  "fechaProgramada": "2026-09-25",
   "numeroIntentos": 0,
   "version": 2,
   "actualizadoEn": "2026-09-23T19:10:00Z"
@@ -947,7 +970,10 @@ Despacho -> Marketplace/Chatbot: cotización
 ### 15.2. Creación y entrega
 
 ```text
-Ventas -> Despacho: paquete sellado + peso/volumen final
+Ventas -> Despacho: pedido pagado y preparado + destinatario + destino + líneas (SKU, cantidad)
+Despacho -> Productos: consulta física en lote por SKU
+Productos -> Despacho: peso y dimensiones por SKU
+Despacho: calcula peso/volumen, registra cantidadPaquetes=1 y crea PENDIENTE_ASIGNACION
 Despacho -> Ventas: idDespacho + estado PENDIENTE_ASIGNACION
 Gestor -> Despacho: asignar repartidor
 Despacho -> Operación: reservar capacidad y proyectar ruta
@@ -970,7 +996,7 @@ Despacho -> Canal: estado, fecha, distrito e hitos sin coordenadas ni PII
 |---|---|
 | Seguridad y Usuarios | Valor exacto de `iss`; representación de scopes; registrar los cuatro scopes de Despacho y asignarlos a cada `client_id`; incorporar `REPARTIDOR`; definir alta, invitación, baja y vinculación de su cuenta |
 | Productos y Ofertas | Ruta y esquema definitivo de la consulta física en lote; unidades; scope requerido, propuesto como `productos:fisicos:leer` |
-| Ventas y Postventa | Registrar `modulo-ventas` con `despachos:crear`, `despachos:cancelar` y `seguimientos:leer`; URL y autenticación del webhook; formato definitivo del paquete sellado; responsabilidad de autorizar al usuario antes de cancelar |
+| Ventas y Postventa | Registrar `modulo-ventas` con `despachos:crear`, `despachos:cancelar` y `seguimientos:leer`; invocar la creación solo cuando el pedido esté pagado, preparado y listo para entrega; proporcionar la URL y definir el scope de recepción del webhook; autorizar al usuario antes de solicitar una cancelación |
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
 | Equipo de Despacho | Convención final de `Idempotency-Key`; tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
 
