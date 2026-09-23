@@ -14,8 +14,8 @@
 
 ## 1. Declaración de la Historia (User Story)
 
-**COMO** Gestor de Flota
-**QUIERO** vincular a cada repartidor un vehículo para la jornada en curso, activándolo con los límites de carga de esa unidad
+**COMO** Gestor de Despacho
+**QUIERO** vincular a cada repartidor una furgoneta para la jornada en curso, usando sus límites de carga
 **PARA** que el Panel de Programación (F-02) disponga de operadores habilitados con capacidad real confirmada al momento de asignar despachos.
 
 ---
@@ -24,17 +24,17 @@
 
 - **Especificación origen:** [F-05-MonitoreoFlotaCapacidad.md](../../funcionalidades/F-05-MonitoreoFlotaCapacidad.md) (Requisito `RF-03`, Criterios `CA-08`, `CA-09`).
 - **Endpoints asociados:**
-  - `POST /api/v1/repartidores/{idRepartidor}/asignacion-diaria` — Vincular repartidor con vehículo para la jornada activa (a consolidar en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
-- **Roles requeridos:** `GESTOR_FLOTA` o `ADMIN_DESPACHO` (autenticación JWT).
+  - `POST /api/v1/jornadas` — Abrir una jornada para un repartidor, una furgoneta y una zona.
+- **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
-  - Interfaz de Asignación Diaria: selector de repartidor y vehículo disponibles con validación de disponibilidad antes de confirmar.
+  - Interfaz de Asignación Diaria: selector de repartidor y furgoneta disponibles con validación previa.
   - Indicador visual del estado del repartidor tras confirmar la asignación (`DISPONIBLE`).
 - **Reglas de negocio:**
   - Solo puede existir una asignación operativa activa por repartidor por jornada. Un segundo intento en el mismo día para el mismo operador se responde con `409 Conflict`.
-  - Al confirmar la asignación, el repartidor transiciona a estado `DISPONIBLE` y hereda los límites de carga del vehículo asignado (peso en kg, volumen en m³ y tope de paquetes diarios).
-  - Solo pueden participar repartidores en estado `INACTIVO` (sin turno activo) y vehículos en estado `DISPONIBLE`.
+  - Al abrir la jornada, el repartidor pasa a `DISPONIBLE` y la jornada copia los límites de la furgoneta (peso, volumen y paquetes).
+  - Solo pueden participar repartidores `ACTIVO` y `VINCULADO` sin jornada activa, y furgonetas en estado `DISPONIBLE`.
   - La asignación diaria activa al operador y lo incluye inmediatamente en las respuestas de `GET /api/v1/repartidores/disponibles`.
-- **Entidades de datos involucradas:** `repartidores`, `vehiculos`, `turnos_operador` (ver [arquitectura/modelo-datos.md](../../arquitectura/modelo-datos.md)).
+- **Entidades de datos involucradas:** `repartidores`, `furgonetas`, `asignaciones_diarias` (ver [arquitectura/modelo-datos.md](../../arquitectura/modelo-datos.md)).
 
 ---
 
@@ -55,7 +55,7 @@
 ## 4. Definición de Terminado (Definition of Done - DoD)
 
 - [ ] Código implementado en Java 21 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
-- [ ] Servicio de asignación diaria implementado con `@Transactional`, validación de unicidad por repartidor y jornada, y herencia de límites del vehículo.
+- [ ] Apertura de jornada implementada con `@Transactional`, unicidad por repartidor y furgoneta, y copia de límites.
 - [ ] Entidad JPA y repositorio para `turnos_operador` con restricción de unicidad `(idRepartidor, fechaJornada)`.
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) cubriendo los 2 escenarios (`CA-08`, `CA-09`).
 - [ ] Prueba de integración verificando que el repartidor asignado aparece en `GET /api/v1/repartidores/disponibles` con los límites correctos.

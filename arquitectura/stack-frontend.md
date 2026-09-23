@@ -62,7 +62,7 @@ Estas dependencias se incluyen en el bundle final que se despliega en **Vercel**
 
 | Paquete | Versión | Uso principal | Funcionalidades que lo usan |
 |---|---|---|---|
-| `@tanstack/react-table` | ^8.20.0 | Listados paginados y filtrables de repartidores, vehículos y despachos | **F-02, F-05** |
+| `@tanstack/react-table` | ^8.20.0 | Listados paginados y filtrables de repartidores, furgonetas y despachos | **F-02, F-05** |
 
 ### 3.6. Formularios y validación
 

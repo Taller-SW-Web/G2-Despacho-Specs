@@ -14,7 +14,7 @@
 
 ## 1. Declaración de la Historia (User Story)
 
-**COMO** Gestor de Flota
+**COMO** Gestor de Despacho
 **QUIERO** registrar nuevos repartidores, editar sus datos, consultar el listado de operadores y cambiar su estado operativo
 **PARA** mantener actualizado el padrón de personal disponible para ejecutar despachos y controlar quién puede recibir asignaciones.
 
@@ -27,13 +27,13 @@
   - `POST /api/v1/repartidores` — Alta de nuevo repartidor (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md) §7.3).
   - `GET /api/v1/repartidores` — Listado paginado con filtros por estado y turno.
   - `PUT /api/v1/repartidores/{idRepartidor}` — Modificación de datos personales y estado operativo.
-- **Roles requeridos:** `GESTOR_FLOTA` o `ADMIN_DESPACHO` (autenticación JWT). Usuarios sin estos roles deben recibir `403 Forbidden`.
+- **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT). Usuarios sin este rol deben recibir `403 Forbidden`.
 - **Componentes de Frontend:**
   - Panel de Repartidores: listado paginado con filtros por estado y turno, y acciones para registrar, editar o cambiar el estado de un operador.
   - Formulario de Repartidor: campos para nombres, apellidos, DNI, teléfono, número de brevete y turno habitual.
 - **Reglas de negocio:**
   - El DNI del repartidor debe ser único en el sistema; un intento de duplicar el documento se responde con `409 Conflict`.
-  - Un repartidor recién registrado queda automáticamente en estado `INACTIVO` hasta que se le asigne un turno y un vehículo.
+  - Un repartidor recién registrado queda `ACTIVO`, `FUERA_DE_TURNO` y con vinculación pendiente; no puede abrir una jornada hasta quedar `VINCULADO`.
   - La desactivación de un repartidor con historial de despachos se aplica como baja lógica (sin eliminación física) para preservar la trazabilidad.
   - Un repartidor en estado `INACTIVO` no aparece en las respuestas del endpoint de disponibilidad (`GET /api/v1/repartidores/disponibles`).
 - **Entidades de datos involucradas:** `repartidores` (ver [arquitectura/modelo-datos.md](../../arquitectura/modelo-datos.md)).
@@ -43,7 +43,7 @@
 ## 3. Criterios de Aceptación (Gherkin)
 
 - [ ] **CA-01: Registro exitoso de un nuevo repartidor**
-  - **DADO** que el Gestor de Flota ingresa los datos de un nuevo operador: nombres, apellidos, DNI, teléfono, número de brevete y turno habitual.
+  - **DADO** que el Gestor de Despacho ingresa los datos de un nuevo operador: nombres, apellidos, DNI, teléfono, número de brevete y turno habitual.
   - **CUANDO** confirma el registro en `POST /api/v1/repartidores`.
   - **ENTONCES** el sistema valida que el DNI no exista previamente, crea el repartidor con estado `INACTIVO` y devuelve su identificador único con código `201 Created`.
 
@@ -58,7 +58,7 @@
   - **ENTONCES** el sistema aplica baja lógica (no elimina el registro), lo excluye de nuevas asignaciones y preserva su historial de entregas intacto.
 
 - [ ] **CA-04: Acceso sin permisos requeridos**
-  - **DADO** que un usuario sin el rol `GESTOR_FLOTA` ni `ADMIN_DESPACHO` intenta registrar o modificar repartidores.
+  - **DADO** que un usuario sin el rol `GESTOR_DESPACHO` intenta registrar o modificar repartidores.
   - **CUANDO** realiza la petición al backend.
   - **ENTONCES** el sistema rechaza la solicitud con código `403 Forbidden` y no expone información del personal.
 

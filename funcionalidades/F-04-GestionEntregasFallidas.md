@@ -68,7 +68,7 @@ El sistema DEBE permitir al Gestor consultar los despachos en `FALLIDO`.
 
 - **DADO** que existen despachos en `FALLIDO`.
 - **CUANDO** el Gestor abre la pantalla de Entregas Fallidas.
-- **ENTONCES** el sistema muestra código de rastreo, fecha del incidente, motivo, número de intento sobre el máximo, repartidor, indicador de recepción ("Pendiente de retorno" o "Recibido en centro"), indicador de evidencia e indicador de pedido anulado, con paginación y filtros por motivo, fecha y recepción.
+- **ENTONCES** el sistema muestra código operativo interno, fecha del incidente, motivo, número de intento sobre el máximo, repartidor, indicador de recepción ("Pendiente de retorno" o "Recibido en centro"), indicador de evidencia e indicador de pedido anulado, con paginación y filtros por motivo, fecha y recepción.
 
 #### CA-02. Listado sin incidencias
 

@@ -104,7 +104,7 @@ El sistema DEBE mostrar al repartidor solo sus despachos de la jornada en curso,
 
 - **DADO** que el repartidor tiene despachos de la jornada actual.
 - **CUANDO** abre "Mi Ruta".
-- **ENTONCES** el sistema lista los despachos ordenados por secuencia con código de rastreo, dirección, destinatario, estado, número de intento y posición, y excluye los despachos `CANCELADO` o reasignados a otro repartidor.
+- **ENTONCES** el sistema lista los despachos ordenados por secuencia con código operativo interno, dirección, destinatario, estado, número de intento y posición, y excluye los despachos `CANCELADO` o reasignados a otro repartidor.
 
 #### CA-06. Jornada sin asignaciones
 
@@ -280,7 +280,7 @@ El sistema DEBE permitir ver la evidencia únicamente a usuarios autorizados, si
 
 ### RF-10. Catálogo de motivos de fallo
 
-El sistema DEBE mantener el catálogo de motivos como fuente única para el campo y para F-04.
+El sistema DEBE consumir el catálogo canónico de motivos expuesto por Gestión de Despachos y usarlo como fuente única para el campo y para F-04.
 
 #### CA-30. Consulta del catálogo
 
@@ -349,7 +349,7 @@ Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se 
 
 - **Resolución de incidencias:** confirmar la recepción del paquete en el centro, reprogramar o cerrar como `DEVUELTO_A_ORIGEN` corresponde a F-04.
 - **Asignación, reasignación, secuencia y cancelación:** corresponden a F-02.
-- **Repartidores, vehículos, turnos y cálculo de ocupación:** corresponden a F-05.
+- **Repartidores, furgonetas, jornadas y cálculo de ocupación:** corresponden a F-05.
 - **Publicación de eventos a otros módulos:** corresponde al requisito transversal RT-03 del overview.
 - **Cotización y cobertura:** corresponden a F-01.
 - **Notificación al cliente final:** corresponde a los canales y a Ventas y Postventa.

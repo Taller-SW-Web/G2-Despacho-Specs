@@ -16,7 +16,7 @@
 
 **COMO** Panel de Programación y Asignación (F-02)
 **QUIERO** invocar un endpoint que retorne únicamente los repartidores habilitados para recibir nuevos despachos, con su balance de capacidad actualizado
-**PARA** tomar decisiones de asignación precisas sin saturar operadores ni asignar paquetes que excedan la capacidad remanente del vehículo.
+**PARA** tomar decisiones de asignación precisas sin exceder la capacidad remanente de la furgoneta.
 
 ---
 
@@ -26,14 +26,14 @@
 - **Endpoints asociados:**
   - `GET /api/v1/repartidores/disponibles` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md) §7.1).
   - Parámetros de consulta opcionales: `zona` (string) y `pesoRequeridoKg` (float).
-- **Roles requeridos:** `GESTOR_DESPACHO` o `GESTOR_FLOTA` (autenticación JWT). Endpoint de uso interno entre componentes del módulo.
+- **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT). La llamada entre microservicios utiliza además un token técnico.
 - **Reglas de negocio y rendimiento:**
   - Solo se incluyen repartidores en estado `DISPONIBLE` o `EN_RUTA` con capacidad remanente mayor a cero.
   - Los repartidores `SATURADOS`, `FUERA_DE_TURNO` o `INACTIVOS` NO aparecen en la respuesta.
   - Si se proporciona `pesoRequeridoKg`, el endpoint filtra y retorna solo los operadores con capacidad de peso remanente mayor o igual al valor indicado.
   - Cuando no hay repartidores disponibles, el sistema retorna `200 OK` con lista vacía — no se genera error.
   - **Requisito de rendimiento:** respuesta en menos de 200 ms para no agregar latencia al flujo de asignación de F-02.
-- **Entidades de datos involucradas:** `repartidores`, `vehiculos`, `despachos` (lectura del conteo activo).
+- **Entidades de datos involucradas:** `repartidores`, `furgonetas`, `asignaciones_diarias`, `reservas_capacidad` y `proyecciones_despacho` en Operación.
 
 ---
 
@@ -42,7 +42,7 @@
 - [ ] **CA-12: Respuesta con operadores disponibles y su balance de carga**
   - **DADO** que existen 5 repartidores en turno, de los cuales 3 tienen capacidad remanente (estados `DISPONIBLE` o `EN_RUTA`) y 2 están `SATURADOS` o `FUERA_DE_TURNO`.
   - **CUANDO** el servicio de F-02 invoca `GET /api/v1/repartidores/disponibles`.
-  - **ENTONCES** el sistema retorna la lista de los 3 operadores habilitados, incluyendo por cada uno: identificador, nombre, tipo de vehículo, capacidad máxima, paquetes asignados, porcentaje de ocupación y estado.
+  - **ENTONCES** el sistema retorna los 3 repartidores habilitados con identificador, nombre, furgoneta, capacidad máxima, capacidad remanente, porcentaje de ocupación y estado.
 
 - [ ] **CA-13: Respuesta vacía cuando no hay repartidores disponibles**
   - **DADO** que todos los repartidores en turno están `SATURADOS` o `FUERA_DE_TURNO`.

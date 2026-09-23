@@ -53,14 +53,13 @@ Los tres escenarios permanecen fuera del alcance actual hasta que Ventas y Postv
 
 ### En discusión
 
-- Incorporación de motocicletas, automóviles u otros vehículos, condicionada a la definición de despacho express con los demás módulos.
 
 ### Trabajo futuro
 
 - Monitoreo GPS de las furgonetas.
 - Gestión avanzada de mantenimiento; la versión inicial conserva únicamente el estado básico `EN_MANTENIMIENTO`.
 - Registro de combustible, kilometraje y costos operativos.
-- Gestión de múltiples turnos sofisticados por repartidor o vehículo.
+- Gestión de múltiples turnos sofisticados por repartidor o furgoneta.
 
 ## Regla para incorporar un elemento
 
