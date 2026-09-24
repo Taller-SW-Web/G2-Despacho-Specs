@@ -1,12 +1,10 @@
-# Propuesta Consolidada del Contrato de Comunicación del Módulo de Despacho
+# Contrato de Comunicación del Módulo de Despacho
 
-> **Estado:** borrador para revisión entre equipos. Este archivo propone reemplazar `integraciones/api-contract.md` después de su aprobación. Mientras no se apruebe y renombre, no constituye un segundo contrato oficial.
-
-## 1. Propósito y decisiones consolidadas
+## 1. Propósito
 
 Este documento define las comunicaciones del módulo de Despacho y Entrega con los canales, los demás módulos del Marketplace y sus dos microservicios internos. Se alinea con F-01 a F-05 y con los requisitos transversales de seguimiento, historial y eventos.
 
-Las decisiones adoptadas en este borrador son:
+Este contrato establece:
 
 1. Despacho es responsable de calcular la cotización.
 2. Marketplace, Chatbot o Ventas envían destino y líneas con `sku` y `cantidad`; no calculan peso, volumen ni tarifa.
@@ -1037,4 +1035,3 @@ Despacho -> Canal: estado, fecha, distrito e hitos sin coordenadas ni PII
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
 | Equipo de Despacho | Convención final de `Idempotency-Key`; tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
 
-Cuando estos acuerdos se aprueben, este borrador debe reemplazar `integraciones/api-contract.md`; no deben mantenerse dos contratos oficiales en paralelo.

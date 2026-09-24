@@ -2,7 +2,7 @@
 
 > **Estado:** Propuesta para discusión del equipo. Este documento no modifica ni reemplaza las especificaciones funcionales vigentes.
 
-Este documento presenta el nivel 1 del modelo C4 del Sistema de Despacho y Entrega a Domicilio. Su objetivo es mostrar, sin detalles técnicos de implementación, quiénes utilizan el sistema, con qué sistemas externos se integra y qué información intercambia con cada uno. Los protocolos concretos se decidirán después de acordarlos con los equipos propietarios.
+Este documento presenta el nivel 1 del modelo C4 del Sistema de Despacho y Entrega a Domicilio. Su objetivo es mostrar, sin detalles técnicos de implementación, quiénes utilizan el sistema, con qué sistemas externos se integra y qué información intercambia con cada uno. Los mecanismos de comunicación se alinean con `integraciones/api-contract.md`.
 
 ## 1. Diagrama de contexto
 
@@ -45,13 +45,13 @@ flowchart LR
 
 ## 3. Sistemas externos e intercambios
 
-| Sistema externo | Información recibida por Despacho | Información enviada por Despacho | Mecanismo por acordar | Funcionalidad relacionada |
+| Sistema externo | Información recibida por Despacho | Información enviada por Despacho | Mecanismo | Funcionalidad relacionada |
 |---|---|---|---|---|
 | Canal Marketplace | Productos, cantidades y destino para cotizar; consulta de seguimiento autorizada | Cobertura, costo, plazo estimado y estado resumido del despacho | API REST síncrona, directamente o mediante Ventas y Postventa | F-01, seguimiento transversal |
 | Canal Chatbot | Productos, cantidades y destino para cotizar; consulta de estado autorizada | Cobertura, costo, plazo estimado y estado resumido del despacho | API REST síncrona, directamente o mediante Ventas y Postventa | F-01, seguimiento transversal |
-| Ventas y Postventa | Solicitud de despacho de un pedido pagado y sellado; solicitud de cancelación | Aceptación con identificador y código de rastreo; cambios de estado idempotentes | Solicitud por API REST o evento RabbitMQ; estados por RabbitMQ o webhook | F-02, F-04, eventos transversales |
-| Productos y Ofertas | Identificador, peso y dimensiones vigentes de los productos cotizados | Solicitud de datos físicos por identificador de producto | API REST síncrona | F-01 |
-| Seguridad y Usuarios | JWT, roles, identificador de usuario y tokens de servicio | Solicitud de creación o vinculación de usuarios con rol `REPARTIDOR` | Validación JWT y API REST; eventos RabbitMQ si así lo exige su contrato | Todas, especialmente F-03 y F-05 |
+| Ventas y Postventa | Solicitud REST de despacho de un pedido pagado y preparado; solicitud de cancelación | Aceptación con identificador y código de rastreo; cambios de estado idempotentes mediante webhook | API REST síncrona de entrada y webhook HTTPS con outbox y reintentos de salida | F-02, F-04, eventos transversales |
+| Productos y Ofertas | Identificador, peso y dimensiones vigentes de los productos cotizados o incluidos en el pedido | Solicitud en lote de datos físicos por SKU | API REST síncrona | F-01, F-02 |
+| Seguridad y Usuarios | JWT, roles, identificador de usuario, tokens de servicio y claves públicas | Solicitud de creación o vinculación de usuarios con rol `REPARTIDOR` | Validación local de JWT mediante JWKS y API REST | Todas, especialmente F-03 y F-05 |
 
 ## 4. Límites del contexto
 
@@ -68,10 +68,9 @@ flowchart LR
 Antes de aprobar este contexto se debe confirmar con los otros equipos:
 
 1. Si Marketplace y Chatbot consumirán cotización y seguimiento directamente o siempre a través de Ventas y Postventa.
-2. Si Ventas enviará la solicitud de despacho por REST, mediante un evento RabbitMQ o admitirá ambos mecanismos.
-3. Si los cambios de estado se entregarán a Ventas mediante RabbitMQ o webhooks HTTPS.
-4. Qué eventos de Seguridad y Usuarios se intercambiarán mediante RabbitMQ y cuáles operaciones seguirán siendo síncronas.
-5. El contenido mínimo, identificador idempotente y reglas de reintento de cada mensaje asíncrono.
+2. La URL y el scope que Ventas y Postventa expondrá para recibir el webhook de cambios de estado.
+3. La ruta, el scope y las unidades definitivas de la consulta en lote a Productos y Ofertas.
+4. El emisor, la representación de scopes y la operación definitiva de alta o vinculación de repartidores en Seguridad y Usuarios.
 
 ## 6. Regla de lectura
 

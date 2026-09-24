@@ -3,7 +3,7 @@
 > Documentación y especificaciones del módulo responsable de organizar, ejecutar y dar seguimiento al proceso de despacho y entrega de pedidos.
 
 **Estado del proyecto:** En especificación y diseño inicial  
-**Arquitectura prevista:** Sistema modular integrado mediante APIs  
+**Arquitectura prevista:** Dos microservicios con persistencia aislada, integrados mediante APIs  
 **Repositorio:** Documentación funcional y técnica
 
 ---
@@ -13,6 +13,8 @@
 El **Módulo de Despacho y Entrega a Domicilio** administra el ciclo operativo que comienza cuando un pedido está listo para ser despachado y termina con su entrega, reprogramación o devolución.
 
 El módulo es responsable de la entidad **despacho** y mantiene sus propios datos. La información perteneciente a pedidos, productos y usuarios se obtiene mediante las APIs de los módulos propietarios, sin acceder directamente a sus bases de datos.
+
+La implementación se divide en los microservicios **Gestión de Despachos** y **Operación de Reparto y Flota**. Cada uno mantiene su propia persistencia y se comunican mediante APIs internas.
 
 Este repositorio centraliza las especificaciones funcionales, decisiones generales y contratos necesarios para que el frontend, el backend y los demás módulos puedan desarrollarse de manera coordinada.
 
@@ -40,6 +42,11 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Índice de funcionalidades](./funcionalidades/funcionalidad.md) | Listado y estado de las especificaciones funcionales. |
 | [Contrato de API](./integraciones/api-contract.md) | Convenciones, autenticación, errores y organización de las APIs. |
 | [Modelo de datos](./arquitectura/modelo-datos.md) | Base evolutiva de entidades, relaciones y decisiones de persistencia. |
+| [C4 de contexto](./arquitectura/c4-contexto.md) | Actores, límites del sistema e integraciones externas. |
+| [C4 de contenedores](./arquitectura/c4-contenedores.md) | Aplicaciones, microservicios, persistencias y comunicaciones internas. |
+| [Glosario de dominio](./arquitectura/glosario-dominio.md) | Significado común de pedidos, despachos, cotizaciones, capacidad y operación. |
+| [Estados del despacho](./arquitectura/diagrama-estados-despacho.md) | Estados, transiciones, precondiciones y operaciones no permitidas. |
+| [Macroproceso de despacho](./arquitectura/macroproceso-despacho.md) | Flujo funcional de alto nivel desde la solicitud de Ventas hasta el resultado final. |
 | [Especificaciones funcionales](./funcionalidades/) | Requisitos, escenarios y criterios de completitud por funcionalidad. |
 | [Especificaciones atómicas](./especificaciones/) | Casos de uso concretos derivados de las funcionalidades y su plantilla común. |
 | [Historias de usuario](./historias-usuario/) | Historias en formato Jira (COMO/QUIERO/PARA) con criterios de aceptación Gherkin y DoD. |
@@ -68,7 +75,7 @@ De acuerdo con la arquitectura general, Despacho y Entrega se relacionará con:
 - Productos y Ofertas.
 - Seguridad y Usuarios.
 
-La comunicación se realizará mediante APIs y sin compartir bases de datos entre módulos. La mayoría de las operaciones serán **síncronas**. Los casos que necesiten comunicación asíncrona y la tecnología que utilizarán todavía se encuentran en evaluación.
+La comunicación se realiza mediante APIs y sin compartir bases de datos entre módulos. Las solicitudes de cotización, seguimiento, creación y cancelación se atienden de forma síncrona. Los cambios de estado hacia Ventas y Postventa se notifican de forma asíncrona mediante webhook HTTPS con bandeja de salida y reintentos.
 
 ## 🛠️ Tecnologías previstas
 
@@ -94,7 +101,7 @@ La comunicación se realizará mediante APIs y sin compartir bases de datos entr
 - JUnit, Mockito, Spring Boot Test y Testcontainers.
 - Figma para el diseño de interfaces.
 - Vercel para el frontend y Render para el backend.
-- Webhooks o RabbitMQ como alternativas de mensajería aún por evaluar.
+- Webhooks HTTPS con patrón outbox para notificaciones asíncronas a Ventas y Postventa.
 
 Las dependencias específicas y sus versiones se documentarán en los repositorios de implementación correspondientes.
 

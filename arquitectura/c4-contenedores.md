@@ -2,7 +2,7 @@
 
 > **Estado:** Propuesta para discusión del equipo. Ningún contenedor, protocolo o proveedor descrito aquí se considera aprobado hasta que el equipo lo acuerde.
 
-Este documento presenta el nivel 2 del modelo C4. Muestra una arquitectura candidata con dos aplicaciones frontend, dos microservicios, un API Gateway, persistencia administrada y mensajería opcional. Los elementos con borde discontinuo representan decisiones pendientes.
+Este documento presenta el nivel 2 del modelo C4. Muestra una arquitectura con dos aplicaciones frontend, dos microservicios, un API Gateway, persistencia administrada y notificación asíncrona mediante webhook HTTPS con outbox.
 
 ## 1. Diagrama de contenedores
 
@@ -14,7 +14,6 @@ flowchart TB
     classDef datos fill:#059669,color:#FFFFFF,stroke:#065F46,stroke-width:2px
     classDef externo fill:#F8FAFC,color:#0F172A,stroke:#64748B,stroke-width:2px
     classDef persona fill:#0F4C5C,color:#FFFFFF,stroke:#08313B,stroke-width:2px
-    classDef candidato fill:#FEF3C7,color:#713F12,stroke:#D97706,stroke-width:2px,stroke-dasharray:6 4
 
     GESTORES["Gestores y administrador"]:::persona
     REPARTIDOR["Repartidor"]:::persona
@@ -39,9 +38,6 @@ flowchart TB
             OBJ[("Storage privado<br/>Fotografías de evidencia")]:::datos
         end
 
-        subgraph MENSAJERIA["Mensajería · proveedor y despliegue por definir"]
-            MQ[("RabbitMQ<br/>Eventos internos y entre módulos<br/>Propuesto, no aprobado")]:::candidato
-        end
     end
 
     MKT["Marketplace"]:::externo
@@ -62,10 +58,7 @@ flowchart TB
     GW -->|"Zonas, despachos, incidencias y seguimiento"| MD
     GW -->|"Flota, jornadas, mi ruta y evidencias"| MR
 
-    MD <-->|"REST: consultas y comandos que requieren respuesta inmediata"| MR
-    MD -->|"Publica hechos del despacho"| MQ
-    MQ -->|"Actualiza proyecciones de ruta y capacidad"| MR
-    MR -->|"Publica hechos operativos"| MQ
+    MD <-->|"API REST interna: capacidad, transiciones y proyecciones"| MR
 
     MD -->|"JDBC con credencial propia"| BDG
     MR -->|"JDBC con credencial propia"| BDR
@@ -74,11 +67,9 @@ flowchart TB
     FA -.->|"Consulta autorizada con URL firmada temporal"| OBJ
 
     MD -->|"Consulta datos físicos"| PRO
-    MQ <-->|"Eventos de integración por acordar"| VEN
-    MD -.->|"Alternativa sin broker:<br/>webhooks HTTPS"| VEN
+    MD -->|"Webhook HTTPS de estados<br/>con outbox y reintentos"| VEN
     GW -->|"Valida tokens o claves públicas"| SEG
     MR -->|"Solicita alta y vinculación de repartidores"| SEG
-    MQ <-->|"Eventos de usuarios si Seguridad los exige"| SEG
 ```
 
 ## 2. Catálogo de contenedores
@@ -93,7 +84,6 @@ flowchart TB
 | Datos de Gestión de Despachos | Zonas, tarifas, despachos, historial, intentos, recepciones, idempotencia y bandeja de eventos salientes | PostgreSQL administrado por Supabase | Un esquema o base lógica aislada | Solo Gestión de Despachos |
 | Datos de Operación y Flota | Repartidores, furgonetas, jornadas, reservas de capacidad, proyección de ruta y referencias de evidencia | PostgreSQL administrado por Supabase | Un esquema o base lógica aislada | Solo Operación de Reparto y Flota |
 | Storage de evidencias | Binarios de fotografías en un bucket privado; acceso temporal mediante URL firmada | Supabase Storage | Bucket privado | Operación de Reparto y clientes autorizados mediante URL temporal |
-| Broker de mensajería | Desacoplar productores y consumidores, amortiguar indisponibilidad temporal y distribuir eventos idempotentes | RabbitMQ, sujeto a acuerdo | Proveedor administrado o servicio dedicado por definir | Ambos microservicios y los módulos externos que acuerden eventos |
 
 ## 3. Responsabilidad de cada microservicio
 
@@ -115,34 +105,26 @@ Este microservicio responde **quién ejecuta la entrega, con qué recursos y qu�
 
 Cuando F-03 origina una transición, Operación de Reparto valida al repartidor, su jornada y la evidencia, y solicita el cambio a Gestión de Despachos. Solo Gestión de Despachos modifica el estado canónico, el contador de intentos y el historial.
 
-## 4. Comunicaciones candidatas
+## 4. Comunicaciones
 
-La propuesta utiliza comunicación híbrida: REST para preguntas o comandos que necesitan una respuesta inmediata y eventos para comunicar hechos ya confirmados.
+La arquitectura utiliza REST para preguntas y comandos que necesitan una respuesta inmediata, y webhook HTTPS con outbox para comunicar a Ventas y Postventa hechos ya confirmados.
 
-| Interacción | Recomendación inicial | Alternativa | Motivo |
-|---|---|---|---|
-| Cotización y seguimiento | API REST síncrona mediante el Gateway | — | El canal necesita mostrar una respuesta inmediata al usuario. |
-| Ventas solicita un despacho | API REST síncrona e idempotente | Evento RabbitMQ `PEDIDO_LISTO_PARA_DESPACHO` | REST permite validar cobertura y devolver de inmediato el identificador y código de rastreo. RabbitMQ conviene si Ventas exige tolerancia a indisponibilidad o ya estandarizó eventos. |
-| Ventas solicita una cancelación | API REST síncrona e idempotente | Evento RabbitMQ | Ventas necesita conocer si el estado actual todavía permite cancelar. |
-| Despacho informa cambios de estado | Evento RabbitMQ con identificador idempotente | Webhook HTTPS con outbox y reintentos | Es una notificación de un hecho ya confirmado y no debe bloquear la transición local. |
-| Gestión consulta o reserva capacidad | REST interno síncrono e idempotente | Saga basada en mensajes | La asignación necesita conocer en ese momento si el repartidor puede recibir el paquete. |
-| Reparto solicita una transición de campo | REST interno síncrono e idempotente | Comando asíncrono con confirmación posterior | El repartidor necesita saber si `EN_CAMINO`, `ENTREGADO` o `FALLIDO` fue aceptado. |
-| Gestión comunica un estado confirmado a Reparto | Evento RabbitMQ | Llamada REST idempotente | Permite actualizar proyecciones de ruta y ocupación sin compartir base de datos. |
-| Seguridad entrega identidad y roles | JWT validado localmente mediante claves públicas | Introspección REST | Evita consultar Seguridad en cada petición si el token es autocontenido y verificable. |
-| Alta o vinculación de un repartidor | API REST con resultado o estado pendiente | Evento RabbitMQ, según contrato de Seguridad | La elección debe acordarse con el equipo propietario de Seguridad. |
-| Carga de evidencia | URL firmada hacia Storage | Carga multipart mediante backend | La transferencia directa evita que el Gateway transporte archivos grandes. |
+| Interacción | Mecanismo | Motivo |
+|---|---|---|
+| Cotización y seguimiento | API REST síncrona mediante el Gateway | El canal necesita mostrar una respuesta inmediata al usuario. |
+| Ventas solicita un despacho | API REST síncrona e idempotente | Permite validar cobertura y devolver de inmediato el identificador y código de rastreo. |
+| Ventas solicita una cancelación | API REST síncrona e idempotente | Ventas necesita conocer si el estado actual todavía permite cancelar. |
+| Despacho informa cambios de estado | Webhook HTTPS con outbox, identificador idempotente y reintentos | La notificación no bloquea ni revierte una transición local confirmada. |
+| Gestión consulta, reserva o libera capacidad | API REST interna síncrona e idempotente | La asignación necesita confirmar en ese momento si existe capacidad. |
+| Reparto solicita una transición de campo | API REST interna síncrona e idempotente | El repartidor necesita conocer el resultado de la operación. |
+| Gestión comunica un estado confirmado a Reparto | API REST interna idempotente y versionada | Mantiene la proyección sin compartir la base de datos. |
+| Seguridad entrega identidad y roles | JWT validado localmente mediante JWKS | Evita consultar Seguridad en cada petición. |
+| Alta o vinculación de un repartidor | API REST con resultado o estado pendiente | La ruta y el scope definitivos deben acordarse con Seguridad. |
+| Carga de evidencia | URL firmada hacia Storage | La transferencia directa evita que el Gateway transporte archivos grandes. |
 
-### 4.1. RabbitMQ no define el orden de atención del negocio
+### 4.1. Webhook y bandeja de salida
 
-Una cola puede conservar el orden de llegada dentro de ciertas condiciones, pero la cola de despachos de F-02 se ordena por reglas del dominio: fecha programada, prioridad, zona, intento y disponibilidad. RabbitMQ puede recibir y amortiguar solicitudes, pero no debe reemplazar la cola operativa almacenada por Gestión de Despachos.
-
-Si Ventas publica solicitudes por RabbitMQ, el consumidor debe ser idempotente por `idPedido`, validar la solicitud y crear el despacho. El orden en que después aparecen para asignación se determina en la base de datos, no por el orden físico de los mensajes.
-
-### 4.2. Webhook y RabbitMQ no son el mismo tipo de elemento C4
-
-- RabbitMQ sí aparece como contenedor porque es infraestructura ejecutable de mensajería.
-- Un webhook no es otro contenedor: es una relación HTTPS saliente hacia un endpoint del módulo receptor y se representa como una flecha.
-- No es necesario utilizar simultáneamente RabbitMQ y webhook para el mismo evento. El equipo debe escoger uno según el contrato acordado con Ventas.
+El webhook no es un contenedor adicional: es una relación HTTPS saliente hacia Ventas y Postventa. Gestión de Despachos registra primero cada evento en su bandeja de salida dentro de la misma transacción del cambio de estado. Un proceso posterior realiza el envío y los reintentos conservando el mismo identificador idempotente.
 
 ## 5. Propiedad y aislamiento de datos propuestos
 
@@ -206,9 +188,8 @@ Cada aplicación debe tener su propio archivo de configuración, variables de en
 | Vercel: Administrativo | `apps/despacho-administrativo` | URL pública del API Gateway |
 | Vercel: Repartidor | `apps/despacho-repartidor` | URL pública del API Gateway; la autorización temporal de Storage se recibe desde la API |
 | Render: API Gateway | `api-gateway` | URL interna de ambos microservicios, origen CORS permitido y datos para validar tokens de Seguridad |
-| Render: Gestión de Despachos | `servicio-gestion-despachos` | Conexión PostgreSQL propia, URL interna de Operación de Reparto, URL de Productos y configuración de RabbitMQ o webhook |
-| Render: Operación de Reparto y Flota | `servicio-operacion-reparto` | Conexión PostgreSQL propia, URL interna de Gestión de Despachos, URL de Seguridad, credenciales privadas de Storage y configuración de RabbitMQ si se aprueba |
-| RabbitMQ | Por definir | Host, puerto, credenciales, exchanges, colas, reintentos y dead-letter queues; solo si el equipo aprueba el broker |
+| Render: Gestión de Despachos | `servicio-gestion-despachos` | Conexión PostgreSQL propia, URL interna de Operación de Reparto, URL de Productos, URL del webhook de Ventas y credenciales de servicio |
+| Render: Operación de Reparto y Flota | `servicio-operacion-reparto` | Conexión PostgreSQL propia, URL interna de Gestión de Despachos, URL de Seguridad y credenciales privadas de Storage |
 
 Los secretos de base de datos, claves de servicio y credenciales privadas de Storage se configuran únicamente en Render. Nunca se incorporan al código fuente ni a las variables públicas de Vercel.
 
@@ -216,13 +197,12 @@ Los secretos de base de datos, claves de servicio y credenciales privadas de Sto
 
 | Decisión | Recomendación para discutir | Cuándo cambiarla |
 |---|---|---|
-| Solicitud de despacho desde Ventas | Comenzar con REST idempotente; aceptar RabbitMQ si es el estándar acordado entre módulos | Cuando Ventas confirme su contrato de integración |
-| Publicación de estados | RabbitMQ si varios módulos compartirán el broker; webhook con outbox si solo existe un receptor | Según infraestructura común, operación y tiempo disponible |
-| Eventos entre los dos microservicios | REST para comandos inmediatos y RabbitMQ para propagar hechos | Si el equipo elimina el broker, reemplazar los eventos por llamadas idempotentes |
+| URL y seguridad del webhook | Webhook HTTPS con outbox e identificador idempotente | Completar la URL y el scope cuando Ventas confirme su contrato de recepción |
+| Comunicación entre microservicios | APIs REST internas idempotentes, autenticadas y versionadas | Ajustar solamente si cambia el contrato interno |
 | Redis | No incluirlo todavía | Incorporarlo si se requiere rate limiting global con varias instancias, caché compartida o coordinación distribuida medida |
 | Base de datos | Un proyecto Supabase con dos esquemas y credenciales aisladas para el curso | Separar proyectos si se necesita aislamiento físico o despliegue realmente independiente |
 | Evidencias | Evaluar Supabase Storage privado con URL firmada | Cambiar si F-03 define otro proveedor o procesamiento especializado |
 | Autenticación | Consumir JWT de Seguridad; no usar Supabase Auth | Cambiar únicamente por acuerdo con Seguridad y Usuarios |
 | Mapas, GPS y optimización | No mostrarlos como contenedores actuales | Incorporarlos cuando entren formalmente al alcance funcional |
 
-Redis no se agrega solo por utilizar microservicios. RabbitMQ tampoco es obligatorio, pero sí tiene una justificación concreta si el curso quiere demostrar comunicación asíncrona o si Seguridad y Ventas ya lo establecieron como mecanismo común.
+Redis no se agrega solo por utilizar microservicios; se incorporará únicamente si aparece una necesidad medida de caché compartida, rate limiting distribuido o coordinación entre instancias.

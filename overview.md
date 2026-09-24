@@ -134,64 +134,9 @@ Seguridad y Usuarios emite los roles humanos y los tokens de servicio. El JWT de
 
 ## 5. Ciclo de vida del despacho
 
-El despacho tiene siete estados. Cada uno tiene una etiqueta pensada para el cliente y el Gestor, y responde a una pregunta simple: ¿dónde está el paquete?
+El despacho tiene siete estados: `PENDIENTE_ASIGNACION`, `ASIGNADO`, `EN_CAMINO`, `ENTREGADO`, `FALLIDO`, `DEVUELTO_A_ORIGEN` y `CANCELADO`. La definición canónica de cada estado, sus precondiciones, efectos y transiciones no permitidas se encuentra en [Diagrama de estados del despacho](arquitectura/diagrama-estados-despacho.md).
 
-| Estado | Etiqueta para el usuario | Dónde está el paquete | ¿Final? |
-|---|---|---|---|
-| `PENDIENTE_ASIGNACION` | En centro de despacho | Sellado en el centro, esperando repartidor | No |
-| `ASIGNADO` | Asignado a repartidor | Reservado para un repartidor, pero todavía en el centro de despacho | No |
-| `EN_CAMINO` | En camino | Recogido por el repartidor y fuera del centro, rumbo al destino | No |
-| `ENTREGADO` | Entregado | Con el cliente | Sí |
-| `FALLIDO` | No entregado, regresando al centro | Con el repartidor, de vuelta al centro | No |
-| `DEVUELTO_A_ORIGEN` | De vuelta en el centro de despacho | En el centro, a disposición de Ventas y Postventa | Sí |
-| `CANCELADO` | Cancelado | En el centro; el pedido fue anulado antes del traslado | Sí |
-
-```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> PENDIENTE_ASIGNACION: Paquete sellado en el centro (F-02)
-    PENDIENTE_ASIGNACION --> ASIGNADO: Asignación a repartidor (F-02)
-    PENDIENTE_ASIGNACION --> CANCELADO: Pedido anulado (F-02)
-    ASIGNADO --> CANCELADO: Pedido anulado (F-02)
-    ASIGNADO --> EN_CAMINO: Sale a entregar (F-03)
-    EN_CAMINO --> ENTREGADO: Entrega con foto (F-03)
-    EN_CAMINO --> FALLIDO: Incidencia con motivo y foto (F-03)
-    ASIGNADO --> FALLIDO: Cierre de jornada, NO_INTENTADO (F-03)
-    EN_CAMINO --> FALLIDO: Cierre de jornada, NO_INTENTADO (F-03)
-    FALLIDO --> PENDIENTE_ASIGNACION: Recibido en centro y reprogramado (F-04)
-    FALLIDO --> DEVUELTO_A_ORIGEN: Recibido en centro y cerrado (F-04)
-    ENTREGADO --> [*]
-    DEVUELTO_A_ORIGEN --> [*]
-    CANCELADO --> [*]
-```
-
-| Origen | Destino | Ejecuta | Contador de intentos |
-|---|---|---|---|
-| — | `PENDIENTE_ASIGNACION` | F-02 | Inicia en cero |
-| `PENDIENTE_ASIGNACION` | `ASIGNADO` | F-02 | Sin efecto |
-| `PENDIENTE_ASIGNACION` o `ASIGNADO` | `CANCELADO` | F-02 | Sin efecto |
-| `ASIGNADO` | `EN_CAMINO` | F-03 | Sin efecto |
-| `EN_CAMINO` | `ENTREGADO` | F-03 | Sin efecto |
-| `EN_CAMINO` | `FALLIDO` | F-03 | Incrementa en uno |
-| `ASIGNADO` o `EN_CAMINO` | `FALLIDO` (`NO_INTENTADO`) | F-03 | Sin efecto |
-| `FALLIDO` (recibido en centro) | `PENDIENTE_ASIGNACION` | F-04 | Sin efecto |
-| `FALLIDO` (recibido en centro) | `DEVUELTO_A_ORIGEN` | F-04 | Sin efecto |
-
-La reasignación de F-02 cambia el repartidor de un despacho `ASIGNADO` sin cambiar su estado. La recepción del paquete en el centro (F-04) tampoco cambia el estado: es una confirmación registrada sobre el despacho `FALLIDO` que habilita la decisión del Gestor.
-
-### 5.1. Reglas del ciclo de vida
-
-1. **Origen único:** todo despacho nace de un pedido pagado cuyo paquete está sellado en el centro de despacho; hay un solo despacho por pedido. Ventas informa peso, volumen y cantidad de bultos físicos, cuyo valor habitual es uno.
-2. **Cobertura obligatoria:** no se registra un despacho cuyo destino no esté cubierto por una zona activa.
-3. **Jornada y secuencia:** solo se asignan despachos programados para hoy o antes; cada asignación define la jornada y la posición en la ruta.
-4. **Capacidad:** ninguna asignación supera la capacidad remanente en kg, m³ o paquetes, calculada por F-05 a partir de los paquetes en poder del repartidor (`ASIGNADO`, `EN_CAMINO` y `FALLIDO` aún no recibidos en el centro).
-5. **Evidencia obligatoria:** no se registra `ENTREGADO` ni `FALLIDO` por incidencia sin fotografía. No se captura firma ni geolocalización.
-6. **Motivo tipificado:** todo `FALLIDO` lleva un motivo del catálogo de F-03: `CLIENTE_AUSENTE`, `DIRECCION_NO_UBICADA`, `RECHAZO_DEL_PAQUETE`, `DATOS_DE_CONTACTO_ERRONEOS`, `ZONA_INACCESIBLE`, `PAQUETE_DANADO`, y `NO_INTENTADO` como motivo exclusivo del sistema.
-7. **Retorno al centro:** todo paquete no entregado regresa al centro de despacho; el Gestor no puede reprogramar ni cerrar un despacho sin confirmar esa recepción.
-8. **Política de intentos:** el máximo es configurable, con valor inicial de dos. Al alcanzarlo, solo se permite cerrar como `DEVUELTO_A_ORIGEN`. Los `NO_INTENTADO` no consumen intentos.
-9. **Cierre de jornada:** ningún despacho queda en `ASIGNADO` o `EN_CAMINO` al terminar la jornada del repartidor.
-10. **Anulación del pedido:** antes del traslado se cancela el despacho; durante el traslado se rechaza; si el despacho está `FALLIDO`, solo puede cerrarse como `DEVUELTO_A_ORIGEN`.
-11. **Inicio físico del traslado:** mientras el despacho está `ASIGNADO`, el paquete permanece en el centro. En el momento en que el repartidor lo recoge y sale del centro, F-03 debe cambiarlo a `EN_CAMINO`.
+La vista funcional completa desde la solicitud de Ventas hasta la entrega, cancelación o devolución se encuentra en [Macroproceso de despacho y entrega](arquitectura/macroproceso-despacho.md).
 
 ---
 
@@ -321,7 +266,7 @@ Según la matriz cruzada del curso, Despacho y Entrega se integra con Marketplac
 - JSON en `camelCase`, enumeraciones en `UPPER_SNAKE_CASE` y fechas ISO 8601 en UTC.
 - Estructura común de errores definida en `integraciones/api-contract.md`.
 - Listados paginados; operaciones de cambio de estado idempotentes y protegidas con bloqueo optimista.
-- Los eventos se envían por webhook en la fase inicial; el publicador permite migrar a un broker de mensajería sin cambiar el dominio.
+- Los eventos hacia Ventas y Postventa se envían por webhook HTTPS mediante una bandeja de salida con reintentos.
 
 ### 8.3. Despliegue
 
@@ -335,9 +280,8 @@ Según la matriz cruzada del curso, Despacho y Entrega se integra con Marketplac
 |---|---|
 | Backend | Java 21, Spring Boot 4.1.1, Maven, Spring Web MVC, Spring Data JPA con Hibernate, Spring Security con JWT, Bean Validation, Lombok |
 | Frontend | React con Vite y Tailwind CSS; dependencias en `arquitectura/stack-frontend.md` |
-| Base de datos | Dos esquemas o bases lógicas PostgreSQL aisladas en Supabase; PostGIS en Gestión para F-01 |
+| Base de datos | Dos esquemas o bases lógicas PostgreSQL aisladas en Supabase |
 | Evidencias | Almacenamiento de objetos privado con URL firmadas; compresión en cliente y eliminación de EXIF |
-| Mapas | Leaflet con OpenStreetMap para la delimitación de zonas |
 | Pruebas | JUnit 5, Mockito, Spring Boot Test y Testcontainers |
 | Documentación de API | Swagger UI desde el backend desplegado |
 | Diseño | Figma |
@@ -357,7 +301,7 @@ Según la matriz cruzada del curso, Despacho y Entrega se integra con Marketplac
 ### 10.2. Dentro del equipo
 
 - Acordar quién construye el componente común de la sección 6 (máquina de estados, historial, eventos y consulta de seguimiento), que las demás funcionalidades reutilizan.
-- Actualizar `integraciones/api-contract.md`: estados `DEVUELTO_A_ORIGEN` y `CANCELADO`, catálogo de motivos, cuerpo de la evidencia (sin firma ni coordenadas), recepción en centro, endpoints nuevos de F-02 y F-05, y seguimiento con token de servicio.
+- Mantener `integraciones/api-contract.md` sincronizado con las funcionalidades, el modelo de datos y los acuerdos de integración.
 - Mantener sincronizados el contrato, el modelo de datos y las proyecciones entre los dos microservicios.
 - Actualizar el skill `.agent/skills/despacho-context`, el `README.md` y las historias de usuario afectadas.
 

@@ -1,6 +1,6 @@
 # Modelo de Datos: Módulo de Despacho y Entrega a Domicilio
 
-Este documento define el modelo relacional de los dos microservicios del módulo de Despacho y Entrega, derivado de F-01 a F-05, de los requisitos transversales RT-01 a RT-04 del [overview](../overview.md), del [contrato de API propuesto](../integraciones/api-contract1.md) y del [C4 de contenedores](./c4-contenedores.md).
+Este documento define el modelo relacional de los dos microservicios del módulo de Despacho y Entrega, derivado de F-01 a F-05, de los requisitos transversales RT-01 a RT-04 del [overview](../overview.md), del [contrato de API](../integraciones/api-contract.md) y del [C4 de contenedores](./c4-contenedores.md).
 
 - **Gestión de Despachos:** F-01, F-02 y F-04; es dueño de zonas, tarifas, despacho canónico, intentos, recepción en centro, historial y eventos.
 - **Operación de Reparto y Flota:** F-03 y F-05; es dueño de repartidores, furgonetas, jornadas, reservas de capacidad, proyección móvil y evidencias.
@@ -13,7 +13,7 @@ Cada microservicio usa una credencial de base de datos distinta. Para el curso p
 
 | Tema | Decisión | Motivo |
 |---|---|---|
-| Motor | PostgreSQL 15/16 en Supabase; PostGIS en Gestión de Despachos | La cobertura geográfica pertenece a F-01. |
+| Motor | PostgreSQL 15/16 en Supabase | Cada microservicio conserva su persistencia aislada. |
 | Persistencia | Dos esquemas o bases lógicas aisladas | Evita compartir tablas y modelos JPA entre microservicios. |
 | Claves primarias | `UUID` generado con `gen_random_uuid()` | Los identificadores se exponen en APIs y eventos; no revelan volumen de operación ni son predecibles. |
 | Código operativo | Columna única `codigo_rastreo_interno` | Facilita la operación interna; los canales consultan por `idPedido`. |
@@ -134,7 +134,6 @@ Cada tabla indica qué microservicio y funcionalidad la escriben. Una funcionali
 | `id` | `UUID` | PK | Identificador. |
 | `nombre` | `VARCHAR(80)` | NOT NULL, UNIQUE | Nombre de la zona ("Lima Centro"). |
 | `estado` | `VARCHAR(10)` | NOT NULL, CHECK (`ACTIVO`, `INACTIVO`) | Solo las zonas activas se cotizan y aceptan despachos. |
-| `geometria` | `GEOMETRY(MultiPolygon, 4326)` | NULL | Polígono dibujado en el mapa; opcional si la zona se define solo por distritos. |
 | `creado_en`, `actualizado_en` | `TIMESTAMPTZ` | NOT NULL | Auditoría. |
 | `creado_por`, `actualizado_por` | `VARCHAR(64)` | NOT NULL | Identificador de usuario de Seguridad. |
 
@@ -244,7 +243,7 @@ Representa la jornada de un repartidor: con qué furgoneta y en qué zona trabaj
 | `referencia` | `VARCHAR(200)` | NULL | Referencia de la dirección. |
 | `distrito` | `VARCHAR(80)` | NOT NULL | Distrito; se expone en el seguimiento. |
 | `codigo_postal` | `VARCHAR(10)` | NULL | Código postal. |
-| `ubicacion` | `GEOMETRY(Point, 4326)` | NULL | Coordenadas si Ventas las envía; solo se usan para resolver la zona. |
+| `latitud`, `longitud` | `NUMERIC` | NULL | Coordenadas informativas si Ventas las envía; la cobertura inicial se resuelve por distrito o código postal. |
 | `peso_kg` | `NUMERIC(10,3)` | NOT NULL, CHECK (> 0) | Peso del paquete sellado. |
 | `volumen_m3` | `NUMERIC(10,4)` | NOT NULL, CHECK (> 0) | Volumen del paquete sellado. |
 | `cantidad_paquetes` | `SMALLINT` | NOT NULL, DEFAULT 1, CHECK (> 0) | Bultos físicos recibidos desde Ventas. |
@@ -395,7 +394,7 @@ Implementa el patrón *outbox*: el evento se inserta en la misma transacción qu
 |---|---|---|---|
 | `id` | `UUID` | PK | Identificador del evento; se reenvía igual para que Ventas y Postventa descarte duplicados. |
 | `despacho_id` | `UUID` | FK → `despachos`, NOT NULL | Despacho. |
-| `destino` | `VARCHAR(25)` | NOT NULL, CHECK (`VENTAS`, `OPERACION_REPARTO`) | Consumidor del evento. |
+| `destino` | `VARCHAR(25)` | NOT NULL, CHECK (`VENTAS`) | Consumidor del evento externo. |
 | `tipo_evento` | `VARCHAR(40)` | NOT NULL, CHECK (tipos de la tabla de RT-03) | Tipo de evento. |
 | `payload` | `JSONB` | NOT NULL | Contenido enviado a Ventas y Postventa. |
 | `estado_envio` | `VARCHAR(15)` | NOT NULL, CHECK (`PENDIENTE`, `ENVIADO`, `ENVIO_FALLIDO`) | Estado del envío. |
@@ -404,7 +403,7 @@ Implementa el patrón *outbox*: el evento se inserta en la misma transacción qu
 | `ultimo_error` | `VARCHAR(500)` | NULL | Último error recibido. |
 | `creado_en`, `enviado_en` | `TIMESTAMPTZ` | — | Creación y envío exitoso. |
 
-Los despachos simulados no generan eventos hacia Ventas. Los eventos hacia Operación llevan la versión del despacho para mantener la proyección ordenada.
+Los despachos simulados no generan eventos hacia Ventas. La proyección de Operación se actualiza mediante la API interna y aplica la versión del despacho para conservar el orden.
 
 ### 3.5. Tablas de soporte por microservicio
 
@@ -531,7 +530,6 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 
 | Servicio | Tabla | Índice | Consulta que atiende |
 |---|---|---|---|
-| Gestión | `zonas` | GIST sobre `geometria` | Resolución por coordenadas |
 | Gestión | `zona_distritos` | `(distrito)`, `(codigo_postal)` | Resolución de zona |
 | Gestión | `despachos` | `(estado, fecha_programada)` | Cola y fallidos |
 | Gestión | `despachos` | `(id_pedido)` UNIQUE | Seguimiento e idempotencia |

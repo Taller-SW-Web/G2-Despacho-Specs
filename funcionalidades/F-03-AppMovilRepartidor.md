@@ -403,7 +403,7 @@ La funcionalidad se considera completa cuando:
 | `EN_CAMINO` | `FALLIDO` | Incidencia con motivo y evidencia | Incrementa en uno |
 | `ASIGNADO` o `EN_CAMINO` | `FALLIDO` (`NO_INTENTADO`) | Cierre de jornada o corte automático | Sin efecto |
 
-Cualquier otra transición desde F-03 es rechazada con `409 Conflict`. La máquina de estados completa del módulo está definida en el overview (sección 5).
+Cualquier otra transición desde F-03 es rechazada con `409 Conflict`. La máquina de estados completa del módulo está definida en [Diagrama de estados del despacho](../arquitectura/diagrama-estados-despacho.md).
 
 ## Anexo B. Catálogo de motivos de fallo
 
