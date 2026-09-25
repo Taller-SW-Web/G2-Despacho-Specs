@@ -148,15 +148,16 @@ La misma operación atiende tres consultas según el cuerpo recibido:
 
 | Cuerpo | Resultado | `tipoCotizacion` |
 |---|---|---|
-| Solo `destino` | Cobertura y tarifa base de la zona | `BASE` |
+| Solo `destino` | Cobertura, zona y datos del destino | — |
 | `destino` y `lineas` | Cobertura y costo calculado con los datos físicos de los productos | `EXACTA` |
-| Destino sin cobertura | Solo la cobertura, sin costo ni plazo | — |
+| Destino sin cobertura | Solo cobertura y datos del destino, sin costo ni plazo | — |
 
-Solicitud sin productos (cobertura y tarifa base):
+Solicitud sin productos (solo cobertura):
 
 ```json
 {
   "destino": {
+    "direccion": "Av. Javier Prado Este 2465",
     "distrito": "San Borja",
     "codigoPostal": "15036"
   }
@@ -168,6 +169,7 @@ Solicitud con productos:
 ```json
 {
   "destino": {
+    "direccion": "Av. Javier Prado Este 2465",
     "distrito": "San Borja",
     "codigoPostal": "15036"
   },
@@ -180,12 +182,11 @@ Solicitud con productos:
 
 Reglas:
 
-- Debe informarse al menos `distrito` o `codigoPostal`.
-- `lineas` es opcional. Si se omite, la cotización es `BASE`. Si se envía, debe contener al menos un elemento.
+- Debe informarse `distrito`; `direccion`, `codigoPostal` y los demás datos del destino son opcionales.
+- `lineas` es opcional. Si se omite, la respuesta confirma únicamente la cobertura, la zona y los datos del destino, sin costo ni plazo. Si se envía, debe contener al menos un elemento.
 - En cada línea, `sku` es obligatorio y `cantidad` debe ser mayor que cero.
 - Despacho evalúa primero la cobertura. Si el destino no tiene cobertura, responde sin consultar a Productos ni validar las líneas.
 - Con `lineas`, Despacho agrupa los SKU repetidos, consulta a Productos en lote y calcula el peso y volumen totales; el canal no envía esos totales.
-- La cotización `BASE` corresponde a la tarifa base de la zona y es un monto mínimo: el costo final puede aumentar según el peso y volumen reales.
 - La cotización no crea un pedido ni un despacho.
 
 Respuesta con cobertura, sin productos (`200 OK`):
@@ -193,15 +194,9 @@ Respuesta con cobertura, sin productos (`200 OK`):
 ```json
 {
   "coberturaDisponible": true,
-  "tipoCotizacion": "BASE",
-  "idZona": "ZONA-LIMA-CENTRO",
   "nombreZona": "Lima Centro",
-  "costoEnvio": 10.0,
-  "pesoBaseKg": 3.0,
-  "moneda": "PEN",
-  "plazoEstimadoDiasHabiles": 2,
-  "fechaEstimadaEntrega": "2026-09-25",
-  "cotizadoEn": "2026-09-23T18:30:00Z"
+  "distrito": "San Borja",
+  "codigoPostal": "15036"
 }
 ```
 
@@ -211,8 +206,10 @@ Respuesta con cobertura, con productos (`200 OK`):
 {
   "coberturaDisponible": true,
   "tipoCotizacion": "EXACTA",
-  "idZona": "ZONA-LIMA-CENTRO",
   "nombreZona": "Lima Centro",
+  "direccion": "Av. Javier Prado Este 2465",
+  "distrito": "San Borja",
+  "codigoPostal": "15036",
   "pesoTotalKg": 2.65,
   "volumenTotalM3": 0.017,
   "costoEnvio": 14.5,
@@ -228,22 +225,20 @@ Respuesta sin cobertura (`200 OK`), con o sin productos:
 ```json
 {
   "coberturaDisponible": false,
-  "tipoCotizacion": null,
-  "costoEnvio": null,
-  "moneda": "PEN",
-  "plazoEstimadoDiasHabiles": null,
-  "fechaEstimadaEntrega": null,
+  "nombreZona": null,
+  "distrito": "San Borja",
+  "codigoPostal": "15036",
   "mensaje": "La dirección se encuentra fuera de nuestra zona de cobertura"
 }
 ```
 
-Con `tipoCotizacion=BASE`, los canales deben presentar el monto como precio mínimo (por ejemplo, "desde S/ 10.00"). Despacho calcula tanto el plazo como la fecha estimada de entrega. Los canales pueden comunicar `fechaEstimadaEntrega` al cliente y Ventas puede conservarla como referencia, pero no debe enviarla al crear el despacho. Las promociones, incluido el envío gratuito, y el importe finalmente cobrado al cliente pertenecen a Ventas y Postventa y no modifican el costo logístico calculado por Despacho.
+El costo, el plazo y la `fechaEstimadaEntrega` solo se devuelven con `tipoCotizacion=EXACTA`, es decir, cuando el cuerpo incluye `lineas`. Si se omite `lineas`, la respuesta confirma únicamente la cobertura, la zona y los datos del destino; los canales validan la cobertura en pantalla y, si no hay cobertura, se muestra el mensaje correspondiente sin costo ni plazo. Despacho calcula tanto el plazo como la fecha estimada de entrega. Los canales pueden comunicar `fechaEstimadaEntrega` al cliente y Ventas puede conservarla como referencia, pero no debe enviarla al crear el despacho. Las promociones, incluido el envío gratuito, y el importe finalmente cobrado al cliente pertenecen a Ventas y Postventa y no modifican el costo logístico calculado por Despacho.
 
 Errores propios:
 
 | Código | HTTP | Condición |
 |---|---|---|
-| `DESP_ERROR_DESTINO_REQUERIDO` | `400` | No se informó `distrito` ni `codigoPostal` |
+| `DESP_ERROR_DESTINO_REQUERIDO` | `400` | No se informó `distrito` |
 | `DESP_ERROR_LINEAS_VACIAS` | `400` | Se envió `lineas` sin elementos |
 | `DESP_ERROR_CANTIDAD_INVALIDA` | `400` | Cantidad menor o igual a cero |
 | `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` | `422` | Productos no reconoce un SKU |
