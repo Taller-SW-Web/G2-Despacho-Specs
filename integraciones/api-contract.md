@@ -86,7 +86,7 @@ El valor de `iss` se obtiene del campo `issuer` publicado por `GET /api/v1/auth/
 | `despachos:crear` | Ventas | Crear un despacho para un pedido pagado, preparado y listo para entrega |
 | `despachos:cancelar` | Ventas | Solicitar cancelación por anulación del pedido |
 
-Estos scopes pertenecen a la API de Despacho: Despacho define su significado y Seguridad los registra y concede a cada `client_id`. En cambio, `usuarios:leer` y `direcciones:leer` pertenecen a la API de Seguridad y ya están concedidos a `modulo-despacho`. El acceso de Despacho a datos físicos deberá usar el scope que defina Productos y Ofertas, propuesto provisionalmente como `productos:fisicos:leer`.
+Estos scopes pertenecen a la API de Despacho: Despacho define su significado y Seguridad los registra y concede a cada `client_id`. En cambio, `usuarios:leer` y `direcciones:leer` pertenecen a la API de Seguridad y ya están concedidos a `modulo-despacho`. Para consultar datos físicos, Productos y Ofertas acordó el scope `productos:fisicos:leer`, perteneciente a `api-productos`, que deberá concederse al cliente técnico `modulo-despacho`.
 
 ### 3.5. Errores
 
@@ -173,7 +173,7 @@ Para cerrar la integración se deben probar, como mínimo, los casos sin token, 
 |---|---|---|---|---|
 | Marketplace o Chatbot | Despacho | Solicitar cotización | Token de servicio con `cotizaciones:calcular` | REST síncrono |
 | Marketplace o Chatbot | Despacho | Consultar seguimiento por `idPedido` | Token de servicio con `seguimientos:leer` | REST síncrono |
-| Despacho | Productos y Ofertas | Consultar datos físicos por SKU | Token de `modulo-despacho` con scope definido por Productos | REST síncrono en lote |
+| Despacho | Productos y Ofertas | Consultar datos físicos por SKU | Token de `modulo-despacho` con `aud=api-productos` y scope `productos:fisicos:leer` | REST síncrono en lote |
 | Ventas y Postventa | Despacho | Crear despacho de pedido listo para entrega | Token de servicio con `despachos:crear` | REST síncrono e idempotente |
 | Ventas y Postventa | Despacho | Cancelar por anulación | Token de servicio con `despachos:cancelar` | REST síncrono e idempotente |
 | Despacho | Ventas y Postventa | Informar cambios de estado | Token de servicio con scope definido por Ventas | Webhook con outbox y reintentos |
@@ -296,12 +296,13 @@ Errores propios:
 
 ### 5.2. Integración de Despacho con Productos y Ofertas
 
-Esta operación pertenece a Productos y Ofertas. La ruta definitiva debe ser confirmada por ese equipo; Despacho requiere como mínimo un contrato equivalente al siguiente.
+Esta operación pertenece a Productos y Ofertas. Ambos equipos acordaron la ruta, las unidades y la autorización descritas a continuación.
 
-- **Método propuesto:** `POST`
-- **Ruta propuesta:** `/api/v1/productos/datos-fisicos/consulta`
-- **Consumidor:** backend de Despacho.
-- **Autenticación:** token de servicio propio de `modulo-despacho`, con el scope que defina Productos; se propone `productos:fisicos:leer`.
+- **Método:** `POST`
+- **Ruta:** `/api/v1/productos/datos-fisicos/consulta`
+- **Consumidor:** backend de Despacho, identificado por el `client_id` `modulo-despacho`.
+- **Autenticación:** token de servicio con `aud=api-productos` y scope `productos:fisicos:leer`.
+- **Unidades:** peso en kilogramos (`pesoKg`) y dimensiones en centímetros (`dimensionesCm`).
 
 ```json
 {
@@ -1076,7 +1077,7 @@ Despacho -> Canal: estado, fecha, distrito e hitos sin coordenadas ni PII
 | Equipo | Acuerdo pendiente |
 |---|---|
 | Seguridad y Usuarios | Registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
-| Productos y Ofertas | Ruta y esquema definitivo de la consulta física en lote; unidades; scope requerido, propuesto como `productos:fisicos:leer` |
+| Productos y Ofertas | Registrar en Seguridad la concesión de `productos:fisicos:leer` a `modulo-despacho` para `api-productos` y ejecutar las pruebas de contrato entre ambos backends |
 | Ventas y Postventa | Registrar `modulo-ventas` con `despachos:crear`, `despachos:cancelar` y `seguimientos:leer`; invocar la creación solo cuando el pedido esté pagado, preparado y listo para entrega; proporcionar la URL y definir el scope de recepción del webhook; autorizar al usuario antes de solicitar una cancelación |
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
 | Equipo de Despacho | Convención final de `Idempotency-Key`; tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
