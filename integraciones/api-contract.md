@@ -392,6 +392,22 @@ Despacho no reenvía a Productos el token recibido de Marketplace o Chatbot. Obt
 }
 ```
 
+El campo `estado` utiliza el siguiente catálogo. `FALLIDO` representa un intento no completado y no debe interpretarse como el cierre definitivo del despacho.
+
+| Estado | Significado para el consumidor | Final |
+|---|---|---|
+| `PENDIENTE_ASIGNACION` | El despacho fue creado y espera la asignación de un repartidor. | No |
+| `ASIGNADO` | El despacho ya tiene repartidor, pero todavía no ha salido del centro. | No |
+| `EN_CAMINO` | El repartidor recogió el paquete y comenzó el traslado al destinatario. | No |
+| `FALLIDO` | La entrega no se completó o terminó la jornada sin realizarla; todavía puede reprogramarse. | No |
+| `ENTREGADO` | La entrega fue confirmada correctamente. | Sí |
+| `DEVUELTO_A_ORIGEN` | El paquete regresó al centro y la operación terminó sin entrega; no habrá otro intento. | Sí |
+| `CANCELADO` | Ventas anuló el pedido antes de completar el despacho. | Sí |
+
+Los estados finales son `ENTREGADO`, `DEVUELTO_A_ORIGEN` y `CANCELADO`; no admiten nuevas transiciones. Para consultar las transiciones, precondiciones y efectos completos, véase el [diagrama de estados del despacho](../arquitectura/diagrama-estados-despacho.md).
+
+`estadoEtiqueta` y las etiquetas de los hitos proporcionan una descripción pública sin detalles operativos sensibles. Cada canal puede adaptar su redacción para la interfaz.
+
 La respuesta nunca incluye:
 
 - Coordenadas.
