@@ -10,6 +10,17 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 | **F-04** | Entregas fallidas y reprogramaciones | Recibe en el centro los paquetes no entregados y decide su reprogramación o cierre. | Gerardo | En especificación | [Ver especificación](./F-04-GestionEntregasFallidas.md) |
 | **F-05** | Monitoreo de flota, operadores y capacidad diaria | Administra repartidores, furgonetas, jornadas y ocupación. | Rhamses | En especificación | [Ver especificación](./F-05-MonitoreoFlotaCapacidad.md) |
 
+## Especificaciones atómicas de F-04
+
+| ID | Comportamiento | Especificación | Estado |
+|---|---|---|---|
+| **ES-F04-01** | Consultar entregas fallidas | [Ver especificación](../especificaciones/ES-F04-01-ConsultarEntregasFallidas.md) | Borrador |
+| **ES-F04-02** | Consultar el detalle de una incidencia | [Ver especificación](../especificaciones/ES-F04-02-ConsultarDetalleIncidencia.md) | Borrador |
+| **ES-F04-03** | Confirmar la recepción del paquete | [Ver especificación](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete.md) | Borrador |
+| **ES-F04-04** | Reprogramar un despacho fallido | [Ver especificación](../especificaciones/ES-F04-04-ReprogramarDespachoFallido.md) | Borrador |
+| **ES-F04-05** | Cerrar un despacho como devuelto a origen | [Ver especificación](../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen.md) | Borrador |
+| **ES-F04-06** | Registrar la trazabilidad de las operaciones | [Ver especificación](../especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones.md) | Borrador |
+
 ## Requisitos transversales
 
 La gestión de estados del despacho y el seguimiento del pedido en ruta se especifican como requisitos transversales (RT-01 a RT-04) en la sección 6 de [overview.md](../overview.md). No constituyen una funcionalidad independiente.
