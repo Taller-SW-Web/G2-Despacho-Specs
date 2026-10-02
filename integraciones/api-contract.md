@@ -26,7 +26,7 @@ Este contrato establece:
 | Chatbot | Conversación con el cliente | Destino, SKU y cantidad; `idPedido` para seguimiento | Cobertura, cotización, plazo y estado resumido |
 | Ventas y Postventa | Pedido, pago, preparación, anulaciones y tratamiento comercial | Pedido listo para entrega con destinatario, destino y líneas (`sku`, `cantidad`); cancelaciones | Identificador del despacho y eventos de estado |
 | Productos y Ofertas | Catálogo, SKU, peso y dimensiones del producto | Datos físicos vigentes consultados por Despacho | Consulta de SKUs realizada por Despacho |
-| Seguridad y Usuarios | Identidades, credenciales y roles | JWT de usuario, tokens de servicio, JWKS e identificadores de usuario | Solicitud de creación o vinculación de repartidores, pendiente de acuerdo |
+| Seguridad y Usuarios | Identidades, credenciales y roles globales | JWT de usuario, tokens de servicio, JWKS e identificadores de usuario | Ninguna credencial; el alta global la realiza `ADMIN_SISTEMA` y Despacho conserva únicamente el vínculo local con `usuario_id` |
 | Gestión de Despachos | Zonas, tarifas, despacho, estado e historial | Comandos y estados confirmados para Operación | Disponibilidad, capacidad y transiciones solicitadas |
 | Operación de Reparto y Flota | Repartidores, furgonetas, jornadas, capacidad y evidencias | Disponibilidad y comandos de transición de campo | Asignaciones y estados confirmados |
 
@@ -58,22 +58,24 @@ La obtención de un token de servicio es la excepción al último encabezado: `P
 
 ### 3.3. Roles humanos y tokens de servicio
 
-| Rol | Uso |
+| Rol global | Uso |
 |---|---|
 | `GESTOR_DESPACHO` | Todas las operaciones administrativas: zonas, tarifas, programación, asignación, incidencias, repartidores, furgonetas y jornadas |
-| `REPARTIDOR` | Ruta propia, evidencia y operaciones de campo; su incorporación al catálogo de Seguridad está pendiente de acuerdo |
+
+`REPARTIDOR` no forma parte del catálogo global de roles de Seguridad. Es un perfil local de Despacho enlazado al `sub` del usuario mediante el `usuario_id` almacenado por F-05. Las operaciones de campo se autorizan verificando que ese perfil exista, esté activo y sea propietario de la ruta o del recurso solicitado.
 
 Los módulos externos no utilizan un rol humano `SERVICIO_INTEGRACION`. Seguridad emite tokens de servicio en los que:
 
 - `sub` contiene el `client_id`, por ejemplo `modulo-chatbot` o `modulo-ventas`.
 - `tipo` vale `servicio`.
 - `scope` contiene los permisos concedidos al cliente.
+- `aud` contiene las APIs dueñas de esos scopes, por ejemplo `api-despacho`.
 - `iss` identifica al emisor de Seguridad.
 - `iat`, `exp` y `jti` permiten validar emisión, vencimiento y unicidad del token.
 
 Los tokens de usuarios humanos llevan `tipo=acceso`, un UUID de usuario en `sub` y sus roles en `roles`. Los tokens de refresco no se aceptan en las APIs de negocio.
 
-El valor definitivo de `iss` y la representación del scope dentro del JWT (`scope` como texto o `scopes` como arreglo) deben confirmarse con Seguridad. No se exigirá `aud` mientras no forme parte de su contrato definitivo.
+El valor de `iss` se obtiene del campo `issuer` publicado por `GET /api/v1/auth/.well-known/openid-configuration`; no se fija manualmente porque cambia según el entorno. En el JWT de servicio, `scope` es un texto con valores separados por espacios y `aud` identifica las APIs destinatarias. El token de servicio dura una hora y no tiene token de refresco. Despacho exige `aud=api-despacho` en sus endpoints de integración. El contrato actual de Seguridad no garantiza `aud` en los tokens humanos de acceso, por lo que esa validación se aplica únicamente a los tokens de servicio.
 
 ### 3.4. Scopes de servicio de Despacho
 
@@ -84,7 +86,7 @@ El valor definitivo de `iss` y la representación del scope dentro del JWT (`sco
 | `despachos:crear` | Ventas | Crear un despacho para un pedido pagado, preparado y listo para entrega |
 | `despachos:cancelar` | Ventas | Solicitar cancelación por anulación del pedido |
 
-Estos scopes pertenecen a la API de Despacho: Despacho define su significado y Seguridad los registra y concede a cada `client_id`. En cambio, `usuarios:leer` y `direcciones:leer` pertenecen a la API de Seguridad y ya están concedidos a `modulo-despacho`. El acceso de Despacho a datos físicos deberá usar el scope que defina Productos y Ofertas, propuesto provisionalmente como `productos:fisicos:leer`.
+Estos scopes pertenecen a la API de Despacho: Despacho define su significado y Seguridad los registra y concede a cada `client_id`. En cambio, `usuarios:leer` y `direcciones:leer` pertenecen a la API de Seguridad y ya están concedidos a `modulo-despacho`. Para consultar datos físicos, Productos y Ofertas acordó el scope `productos:fisicos:leer`, perteneciente a `api-productos`, que deberá concederse al cliente técnico `modulo-despacho`.
 
 ### 3.5. Errores
 
@@ -112,13 +114,58 @@ Las respuestas de error usan `Content-Type: application/problem+json`, siguiendo
 | Código HTTP | Significado |
 |---|---|
 | `400 Bad Request` | Formato o validación básica inválida |
-| `401 Unauthorized` | Credencial ausente, inválida o vencida |
-| `403 Forbidden` | Credencial válida sin el rol o propiedad requerida |
+| `401 Unauthorized` | Token ausente, firma inválida, token vencido o claims de seguridad no aceptados; para tokens de servicio incluye `iss`, `aud` y `tipo` incorrectos |
+| `403 Forbidden` | Token válido, pero sin el scope, rol o propiedad del recurso requerido |
 | `404 Not Found` | Recurso inexistente |
 | `409 Conflict` | Estado incompatible, duplicado o modificación concurrente |
 | `422 Unprocessable Entity` | Solicitud válida, pero no procesable por una regla del negocio |
 | `429 Too Many Requests` | Límite de cotizaciones excedido |
 | `503 Service Unavailable` | Dependencia necesaria temporalmente no disponible |
+
+Todos los endpoints protegidos aplican esta distinción antes de ejecutar la operación de negocio. Una respuesta `401` incluye el encabezado `WWW-Authenticate: Bearer` y no indica si el recurso solicitado existe. Una respuesta `403` tampoco expone datos del pedido, despacho, destinatario o repartidor.
+
+Ejemplo de token no aceptado:
+
+```http
+HTTP/1.1 401 Unauthorized
+Content-Type: application/problem+json
+WWW-Authenticate: Bearer
+```
+
+```json
+{
+  "type": "https://despacho.example.com/problemas/token-invalido",
+  "title": "Token no aceptado",
+  "status": 401,
+  "code": "DESP_ERROR_TOKEN_INVALIDO",
+  "detail": "No fue posible autenticar la solicitud",
+  "instance": "/api/v1/seguimientos/pedidos/PED-2026-00891",
+  "correlationId": "35ac19fa-4b25-4a98-bbdd-882234ec1a2c",
+  "timestamp": "2026-09-23T18:30:00Z"
+}
+```
+
+Ejemplo de token válido sin el scope exigido por la operación:
+
+```http
+HTTP/1.1 403 Forbidden
+Content-Type: application/problem+json
+```
+
+```json
+{
+  "type": "https://despacho.example.com/problemas/permiso-insuficiente",
+  "title": "Permiso insuficiente",
+  "status": 403,
+  "code": "DESP_ERROR_SCOPE_INSUFICIENTE",
+  "detail": "El cliente no tiene permiso para realizar esta operación",
+  "instance": "/api/v1/seguimientos/pedidos/PED-2026-00891",
+  "correlationId": "35ac19fa-4b25-4a98-bbdd-882234ec1a2c",
+  "timestamp": "2026-09-23T18:30:00Z"
+}
+```
+
+Para cerrar la integración se deben probar, como mínimo, los casos sin token, token inválido o vencido, audiencia incorrecta, scope ausente y scope correcto. Una audiencia que no contenga `api-despacho` se rechaza con `401 Unauthorized` antes de ejecutar la operación de negocio.
 
 ## 4. Matriz de comunicaciones externas
 
@@ -126,12 +173,12 @@ Las respuestas de error usan `Content-Type: application/problem+json`, siguiendo
 |---|---|---|---|---|
 | Marketplace o Chatbot | Despacho | Solicitar cotización | Token de servicio con `cotizaciones:calcular` | REST síncrono |
 | Marketplace o Chatbot | Despacho | Consultar seguimiento por `idPedido` | Token de servicio con `seguimientos:leer` | REST síncrono |
-| Despacho | Productos y Ofertas | Consultar datos físicos por SKU | Token de `modulo-despacho` con scope definido por Productos | REST síncrono en lote |
+| Despacho | Productos y Ofertas | Consultar datos físicos por SKU | Token de `modulo-despacho` con `aud=api-productos` y scope `productos:fisicos:leer` | REST síncrono en lote |
 | Ventas y Postventa | Despacho | Crear despacho de pedido listo para entrega | Token de servicio con `despachos:crear` | REST síncrono e idempotente |
 | Ventas y Postventa | Despacho | Cancelar por anulación | Token de servicio con `despachos:cancelar` | REST síncrono e idempotente |
 | Despacho | Ventas y Postventa | Informar cambios de estado | Token de servicio con scope definido por Ventas | Webhook con outbox y reintentos |
 | Despacho | Seguridad y Usuarios | Obtener claves públicas | HTTPS | JWKS con caché |
-| Despacho | Seguridad y Usuarios | Crear o vincular usuario de repartidor | Token de servicio; ruta y scope pendientes | REST síncrono con reintento manual |
+| Seguridad y Usuarios | Despacho | Notificar cambios de estado o roles de usuarios | Credenciales y permisos del broker pendientes de publicación | Eventos RabbitMQ previstos por Seguridad |
 
 ## 5. F-01: cotización para Marketplace, Chatbot y Ventas
 
@@ -249,12 +296,13 @@ Errores propios:
 
 ### 5.2. Integración de Despacho con Productos y Ofertas
 
-Esta operación pertenece a Productos y Ofertas. La ruta definitiva debe ser confirmada por ese equipo; Despacho requiere como mínimo un contrato equivalente al siguiente.
+Esta operación pertenece a Productos y Ofertas. Ambos equipos acordaron la ruta, las unidades y la autorización descritas a continuación.
 
-- **Método propuesto:** `POST`
-- **Ruta propuesta:** `/api/v1/productos/datos-fisicos/consulta`
-- **Consumidor:** backend de Despacho.
-- **Autenticación:** token de servicio propio de `modulo-despacho`, con el scope que defina Productos; se propone `productos:fisicos:leer`.
+- **Método:** `POST`
+- **Ruta:** `/api/v1/productos/datos-fisicos/consulta`
+- **Consumidor:** backend de Despacho, identificado por el `client_id` `modulo-despacho`.
+- **Autenticación:** token de servicio con `aud=api-productos` y scope `productos:fisicos:leer`.
+- **Unidades:** peso en kilogramos (`pesoKg`) y dimensiones en centímetros (`dimensionesCm`).
 
 ```json
 {
@@ -343,6 +391,22 @@ Despacho no reenvía a Productos el token recibido de Marketplace o Chatbot. Obt
   "actualizadoEn": "2026-09-23T16:00:00Z"
 }
 ```
+
+El campo `estado` utiliza el siguiente catálogo. `FALLIDO` representa un intento no completado y no debe interpretarse como el cierre definitivo del despacho.
+
+| Estado | Significado para el consumidor | Final |
+|---|---|---|
+| `PENDIENTE_ASIGNACION` | El despacho fue creado y espera la asignación de un repartidor. | No |
+| `ASIGNADO` | El despacho ya tiene repartidor, pero todavía no ha salido del centro. | No |
+| `EN_CAMINO` | El repartidor recogió el paquete y comenzó el traslado al destinatario. | No |
+| `FALLIDO` | La entrega no se completó o terminó la jornada sin realizarla; todavía puede reprogramarse. | No |
+| `ENTREGADO` | La entrega fue confirmada correctamente. | Sí |
+| `DEVUELTO_A_ORIGEN` | El paquete regresó al centro y la operación terminó sin entrega; no habrá otro intento. | Sí |
+| `CANCELADO` | Ventas anuló el pedido antes de completar el despacho. | Sí |
+
+Los estados finales son `ENTREGADO`, `DEVUELTO_A_ORIGEN` y `CANCELADO`; no admiten nuevas transiciones. Para consultar las transiciones, precondiciones y efectos completos, véase el [diagrama de estados del despacho](../arquitectura/diagrama-estados-despacho.md).
+
+`estadoEtiqueta` y las etiquetas de los hitos proporcionan una descripción pública sin detalles operativos sensibles. Cada canal puede adaptar su redacción para la interfaz.
 
 La respuesta nunca incluye:
 
@@ -502,8 +566,9 @@ Despacho valida los JWT localmente, sin consultar a Seguridad en cada solicitud:
 1. Obtiene la configuración desde `GET /api/v1/auth/.well-known/openid-configuration`.
 2. Obtiene las claves públicas desde `GET /api/v1/auth/.well-known/jwks.json` y las mantiene en caché.
 3. Verifica firma, algoritmo permitido, vencimiento y emisor.
-4. Para una persona, exige `tipo=acceso` y el rol humano correspondiente.
-5. Para un módulo, exige `tipo=servicio` y el scope propio de la operación.
+4. Para una persona gestora, exige `tipo=acceso` y el rol `GESTOR_DESPACHO`.
+5. Para un repartidor, exige `tipo=acceso` y resuelve mediante `sub` un perfil local activo vinculado al usuario.
+6. Para un módulo, exige `tipo=servicio`, que `aud` contenga `api-despacho` y el scope propio de la operación.
 
 No se exige el rol ficticio `SERVICIO_INTEGRACION` ni un claim separado `clientId`: la identidad técnica ya está en `sub`. Tampoco se combina el token con una API key.
 
@@ -514,7 +579,7 @@ Ejemplo conceptual de token de usuario:
   "sub": "2f31c1b1-7568-41b8-bf91-342db68431df",
   "tipo": "acceso",
   "roles": ["GESTOR_DESPACHO"],
-  "iss": "auth-service",
+  "iss": "https://seguridad.example.com/api/v1/auth",
   "iat": 1789273200,
   "exp": 1789276800,
   "jti": "7f22750a-8365-48da-93cf-6e063159ec60"
@@ -528,14 +593,15 @@ Ejemplo conceptual de token de servicio:
   "sub": "modulo-chatbot",
   "tipo": "servicio",
   "scope": "cotizaciones:calcular seguimientos:leer",
-  "iss": "auth-service",
+  "aud": ["api-despacho"],
+  "iss": "https://seguridad.example.com/api/v1/auth",
   "iat": 1789273200,
   "exp": 1789276800,
   "jti": "ad6b5dda-c481-4ad3-907a-04a56d392de7"
 }
 ```
 
-`iss=auth-service` y el campo `scope` son ilustrativos. Seguridad debe confirmar el valor exacto del emisor y si entrega `scope` como texto o `scopes` como arreglo. Su contrato actual no documenta `aud`, por lo que Despacho no debe inventarlo como requisito.
+Los valores de `iss` mostrados son ilustrativos y no deben copiarse en la configuración. Cada despliegue obtiene el emisor real mediante el documento de descubrimiento de su propio entorno. Seguridad confirmó `scope` como texto separado por espacios dentro del JWT de servicio y `aud` como la lista de APIs dueñas de los scopes concedidos.
 
 ### 8.2. Obtención de un token de servicio
 
@@ -556,14 +622,17 @@ Respuesta esperada:
 
 ```json
 {
-  "access_token": "<jwt-de-servicio>",
-  "token_type": "Bearer",
-  "expires_in": 3600,
-  "scope": "cotizaciones:calcular seguimientos:leer"
+  "accessToken": "<jwt-de-servicio>",
+  "tokenType": "Bearer",
+  "expiresIn": 3600,
+  "scopes": [
+    "cotizaciones:calcular",
+    "seguimientos:leer"
+  ]
 }
 ```
 
-El canal utiliza después `Authorization: Bearer <jwt-de-servicio>` al llamar a Despacho. Del mismo modo, `modulo-despacho` solicita otro token con sus propias credenciales y el scope aceptado por Productos; nunca reutiliza el token del canal.
+El arreglo `scopes` pertenece a la respuesta HTTP de emisión. Dentro del JWT emitido, el claim `scope` contiene esos valores separados por espacios. El canal utiliza después `Authorization: Bearer <jwt-de-servicio>` al llamar a Despacho. Del mismo modo, `modulo-despacho` solicita otro token con sus propias credenciales y el scope aceptado por Productos; nunca reutiliza el token del canal.
 
 ### 8.3. Introspección de un usuario antes de una operación sensible
 
@@ -575,38 +644,29 @@ Seguridad todavía no ha concedido `tokens:introspeccion` a `modulo-despacho`; n
 
 ### 8.4. Creación y vinculación de un usuario repartidor
 
-El contrato actual de Seguridad todavía no contiene el rol `REPARTIDOR` ni una operación específica para que Despacho cree o vincule esa cuenta. Por tanto, lo siguiente es una propuesta pendiente, no una API confirmada:
+Seguridad confirmó que `REPARTIDOR` no será un rol global, que no incluirá un claim `idRepartidor` y que no expondrá un endpoint para crear cuentas de repartidores mediante el token de servicio de Despacho. Una persona con rol `ADMIN_SISTEMA` crea cada cuenta en Seguridad y Despacho mantiene el perfil operativo en su propia base de datos.
 
-- **Método propuesto:** `POST`
-- **Ruta propuesta:** `/api/v1/usuarios/integraciones/repartidores`
-- **Consumidor:** `modulo-despacho`.
-- **Autenticación propuesta:** token de servicio con un scope que Seguridad deberá definir, por ejemplo `usuarios:crear:repartidor`.
-- **Idempotencia:** unicidad por `idRepartidor` y correo.
+El flujo de vinculación esperado, pendiente de confirmación operativa por Seguridad, es el siguiente:
 
-```json
-{
-  "idRepartidor": "REP-0012",
-  "nombres": "Juan",
-  "apellidos": "Pérez",
-  "documentoIdentidad": "71234567",
-  "correo": "juan.perez@example.com",
-  "telefono": "+51987654321",
-  "rol": "REPARTIDOR"
-}
-```
+1. F-05 registra al repartidor local con `vinculacion=PENDIENTE`.
+2. Un `ADMIN_SISTEMA` crea su cuenta en Seguridad mediante el procedimiento administrativo que ese módulo defina.
+3. Despacho recibe el `usuario_id` generado por Seguridad y lo asocia al repartidor local.
+4. Cuando llega un token humano, el backend utiliza su claim `sub` para localizar al repartidor vinculado.
+5. El acceso a rutas y operaciones de campo depende del estado local del repartidor y de la propiedad del recurso.
 
-```json
-{
-  "idUsuario": "USR-9021",
-  "idRepartidor": "REP-0012",
-  "rol": "REPARTIDOR",
-  "estado": "PENDIENTE_ACTIVACION"
-}
-```
+Despacho almacena solamente el `usuario_id`, el vínculo y los estados operativos; nunca almacena ni transporta la contraseña definitiva. La entrega o activación de las credenciales pertenece a Seguridad. No se abre una jornada mientras el repartidor no esté vinculado y habilitado.
 
-Seguridad no devuelve un token al crear la cuenta. Debe enviar una invitación o permitir que el repartidor defina sus credenciales; el token se emite recién cuando inicia sesión. Despacho almacena solamente `idUsuario`, el vínculo y el estado operativo, nunca la contraseña.
+La baja lógica local impide nuevas jornadas, asignaciones y operaciones, pero no desactiva por sí sola la cuenta global. La desactivación o el bloqueo global corresponde a Seguridad. Todavía deben confirmar el canal administrativo para solicitar el alta o la baja global, cómo se comunicará el `usuario_id`, cómo se entregarán las credenciales iniciales y qué valor llevará `roles` en el token de una cuenta vinculada como repartidor.
 
-Si Seguridad no está disponible, F-05 conserva al repartidor con `vinculacion=PENDIENTE` o `ERROR`. Cuando la cuenta existe pero espera al usuario, usa `PENDIENTE_ACTIVACION`; solo cambia a `VINCULADO` cuando Seguridad confirma que puede iniciar sesión. No se abre una jornada antes de `VINCULADO`. Dar de baja al repartidor en Despacho impide asignarle jornadas; bloquear su acceso es una operación separada cuya API pertenece a Seguridad.
+### 8.5. Eventos de usuarios publicados por Seguridad
+
+Despacho prevé consumir los eventos `usuario.desactivado`, `usuario.bloqueado`, `usuario.reactivado`, `usuario.desbloqueado` y `usuario.roles_cambiados` para mantener actualizado el acceso de los usuarios vinculados. Son notificaciones de cambios ya realizados por Seguridad, no comandos de Despacho ni scopes OAuth.
+
+- `usuario.desactivado` y `usuario.bloqueado` impiden iniciar jornadas, recibir nuevas asignaciones o ejecutar operaciones.
+- `usuario.reactivado` y `usuario.desbloqueado` actualizan el estado global, pero no revierten automáticamente una baja local.
+- `usuario.roles_cambiados` actualiza oportunamente el acceso administrativo de quienes ejercen como `GESTOR_DESPACHO`.
+
+Seguridad ha previsto publicar estos cambios mediante RabbitMQ, pero el contrato asíncrono todavía debe definir disponibilidad, exchange, routing keys, payloads, credenciales, permisos de consumo y política de reentrega. Hasta que ese contrato esté disponible, Despacho no asume que los eventos puedan consumirse en producción.
 
 ## 9. API administrativa de F-01 y F-02
 
@@ -686,7 +746,7 @@ Secuencia:
 
 ## 10. API de F-03: operación del repartidor
 
-Todos los recursos requieren JWT con rol `REPARTIDOR`. El backend obtiene el usuario desde el token y resuelve el repartidor vinculado; el cliente no puede elegir otro `idRepartidor`.
+Todos los recursos requieren un JWT humano con `tipo=acceso`. El backend toma el `sub`, resuelve el perfil local de repartidor vinculado y comprueba que esté activo; el cliente no puede elegir otro `idRepartidor`. No se exige un rol global `REPARTIDOR` ni un claim `idRepartidor`.
 
 | Método | Ruta | Propósito |
 |---|---|---|
@@ -804,15 +864,23 @@ Cierre:
 | Método | Ruta | Roles | Propósito |
 |---|---|---|---|
 | `GET` | `/api/v1/repartidores` | `GESTOR_DESPACHO` | Listar repartidores |
-| `POST` | `/api/v1/repartidores` | `GESTOR_DESPACHO` | Registrar y solicitar vinculación |
+| `POST` | `/api/v1/repartidores` | `GESTOR_DESPACHO` | Registrar perfil local pendiente de vinculación |
 | `GET` | `/api/v1/repartidores/{idRepartidor}` | `GESTOR_DESPACHO` | Consultar detalle |
 | `PUT` | `/api/v1/repartidores/{idRepartidor}` | `GESTOR_DESPACHO` | Editar |
 | `PATCH` | `/api/v1/repartidores/{idRepartidor}/estado` | `GESTOR_DESPACHO` | Alta o baja lógica |
-| `POST` | `/api/v1/repartidores/{idRepartidor}/vinculacion/reintento` | `GESTOR_DESPACHO` | Reintentar alta en Seguridad |
+| `PUT` | `/api/v1/repartidores/{idRepartidor}/vinculacion` | `GESTOR_DESPACHO` | Asociar el `usuario_id` creado previamente en Seguridad |
 | `GET` | `/api/v1/furgonetas` | `GESTOR_DESPACHO` | Listar furgonetas |
 | `POST` | `/api/v1/furgonetas` | `GESTOR_DESPACHO` | Registrar furgoneta |
 | `PUT` | `/api/v1/furgonetas/{idFurgoneta}` | `GESTOR_DESPACHO` | Editar límites |
 | `PATCH` | `/api/v1/furgonetas/{idFurgoneta}/estado` | `GESTOR_DESPACHO` | Cambiar disponibilidad o mantenimiento |
+
+La vinculación recibe el identificador de la cuenta global y no crea ni modifica credenciales:
+
+```json
+{
+  "usuarioId": "2f31c1b1-7568-41b8-bf91-342db68431df"
+}
+```
 
 Furgoneta:
 
@@ -1024,8 +1092,8 @@ Despacho -> Canal: estado, fecha, distrito e hitos sin coordenadas ni PII
 
 | Equipo | Acuerdo pendiente |
 |---|---|
-| Seguridad y Usuarios | Valor exacto de `iss`; representación de scopes; registrar los cuatro scopes de Despacho y asignarlos a cada `client_id`; incorporar `REPARTIDOR`; definir alta, invitación, baja y vinculación de su cuenta |
-| Productos y Ofertas | Ruta y esquema definitivo de la consulta física en lote; unidades; scope requerido, propuesto como `productos:fisicos:leer` |
+| Seguridad y Usuarios | Registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
+| Productos y Ofertas | Registrar en Seguridad la concesión de `productos:fisicos:leer` a `modulo-despacho` para `api-productos` y ejecutar las pruebas de contrato entre ambos backends |
 | Ventas y Postventa | Registrar `modulo-ventas` con `despachos:crear`, `despachos:cancelar` y `seguimientos:leer`; invocar la creación solo cuando el pedido esté pagado, preparado y listo para entrega; proporcionar la URL y definir el scope de recepción del webhook; autorizar al usuario antes de solicitar una cancelación |
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
 | Equipo de Despacho | Convención final de `Idempotency-Key`; tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
