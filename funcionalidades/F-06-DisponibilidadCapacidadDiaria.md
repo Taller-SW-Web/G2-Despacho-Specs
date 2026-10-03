@@ -1,6 +1,6 @@
 # Especificación F-06: Disponibilidad y Capacidad Diaria de la Flota
 
-**Responsable:** Rhamses
+**Responsable:** Luis
 **Estado:** En especificación
 **Actor principal:** Gestor de Despacho
 **Lineamiento del curso:** Soporte a la asignación de despacho a operador/repartidor
