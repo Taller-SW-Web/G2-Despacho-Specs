@@ -26,7 +26,8 @@ Este repositorio centraliza las especificaciones funcionales, decisiones general
 | **F-02** | Programación y asignación | Organiza los despachos pendientes y permite asignarlos a repartidores o rutas disponibles. |
 | **F-03** | Operación del repartidor | Ofrece una web responsive para consultar entregas, actualizar estados y registrar evidencias. |
 | **F-04** | Entregas fallidas y reprogramaciones | Gestiona incidencias, nuevos intentos de entrega y devoluciones a almacén. |
-| **F-05** | Flota, operadores y capacidad | Administra repartidores, furgonetas, jornadas, disponibilidad y capacidad diaria. |
+| **F-05** | Repartidores y vehículos | Registra repartidores con vinculación a Seguridad y furgonetas con capacidades de carga. |
+| **F-06** | Disponibilidad y capacidad diaria | Asigna repartidores a furgonetas y zonas por jornada, calcula ocupación y disponibilidad. |
 
 ### Seguimiento de pedidos
 
