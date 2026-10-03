@@ -1,31 +1,32 @@
 # Especificación F-02: Programación y Asignación de Despachos
 
-**Responsable:** Tarqui
-**Estado:** En especificación
-**Actor principal:** Gestor de Despacho
-**Lineamientos del curso:** Generación de solicitud de despacho a partir de un pedido; Asignación de despacho a operador/repartidor
+**Responsable:** Tarqui  
+**Estado:** En especificación  
+**Actor principal:** Gestor de Despacho  
+**Lineamientos del curso:** Generación de solicitud de despacho a partir de un pedido; Asignación de despacho a operador/repartidor  
 
 ## 1. Contexto
 
 Todos los pedidos de la tienda se preparan en un único centro de despacho. Cuando un pedido ya fue pagado y su paquete está sellado en ese centro, el módulo de Ventas y Postventa, dueño de la entidad pedido, solicita a Despacho su entrega a domicilio. A partir de esa solicitud nace el despacho, entidad cuyo dueño es este módulo, en estado `PENDIENTE_ASIGNACION` ("En centro de despacho").
 
-El Gestor de Despacho necesita un panel donde ver la cola de despachos pendientes y asignarlos a los repartidores en turno, sin sobrepasar la capacidad de sus furgonetas. La asignación define además la jornada y el orden en que el repartidor atenderá cada despacho, información que consume la web del repartidor (F-03).
+El Gestor de Despacho necesita un panel donde ver la cola de despachos pendientes y asignarlos a los repartidores en turno, sin sobrepasar la capacidad de sus furgonetas. La asignación define además la jornada y el orden en que el repartidor atenderá cada despacho, información que consume la web del repartidor (F-03). Asimismo, para efectos de desarrollo, pruebas autónomas y control de flujo en el centro sin depender de pedidos reales de Ventas, el sistema provee un mecanismo de generación de despachos de prueba.
 
 ## 2. Propósito
 
-Registrar las solicitudes de despacho recibidas desde Ventas y Postventa, mantener la cola de pendientes, asignar cada despacho a un repartidor habilitado para la jornada en curso respetando su capacidad, definir la secuencia de ruta y atender la cancelación de despachos cuando el pedido es anulado.
+Registrar las solicitudes de despacho recibidas desde Ventas y Postventa, mantener la cola de pendientes, permitir la generación de despachos simulados de prueba, asignar cada despacho a un repartidor habilitado para la jornada en curso respetando su capacidad tridimensional (kg, m³ y paquetes), definir y reordenar la secuencia de ruta, reasignar despachos no trasladados y atender la cancelación de despachos cuando el pedido es anulado.
 
 ## 3. Alcance
 
 Esta funcionalidad incluye:
 
 - Recepción de solicitudes de despacho desde Ventas y Postventa, con resolución de zona mediante F-01 y control de duplicados por pedido.
+- Generación de despachos simulados de prueba (`POST /api/v1/despachos/simulaciones`) para verificación autónoma de la cola y de los flujos de asignación.
 - Cola paginada y filtrable de despachos en `PENDIENTE_ASIGNACION`, incluidos los reprogramados por F-04.
-- Asignación de un despacho a un repartidor para la jornada en curso, validando disponibilidad y capacidad con la información de F-05.
+- Asignación de un despacho a un repartidor para la jornada en curso, validando disponibilidad y capacidad con la información de F-06.
 - Secuencia de ruta: posición automática al asignar y reordenamiento por el Gestor.
-- Reasignación de un despacho `ASIGNADO` a otro repartidor.
+- Reasignación de un despacho `ASIGNADO` a otro repartidor antes de iniciar su traslado.
 - Cancelación de despachos por anulación del pedido en Ventas y Postventa.
-- Auditoría de recepciones, asignaciones, reasignaciones y cancelaciones.
+- Auditoría de recepciones, simulaciones, asignaciones, reordenamientos, reasignaciones y cancelaciones.
 
 ## 4. Precondiciones, dependencias y resultados
 
@@ -35,9 +36,9 @@ Esta funcionalidad incluye:
 - La recepción y la cancelación desde Ventas y Postventa requieren un token de servicio de `modulo-ventas` con `despachos:crear` o `despachos:cancelar`, respectivamente.
 - Una solicitud de despacho corresponde a un pedido pagado ya preparado y sellado, e incluye: identificador de pedido, destinatario, destino, peso, volumen, cantidad de paquetes físicos y fecha comprometida. Las coordenadas son opcionales y `cantidadPaquetes` normalmente vale `1`.
 - Al crear un despacho nuevo, el destino debe estar cubierto por una zona activa de F-01. Los despachos existentes conservan la zona registrada y pueden continuar su ciclo o ser reprogramados aunque posteriormente esa zona sea desactivada.
-- Solo se asignan despachos en `PENDIENTE_ASIGNACION` cuya fecha de entrega programada sea igual o anterior a la fecha actual.
-- El repartidor debe tener una asignación diaria activa en F-05 y un estado operativo `DISPONIBLE` o `EN_RUTA`.
-- El peso, el volumen y la cantidad de paquetes del despacho no deben superar la capacidad remanente del repartidor.
+- Solo se asignan despachos en `PENDIENTE_ASIGNACION` cuya fecha de entrega programada sea igual o anterior a la fecha actual. Los despachos reprogramados a futuro permanecen en cola en modo solo lectura hasta su fecha comprometida.
+- El repartidor debe tener una asignación operativa diaria activa provista por F-06 y encontrarse en estado operativo `DISPONIBLE` o `EN_RUTA`.
+- El peso, el volumen y la cantidad física de paquetes del despacho no deben superar la capacidad remanente del repartidor en ninguna de sus tres variables (evaluación tridimensional obligatoria).
 
 ### 4.2. Dependencias
 
@@ -45,19 +46,23 @@ Esta funcionalidad incluye:
 |---|---|
 | Seguridad y Usuarios | Emitir el JWT del Gestor y el token de servicio de Ventas y Postventa. |
 | Ventas y Postventa | Enviar solicitudes de despacho y solicitudes de cancelación por anulación del pedido. |
-| Zonas y Cotizador (F-01) | Resolver la zona del destino y rechazar destinos sin cobertura. |
-| Monitoreo de Flota (F-05) | Calcular y proveer los repartidores disponibles con su capacidad remanente en kg, m³ y paquetes. F-02 conserva la responsabilidad de ejecutar la asignación del despacho. |
-| Web del Repartidor (F-03) | Recibir los despachos `ASIGNADO` con su jornada y secuencia. |
-| Entregas Fallidas (F-04) | Devolver a la cola los despachos reprogramados, con su nueva fecha programada. |
+| Zonas y Cotizador (F-01) | Resolver la zona del destino y rechazar destinos sin cobertura activa. |
+| Gestión de Repartidores y Vehículos (F-05) | Proveer el registro base de repartidores y furgonetas con sus límites máximos de carga. |
+| Disponibilidad y Capacidad Diaria (F-06) | Calcular y proveer los repartidores disponibles en jornada con su capacidad remanente en kg, m³ y paquetes. F-02 conserva la responsabilidad de ejecutar la asignación del despacho. |
+| Web del Repartidor (F-03) | Recibir los despachos `ASIGNADO` con su jornada y secuencia, y notificar inicios de traslado y estados de entrega. |
+| Entregas Fallidas (F-04) | Devolver a la cola los despachos reprogramados, con su nueva fecha programada y contador de intentos conservado. |
 | Requisitos transversales (overview, sección 6) | Validar cada transición en la máquina de estados común, registrar el historial y publicar el evento hacia Ventas y Postventa. |
 
 ### 4.3. Resultados
 
-- Una solicitud válida crea un despacho en `PENDIENTE_ASIGNACION` con código operativo interno único, zona, fecha programada igual a la fecha comprometida y contador de intentos en cero.
-- Una solicitud repetida para el mismo pedido no crea un segundo despacho.
-- Una asignación válida cambia el estado a `ASIGNADO`, registra repartidor, jornada y secuencia, y se refleja en la ocupación calculada por F-05.
-- Una cancelación válida cambia el estado a `CANCELADO` y libera la capacidad del repartidor si el despacho estaba asignado.
-- Toda operación queda auditada con fecha, usuario o sistema origen, despacho y observaciones.
+- Una solicitud válida crea un despacho en `PENDIENTE_ASIGNACION` con código operativo interno y de rastreo único, zona, fecha programada igual a la fecha comprometida y contador de intentos en cero.
+- Una solicitud repetida para el mismo pedido no crea un segundo despacho y responde de forma idempotente.
+- Una generación de prueba crea un despacho simulado en `PENDIENTE_ASIGNACION` disponible de inmediato en la cola.
+- Una asignación válida cambia el estado a `ASIGNADO`, registra repartidor, jornada, observaciones y secuencia, reflejándose en la ocupación calculada por F-06.
+- Un reordenamiento exitoso actualiza la secuencia de entrega sin huecos ni posiciones duplicadas.
+- Una reasignación válida transfiere el despacho al final de la ruta del nuevo repartidor, actualiza las capacidades en F-06 y registra el motivo.
+- Una cancelación válida cambia el estado a `CANCELADO` y libera la reserva de capacidad del repartidor si el despacho estaba asignado.
+- Toda operación queda auditada con fecha en UTC, usuario o sistema origen, despacho, estado anterior, estado nuevo y observaciones.
 
 ## 5. Requisitos y criterios de aceptación automatizables
 
@@ -73,7 +78,7 @@ El sistema DEBE registrar las solicitudes de despacho recibidas desde Ventas y P
 
 #### CA-02. Rechazo de solicitud con datos incompletos o inconsistentes
 
-- **DADO** una solicitud sin dirección o con peso o volumen menor o igual a cero.
+- **DADO** una solicitud sin dirección o con peso, volumen o cantidad de paquetes menor o igual a cero.
 - **CUANDO** es evaluada.
 - **ENTONCES** el sistema responde `400 Bad Request`, detalla los campos inválidos y no persiste registros parciales.
 
@@ -85,13 +90,13 @@ El sistema DEBE permitir al Gestor consultar y filtrar de forma paginada los des
 
 - **DADO** que existen despachos en `PENDIENTE_ASIGNACION`.
 - **CUANDO** el Gestor abre la vista de Programación y Asignación.
-- **ENTONCES** el sistema muestra código interno, pedido, zona, dirección, peso, volumen, cantidad de paquetes, fecha programada, número de intento y tiempo en espera, ordenados por fecha programada.
+- **ENTONCES** el sistema muestra código interno/rastreo, pedido, zona, dirección, peso, volumen, cantidad de paquetes, fecha programada, número de intento y tiempo en espera, ordenados por fecha programada ascendente.
 
 #### CA-04. Listado sin despachos pendientes
 
 - **DADO** que no existen despachos pendientes.
 - **CUANDO** el Gestor consulta la vista.
-- **ENTONCES** el sistema muestra el estado vacío "No hay despachos pendientes de asignación".
+- **ENTONCES** el sistema muestra el estado vacío "No hay despachos pendientes de asignación" con acceso a generar pedidos de prueba.
 
 #### CA-05. Acceso sin permisos requeridos
 
@@ -101,19 +106,19 @@ El sistema DEBE permitir al Gestor consultar y filtrar de forma paginada los des
 
 ### RF-03. Asignar despacho a un repartidor
 
-El sistema DEBE asignar un despacho pendiente a un repartidor habilitado para la jornada en curso, sin exceder su capacidad.
+El sistema DEBE asignar un despacho pendiente a un repartidor habilitado para la jornada en curso, sin exceder su capacidad en kg, m³ ni paquetes.
 
 #### CA-06. Asignación exitosa dentro de la capacidad disponible
 
-- **DADO** un despacho en `PENDIENTE_ASIGNACION` programado para hoy y un repartidor `DISPONIBLE` cuya capacidad remanente cubre su peso, volumen y cantidad de paquetes.
-- **CUANDO** el Gestor confirma la asignación.
-- **ENTONCES** el sistema cambia el estado a `ASIGNADO`, registra el repartidor y la jornada actual, asigna la siguiente posición de la secuencia de ruta y la ocupación del repartidor en F-05 refleja el nuevo despacho.
+- **DADO** un despacho en `PENDIENTE_ASIGNACION` programado para hoy y un repartidor en estado `DISPONIBLE` o `EN_RUTA` cuya capacidad remanente en F-06 cubre su peso, volumen y cantidad de paquetes.
+- **CUANDO** el Gestor confirma la asignación, ingresando opcionalmente instrucciones de entrega.
+- **ENTONCES** el sistema cambia el estado a `ASIGNADO`, registra el repartidor, la jornada actual y las observaciones, asigna la siguiente posición de la secuencia de ruta y la ocupación del repartidor en F-06 refleja la nueva reserva.
 
 #### CA-07. Rechazo por capacidad excedida
 
 - **DADO** un despacho cuyo peso, volumen o cantidad de paquetes supera la capacidad remanente del repartidor.
 - **CUANDO** el Gestor intenta confirmar la asignación.
-- **ENTONCES** el sistema responde `422 Unprocessable Entity`, indica el límite excedido ("Capacidad de carga del repartidor excedida") y mantiene el despacho en `PENDIENTE_ASIGNACION`.
+- **ENTONCES** el sistema responde `422 Unprocessable Entity`, indica el límite excedido ("Capacidad de carga del repartidor excedida: [peso / volumen / paquetes]") y mantiene el despacho en `PENDIENTE_ASIGNACION`.
 
 #### CA-08. Rechazo por repartidor no habilitado
 
@@ -135,7 +140,7 @@ El sistema DEBE registrar un historial auditable de cada operación sobre el des
 
 - **DADO** que una asignación es aceptada.
 - **CUANDO** finaliza la transacción.
-- **ENTONCES** se registran despacho, repartidor, usuario gestor, jornada, secuencia, marca temporal en UTC y la ocupación resultante del repartidor.
+- **ENTONCES** se registran despacho, repartidor, usuario gestor, jornada, secuencia, observaciones, marca temporal en UTC y la ocupación resultante del repartidor.
 
 ### RF-05. Integridad de la recepción
 
@@ -175,13 +180,13 @@ El sistema DEBE permitir mover a otro repartidor un despacho que aún no inició
 
 #### CA-15. Reasignación exitosa
 
-- **DADO** un despacho en `ASIGNADO` y otro repartidor habilitado con capacidad suficiente.
-- **CUANDO** el Gestor confirma la reasignación indicando un motivo.
-- **ENTONCES** el sistema cambia el repartidor del despacho, lo ubica al final de la secuencia del nuevo repartidor, lo retira de la ruta del anterior y registra la auditoría con ambos repartidores.
+- **DADO** un despacho en `ASIGNADO` y otro repartidor habilitado con capacidad suficiente en F-06.
+- **CUANDO** el Gestor confirma la reasignación indicando obligatoriamente un motivo.
+- **ENTONCES** el sistema cambia el repartidor del despacho, lo ubica al final de la secuencia del nuevo repartidor, lo retira de la ruta del anterior, actualiza las reservas de capacidad en F-06 y registra la auditoría con ambos repartidores y el motivo.
 
-#### CA-16. Reasignación de un despacho en traslado
+#### CA-16. Reasignación de un despacho en traslado o cerrado
 
-- **DADO** un despacho en cualquier estado distinto de `ASIGNADO`.
+- **DADO** un despacho en cualquier estado distinto de `ASIGNADO` (`EN_CAMINO`, `ENTREGADO`, `FALLIDO`).
 - **CUANDO** se intenta reasignarlo.
 - **ENTONCES** el sistema responde `409 Conflict` y conserva el repartidor original.
 
@@ -193,7 +198,7 @@ El sistema DEBE atender las solicitudes de cancelación que Ventas y Postventa e
 
 - **DADO** un despacho en `PENDIENTE_ASIGNACION` o `ASIGNADO`.
 - **CUANDO** Ventas y Postventa solicita su cancelación indicando el pedido anulado.
-- **ENTONCES** el sistema cambia el estado a `CANCELADO`, lo retira de la cola o de la ruta del repartidor, registra la auditoría y responde con el estado resultante. Un despacho `ASIGNADO` todavía permanece físicamente en el centro de despacho; si el repartidor ya lo recogió y salió, debe encontrarse en `EN_CAMINO` y se aplica el rechazo definido en CA-18.
+- **ENTONCES** el sistema cambia el estado a `CANCELADO`, lo retira de la cola o de la ruta del repartidor, libera la reserva de capacidad en F-06 si estaba asignado, registra la auditoría y responde con el estado resultante.
 
 #### CA-18. Cancelación de un despacho en traslado o cerrado
 
@@ -207,15 +212,26 @@ El sistema DEBE atender las solicitudes de cancelación que Ventas y Postventa e
 - **CUANDO** Ventas y Postventa solicita su cancelación.
 - **ENTONCES** el sistema registra la anulación del pedido sobre el despacho sin cambiar su estado, responde `202 Accepted` y, cuando el paquete regrese al centro de despacho, F-04 solo permite cerrarlo como `DEVUELTO_A_ORIGEN`.
 
+### RF-09. Generación de despachos de prueba para simulación y testing
+
+El sistema DEBE permitir al Gestor generar despachos simulados con datos válidos para disponer de carga de trabajo inmediata en la cola de asignación sin depender de Ventas y Postventa.
+
+#### CA-20. Generación autónoma de despachos de prueba
+
+- **DADO** que el Gestor de Despacho requiere generar carga de trabajo de prueba en la cola.
+- **CUANDO** solicita la generación de prueba mediante la interfaz o invoca `POST /api/v1/despachos/simulaciones`.
+- **ENTONCES** el sistema crea un despacho simulado en `PENDIENTE_ASIGNACION` con código operativo y de rastreo único (ej. `DSP-SIM-XXXXX`), asigna una zona activa de F-01 con datos físicos válidos y responde `201 Created` incorporándolo de inmediato a la cola con la etiqueta "Simulado".
+
 ## 6. Frontend
 
 | Elemento | Responsabilidad |
 |---|---|
-| Panel de Programación | Cola de `PENDIENTE_ASIGNACION` con filtros por fecha, zona e intento, y paginación. |
-| Modal de Asignación | Catálogo de repartidores disponibles, priorizando los de la zona del despacho, con furgoneta y barras de ocupación en kg, m³ y paquetes. |
-| Ruta por repartidor | Despachos de cada repartidor en la jornada con su estado actual y hora del último cambio (seguimiento en ruta, overview RT-04), con reordenamiento y reasignación. |
-| Indicadores de capacidad | Alerta previa cuando un despacho excede la capacidad del repartidor seleccionado. |
-| Retroalimentación | Éxito, sobrecarga, conflictos de concurrencia, despachos programados a futuro y errores de red. |
+| Panel de Programación | Cola de `PENDIENTE_ASIGNACION` con indicadores KPI interactivos, filtros por fecha, zona e intento, paginación, y botón "Generar pedido de prueba". |
+| Modal de Asignación | Catálogo de repartidores disponibles agrupados por zona (primero los de la zona del despacho), con furgoneta, barras tridimensionales de ocupación (kg, m³ y paquetes), proyección rayada y campo opcional de observación. |
+| Ruta por repartidor | Layout adaptable a escritorio y tableta, visualización de despachos con estados (`ASIGNADO`, `EN_CAMINO`, `ENTREGADO`, `FALLIDO`), reordenamiento manual por arrastre y botones subir/bajar, barra fija de cambios pendientes y seguimiento en ruta con marca temporal (RT-04). |
+| Modal de Reasignación | Catálogo de repartidores destino, validación de capacidad libre, campo obligatorio de motivo y reubicación al final de la ruta. |
+| Indicadores de capacidad | Alerta previa cuando un despacho excede la capacidad del repartidor seleccionado en peso, volumen o paquetes. |
+| Retroalimentación | Éxito, sobrecarga (`422`), conflictos de concurrencia (`409`), despachos programados a futuro y errores de red. |
 
 La interfaz debe deshabilitar acciones inválidas, pero todas las reglas se validan en el backend.
 
@@ -224,12 +240,13 @@ La interfaz debe deshabilitar acciones inválidas, pero todas las reglas se vali
 | Componente lógico | Responsabilidad |
 |---|---|
 | Receptor de solicitudes | Validar la solicitud, controlar duplicados por pedido, resolver la zona con F-01 y crear el despacho. |
+| Generador de simulaciones | Autogenerar despachos de prueba con datos físicos consistentes en zonas activas (`POST /api/v1/despachos/simulaciones`). |
 | Consulta de cola | Recuperar despachos pendientes con filtros, orden por fecha programada y paginación. |
 | Caso de uso de asignación | Validar estado, fecha programada, habilitación y capacidad remanente de forma transaccional. |
 | Gestión de secuencia | Asignar la siguiente posición y aplicar reordenamientos sin huecos ni duplicados. |
-| Caso de uso de reasignación | Mover un despacho `ASIGNADO` entre repartidores validando capacidad. |
-| Caso de uso de cancelación | Aplicar las reglas de cancelación según el estado del despacho. |
-| Integración con F-05 | Consultar disponibilidad y capacidad remanente antes de confirmar. |
+| Caso de uso de reasignación | Mover un despacho `ASIGNADO` entre repartidores validando capacidad y motivo. |
+| Caso de uso de cancelación | Aplicar las reglas de cancelación según el estado del despacho y liberar reservas. |
+| Integración con F-06 | Consultar disponibilidad y capacidad remanente (kg, m³, paquetes) antes de confirmar asignaciones o reasignaciones. |
 | Persistencia y auditoría | Guardar despachos y auditoría en PostgreSQL; las transiciones se registran mediante la máquina de estados común. |
 
 Las rutas, cuerpos, respuestas y códigos se centralizan en `integraciones/api-contract.md`.
@@ -238,18 +255,18 @@ Las rutas, cuerpos, respuestas y códigos se centralizan en `integraciones/api-c
 
 - **Seguridad:** el panel requiere JWT con rol `GESTOR_DESPACHO`; la recepción y la cancelación requieren los scopes de servicio `despachos:crear` y `despachos:cancelar`.
 - **Aislamiento:** el módulo no accede a bases de datos de otros módulos.
-- **Concurrencia:** la asignación, la reasignación y la cancelación usan bloqueo optimista para impedir operaciones simultáneas sobre el mismo despacho.
+- **Concurrencia:** la asignación, el reordenamiento, la reasignación y la cancelación usan bloqueo optimista para impedir operaciones simultáneas sobre el mismo despacho.
 - **Idempotencia:** la recepción es idempotente por identificador de pedido.
 - **Rendimiento:** la cola responde en menos de 250 ms para páginas de hasta 100 registros; la recepción responde en menos de 500 ms.
 - **Trazabilidad:** cada operación registra marca temporal en UTC y usuario o sistema origen.
-- **Usabilidad:** el panel es adaptable a escritorio y tablet.
+- **Usabilidad:** el panel es adaptable a escritorio (1440 × 1024 px) y tablet (1024 × 768 px).
 
 ## 9. Fuera de alcance
 
 - **Optimización automática de rutas:** el orden lo define el Gestor; la navegación usa herramientas externas.
 - **Ejecución de la entrega:** corresponde a F-03.
 - **Resolución de entregas fallidas:** corresponde a F-04.
-- **Administración de repartidores, furgonetas y jornadas:** corresponde a F-05.
+- **Administración de repartidores, furgonetas y jornadas:** corresponde a F-05 y F-06.
 - **Anulación del pedido:** la decide Ventas y Postventa; F-02 solo aplica su efecto sobre el despacho.
 - **Preparación y sellado del paquete:** ocurren en el centro de despacho antes de la solicitud; el módulo recibe el paquete listo para enviar.
 - **Cobros y facturación:** corresponden a Ventas y Postventa.
@@ -261,14 +278,15 @@ Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendien
 | Criterios | Verificación automatizada | Nivel | Evidencia esperada |
 |---|---|---|---|
 | CA-01 y CA-02 | Enviar solicitudes válidas e inválidas. | Integración y unitaria | `201` con zona asignada y `400` para datos inválidos. |
-| CA-03 y CA-04 | Consultar la cola con y sin pendientes. | Integración y frontend | Tabla paginada ordenada y estado vacío. |
+| CA-03 y CA-04 | Consultar la cola con y sin pendientes. | Integración y frontend | Tabla paginada ordenada y estado vacío con opción de prueba. |
 | CA-05 | Invocar la cola y la asignación sin credenciales o con rol incorrecto. | Integración de seguridad | `403 Forbidden`. |
-| CA-06 a CA-09 | Asignar con capacidad suficiente, excedida por cada límite, repartidor no habilitado y conflicto concurrente. | Unitaria e integración | `ASIGNADO` con secuencia; `422` y `409` según corresponda. |
+| CA-06 a CA-09 | Asignar con capacidad suficiente, excedida por cada límite (kg, m³, paquetes), repartidor no habilitado y conflicto concurrente. | Unitaria e integración | `ASIGNADO` con secuencia; `422` y `409` según corresponda. |
 | CA-10 | Consultar la auditoría tras una asignación. | Integración con persistencia | Registro completo con jornada, secuencia y ocupación resultante. |
 | CA-11 y CA-12 | Repetir una solicitud y enviar un destino sin cobertura. | Integración | Un único despacho por pedido y `422` sin persistencia. |
 | CA-13 y CA-14 | Asignar un despacho programado a futuro y reordenar una ruta. | Unitaria e integración | `409` para fecha futura; secuencia continua y reflejada en F-03. |
 | CA-15 y CA-16 | Reasignar un despacho `ASIGNADO` y otro `EN_CAMINO`. | Integración | Cambio de repartidor en el primer caso y `409` en el segundo. |
 | CA-17 a CA-19 | Cancelar despachos en cada estado. | Unitaria e integración | `CANCELADO`, `409` o anulación registrada según el estado. |
+| CA-20 | Generar un despacho de prueba simulado. | Integración y API | `201 Created` con datos válidos y presencia inmediata en cola. |
 
 Además, se ejecutarán tres recorridos funcionales completos:
 
@@ -280,10 +298,11 @@ Además, se ejecutarán tres recorridos funcionales completos:
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-19` están implementados y cuentan con pruebas automatizadas exitosas.
+- Los criterios `CA-01` a `CA-20` están implementados y cuentan con pruebas automatizadas exitosas.
 - Los tres recorridos funcionales han sido verificados de extremo a extremo.
 - No existe más de un despacho por pedido.
-- Ninguna asignación supera la capacidad en kg, m³ o paquetes informada por F-05.
+- Ninguna asignación supera la capacidad en kg, m³ o paquetes informada por F-06.
 - Cada despacho asignado tiene jornada y secuencia consumibles por F-03.
+- Los despachos simulados pueden generarse autónomamente para pruebas sin alterar el flujo real.
 - No se han incorporado capacidades declaradas fuera de alcance.
 - La evidencia de pruebas puede trazarse hacia cada criterio de aceptación.

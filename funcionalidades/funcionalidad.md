@@ -24,6 +24,19 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 | **ES-F01-07** | Resolver la zona de un destino para el módulo | [Ver especificación](../especificaciones/ES-F01-07-ResolverZonaParaModulo.md) | Borrador |
 | **ES-F01-08** | Registrar la trazabilidad de la configuración | [Ver especificación](../especificaciones/ES-F01-08-RegistrarTrazabilidadConfiguracion.md) | Borrador |
 
+## Especificaciones atómicas de F-02
+
+| ID | Comportamiento | Especificación | Estado |
+|---|---|---|---|
+| **ES-F02-01** | Recepción de solicitudes de despacho | [Ver especificación](../especificaciones/ES-F02-01-RecepcionSolicitudDespacho.md) | Borrador |
+| **ES-F02-02** | Generación de despachos de prueba para simulación | [Ver especificación](../especificaciones/ES-F02-02-GenerarDespachoPrueba.md) | Borrador |
+| **ES-F02-03** | Consultar la cola de despachos pendientes | [Ver especificación](../especificaciones/ES-F02-03-ConsultarColaPendientes.md) | Borrador |
+| **ES-F02-04** | Asignar despacho a un repartidor | [Ver especificación](../especificaciones/ES-F02-04-AsignarDespachoRepartidor.md) | Borrador |
+| **ES-F02-05** | Consultar y reordenar la secuencia de ruta | [Ver especificación](../especificaciones/ES-F02-05-ConsultarReordenarSecuenciaRuta.md) | Borrador |
+| **ES-F02-06** | Reasignar despacho a otro repartidor | [Ver especificación](../especificaciones/ES-F02-06-ReasignarDespachoRepartidor.md) | Borrador |
+| **ES-F02-07** | Cancelar despacho por anulación del pedido | [Ver especificación](../especificaciones/ES-F02-07-CancelarDespachoPorAnulacion.md) | Borrador |
+| **ES-F02-08** | Registrar la trazabilidad de las operaciones | [Ver especificación](../especificaciones/ES-F02-08-RegistrarTrazabilidadOperaciones.md) | Borrador |
+
 ## Especificaciones atómicas de F-04
 
 | ID | Comportamiento | Especificación | Estado |
