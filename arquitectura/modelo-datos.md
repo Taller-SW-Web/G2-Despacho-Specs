@@ -132,6 +132,8 @@ Cada tabla indica qué microservicio y funcionalidad la escriben. Una funcionali
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | `UUID` | PK | Identificador. |
+| `origen_delimitacion` | `VARCHAR(20)` | NOT NULL | Delimitación. |
+| `geom` | `GEOMETRY(MultiPolygon, 4326)` | NOT NULL | Geometria. |
 | `nombre` | `VARCHAR(80)` | NOT NULL, UNIQUE | Nombre de la zona ("Lima Centro"). |
 | `estado` | `VARCHAR(10)` | NOT NULL, CHECK (`ACTIVO`, `INACTIVO`) | Solo las zonas activas se cotizan y aceptan despachos. |
 | `creado_en`, `actualizado_en` | `TIMESTAMPTZ` | NOT NULL | Auditoría. |
@@ -142,8 +144,8 @@ Cada tabla indica qué microservicio y funcionalidad la escriben. Una funcionali
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | `UUID` | PK | Identificador. |
+| `distrito_id` | `UUID` | FK, NOT NULL | Distrito al que pertenece. |
 | `zona_id` | `UUID` | FK → `zonas`, NOT NULL | Zona a la que pertenece. |
-| `distrito` | `VARCHAR(80)` | NOT NULL | Distrito cubierto. |
 | `codigo_postal` | `VARCHAR(10)` | NULL | Código postal, si aplica. |
 
 El backend valida que un distrito no pertenezca a dos zonas activas (F-01 CA-03), ya que la regla depende del estado de la zona.
@@ -164,6 +166,20 @@ El backend valida que un distrito no pertenezca a dos zonas activas (F-01 CA-03)
 | `creado_en`, `creado_por` | — | NOT NULL | Auditoría. |
 
 Índice único parcial: una sola tarifa activa por zona (`zona_id` WHERE `activa`). Un cambio de tarifa desactiva la anterior y crea una nueva, lo que conserva el histórico.
+
+#### `distrito`
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | `UUID` | PK | Identificador. |
+| `nombre` | `VARCHAR(25)` | FK → `zonas`, NOT NULL | Zona tarificada. |
+| `provincia` | `VARCHAR(25)` | NOT NULL, CHECK (≥ 0) | Precio hasta el peso base. |
+| `departamento` | `VARCHAR(25)` | NOT NULL, CHECK (> 0) | Peso incluido en la tarifa base. |
+| `ubigeo` | `VARCHAR(10)` | NOT NULL, CHECK (≥ 0) | Precio por kilogramo adicional. |
+| `geom` | `GEOMETRY(MultiPolygon, 4326)` | NOT NULL | Geometria. |
+| `creado_en` | `CHAR(3)` | NOT NULL, DEFAULT `PEN` | Moneda de la tarifa. |
+| `actualizado_en`, `plazo_max_dias` | `SMALLINT` | NOT NULL, CHECK (`plazo_min_dias` ≤ `plazo_max_dias`) | Plazo estimado en días hábiles. |
+
 
 ### 3.2. Flota y capacidad (Operación de Reparto y Flota; escribe F-05)
 
