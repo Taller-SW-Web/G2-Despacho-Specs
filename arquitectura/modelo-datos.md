@@ -175,10 +175,10 @@ El backend valida que un distrito no pertenezca a dos zonas activas (F-01 CA-03)
 | `nombre` | `VARCHAR(25)` | FK → `zonas`, NOT NULL | Zona tarificada. |
 | `provincia` | `VARCHAR(25)` | NOT NULL, CHECK (≥ 0) | Precio hasta el peso base. |
 | `departamento` | `VARCHAR(25)` | NOT NULL, CHECK (> 0) | Peso incluido en la tarifa base. |
-| `ubigeo` | `VARCHAR(10)` | NOT NULL, CHECK (≥ 0) | Precio por kilogramo adicional. |
+| `ubigeo` | `VARCHAR(10)` | NOT NULL | Precio por kilogramo adicional. |
 | `geom` | `GEOMETRY(MultiPolygon, 4326)` | NOT NULL | Geometria. |
-| `creado_en` | `CHAR(3)` | NOT NULL, DEFAULT `PEN` | Moneda de la tarifa. |
-| `actualizado_en`, `plazo_max_dias` | `SMALLINT` | NOT NULL, CHECK (`plazo_min_dias` ≤ `plazo_max_dias`) | Plazo estimado en días hábiles. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `PEN` | . |
+| `actualizado_en` | `VARCHAR(64)` | NOT NULL,  |  |
 
 
 ### 3.2. Flota y capacidad (Operación de Reparto y Flota; escribe F-05)
