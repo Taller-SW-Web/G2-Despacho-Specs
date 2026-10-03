@@ -11,6 +11,19 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 | **F-05** | Gestión de repartidores y vehículos | CRUD de repartidores con baja lógica y vinculación con Seguridad, y gestión de furgonetas con capacidades de carga. | Rhamses | En especificación | [Ver especificación](./F-05-GestionRepartidoresVehiculos.md) |
 | **F-06** | Disponibilidad y capacidad diaria de la flota | Asignación diaria repartidor – furgoneta – zona, cálculo de ocupación, disponibilidad y saturación para F-02. | Rhamses | En especificación | [Ver especificación](./F-06-DisponibilidadCapacidadDiaria.md) |
 
+## Especificaciones atómicas de F-01
+
+| ID | Comportamiento | Especificación | Estado |
+|---|---|---|---|
+| **ES-F01-01** | Consultar el catálogo de zonas de cobertura | [Ver especificación](../especificaciones/ES-F01-01-ConsultarCatalogoZonas.md) | Borrador |
+| **ES-F01-02** | Registrar y editar una zona de cobertura | [Ver especificación](../especificaciones/ES-F01-02-RegistrarZonaCobertura.md) | Borrador |
+| **ES-F01-03** | Activar y desactivar una zona de cobertura | [Ver especificación](../especificaciones/ES-F01-03-ActivarDesactivarZona.md) | Borrador |
+| **ES-F01-04** | Configurar la tarifa vigente de una zona | [Ver especificación](../especificaciones/ES-F01-04-ConfigurarTarifaZona.md) | Borrador |
+| **ES-F01-05** | Consultar la cobertura de un destino | [Ver especificación](../especificaciones/ES-F01-05-ConsultarCoberturaDestino.md) | Borrador |
+| **ES-F01-06** | Cotizar el envío con datos físicos de productos | [Ver especificación](../especificaciones/ES-F01-06-CotizarEnvioConProductos.md) | Borrador |
+| **ES-F01-07** | Resolver la zona de un destino para el módulo | [Ver especificación](../especificaciones/ES-F01-07-ResolverZonaParaModulo.md) | Borrador |
+| **ES-F01-08** | Registrar la trazabilidad de la configuración | [Ver especificación](../especificaciones/ES-F01-08-RegistrarTrazabilidadConfiguracion.md) | Borrador |
+
 ## Especificaciones atómicas de F-04
 
 | ID | Comportamiento | Especificación | Estado |

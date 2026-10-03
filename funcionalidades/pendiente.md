@@ -10,6 +10,7 @@ Este documento centraliza las posibles ampliaciones y los acuerdos que todavía 
 - Detección de solapamientos entre polígonos.
 - Almacenamiento y consultas de geometrías complejas mediante PostGIS.
 - Integración con servicios geográficos pagados, sujeta a evaluación técnica y presupuestal.
+- Rangos de peso por tramos adicionales en la matriz tarifaria; la versión vigente solo define tarifa base, peso incluido y recargo por kilogramo adicional.
 
 ## F-02: Programación y asignación
 
