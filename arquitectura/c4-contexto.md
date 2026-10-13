@@ -1,6 +1,6 @@
 # Arquitectura C4: Diagrama de Contexto
 
-> **Estado:** Propuesta para discusión del equipo. Este documento no modifica ni reemplaza las especificaciones funcionales vigentes.
+> **Estado:** Contexto general alineado con `overview.md` e `integraciones/api-contract.md`. Los aspectos operativos aún abiertos se indican en la sección 5.
 
 Este documento presenta el nivel 1 del modelo C4 del Sistema de Despacho y Entrega a Domicilio. Su objetivo es mostrar, sin detalles técnicos de implementación, quiénes utilizan el sistema, con qué sistemas externos se integra y qué información intercambia con cada uno. Los mecanismos de comunicación se alinean con `integraciones/api-contract.md`.
 
@@ -28,11 +28,11 @@ flowchart LR
     GF -->|"Administra zonas, tarifas, repartidores, furgonetas y jornadas"| DESP
     REP -->|"Consulta su ruta y registra entregas, fallos y evidencias"| DESP
 
-    MKT <-->|"Solicita cotizaciones y consulta seguimiento"| DESP
-    CHT <-->|"Solicita cotizaciones y consulta estado"| DESP
-    VEN <-->|"Envía solicitudes y cancelaciones; recibe estados del despacho"| DESP
-    PRO <-->|"Proporciona identificador, peso y dimensiones de productos"| DESP
-    SEG <-->|"Emite JWT y tokens de servicio; recibe altas de repartidores"| DESP
+    MKT <-->|"Consume cotización y seguimiento con token de servicio"| DESP
+    CHT <-->|"Consume cotización y seguimiento con token de servicio"| DESP
+    VEN <-->|"Crea y cancela despachos; recibe eventos de estado"| DESP
+    PRO <-->|"Proporciona peso y dimensiones vigentes por SKU"| DESP
+    SEG -->|"Emite JWT, tokens de servicio, JWKS e identificadores de usuario"| DESP
 ```
 
 ## 2. Personas y responsabilidades
@@ -47,11 +47,11 @@ flowchart LR
 
 | Sistema externo | Información recibida por Despacho | Información enviada por Despacho | Mecanismo | Funcionalidad relacionada |
 |---|---|---|---|---|
-| Canal Marketplace | Productos, cantidades y destino para cotizar; consulta de seguimiento autorizada | Cobertura, costo, plazo estimado y estado resumido del despacho | API REST síncrona, directamente o mediante Ventas y Postventa | F-01, seguimiento transversal |
-| Canal Chatbot | Productos, cantidades y destino para cotizar; consulta de estado autorizada | Cobertura, costo, plazo estimado y estado resumido del despacho | API REST síncrona, directamente o mediante Ventas y Postventa | F-01, seguimiento transversal |
-| Ventas y Postventa | Solicitud REST de despacho de un pedido pagado y preparado; solicitud de cancelación | Aceptación con identificador y código de rastreo; cambios de estado idempotentes mediante webhook | API REST síncrona de entrada y webhook HTTPS con outbox y reintentos de salida | F-02, F-04, eventos transversales |
-| Productos y Ofertas | Identificador, peso y dimensiones vigentes de los productos cotizados o incluidos en el pedido | Solicitud en lote de datos físicos por SKU | API REST síncrona | F-01, F-02 |
-| Seguridad y Usuarios | JWT, roles, identificador de usuario, tokens de servicio y claves públicas | Solicitud de creación o vinculación de usuarios con rol `REPARTIDOR` | Validación local de JWT mediante JWKS y API REST | Todas, especialmente F-03 y F-05 |
+| Canal Marketplace | Destino y líneas (`sku`, `cantidad`) para cotizar; `idPedido` para seguimiento | Cobertura, costo, plazo y estado resumido sin coordenadas ni datos personales | API REST síncrona directa con `cotizaciones:calcular` o `seguimientos:leer` y `aud=api-despacho` | F-01, seguimiento transversal |
+| Canal Chatbot | Destino y líneas (`sku`, `cantidad`) para cotizar; `idPedido` para seguimiento | Cobertura, costo, plazo y estado resumido sin coordenadas ni datos personales | API REST síncrona directa con `cotizaciones:calcular` o `seguimientos:leer` y `aud=api-despacho` | F-01, seguimiento transversal |
+| Ventas y Postventa | Pedido pagado con paquete preparado y sellado, destinatario, destino y líneas (`sku`, `cantidad`); solicitudes de cancelación | Identificador del despacho y siete tipos de evento logístico mediante el webhook confirmado | REST síncrono con `despachos:crear`, `despachos:cancelar` o `seguimientos:leer`; webhook HTTPS hacia `/api/v1/integraciones/despachos/eventos` con `ventas:pedidos:estado` | F-02, F-04, eventos transversales |
+| Productos y Ofertas | Peso en kilogramos y dimensiones en centímetros vigentes por SKU | Consulta en lote de los SKU incluidos en la cotización o el pedido | `POST /api/v1/productos/datos-fisicos/consulta` con `aud=api-productos` y `productos:fisicos:leer` | F-01, F-02 |
+| Seguridad y Usuarios | JWT, tokens de servicio, JWKS e identificadores de usuario | No recibe una solicitud automática de alta desde Despacho; una persona con `ADMIN_SISTEMA` crea la cuenta y Despacho vincula localmente su `usuario_id` | OAuth 2.0 `client_credentials`, descubrimiento/JWKS y vinculación administrativa local | Todas, especialmente F-03 y F-05 |
 
 ## 4. Límites del contexto
 
@@ -63,14 +63,16 @@ flowchart LR
 - No existe integración con Retail dentro del alcance vigente.
 - No se incluyen mapas, navegación, GPS, notificaciones al cliente ni optimización automática de rutas porque no forman parte de F-01 a F-05.
 
-## 5. Acuerdos externos pendientes
+## 5. Acuerdos externos y aspectos operativos pendientes
 
-Antes de aprobar este contexto se debe confirmar con los otros equipos:
+Ya están confirmados el consumo directo de Marketplace y Chatbot, la integración bidireccional con Ventas y Postventa, la consulta física a Productos y la estructura de los tokens de servicio. No quedan decisiones funcionales abiertas en esas relaciones.
 
-1. Si Marketplace y Chatbot consumirán cotización y seguimiento directamente o siempre a través de Ventas y Postventa.
-2. La URL y el scope que Ventas y Postventa expondrá para recibir el webhook de cambios de estado.
-3. La ruta, el scope y las unidades definitivas de la consulta en lote a Productos y Ofertas.
-4. El emisor, la representación de scopes y la operación definitiva de alta o vinculación de repartidores en Seguridad y Usuarios.
+Permanecen como actividades operativas:
+
+1. Registrar o verificar en Seguridad las concesiones de scopes para cada `client_id`, incluida `despachos:cancelar` para `modulo-ventas`, `ventas:pedidos:estado` para `modulo-despacho` y `productos:fisicos:leer` para `modulo-despacho`.
+2. Configurar por ambiente las URL, credenciales y secretos, sin incorporarlos al repositorio.
+3. Ejecutar pruebas de contrato entre los módulos consumidores y proveedores.
+4. Publicar el procedimiento administrativo definitivo para comunicar a Despacho el `usuario_id` creado por `ADMIN_SISTEMA`, así como el contrato RabbitMQ de eventos de usuario.
 
 ## 6. Regla de lectura
 

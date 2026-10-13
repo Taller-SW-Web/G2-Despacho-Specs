@@ -1,6 +1,6 @@
 # Arquitectura C4: Diagrama de Contenedores
 
-> **Estado:** Propuesta para discusión del equipo. Ningún contenedor, protocolo o proveedor descrito aquí se considera aprobado hasta que el equipo lo acuerde.
+> **Estado:** Diseño base alineado con `overview.md` e `integraciones/api-contract.md`. Las decisiones técnicas que todavía pueden cambiar se indican en la sección 8.
 
 Este documento presenta el nivel 2 del modelo C4. Muestra una arquitectura con dos aplicaciones frontend, dos microservicios, un API Gateway, persistencia administrada y notificación asíncrona mediante webhook HTTPS con outbox.
 
@@ -27,7 +27,7 @@ flowchart TB
         end
 
         subgraph RENDER["Render · 3 despliegues backend"]
-            GW["API Gateway<br/>Punto único de entrada<br/>Enrutamiento, JWT, CORS, rate limiting y correlación"]:::gateway
+            GW["API Gateway<br/>Punto único de entrada<br/>Enrutamiento, JWT, CORS, rate limiting y correlación opcional"]:::gateway
             MD["Microservicio Gestión de Despachos<br/>Java + Spring Boot<br/>F-01, F-02, F-04, estados, historial, seguimiento y eventos"]:::servicio
             MR["Microservicio Operación de Reparto y Flota<br/>Java + Spring Boot<br/>F-03, F-05, jornadas, capacidad y evidencias"]:::servicio
         end
@@ -53,7 +53,7 @@ flowchart TB
 
     MKT -->|"Cotización y seguimiento"| GW
     CHT -->|"Cotización y seguimiento"| GW
-    VEN -->|"REST propuesto: solicitud y cancelación"| GW
+    VEN -->|"REST confirmado: creación, cancelación y seguimiento"| GW
 
     GW -->|"Zonas, despachos, incidencias y seguimiento"| MD
     GW -->|"Flota, jornadas, mi ruta y evidencias"| MR
@@ -68,8 +68,8 @@ flowchart TB
 
     MD -->|"Consulta datos físicos"| PRO
     MD -->|"Webhook HTTPS de estados<br/>con outbox y reintentos"| VEN
-    GW -->|"Valida tokens o claves públicas"| SEG
-    MR -->|"Solicita alta y vinculación de repartidores"| SEG
+    GW -->|"Obtiene descubrimiento y JWKS para validar tokens"| SEG
+    MD -->|"Obtiene tokens de servicio para APIs externas"| SEG
 ```
 
 ## 2. Catálogo de contenedores
@@ -78,7 +78,7 @@ flowchart TB
 |---|---|---|---|---|
 | Frontend Administrativo | Experiencia para `GESTOR_DESPACHO`: zonas, tarifas, programación, incidencias, flota y jornadas | React, Vite y Tailwind CSS | Proyecto independiente en Vercel | API Gateway y, mediante URL firmada, Storage |
 | Frontend del Repartidor | Ruta diaria, detalle, transiciones en campo, evidencia y cierre de jornada | React, Vite y Tailwind CSS, diseño mobile-first | Proyecto independiente en Vercel | API Gateway y, mediante URL firmada, Storage |
-| API Gateway | Única URL pública; enruta por capacidad, aplica CORS, límite de cotizaciones, validación inicial del JWT e identificador de correlación | Java y componente Gateway compatible con el stack Spring | Servicio independiente en Render | Seguridad y Usuarios, ambos microservicios |
+| API Gateway | Única URL pública; enruta por capacidad, aplica CORS, límite de cotizaciones, validación inicial del JWT y correlación técnica opcional | Java y componente Gateway compatible con el stack Spring | Servicio independiente en Render | Seguridad y Usuarios, ambos microservicios |
 | Microservicio Gestión de Despachos | Fuente única de zonas, tarifas y del estado del despacho; asignación, reprogramación, seguimiento, historial y publicación de eventos | Java 21, Spring Boot, Maven, Spring Web, Spring Security y JPA | Servicio independiente en Render | Su PostgreSQL, Operación de Reparto, Productos y Ofertas, Ventas y Postventa |
 | Microservicio Operación de Reparto y Flota | Fuente única de repartidores, furgonetas, jornadas y capacidad; operación móvil y gestión de evidencias | Java 21, Spring Boot, Maven, Spring Web, Spring Security y JPA | Servicio independiente en Render | Su PostgreSQL, Storage, Gestión de Despachos y Seguridad y Usuarios |
 | Datos de Gestión de Despachos | Zonas, tarifas, despachos, historial, intentos, recepciones, idempotencia y bandeja de eventos salientes | PostgreSQL administrado por Supabase | Un esquema o base lógica aislada | Solo Gestión de Despachos |
@@ -112,14 +112,14 @@ La arquitectura utiliza REST para preguntas y comandos que necesitan una respues
 | Interacción | Mecanismo | Motivo |
 |---|---|---|
 | Cotización y seguimiento | API REST síncrona mediante el Gateway | El canal necesita mostrar una respuesta inmediata al usuario. |
-| Ventas solicita un despacho | API REST síncrona e idempotente | Permite validar cobertura y devolver de inmediato el identificador y código de rastreo. |
-| Ventas solicita una cancelación | API REST síncrona e idempotente | Ventas necesita conocer si el estado actual todavía permite cancelar. |
-| Despacho informa cambios de estado | Webhook HTTPS con outbox, identificador idempotente y reintentos | La notificación no bloquea ni revierte una transición local confirmada. |
+| Ventas solicita un despacho | `POST /api/v1/despachos` con `despachos:crear` e `Idempotency-Key` | Permite validar cobertura y devolver de inmediato el identificador y código de rastreo. |
+| Ventas solicita una cancelación | `POST /api/v1/despachos/pedidos/{idPedido}/cancelacion` con `despachos:cancelar` e `Idempotency-Key` | Ventas necesita conocer si el estado actual todavía permite cancelar. |
+| Despacho informa cambios de estado | Webhook HTTPS a `/api/v1/integraciones/despachos/eventos` con `ventas:pedidos:estado`, outbox, `idEvento` y reintentos | La notificación no bloquea ni revierte una transición local confirmada. |
 | Gestión consulta, reserva o libera capacidad | API REST interna síncrona e idempotente | La asignación necesita confirmar en ese momento si existe capacidad. |
 | Reparto solicita una transición de campo | API REST interna síncrona e idempotente | El repartidor necesita conocer el resultado de la operación. |
 | Gestión comunica un estado confirmado a Reparto | API REST interna idempotente y versionada | Mantiene la proyección sin compartir la base de datos. |
-| Seguridad entrega identidad y roles | JWT validado localmente mediante JWKS | Evita consultar Seguridad en cada petición. |
-| Alta o vinculación de un repartidor | API REST con resultado o estado pendiente | La ruta y el scope definitivos deben acordarse con Seguridad. |
+| Seguridad entrega identidad, roles y scopes | JWT validado localmente mediante JWKS; token de servicio obtenido por `client_credentials` | Evita consultar Seguridad en cada petición protegida y separa usuarios humanos de clientes técnicos. |
+| Alta y vinculación de un repartidor | `ADMIN_SISTEMA` crea la cuenta en Seguridad sin rol global; una operación administrativa vincula después el `usuario_id` con el perfil local | Despacho no crea cuentas, no administra contraseñas y autoriza al repartidor mediante el `sub` vinculado. |
 | Carga de evidencia | URL firmada hacia Storage | La transferencia directa evita que el Gateway transporte archivos grandes. |
 
 ### 4.1. Webhook y bandeja de salida
@@ -193,11 +193,12 @@ Cada aplicación debe tener su propio archivo de configuración, variables de en
 
 Los secretos de base de datos, claves de servicio y credenciales privadas de Storage se configuran únicamente en Render. Nunca se incorporan al código fuente ni a las variables públicas de Vercel.
 
-## 8. Decisiones que el equipo debe cerrar
+## 8. Decisiones vigentes y puntos que el equipo debe cerrar
 
 | Decisión | Recomendación para discutir | Cuándo cambiarla |
 |---|---|---|
-| URL y seguridad del webhook | Webhook HTTPS con outbox e identificador idempotente | Completar la URL y el scope cuando Ventas confirme su contrato de recepción |
+| URL y seguridad del webhook | Ruta confirmada `/api/v1/integraciones/despachos/eventos`; token de `modulo-despacho` con `aud=api-ventas` y `ventas:pedidos:estado`; outbox e idempotencia por `idEvento` | Cambiar únicamente mediante una nueva versión acordada con Ventas |
+| Alta y vinculación de repartidores | `ADMIN_SISTEMA` crea la cuenta global y Despacho conserva solamente el vínculo local con `usuario_id` | Completar el canal administrativo para comunicar el identificador y gestionar altas o bajas globales |
 | Comunicación entre microservicios | APIs REST internas idempotentes, autenticadas y versionadas | Ajustar solamente si cambia el contrato interno |
 | Redis | No incluirlo todavía | Incorporarlo si se requiere rate limiting global con varias instancias, caché compartida o coordinación distribuida medida |
 | Base de datos | Un proyecto Supabase con dos esquemas y credenciales aisladas para el curso | Separar proyectos si se necesita aislamiento físico o despliegue realmente independiente |
