@@ -77,7 +77,8 @@ graph TD
         F02["F-02 Programación y asignación"]
         F03["F-03 Web del repartidor"]
         F04["F-04 Entregas fallidas"]
-        F05["F-05 Flota y capacidad"]
+        F05["F-05 Repartidores y vehículos"]
+        F06["F-06 Disponibilidad y capacidad"]
         RT["Requisitos transversales:<br>estados, historial, eventos y seguimiento"]
     end
 
@@ -88,9 +89,10 @@ graph TD
     F05 -->|Disponibilidad y capacidad remanente| F02
     F02 -->|Despacho ASIGNADO con jornada y secuencia| F03
     F05 -->|Habilitación del repartidor| F03
+    F05 -->|Datos básicos del repartidor| F04
     F03 -->|Cierre de turno| F05
     F03 -->|FALLIDO: paquete regresa al centro| F04
-    F04 -->|Recepción confirmada: libera ocupación| F05
+    F04 -->|Recepción confirmada: libera ocupación| F06
     F04 -->|Reprogramado| F02
     F02 -->|Transiciones| RT
     F03 -->|Transiciones| RT
@@ -111,9 +113,10 @@ graph TD
 | F-05 | F-02 | Repartidores habilitados con capacidad remanente en kg, m³ y paquetes. | F-05 RF-05 |
 | F-02 | F-03 | Despachos `ASIGNADO` con jornada, secuencia, destinatario, dirección y teléfono. | F-02 RF-06 |
 | F-05 | F-03 | Repartidor vinculado al usuario del token y su estado operativo. | F-05 RF-06, RF-07 |
+| F-05 | F-04 | Datos básicos del perfil local del repartidor asociado a un intento fallido. | F-04 RF-01, RF-02 |
 | F-03 | F-05 | Solicitud de cierre de turno al cerrar la jornada. | F-03 RF-07 |
 | Gestión | F-03 y F-04 | Catálogo canónico de motivos; F-03 selecciona el motivo y Gestión lo valida al cambiar a `FALLIDO`. | F-03 RF-06 y RF-10 |
-| F-04 | F-05 | Recepción del paquete en el centro, que deja de contar en la ocupación del repartidor. | F-04 RF-07 |
+| F-04 | F-06 | Recepción del paquete en el centro, que deja de contar en la ocupación del repartidor y la furgoneta. | F-04 RF-07, F-06 sección 4.5 |
 | F-04 | F-02 | Despachos reprogramados con nueva fecha programada. | F-04 RF-03 |
 | F-02 | F-04 | Anulación del pedido sobre un despacho fallido. | F-02 CA-20, F-04 CA-15 |
 | F-02, F-03, F-04 | Requisitos transversales | Solicitudes de transición de estado. | Sección 6 |
@@ -122,13 +125,15 @@ graph TD
 
 ## 4. Actores y roles
 
-| Rol | Actor | Uso |
+| Identidad o credencial | Actor | Uso |
 |---|---|---|
-| `GESTOR_DESPACHO` | Gestor de Despacho (actor principal) | Toda la administración de F-01, F-02, F-04 y F-05 |
-| `REPARTIDOR` | Repartidor en campo | F-03 |
+| `GESTOR_DESPACHO` | Gestor de Despacho (actor principal) | Toda la administración de F-01, F-02, F-04, F-05 y F-06 |
+| Perfil local de repartidor vinculado al `sub` | Repartidor en campo | F-03; exige vínculo local activo, jornada habilitada y propiedad del recurso |
 | Token de servicio con scopes | Ventas y Postventa, Marketplace y Chatbot | Cotización, creación, cancelación y seguimiento según el scope concedido |
 
-Seguridad y Usuarios emite los roles humanos y los tokens de servicio. El JWT del repartidor contiene su identificador de usuario; Operación resuelve el repartidor mediante el vínculo que mantiene F-05.
+Seguridad y Usuarios emite los roles humanos y los tokens de servicio. `REPARTIDOR` no forma parte de su catálogo global de roles: la cuenta del repartidor se crea sin rol y su token lleva `roles: []`. Operación utiliza el `sub` del JWT para resolver el perfil local que mantiene F-05 y autoriza según su estado, jornada y recursos asignados; no espera un claim `idRepartidor`.
+
+El alta global la realiza una persona con rol `ADMIN_SISTEMA` mediante `POST /usuarios`, omitiendo el campo `rol`. La cuenta nace `PENDIENTE_VERIFICACION`; Seguridad envía un enlace de activación de un solo uso, válido durante 72 horas, para que el repartidor defina su contraseña y acepte los términos. Despacho conserva únicamente el `usuario_id` y nunca administra credenciales. Este flujo pertenece a la revisión local 1.1.0 de Seguridad y queda sujeto a su publicación formal.
 
 ---
 
@@ -294,7 +299,7 @@ Según la matriz cruzada del curso, Despacho y Entrega se integra con Marketplac
 
 | Módulo | Acuerdo |
 |---|---|
-| Seguridad y Usuarios | Registrar los scopes de Despacho; incorporar `REPARTIDOR`; definir creación, invitación, activación y baja de su cuenta. |
+| Seguridad y Usuarios | Publicar formalmente la revisión que establece el alta por `ADMIN_SISTEMA` y `roles: []`; registrar y conceder los scopes de `api-despacho`; definir cómo se solicita el alta o baja global, cómo se comunica el `usuario_id` a Despacho y publicar el contrato RabbitMQ de eventos de usuario. |
 | Ventas y Postventa | Formato definitivo del paquete sellado, incluida `cantidadPaquetes`; cancelación, eventos y dirección del webhook. |
 | Canal Marketplace y Canal Chatbot | Obtener tokens de servicio con `cotizaciones:calcular` y `seguimientos:leer`. |
 
