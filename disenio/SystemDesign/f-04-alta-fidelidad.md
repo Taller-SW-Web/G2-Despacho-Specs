@@ -103,7 +103,7 @@ Etiquetas especiales (badge `sm`):
 
 ### 2.5. Estructura de layout
 
-**Aplicación administrativa (F-01, F-02, F-04, F-05).** Frame de 1440 × 1024 px, grilla de 12 columnas, margen de 40 px y gutter de 24 px.
+**Aplicación administrativa (F-01, F-02, F-04, F-05, F-06).** Frame de 1440 × 1024 px, grilla de 12 columnas, margen de 40 px y gutter de 24 px.
 
 ```text
 ┌────────────┬─────────────────────────────────────────────┐

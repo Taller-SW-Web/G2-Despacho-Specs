@@ -45,9 +45,10 @@ Esta funcionalidad incluye:
 | Dependencia | Responsabilidad |
 |---|---|
 | Seguridad y Usuarios | Proporcionar la identidad y el rol `GESTOR_DESPACHO`. |
-| Web del Repartidor (F-03) | Registrar el fallo, su motivo, la evidencia y el contador; proveer el catálogo de motivos y el acceso autorizado a la evidencia. |
+| Web del Repartidor (F-03) | Registrar el fallo, su motivo, la evidencia, el contador y la referencia del repartidor; proveer el catálogo de motivos y el acceso autorizado a la evidencia. |
 | Programación y Asignación (F-02) | Recibir los despachos reprogramados en la cola y registrar la anulación de pedidos sobre despachos fallidos. |
-| Monitoreo de Flota (F-05) | Dejar de contar el paquete en la ocupación del repartidor cuando se confirma su recepción. |
+| Gestión de Repartidores y Vehículos (F-05) | Proveer los datos básicos del perfil local del repartidor asociado al intento para las consultas operativas. |
+| Disponibilidad y Capacidad Diaria (F-06) | Dejar de contar el paquete en la ocupación del repartidor y la furgoneta cuando se confirma su recepción. |
 | Requisitos transversales (overview, sección 6) | Validar las transiciones, registrar el historial y publicar los eventos hacia Ventas y Postventa. |
 | Ventas y Postventa | Recibir el resultado de la reprogramación o del cierre como devuelto a origen. |
 
@@ -182,7 +183,7 @@ El sistema DEBE registrar el retorno físico del paquete antes de cualquier deci
 
 - **DADO** un despacho en `FALLIDO` marcado como "Pendiente de retorno".
 - **CUANDO** el Gestor confirma que el paquete llegó al centro de despacho, indicando si el sello está intacto.
-- **ENTONCES** el despacho se marca como "Recibido en centro" sin cambiar de estado, se registra la auditoría y el paquete deja de contar en la ocupación del repartidor en F-05.
+- **ENTONCES** el despacho se marca como "Recibido en centro" sin cambiar de estado, se registra la auditoría y el paquete deja de contar en la ocupación del repartidor y la furgoneta en F-06.
 
 #### CA-17. Decisión sin recepción confirmada
 
@@ -251,7 +252,7 @@ La posible logística inversa posterior a una entrega está centralizada en [Pen
 | CA-10 a CA-12 | Cerrar, repetir y simular indisponibilidad de Ventas y Postventa. | Unitaria e integración | Un único cambio y un único evento; evento pendiente si falla. |
 | CA-13 | Revisar la auditoría tras cada operación. | Integración con persistencia | Registro completo. |
 | CA-14 y CA-15 | Reprogramar un `NO_INTENTADO` y un despacho con pedido anulado. | Unitaria e integración | Contador sin cambio; `409` con pedido anulado. |
-| CA-16 a CA-18 | Confirmar recepción, decidir sin recepción y cerrar la jornada sin retorno. | Unitaria e integración | Ocupación liberada en F-05, `409` y alerta de retorno atrasado. |
+| CA-16 a CA-18 | Confirmar recepción, decidir sin recepción y cerrar la jornada sin retorno. | Unitaria e integración | Ocupación liberada en F-06, `409` y alerta de retorno atrasado. |
 
 Además, se ejecutarán tres recorridos funcionales completos:
 

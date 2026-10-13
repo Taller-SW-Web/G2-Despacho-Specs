@@ -28,9 +28,9 @@ Cada microservicio usa una credencial de base de datos distinta. Para el curso p
 
 ### 1.1. Cantidad de paquetes
 
-Ventas y Postventa informa `cantidadPaquetes` cuando solicita el despacho del pedido ya preparado y sellado. El valor habitual y predeterminado es `1`: cinco polos dentro de una misma bolsa o caja siguen siendo un paquete. Solo será mayor cuando el pedido llegue físicamente en dos o más bultos independientes.
+Ventas y Postventa no informa `cantidadPaquetes`. Para el alcance inicial, cada pedido genera un despacho y un único paquete lógico, por lo que Gestión registra internamente `cantidad_paquetes=1`. Las líneas recibidas (`sku`, `cantidad`) representan productos y unidades, no bultos físicos.
 
-Este valor no representa la cantidad de productos. Gestión lo conserva en el despacho y Operación lo utiliza, junto con peso y volumen, para reservar capacidad en la furgoneta.
+Gestión conserva este valor para que Operación lo utilice, junto con el peso y el volumen calculados a partir de los datos físicos de Productos, al reservar capacidad en la furgoneta. Admitir más de un bulto por pedido requerirá una ampliación explícita del contrato; no debe inferirse desde la cantidad de productos.
 
 ---
 
@@ -191,23 +191,24 @@ El backend valida que un distrito no pertenezca a dos zonas activas (F-01 CA-03)
 | `nombres`, `apellidos` | `VARCHAR(80)` | NOT NULL | Datos personales. |
 | `dni` | `VARCHAR(12)` | NOT NULL, UNIQUE | Documento de identidad (F-05 CA-02). |
 | `telefono` | `VARCHAR(20)` | NOT NULL | Contacto. |
-| `correo` | `VARCHAR(120)` | NOT NULL, UNIQUE | Usado para solicitar su cuenta a Seguridad. |
+| `correo` | `VARCHAR(120)` | NOT NULL, UNIQUE | Identifica al repartidor y permite coordinar administrativamente su cuenta global. |
 | `numero_brevete` | `VARCHAR(20)` | NOT NULL | Licencia de conducir. |
 | `turno_habitual` | `VARCHAR(10)` | NOT NULL, CHECK (`MANANA`, `TARDE`, `COMPLETO`) | Turno de referencia. |
 | `estado_registro` | `VARCHAR(10)` | NOT NULL, CHECK (`ACTIVO`, `INACTIVO`) | Baja lógica. |
 | `id_usuario_seguridad` | `UUID` | NULL, UNIQUE | Usuario propiedad de Seguridad y Usuarios. |
-| `estado_vinculacion` | `VARCHAR(25)` | NOT NULL, CHECK (`PENDIENTE`, `PENDIENTE_ACTIVACION`, `VINCULADO`, `ERROR`) | Solo `VINCULADO` permite abrir una jornada. |
-| `ultimo_intento_vinculacion_en` | `TIMESTAMPTZ` | NULL | Última solicitud enviada a Seguridad. |
-| `ultimo_error_vinculacion` | `VARCHAR(500)` | NULL | Diagnóstico visible para reintentar. |
+| `estado_vinculacion` | `VARCHAR(15)` | NOT NULL, CHECK (`PENDIENTE`, `VINCULADO`) | Solo `VINCULADO` permite abrir una jornada. No replica el estado global de la cuenta. |
+| `vinculado_en` | `TIMESTAMPTZ` | NULL | Momento en que se asoció el `usuario_id` de Seguridad. |
 | Auditoría | — | NOT NULL | `creado_en`, `actualizado_en`, `creado_por`, `actualizado_por`. |
 
-Flujo recomendado:
+Flujo acordado:
 
-1. Operación crea el repartidor con `estado_vinculacion=PENDIENTE`.
-2. Solicita la cuenta a Seguridad con su token de servicio; nunca almacena ni recibe la contraseña definitiva.
-3. Si Seguridad crea la cuenta y envía una invitación, se guarda `id_usuario_seguridad` y se cambia a `PENDIENTE_ACTIVACION`.
-4. Cuando Seguridad confirma que la cuenta puede iniciar sesión, se cambia a `VINCULADO`.
-5. Si la integración falla, se usa `ERROR` y el gestor puede reintentar.
+1. Operación crea el perfil local del repartidor con `estado_vinculacion=PENDIENTE` y sin credenciales.
+2. Una persona con rol `ADMIN_SISTEMA` crea la cuenta en Seguridad mediante su procedimiento administrativo, omitiendo un rol global de repartidor. La activación de credenciales pertenece por completo a Seguridad.
+3. El canal administrativo acordado comunica a Despacho el `usuario_id` creado.
+4. Operación guarda el valor en `id_usuario_seguridad`, registra `vinculado_en` y cambia el vínculo local a `VINCULADO`.
+5. Cuando llega un JWT humano, el claim `sub` se resuelve contra `id_usuario_seguridad`; el estado local, la jornada y la propiedad de los recursos determinan la autorización.
+
+Despacho no solicita automáticamente la creación de la cuenta, no utiliza un scope para crear repartidores y nunca almacena ni recibe la contraseña. El estado de activación, bloqueo o desactivación global pertenece a Seguridad y no se replica en `estado_vinculacion`; cuando se publique el contrato RabbitMQ, sus eventos permitirán reaccionar a esos cambios sin convertirlos en estados locales de vinculación.
 
 La baja local mediante `estado_registro=INACTIVO` impide jornadas y asignaciones. Bloquear el acceso de la cuenta es una operación distinta que pertenece a Seguridad.
 
@@ -260,12 +261,11 @@ Representa la jornada de un repartidor: con qué furgoneta y en qué zona trabaj
 | `distrito` | `VARCHAR(80)` | NOT NULL | Distrito; se expone en el seguimiento. |
 | `codigo_postal` | `VARCHAR(10)` | NULL | Código postal. |
 | `latitud`, `longitud` | `NUMERIC` | NULL | Coordenadas informativas si Ventas las envía; la cobertura inicial se resuelve por distrito o código postal. |
-| `peso_kg` | `NUMERIC(10,3)` | NOT NULL, CHECK (> 0) | Peso del paquete sellado. |
-| `volumen_m3` | `NUMERIC(10,4)` | NOT NULL, CHECK (> 0) | Volumen del paquete sellado. |
-| `cantidad_paquetes` | `SMALLINT` | NOT NULL, DEFAULT 1, CHECK (> 0) | Bultos físicos recibidos desde Ventas. |
+| `peso_kg` | `NUMERIC(10,3)` | NOT NULL, CHECK (> 0) | Peso total calculado por Despacho con los datos físicos vigentes de las líneas consultadas a Productos. |
+| `volumen_m3` | `NUMERIC(10,4)` | NOT NULL, CHECK (> 0) | Volumen total calculado por Despacho con las dimensiones vigentes de las líneas consultadas a Productos. |
+| `cantidad_paquetes` | `SMALLINT` | NOT NULL, DEFAULT 1, CHECK (= 1) | Paquete lógico registrado internamente; no se recibe desde Ventas. |
 | `zona_id` | `UUID` | FK → `zonas`, NOT NULL | Zona resuelta por F-01 al recibir la solicitud. |
-| `fecha_comprometida` | `DATE` | NOT NULL | Fecha prometida al cliente por Ventas. |
-| `fecha_programada` | `DATE` | NOT NULL | Fecha en que puede asignarse; cambia al reprogramar (F-02 CA-14). |
+| `fecha_programada` | `DATE` | NOT NULL | Fecha calculada por Despacho a partir de la zona, el plazo y el calendario operativo; cambia al reprogramar. |
 | `en_cola_desde` | `TIMESTAMPTZ` | NULL | Última entrada a `PENDIENTE_ASIGNACION`; base del "tiempo en espera". |
 | `repartidor_id_externo` | `UUID` | NULL, sin FK | Repartidor propiedad de Operación. |
 | `asignacion_diaria_id_externa` | `UUID` | NULL, sin FK | Jornada propiedad de Operación. |
@@ -475,7 +475,7 @@ Cada servicio mantiene su propia auditoría: Gestión para zonas, tarifas y par�
 
 Cada microservicio tiene su propia tabla. Restricción única: `(actor_tipo, actor_id, operacion, clave)`.
 
-Idempotencia significa que repetir una solicitud porque se perdió la respuesta no duplica el efecto. Por ejemplo, dos peticiones iguales de “Entregado” producen un solo intento y una sola transición. Incluso si finalmente no se exige el encabezado `Idempotency-Key` en todos los comandos, se mantienen las protecciones de negocio: `id_pedido` único, una reserva vigente por despacho y versiones de proyección crecientes.
+Idempotencia significa que repetir una solicitud porque se perdió la respuesta no duplica el efecto. Por ejemplo, dos peticiones iguales de “Entregado” producen un solo intento y una sola transición. `Idempotency-Key` es obligatorio para la creación y la cancelación solicitadas por Ventas; los demás comandos solo exigen el encabezado cuando su contrato lo declara. En todos los casos se mantienen además las protecciones de negocio: `id_pedido` único, una reserva vigente por despacho y versiones de proyección crecientes.
 
 ---
 
@@ -486,7 +486,7 @@ Idempotencia significa que repetir una solicitud porque se perdió la respuesta 
 | `despachos.estado` | `PENDIENTE_ASIGNACION`, `ASIGNADO`, `EN_CAMINO`, `ENTREGADO`, `FALLIDO`, `DEVUELTO_A_ORIGEN`, `CANCELADO` |
 | `zonas.estado` | `ACTIVO`, `INACTIVO` |
 | `repartidores.estado_registro` | `ACTIVO`, `INACTIVO` |
-| `repartidores.estado_vinculacion` | `PENDIENTE`, `PENDIENTE_ACTIVACION`, `VINCULADO`, `ERROR` |
+| `repartidores.estado_vinculacion` | `PENDIENTE`, `VINCULADO` |
 | `furgonetas.estado` | `DISPONIBLE`, `EN_MANTENIMIENTO`, `INACTIVA` |
 | `asignaciones_diarias.estado` | `ACTIVA`, `CERRADA` |
 | `reservas_capacidad.estado` | `ACTIVA`, `LIBERADA` |

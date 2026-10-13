@@ -15,7 +15,7 @@ Registrar que el paquete asociado a un despacho fallido regresó físicamente al
 - El despacho existe y su estado vigente es `FALLIDO`.
 - El paquete aparece como `Pendiente de retorno` y se encuentra físicamente en el centro de despacho.
 - La identidad del usuario que confirma se obtiene de la sesión autenticada.
-- Existe la información necesaria para liberar de forma idempotente la reserva u ocupación asociada en F-05.
+- Existe la información necesaria para liberar de forma idempotente la reserva u ocupación asociada en F-06.
 
 ## 3. Flujo principal
 
@@ -24,7 +24,7 @@ Registrar que el paquete asociado a un despacho fallido regresó físicamente al
 3. El Gestor verifica físicamente el paquete y confirma la operación.
 4. El backend valida el rol, el estado vigente y que la recepción no haya sido procesada previamente.
 5. El sistema registra la fecha del servidor, el usuario, el estado del sello y la observación, manteniendo el despacho en `FALLIDO`.
-6. La operación registra su trazabilidad y solicita la liberación idempotente de la ocupación en F-05.
+6. La operación registra su trazabilidad y solicita la liberación idempotente de la ocupación en F-06.
 7. El frontend informa el resultado y presenta el paquete como `Recibido en centro`.
 
 ## 4. Reglas y validaciones
@@ -37,7 +37,7 @@ Registrar que el paquete asociado a un despacho fallido regresó físicamente al
 - La recepción habilita las decisiones posteriores, pero no las ejecuta automáticamente.
 - Una repetición exacta es idempotente: devuelve el resultado vigente sin duplicar recepción, auditoría ni liberación de ocupación.
 - Si otra operación modificó el despacho y ya no está `FALLIDO`, se responde `409 Conflict` y no se registra la recepción.
-- La liberación de ocupación debe utilizar el mecanismo interno e idempotente definido con F-05.
+- La liberación de ocupación debe utilizar el mecanismo interno e idempotente definido con F-06.
 - Un usuario sin el rol requerido obtiene `403 Forbidden`.
 
 ## 5. Entradas, salidas e integraciones
@@ -55,11 +55,11 @@ Registrar que el paquete asociado a un despacho fallido regresó físicamente al
 - Fecha y usuario de recepción.
 - Estado registrado del sello y observación.
 - Despacho todavía en `FALLIDO`, ahora habilitado para una decisión.
-- Liberación de la ocupación correspondiente en F-05.
+- Liberación de la ocupación correspondiente en F-06.
 
 ### Integraciones
 
-- F-05 recibe la liberación idempotente de la reserva por el motivo `RECEPCION_EN_CENTRO`.
+- F-06 recibe la liberación idempotente de la reserva por el motivo `RECEPCION_EN_CENTRO`.
 - El componente transversal de historial registra la operación junto con su ejecutor y marca temporal.
 - La solicitud y la integración interna se rigen por `integraciones/api-contract.md` [cite: 2].
 
@@ -115,4 +115,4 @@ Registrar que el paquete asociado a un despacho fallido regresó físicamente al
 - [cite: 1] `funcionalidades/F-04-GestionEntregasFallidas.md`, RF-07 y CA-16 a CA-18.
 - [cite: 2] `integraciones/api-contract.md`, secciones 11, 13.2 y 14.
 - [cite: 3] `disenio/funcionalidades/f-04.md`, Pantalla 3: Confirmación de Recepción en Centro.
-- [cite: 4] `overview.md`, RT-02 e integración entre F-04 y F-05.
+- [cite: 4] `overview.md`, RT-02 e integración entre F-04 y F-06.
