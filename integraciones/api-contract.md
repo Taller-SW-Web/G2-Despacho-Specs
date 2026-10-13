@@ -50,7 +50,7 @@ Despacho no administra pagos, stock, embalaje, cuentas de usuario, navegación G
 | Encabezado | Uso |
 |---|---|
 | `Authorization: Bearer <token>` | Operaciones con JWT de usuario o token de servicio |
-| `Idempotency-Key: <uuid>` | Reintentos seguros en los comandos que lo declaren; la obligatoriedad general queda pendiente de acuerdo |
+| `Idempotency-Key: <uuid>` | Reintentos seguros en los comandos que lo declaren; es obligatorio como UUID v4 de hasta 128 caracteres al crear o cancelar despachos desde Ventas |
 | `X-Correlation-Id: <uuid>` | Opcional; trazabilidad entre módulos. El Gateway lo genera si no llega |
 | `Content-Type: application/json` | Cuerpos JSON |
 
@@ -81,12 +81,14 @@ El valor de `iss` se obtiene del campo `issuer` publicado por `GET /api/v1/auth/
 
 | Scope | Consumidores previstos | Operación autorizada |
 |---|---|---|
-| `cotizaciones:calcular` | Marketplace, Chatbot y, si lo requiere, Ventas | Calcular cobertura, costo y plazo |
+| `cotizaciones:calcular` | Marketplace y Chatbot | Calcular cobertura, costo y plazo |
 | `seguimientos:leer` | Marketplace, Chatbot y Ventas | Consultar seguimiento por `idPedido` |
 | `despachos:crear` | Ventas | Crear un despacho para un pedido pagado, preparado y listo para entrega |
 | `despachos:cancelar` | Ventas | Solicitar cancelación por anulación del pedido |
 
 Estos scopes pertenecen a la API de Despacho: Despacho define su significado y Seguridad los registra y concede a cada `client_id`. En cambio, `usuarios:leer` y `direcciones:leer` pertenecen a la API de Seguridad y ya están concedidos a `modulo-despacho`. Para consultar datos físicos, Productos y Ofertas acordó el scope `productos:fisicos:leer`, perteneciente a `api-productos`, que deberá concederse al cliente técnico `modulo-despacho`.
+
+La integración con Ventas utiliza permisos distintos según la dirección de la llamada. `modulo-ventas` llama a `api-despacho` con `despachos:crear`, `despachos:cancelar` o `seguimientos:leer`. En la dirección contraria, `modulo-despacho` llama al webhook de `api-ventas` con `ventas:pedidos:estado`. No se utiliza el scope propuesto inicialmente `despachos:eventos:recibir`, porque Ventas confirmó la reutilización de `ventas:pedidos:estado`.
 
 ### 3.5. Errores
 
@@ -174,13 +176,13 @@ Para cerrar la integración se deben probar, como mínimo, los casos sin token, 
 | Marketplace o Chatbot | Despacho | Solicitar cotización | Token de servicio con `cotizaciones:calcular` | REST síncrono |
 | Marketplace o Chatbot | Despacho | Consultar seguimiento por `idPedido` | Token de servicio con `seguimientos:leer` | REST síncrono |
 | Despacho | Productos y Ofertas | Consultar datos físicos por SKU | Token de `modulo-despacho` con `aud=api-productos` y scope `productos:fisicos:leer` | REST síncrono en lote |
-| Ventas y Postventa | Despacho | Crear despacho de pedido listo para entrega | Token de servicio con `despachos:crear` | REST síncrono e idempotente |
-| Ventas y Postventa | Despacho | Cancelar por anulación | Token de servicio con `despachos:cancelar` | REST síncrono e idempotente |
-| Despacho | Ventas y Postventa | Informar cambios de estado | Token de servicio con scope definido por Ventas | Webhook con outbox y reintentos |
+| Ventas y Postventa | Despacho | Crear despacho de pedido listo para entrega | Token de `modulo-ventas` con `aud=api-despacho` y scope `despachos:crear` | REST síncrono e idempotente |
+| Ventas y Postventa | Despacho | Cancelar por anulación | Token de `modulo-ventas` con `aud=api-despacho` y scope `despachos:cancelar` | REST síncrono e idempotente |
+| Despacho | Ventas y Postventa | Informar cambios de estado | Token de `modulo-despacho` con `aud=api-ventas` y scope `ventas:pedidos:estado` | Webhook con outbox y reintentos |
 | Despacho | Seguridad y Usuarios | Obtener claves públicas | HTTPS | JWKS con caché |
 | Seguridad y Usuarios | Despacho | Notificar cambios de estado o roles de usuarios | Credenciales y permisos del broker pendientes de publicación | Eventos RabbitMQ previstos por Seguridad |
 
-## 5. F-01: cotización para Marketplace, Chatbot y Ventas
+## 5. F-01: cotización para Marketplace y Chatbot
 
 ### 5.1. Solicitar cotización
 
@@ -425,8 +427,8 @@ Un fallo reprogramado muestra hitos con etiquetas públicas como `No entregado, 
 
 - **Método:** `POST`
 - **Ruta:** `/api/v1/despachos`
-- **Autenticación:** token de servicio con `tipo=servicio`, `sub=modulo-ventas` y scope `despachos:crear`.
-- **Idempotencia:** unicidad obligatoria por `idPedido`. El uso de `Idempotency-Key` queda recomendado y pendiente de convención común entre módulos.
+- **Autenticación:** token de servicio con `tipo=servicio`, `sub=modulo-ventas`, `aud=api-despacho` y scope `despachos:crear`.
+- **Idempotencia:** `Idempotency-Key` es obligatorio, debe ser un UUID v4 de hasta 128 caracteres y se combina con la unicidad de negocio por `idPedido`. Un reintento con la misma clave devuelve el resultado original sin crear otro despacho.
 
 ```json
 {
@@ -490,8 +492,8 @@ Si el pedido ya tiene despacho, se responde `200 OK` con el recurso existente y 
 
 - **Método:** `POST`
 - **Ruta:** `/api/v1/despachos/pedidos/{idPedido}/cancelacion`
-- **Autenticación:** token de servicio con `tipo=servicio`, `sub=modulo-ventas` y scope `despachos:cancelar`.
-- **Idempotencia:** la repetición debe conservar el mismo resultado. El uso de `Idempotency-Key` queda recomendado y pendiente de convención común entre módulos.
+- **Autenticación:** token de servicio con `tipo=servicio`, `sub=modulo-ventas`, `aud=api-despacho` y scope `despachos:cancelar`.
+- **Idempotencia:** `Idempotency-Key` es obligatorio y debe ser un UUID v4 de hasta 128 caracteres. Una repetición con la misma clave conserva el resultado original y no duplica la transición, la auditoría ni el evento.
 
 ```json
 {
@@ -523,9 +525,9 @@ Comportamiento:
 
 Despacho registra el evento en una bandeja de salida dentro de la misma transacción del cambio. La entrega inicial se realizará por webhook HTTPS. La URL pertenece a Ventas y debe configurarse mediante una variable segura.
 
-- **Método esperado:** `POST`
-- **Ruta propuesta de Ventas:** `/api/v1/integraciones/despachos/eventos`
-- **Autenticación:** token de servicio de `modulo-despacho` emitido por Seguridad, con el scope de recepción que defina Ventas.
+- **Método:** `POST`
+- **Ruta confirmada por Ventas:** `/api/v1/integraciones/despachos/eventos`
+- **Autenticación:** token de servicio emitido por Seguridad con `tipo=servicio`, `sub=modulo-despacho`, `aud=api-ventas` y scope `ventas:pedidos:estado`.
 - **Idempotencia:** Ventas deduplica por `idEvento`.
 
 ```json
@@ -541,15 +543,17 @@ Despacho registra el evento en una bandeja de salida dentro de la misma transacc
 }
 ```
 
-| Estado nuevo | Tipo de evento | Datos adicionales |
-|---|---|---|
-| `ASIGNADO` | `DESPACHO_ASIGNADO` | `fechaProgramada` |
-| `EN_CAMINO` | `DESPACHO_EN_CAMINO` | Ninguno |
-| `ENTREGADO` | `DESPACHO_ENTREGADO` | `fechaEntrega`, `recibidoPor` opcional |
-| `FALLIDO` | `DESPACHO_FALLIDO` | `motivo`, `numeroIntento` |
-| `PENDIENTE_ASIGNACION` reprogramado | `DESPACHO_REPROGRAMADO` | `nuevaFechaProgramada` |
-| `DEVUELTO_A_ORIGEN` | `DESPACHO_DEVUELTO_A_ORIGEN` | `motivoCierre` |
-| `CANCELADO` | `DESPACHO_CANCELADO` | Ninguno |
+| Estado nuevo | Tipo de evento | Datos adicionales | Efecto acordado en Ventas |
+|---|---|---|---|
+| `ASIGNADO` | `DESPACHO_ASIGNADO` | `fechaProgramada` | Conserva `EN_PREPARACION`; registra el hito. |
+| `EN_CAMINO` | `DESPACHO_EN_CAMINO` | Ninguno | Cambia `EN_PREPARACION` a `DESPACHADO`. |
+| `ENTREGADO` | `DESPACHO_ENTREGADO` | `fechaEntrega`, `recibidoPor` opcional | Cambia `DESPACHADO` a `ENTREGADO`. |
+| `FALLIDO` | `DESPACHO_FALLIDO` | `motivo`, `numeroIntento` | Conserva `DESPACHADO`; registra el intento para auditoría. |
+| `PENDIENTE_ASIGNACION` reprogramado | `DESPACHO_REPROGRAMADO` | `nuevaFechaProgramada` | Conserva el estado comercial y actualiza la fecha estimada de entrega. |
+| `DEVUELTO_A_ORIGEN` | `DESPACHO_DEVUELTO_A_ORIGEN` | `motivoCierre` | Cambia `DESPACHADO` a `ANULADO` y habilita el tratamiento comercial correspondiente. |
+| `CANCELADO` | `DESPACHO_CANCELADO` | Ninguno | Confirma idempotentemente la cancelación solicitada; no reabre ni vuelve a modificar un pedido ya anulado. |
+
+Los siete tipos anteriores son eventos logísticos aceptados por Ventas, no siete estados adicionales de su pedido. Ventas conserva su propia máquina de estados comercial y aplica el efecto indicado para cada evento.
 
 La política de intentos pertenece a Despacho: el máximo inicial es `2`, puede configurarse dentro del módulo y no se recibe desde Ventas. `DESPACHO_FALLIDO` informa un intento no exitoso, pero no representa necesariamente un cierre definitivo. Solo `DESPACHO_DEVUELTO_A_ORIGEN` comunica que la operación logística terminó sin entrega y permite que Ventas y Postventa decida la anulación, devolución comercial o reembolso que corresponda.
 
@@ -1040,10 +1044,10 @@ Al asignar o reasignar se envía la información completa necesaria para la ruta
 
 ## 14. Reglas de idempotencia y concurrencia
 
-- La idempotencia de negocio es obligatoria aunque todavía no se adopte un encabezado común.
+- La idempotencia de negocio es obligatoria en todos los comandos que modifican estado.
 - Crear despacho es único por `idPedido`; reenviar el mismo pedido devuelve el despacho existente.
 - Cancelar, asignar, reasignar, iniciar traslado, entregar, fallar, recibir, reprogramar y cerrar deben reconocer una repetición segura mediante la clave de negocio, la versión o una clave de operación.
-- `Idempotency-Key` se recomienda para comandos `POST`, especialmente desde clientes móviles, pero su obligatoriedad queda pendiente de acuerdo entre los equipos.
+- `Idempotency-Key` es obligatorio como UUID v4 de hasta 128 caracteres para `POST /api/v1/despachos` y `POST /api/v1/despachos/pedidos/{idPedido}/cancelacion`. En los demás comandos `POST` se exige únicamente cuando la operación lo declara expresamente.
 - Una repetición exacta devuelve el resultado original sin duplicar historial, intento, reserva ni evento.
 - Toda transición utiliza control de versión. Si otra operación modificó el despacho, se responde `409 Conflict` con el estado vigente.
 - Los eventos conservan el mismo `idEvento` en cada reintento.
@@ -1090,11 +1094,12 @@ Despacho -> Canal: estado, fecha, distrito e hitos sin coordenadas ni PII
 
 ## 16. Acuerdos externos que aún deben confirmarse
 
+El contrato funcional con Ventas y Postventa está cerrado: se confirmaron el momento de creación, el payload sin `cantidadPaquetes`, la cancelación, los siete eventos, la ruta y el scope del webhook y la convención de `Idempotency-Key`. Solo quedan el aprovisionamiento o verificación de credenciales por ambiente y las pruebas de contrato.
+
 | Equipo | Acuerdo pendiente |
 |---|---|
-| Seguridad y Usuarios | Registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
+| Seguridad y Usuarios | Registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
 | Productos y Ofertas | Registrar en Seguridad la concesión de `productos:fisicos:leer` a `modulo-despacho` para `api-productos` y ejecutar las pruebas de contrato entre ambos backends |
-| Ventas y Postventa | Registrar `modulo-ventas` con `despachos:crear`, `despachos:cancelar` y `seguimientos:leer`; invocar la creación solo cuando el pedido esté pagado, preparado y listo para entrega; proporcionar la URL y definir el scope de recepción del webhook; autorizar al usuario antes de solicitar una cancelación |
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
-| Equipo de Despacho | Convención final de `Idempotency-Key`; tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
+| Equipo de Despacho | Tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
 
