@@ -56,6 +56,7 @@ Permitir que el Gestor de Despacho examine la incidencia, la recepción y el his
 ### Integraciones
 
 - F-03 origina la incidencia y proporciona el mecanismo autorizado de acceso a la evidencia.
+- F-05 proporciona los datos básicos del perfil local del repartidor asociado al intento.
 - F-02 proporciona el indicador de anulación registrado sobre un despacho fallido.
 - La consulta de incidencia y la autorización de evidencia respetan las rutas definidas en `integraciones/api-contract.md` [cite: 2].
 

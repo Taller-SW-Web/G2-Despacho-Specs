@@ -79,7 +79,7 @@ Para mantener la vista legible, el diagrama conecta el bloque de comunicación c
 | 3. Programar y asignar | F-02 con capacidad de F-05 | Despacho pendiente y jornada vigente | Despacho `ASIGNADO`, reserva y secuencia de ruta. |
 | 4. Ejecutar reparto | F-03 | Ruta del repartidor | Despacho `EN_CAMINO` y luego resultado de la visita. |
 | 5. Gestionar resultado | F-03 | Entrega o incidencia | `ENTREGADO` o `FALLIDO` con evidencia y motivo cuando corresponda. |
-| 6. Resolver fallido | F-04 con liberación en F-05 | Paquete retornado al centro | Reprogramación o `DEVUELTO_A_ORIGEN`. |
+| 6. Resolver fallido | F-04 con liberación de capacidad en F-06 | Paquete retornado al centro | Reprogramación o `DEVUELTO_A_ORIGEN`. |
 | 7. Comunicar estados | Componente transversal de Gestión | Transición confirmada | Webhook idempotente hacia Ventas y seguimiento actualizado. |
 
 ## 4. Reglas de lectura para otros equipos

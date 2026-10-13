@@ -55,9 +55,10 @@ Permitir que el Gestor de Despacho consulte únicamente los despachos cuyo estad
 
 ### Integraciones
 
-- F-03 proporciona el fallo, el motivo, el intento, el repartidor y la referencia de evidencia.
+- F-03 proporciona el fallo, el motivo, el intento, la referencia del repartidor y la referencia de evidencia.
+- F-05 proporciona los datos básicos del perfil local del repartidor que se muestran en la consulta.
 - F-02 registra la anulación del pedido que debe mostrarse como indicador.
-- La información de jornada necesaria para identificar un retorno atrasado procede de F-05 mediante el mecanismo acordado por el módulo.
+- La información de jornada necesaria para identificar un retorno atrasado procede de F-06 mediante el mecanismo acordado por el módulo.
 - La ruta, los parámetros y la forma de error se rigen exclusivamente por `integraciones/api-contract.md` [cite: 2].
 
 ## 6. Criterios de aceptación
@@ -106,4 +107,4 @@ Permitir que el Gestor de Despacho consulte únicamente los despachos cuyo estad
 - [cite: 1] `funcionalidades/F-04-GestionEntregasFallidas.md`, RF-01, RF-06, RF-07 y CA-01 a CA-03, CA-14 y CA-18.
 - [cite: 2] `integraciones/api-contract.md`, sección 11, API de F-04.
 - [cite: 3] `disenio/funcionalidades/f-04.md`, Pantalla 1: Listado de Entregas Fallidas.
-- [cite: 4] `overview.md`, integración de F-03, F-04 y F-05.
+- [cite: 4] `overview.md`, integración de F-03, F-04, F-05 y F-06.
