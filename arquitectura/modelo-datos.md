@@ -128,57 +128,79 @@ Cada tabla indica qué microservicio y funcionalidad la escriben. Una funcionali
 ### 3.1. Zonas y tarifas (Gestión de Despachos; escribe F-01)
 
 #### `zonas`
-
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | `UUID` | PK | Identificador. |
-| `origen_delimitacion` | `VARCHAR(20)` | NOT NULL | Delimitación. |
-| `geom` | `GEOMETRY(MultiPolygon, 4326)` | NOT NULL | Geometria. |
-| `nombre` | `VARCHAR(80)` | NOT NULL, UNIQUE | Nombre de la zona ("Lima Centro"). |
-| `estado` | `VARCHAR(10)` | NOT NULL, CHECK (`ACTIVO`, `INACTIVO`) | Solo las zonas activas se cotizan y aceptan despachos. |
-| `creado_en`, `actualizado_en` | `TIMESTAMPTZ` | NOT NULL | Auditoría. |
-| `creado_por`, `actualizado_por` | `VARCHAR(64)` | NOT NULL | Identificador de usuario de Seguridad. |
+| `nombre` | `TEXT` | NOT NULL, UNIQUE | Nombre de la zona ("Lima Centro"). |
+| `estado` | `TEXT` | NOT NULL, CHECK (ver §4: `ACTIVO`, `INACTIVO`) | Solo las zonas activas se cotizan y aceptan despachos. |
+| `origen_delimitacion` | `TEXT` | NULL | Origen de la delimitación. |
+| `geom` | `extensions.geometry(Geometry, 4326)` | NULL | Geometría de la zona. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
+| `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
+| `creado_por` | `UUID` | NULL | Identificador de usuario de Seguridad. |
+| `actualizado_por` | `UUID` | NULL | Identificador de usuario de Seguridad. |
 
-#### `zona_distritos`
-
-| Columna | Tipo | Restricciones | Descripción |
-|---|---|---|---|
-| `id` | `UUID` | PK | Identificador. |
-| `distrito_id` | `UUID` | FK, NOT NULL | Distrito al que pertenece. |
-| `zona_id` | `UUID` | FK → `zonas`, NOT NULL | Zona a la que pertenece. |
-| `codigo_postal` | `VARCHAR(10)` | NULL | Código postal, si aplica. |
-
-El backend valida que un distrito no pertenezca a dos zonas activas (F-01 CA-03), ya que la regla depende del estado de la zona.
-
-#### `tarifas_zona`
-
-| Columna | Tipo | Restricciones | Descripción |
-|---|---|---|---|
-| `id` | `UUID` | PK | Identificador. |
-| `zona_id` | `UUID` | FK → `zonas`, NOT NULL | Zona tarificada. |
-| `tarifa_base` | `NUMERIC(10,2)` | NOT NULL, CHECK (≥ 0) | Precio hasta el peso base. |
-| `peso_base_kg` | `NUMERIC(10,3)` | NOT NULL, CHECK (> 0) | Peso incluido en la tarifa base. |
-| `recargo_kg_adicional` | `NUMERIC(10,2)` | NOT NULL, CHECK (≥ 0) | Precio por kilogramo adicional. |
-| `factor_volumetrico` | `NUMERIC(10,2)` | NULL, CHECK (> 0) | kg equivalentes por m³, cuando se informa volumen. |
-| `moneda` | `CHAR(3)` | NOT NULL, DEFAULT `PEN` | Moneda de la tarifa. |
-| `plazo_min_dias`, `plazo_max_dias` | `SMALLINT` | NOT NULL, CHECK (`plazo_min_dias` ≤ `plazo_max_dias`) | Plazo estimado en días hábiles. |
-| `activa` | `BOOLEAN` | NOT NULL | Tarifa vigente. |
-| `creado_en`, `creado_por` | — | NOT NULL | Auditoría. |
-
-Índice único parcial: una sola tarifa activa por zona (`zona_id` WHERE `activa`). Un cambio de tarifa desactiva la anterior y crea una nueva, lo que conserva el histórico.
+Índice: `idx_zonas_geom` (GiST sobre `geom`).
 
 #### `distrito`
-
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | `UUID` | PK | Identificador. |
-| `nombre` | `VARCHAR(25)` | FK → `zonas`, NOT NULL | Zona tarificada. |
-| `provincia` | `VARCHAR(25)` | NOT NULL, CHECK (≥ 0) | Precio hasta el peso base. |
-| `departamento` | `VARCHAR(25)` | NOT NULL, CHECK (> 0) | Peso incluido en la tarifa base. |
-| `ubigeo` | `VARCHAR(10)` | NOT NULL | Precio por kilogramo adicional. |
-| `geom` | `GEOMETRY(MultiPolygon, 4326)` | NOT NULL | Geometria. |
-| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `PEN` | . |
-| `actualizado_en` | `VARCHAR(64)` | NOT NULL,  |  |
+| `nombre` | `TEXT` | NOT NULL | Nombre del distrito. |
+| `provincia` | `TEXT` | NULL | Provincia. |
+| `departamento` | `TEXT` | NULL | Departamento. |
+| `ubigeo` | `TEXT` | UNIQUE | Código UBIGEO. |
+| `geom` | `extensions.geometry(Geometry, 4326)` | NULL | Geometría del distrito. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
+| `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
+
+Índice: `idx_distrito_geom` (GiST sobre `geom`).
+
+#### `zonas_distritos`
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | `UUID` | PK | Identificador. |
+| `zona_id` | `UUID` | FK → `zonas.id`, NOT NULL | Zona a la que pertenece. |
+| `distrito_id` | `UUID` | FK → `distrito.id`, NOT NULL | Distrito al que pertenece. |
+| `codigo_postal` | `TEXT` | NULL | Código postal, si aplica. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
+| `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
+| | | UNIQUE (`zona_id`, `distrito_id`) | Evita duplicar la misma asociación. |
+
+Índice: `idx_zonas_distritos_distrito` sobre (`distrito_id`).
+#### `zona_conflictos_log`
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | `UUID` | PK | Identificador. |
+| `nombre_intentado` | `TEXT` | NULL | Nombre intentado. |
+| `zona_conflicto_id` | `UUID` | FK → `zonas.id` | Zona en conflicto. |
+| `motivo` | `TEXT` | NULL | Motivo del conflicto. |
+| `detalle` | `TEXT` | NULL | Detalle. |
+| `intentado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Momento del intento. |
+| `intentado_por` | `UUID` | NULL | Usuario que lo intentó. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
+| `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
+
+Índice: `idx_zona_conflictos_log_zona` (`zona_conflicto_id`).
+
+#### `tarifas_zona`
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | `UUID` | PK | Identificador. |
+| `zona_id` | `UUID` | FK → `zonas.id`, NOT NULL | Zona tarificada. |
+| `tarifa_base` | `NUMERIC(12,2)` | NOT NULL, CHECK (≥ 0) | Tarifa base. |
+| `peso_base_kg` | `NUMERIC(10,2)` | NULL, CHECK (> 0) | Peso incluido en la tarifa base. |
+| `recargo_kg_adicional` | `NUMERIC(12,2)` | NULL, CHECK (≥ 0) | Recargo por kg adicional. |
+| `factor_volumetrico` | `NUMERIC(10,2)` | NULL, CHECK (> 0) | Factor volumétrico (kg/m³) para cálculo. |
+| `moneda` | `TEXT` | NULL | Moneda (ej. `PEN`, `USD`). |
+| `plazo_min_dias` | `INTEGER` | NULL | Plazo mínimo en días hábiles. |
+| `plazo_max_dias` | `INTEGER` | NULL | Plazo máximo en días hábiles. |
+| `activa` | `BOOLEAN` | NOT NULL, DEFAULT true | Tarifa vigente. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
+| `creado_por` | `UUID` | NULL | Usuario que creó la tarifa. |
+| `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
+
+Índice: `idx_tarifas_zona_zona` sobre (`zona_id`).
 
 
 ### 3.2. Flota y capacidad (Operación de Reparto y Flota; escribe F-05)
@@ -246,87 +268,78 @@ Representa la jornada de un repartidor: con qué furgoneta y en qué zona trabaj
 ### 3.3. Despachos (Gestión de Despachos; escribe F-02 y transiciona RT-01)
 
 #### `despachos`
-
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | `UUID` | PK | Identificador (`idDespacho`). |
-| `id_pedido` | `VARCHAR(50)` | NOT NULL, UNIQUE | Pedido de Ventas y Postventa; garantiza un despacho por pedido (F-02 CA-12). |
-| `codigo_rastreo_interno` | `VARCHAR(20)` | NOT NULL, UNIQUE | Referencia operativa; los canales consultan por `id_pedido`. |
-| `es_simulado` | `BOOLEAN` | NOT NULL, DEFAULT false | Despacho de prueba; no emite eventos (RT-CA-07). |
-| `estado` | `VARCHAR(25)` | NOT NULL, CHECK (ver sección 4) | Estado actual. |
-| `destinatario_nombre` | `VARCHAR(120)` | NOT NULL | Nombre del destinatario. |
-| `destinatario_telefono` | `VARCHAR(20)` | NOT NULL | Teléfono de contacto. |
-| `direccion` | `VARCHAR(200)` | NOT NULL | Dirección de entrega. |
-| `referencia` | `VARCHAR(200)` | NULL | Referencia de la dirección. |
-| `distrito` | `VARCHAR(80)` | NOT NULL | Distrito; se expone en el seguimiento. |
-| `codigo_postal` | `VARCHAR(10)` | NULL | Código postal. |
-| `latitud`, `longitud` | `NUMERIC` | NULL | Coordenadas informativas si Ventas las envía; la cobertura inicial se resuelve por distrito o código postal. |
-| `peso_kg` | `NUMERIC(10,3)` | NOT NULL, CHECK (> 0) | Peso total calculado por Despacho con los datos físicos vigentes de las líneas consultadas a Productos. |
-| `volumen_m3` | `NUMERIC(10,4)` | NOT NULL, CHECK (> 0) | Volumen total calculado por Despacho con las dimensiones vigentes de las líneas consultadas a Productos. |
-| `cantidad_paquetes` | `SMALLINT` | NOT NULL, DEFAULT 1, CHECK (= 1) | Paquete lógico registrado internamente; no se recibe desde Ventas. |
-| `zona_id` | `UUID` | FK → `zonas`, NOT NULL | Zona resuelta por F-01 al recibir la solicitud. |
-| `fecha_programada` | `DATE` | NOT NULL | Fecha calculada por Despacho a partir de la zona, el plazo y el calendario operativo; cambia al reprogramar. |
-| `en_cola_desde` | `TIMESTAMPTZ` | NULL | Última entrada a `PENDIENTE_ASIGNACION`; base del "tiempo en espera". |
-| `repartidor_id_externo` | `UUID` | NULL, sin FK | Repartidor propiedad de Operación. |
-| `asignacion_diaria_id_externa` | `UUID` | NULL, sin FK | Jornada propiedad de Operación. |
-| `reserva_capacidad_id_externa` | `UUID` | NULL, sin FK, UNIQUE | Reserva vigente en Operación. |
-| `secuencia_ruta` | `SMALLINT` | NULL, CHECK (> 0) | Posición en la ruta de la jornada. |
-| `numero_intentos` | `SMALLINT` | NOT NULL, DEFAULT 0 | Intentos reales consumidos. |
-| `pedido_anulado_en` | `TIMESTAMPTZ` | NULL | Anulación registrada sobre un despacho `FALLIDO` (F-02 CA-20). |
-| `version` | `INTEGER` | NOT NULL, DEFAULT 0 | Bloqueo optimista. |
-| Auditoría | — | NOT NULL | `creado_en`, `actualizado_en`. |
+| `pedido_id` | `UUID` | NOT NULL | Pedido de Ventas y Postventa (sin FK entre bases). |
+| `zona_id` | `UUID` | FK → `zonas.id` | Zona resuelta. |
+| `codigo_rastreo_interno` | `TEXT` | UNIQUE | Referencia operativa. |
+| `es_simulado` | `BOOLEAN` | NOT NULL, DEFAULT false | Despacho de prueba; no emite eventos. |
+| `estado` | `TEXT` | NOT NULL, CHECK (ver §4) | Estado actual. |
+| `destinatario_nombre` | `TEXT` | NULL | Nombre del destinatario. |
+| `destinatario_telefono` | `TEXT` | NULL | Teléfono de contacto. |
+| `direccion` | `TEXT` | NULL | Dirección de entrega. |
+| `referencia` | `TEXT` | NULL | Referencia de la dirección. |
+| `distrito` | `TEXT` | NULL | Distrito. |
+| `codigo_postal` | `TEXT` | NULL | Código postal. |
+| `latitud` | `NUMERIC(9,6)` | NULL | Coordenada latitud. |
+| `longitud` | `NUMERIC(9,6)` | NULL | Coordenada longitud. |
+| `peso_kg` | `NUMERIC(10,2)` | NULL, CHECK (> 0) | Peso total calculado. |
+| `volumen_m3` | `NUMERIC(10,3)` | NULL, CHECK (> 0) | Volumen total calculado. |
+| `cantidad_paquetes` | `INTEGER` | NULL, CHECK (= 1) | Paquete lógico registrado internamente. |
+| `fecha_comprometida` | `DATE` | NULL | Fecha comprometida (si se conserva como referencia). |
+| `fecha_programada` | `DATE` | NULL | Fecha programada calculada por Despacho. |
+| `en_cola_desde` | `TIMESTAMPTZ` | NULL | Última entrada a `PENDIENTE_ASIGNACION`. |
+| `repartidor_id_externo` | `UUID` | NULL | Repartidor (BD 1). |
+| `asignacion_diaria_id_externa` | `UUID` | NULL | Jornada (BD 1). |
+| `reserva_capacidad_id_externa` | `UUID` | NULL | Reserva (BD 1). |
+| `secuencia_ruta` | `INTEGER` | NULL, CHECK (> 0) | Posición en ruta. |
+| `numero_intentos` | `INTEGER` | NOT NULL, DEFAULT 0 | Contador de intentos. |
+| `pedido_anulado_en` | `TIMESTAMPTZ` | NULL | Momento de anulación registrada. |
+| `version` | `INTEGER` | NOT NULL, DEFAULT 1 | Bloqueo optimista. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
+| `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
 
-Restricciones adicionales:
-
-- CHECK: los tres identificadores externos y `secuencia_ruta` no son nulos cuando `estado` es `ASIGNADO` o `EN_CAMINO`.
-- Restricción única `DEFERRABLE INITIALLY DEFERRED` sobre `(asignacion_diaria_id_externa, secuencia_ruta)`, que permite reordenar la ruta dentro de una transacción.
-- No existen FK hacia Operación. Gestión guarda los identificadores devueltos al reservar capacidad y los valida mediante la API interna.
-- La asignación se confirma después de crear la reserva. Si Gestión no logra completar el cambio, solicita liberar la reserva con la misma clave idempotente.
+Índices: `idx_despachos_pedido` (`pedido_id`), `idx_despachos_zona` (`zona_id`), `idx_despachos_estado` (`estado`).
 
 ### 3.4. Intentos y trazabilidad (Gestión de Despachos)
 
 #### `motivos_fallo` (catálogo canónico consumido por F-03)
-
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
-| `codigo` | `VARCHAR(30)` | PK | Código del motivo. |
-| `etiqueta` | `VARCHAR(80)` | NOT NULL | Texto mostrado. |
-| `seleccionable_en_campo` | `BOOLEAN` | NOT NULL | `false` para `NO_INTENTADO`. |
-| `consume_intento` | `BOOLEAN` | NOT NULL | `false` para `NO_INTENTADO`. |
-| `activo` | `BOOLEAN` | NOT NULL | Permite retirar motivos sin borrarlos. |
+| `codigo` | `TEXT` | PK | Código del motivo. |
+| `etiqueta` | `TEXT` | NOT NULL | Texto mostrado. |
+| `seleccionable_en_campo` | `BOOLEAN` | NOT NULL, DEFAULT true | `false` para `NO_INTENTADO`. |
+| `consume_intento` | `BOOLEAN` | NOT NULL, DEFAULT true | `false` para `NO_INTENTADO`. |
+| `activo` | `BOOLEAN` | NOT NULL, DEFAULT true | Permite retirar motivos sin borrarlos. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (agregada). |
+| `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (agregada, actualizado por trigger). |
 
 Datos iniciales: los siete motivos del Anexo B de F-03.
 
 #### `intentos_entrega` (escribe F-03; F-04 completa la recepción)
-
-Una fila por cada vez que un despacho sale de una ruta con resultado: entregado o fallido.
-
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | `UUID` | PK | Identificador. |
-| `despacho_id` | `UUID` | FK → `despachos`, NOT NULL | Despacho. |
-| `asignacion_diaria_id_externa` | `UUID` | NOT NULL, sin FK | Jornada de Operación. |
-| `repartidor_id_externo` | `UUID` | NOT NULL, sin FK | Repartidor ejecutor. |
-| `resultado` | `VARCHAR(10)` | NOT NULL, CHECK (`ENTREGADO`, `FALLIDO`) | Resultado. |
-| `motivo_codigo` | `VARCHAR(30)` | FK → `motivos_fallo`, NULL | Obligatorio si `resultado = 'FALLIDO'`. |
-| `consume_intento` | `BOOLEAN` | NOT NULL | Copia del motivo al registrar; `false` en entregas y `NO_INTENTADO`. |
-| `comentario` | `VARCHAR(500)` | NULL | Comentario del repartidor. |
-| `nombre_receptor` | `VARCHAR(120)` | NULL | Nombre opcional de quien recibió (F-03 CA-15). |
-| `evidencia_id_externa` | `UUID` | NULL, sin FK, UNIQUE | Evidencia propiedad de Operación; obligatoria salvo en `NO_INTENTADO`. |
-| `origen` | `VARCHAR(12)` | NOT NULL, CHECK (`MANUAL`, `AUTOMATICO`) | Registro del repartidor o corte automático. |
-| `registrado_en` | `TIMESTAMPTZ` | NOT NULL | Marca temporal del servidor. |
-| `recibido_en_centro_en` | `TIMESTAMPTZ` | NULL | Confirmación de retorno del paquete (F-04 RF-07). |
-| `recibido_por` | `VARCHAR(64)` | NULL | Gestor que confirmó la recepción. |
-| `sello_intacto` | `BOOLEAN` | NULL | Estado del sello al retornar. |
-| `observacion_recepcion` | `VARCHAR(500)` | NULL | Observaciones de la recepción. |
+| `despacho_id` | `UUID` | FK → `despachos.id`, NOT NULL | Despacho. |
+| `asignacion_diaria_id_externa` | `UUID` | NULL | Jornada de Operación. |
+| `repartidor_id_externo` | `UUID` | NULL | Repartidor ejecutor. |
+| `resultado` | `TEXT` | NOT NULL | Resultado (`ENTREGADO`, `FALLIDO`). |
+| `motivo_codigo` | `TEXT` | FK → `motivos_fallo.codigo`, NULL | Motivo cuando aplica. |
+| `consume_intento` | `BOOLEAN` | NOT NULL, DEFAULT true | Indica si consume intento. |
+| `comentario` | `TEXT` | NULL | Comentario del repartidor. |
+| `nombre_receptor` | `TEXT` | NULL | Nombre de quien recibió. |
+| `evidencia_id_externa` | `UUID` | NULL | Evidencia (BD 1). |
+| `origen` | `TEXT` | NULL | Origen. |
+| `registrado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Momento de registro. |
+| `recibido_en_centro_en` | `TIMESTAMPTZ` | NULL | Confirmación de retorno al centro. |
+| `recibido_por` | `UUID` | NULL | Usuario que recibió en centro. |
+| `sello_intacto` | `BOOLEAN` | NULL | Estado del sello. |
+| `observacion_recepcion` | `TEXT` | NULL | Observación de recepción. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
+| `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
 
-Restricciones:
-
-- CHECK: si `resultado = 'FALLIDO'`, `motivo_codigo` no es nulo.
-- CHECK: si `resultado = 'ENTREGADO'` o `consume_intento = true`, `evidencia_id_externa` no es nulo.
-- CHECK: los campos de recepción solo se completan cuando `resultado = 'FALLIDO'`.
-
-Operación valida que la evidencia está cargada, pertenece al despacho y fue creada por el repartidor antes de enviar el comando interno. Gestión recibe el identificador desde el servicio autenticado y lo conserva sin FK porque la evidencia vive en Operación.
+Índices: `idx_intentos_entrega_despacho` (`despacho_id`), `idx_intentos_entrega_motivo` (`motivo_codigo`).
 
 #### `evidencias` (Operación de Reparto y Flota; escribe F-03)
 
@@ -403,23 +416,22 @@ Tabla de solo inserción: sus filas nunca se modifican ni se eliminan.
 | `registrado_en` | `TIMESTAMPTZ` | NOT NULL | Marca temporal del servidor. |
 
 #### `eventos_salientes` (RT-03; escribe el componente común)
-
-Implementa el patrón *outbox*: el evento se inserta en la misma transacción que la transición y un proceso asíncrono lo envía después.
-
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
-| `id` | `UUID` | PK | Identificador del evento; se reenvía igual para que Ventas y Postventa descarte duplicados. |
-| `despacho_id` | `UUID` | FK → `despachos`, NOT NULL | Despacho. |
-| `destino` | `VARCHAR(25)` | NOT NULL, CHECK (`VENTAS`) | Consumidor del evento externo. |
-| `tipo_evento` | `VARCHAR(40)` | NOT NULL, CHECK (tipos de la tabla de RT-03) | Tipo de evento. |
-| `payload` | `JSONB` | NOT NULL | Contenido enviado a Ventas y Postventa. |
-| `estado_envio` | `VARCHAR(15)` | NOT NULL, CHECK (`PENDIENTE`, `ENVIADO`, `ENVIO_FALLIDO`) | Estado del envío. |
-| `intentos_envio` | `SMALLINT` | NOT NULL, DEFAULT 0 | Reintentos realizados; el máximo es configurable. |
-| `proximo_intento_en` | `TIMESTAMPTZ` | NULL | Siguiente reintento con espera creciente. |
-| `ultimo_error` | `VARCHAR(500)` | NULL | Último error recibido. |
-| `creado_en`, `enviado_en` | `TIMESTAMPTZ` | — | Creación y envío exitoso. |
+| `id` | `UUID` | PK | Identificador del evento. |
+| `despacho_id` | `UUID` | FK → `despachos.id`, NOT NULL | Despacho. |
+| `destino` | `TEXT` | NOT NULL | Consumidor del evento (`VENTAS`). |
+| `tipo_evento` | `TEXT` | NOT NULL | Tipo de evento. |
+| `payload` | `JSONB` | NOT NULL | Payload enviado. |
+| `estado_envio` | `TEXT` | NOT NULL | Estado (`PENDIENTE`, `ENVIADO`, `ENVIO_FALLIDO`). |
+| `intentos_envio` | `INTEGER` | NOT NULL, DEFAULT 0 | Reintentos realizados. |
+| `proximo_intento_en` | `TIMESTAMPTZ` | NULL | Siguiente reintento. |
+| `ultimo_error` | `TEXT` | NULL | Último error. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
+| `enviado_en` | `TIMESTAMPTZ` | NULL | Momento de envío exitoso. |
+| `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
 
-Los despachos simulados no generan eventos hacia Ventas. La proyección de Operación se actualiza mediante la API interna y aplica la versión del despacho para conservar el orden.
+Índices: `idx_eventos_salientes_despacho` (`despacho_id`), `idx_eventos_salientes_pendientes` (`estado_envio`, `proximo_intento_en`).
 
 ### 3.5. Tablas de soporte por microservicio
 
@@ -459,21 +471,22 @@ Cada servicio mantiene su propia auditoría: Gestión para zonas, tarifas y par�
 | `registrado_en` | `TIMESTAMPTZ` | NOT NULL | Marca temporal en UTC. |
 
 #### `claves_idempotencia`
-
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | `UUID` | PK | Identificador. |
-| `clave` | `VARCHAR(80)` | NOT NULL | Clave enviada por el cliente. |
-| `actor_tipo` | `VARCHAR(10)` | NOT NULL, CHECK (`USUARIO`, `SERVICIO`) | Persona o módulo. |
-| `actor_id` | `VARCHAR(80)` | NOT NULL | Claim `sub` del token. |
-| `operacion` | `VARCHAR(50)` | NOT NULL | Operación protegida. |
-| `huella_solicitud` | `VARCHAR(64)` | NOT NULL | Hash del cuerpo para impedir reutilizar la clave con otros datos. |
-| `estado` | `VARCHAR(12)` | NOT NULL, CHECK (`EN_PROCESO`, `COMPLETADA`, `FALLIDA`) | Estado del procesamiento. |
-| `codigo_respuesta` | `SMALLINT` | NULL | Código HTTP original. |
+| `clave` | `TEXT` | NOT NULL | Clave enviada por el cliente. |
+| `actor_tipo` | `TEXT` | NOT NULL | Persona o módulo (`USUARIO`, `SERVICIO`). |
+| `actor_id` | `TEXT` | NOT NULL | Claim `sub` del token. |
+| `operacion` | `TEXT` | NOT NULL | Operación protegida. |
+| `huella_solicitud` | `TEXT` | NOT NULL | Hash del cuerpo. |
+| `estado` | `TEXT` | NOT NULL | Estado (`EN_PROCESO`, `COMPLETADA`, `FALLIDA`). |
+| `codigo_respuesta` | `INTEGER` | NULL | Código HTTP original. |
 | `respuesta` | `JSONB` | NULL | Respuesta original. |
-| `creado_en`, `expira_en` | `TIMESTAMPTZ` | NOT NULL | Vigencia de 24 horas. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Creación. |
+| `expira_en` | `TIMESTAMPTZ` | NOT NULL | Vigencia de 24 horas. |
+| `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
 
-Cada microservicio tiene su propia tabla. Restricción única: `(actor_tipo, actor_id, operacion, clave)`.
+Cada microservicio tiene su propia tabla. Restricción única: `(actor_tipo, actor_id, operacion, clave)`. Índice: `idx_claves_idempotencia_expira` (`expira_en`).
 
 Idempotencia significa que repetir una solicitud porque se perdió la respuesta no duplica el efecto. Por ejemplo, dos peticiones iguales de “Entregado” producen un solo intento y una sola transición. `Idempotency-Key` es obligatorio para la creación y la cancelación solicitadas por Ventas; los demás comandos solo exigen el encabezado cuando su contrato lo declara. En todos los casos se mantienen además las protecciones de negocio: `id_pedido` único, una reserva vigente por despacho y versiones de proyección crecientes.
 
@@ -557,7 +570,7 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 | Operación | `reservas_capacidad` | `(asignacion_diaria_id, estado)` | Ocupación |
 | Operación | `proyecciones_despacho` | `(asignacion_diaria_id, secuencia_ruta)` | Ruta móvil |
 | Operación | `evidencias` | `(estado, expira_en)` | Limpieza de cargas |
-| Ambos | `claves_idempotencia` | `(expira_en)` | Limpieza periódica |
+| Ambos | `claves_idempotencia` | `idx_claves_idempotencia_expira (expira_en)` | Limpieza periódica |
 
 ---
 
@@ -586,3 +599,9 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 - **Tokens, secretos y scopes:** se validan o configuran, pero no se persisten en las tablas de negocio.
 - **Ocupación y estado operativo del repartidor:** se calculan en Operación desde reservas activas.
 - **Relaciones JPA o claves foráneas entre microservicios:** se sustituyen por identificadores externos y APIs internas.
+
+---
+
+## 9. Triggers de actualización (`actualizado_en`)
+
+Para mantener `actualizado_en` actualizado en cada UPDATE, se utiliza la función `public.set_actualizado_en()` y los triggers correspondientes sobre todas las tablas que incluyen dicha columna, conforme al DDL de la base de datos (BD 2).
