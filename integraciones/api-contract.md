@@ -260,8 +260,8 @@ Respuesta con cobertura, con productos (`200 OK`):
   "distrito": "San Borja",
   "codigoPostal": "15036",
   "pesoTotalKg": 2.65,
-  "volumenTotalM3": 0.017,
-  "costoEnvio": 14.5,
+  "volumenTotalM3": 0.021,
+  "costoEnvio": 10.0,
   "moneda": "PEN",
   "plazoEstimadoDiasHabiles": 2,
   "fechaEstimadaEntrega": "2026-09-25",
@@ -954,8 +954,8 @@ Estas rutas son internas, requieren credencial de servicio y no se publican medi
   "idRepartidor": "REP-0012",
   "idJornada": "JOR-20260923-0012",
   "requerido": {
-    "pesoKg": 2.8,
-    "volumenM3": 0.02,
+    "pesoKg": 2.65,
+    "volumenM3": 0.021,
     "paquetes": 1
   }
 }
@@ -966,8 +966,8 @@ Estas rutas son internas, requieren credencial de servicio y no se publican medi
   "idReserva": "RES-28719",
   "estado": "CONFIRMADA",
   "capacidadRemanente": {
-    "pesoKg": 317.2,
-    "volumenM3": 2.68,
+    "pesoKg": 317.35,
+    "volumenM3": 2.679,
     "paquetes": 51
   }
 }

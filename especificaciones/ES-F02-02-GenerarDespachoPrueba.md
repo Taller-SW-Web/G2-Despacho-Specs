@@ -20,7 +20,7 @@ Permitir que el Gestor de Despacho o el equipo técnico autogenere de forma aut�
 1. El Gestor pulsa el botón secundario "Generar pedido de prueba" en la cabecera del panel de programación o invoca directamente el endpoint `POST /api/v1/despachos/simulaciones`.
 2. Opcionalmente, la petición puede enviar parámetros de configuración específicos (ej. zona deseada, peso o volumen); de omitirse, el sistema utiliza valores generados automáticamente.
 3. El backend valida el rol del usuario y los parámetros opcionales recibidos.
-4. El sistema selecciona una zona de cobertura activa de F-01 y genera datos realistas y consistentes: identificador simulado de pedido (`PED-SIM-XXXXX`), nombre ficticio de destinatario, dirección de entrega válida dentro de la zona, peso (kg), volumen (m³), cantidad de paquetes (normalmente 1) y fecha programada igual al día actual.
+4. El sistema selecciona una zona de cobertura activa de F-01 y genera datos realistas y consistentes: identificador simulado de pedido (`PED-SIM-XXXXX`), nombre ficticio de destinatario, dirección de entrega válida dentro de la zona, peso (kg), volumen (m³) y una cantidad de paquetes fija en `1` (paquete lógico del alcance inicial), con fecha programada igual al día actual.
 5. El sistema genera el código operativo interno (`DSP-SIM-XXXXX`) y el código de rastreo (`TRK-SIM-XXXXX`).
 6. Se crea el despacho en estado inicial `PENDIENTE_ASIGNACION` con la marca interna de despacho simulado y contador de intentos en cero.
 7. Se registra el evento correspondiente en el historial de trazabilidad indicando el usuario ejecutor.
@@ -31,7 +31,7 @@ Permitir que el Gestor de Despacho o el equipo técnico autogenere de forma aut�
 
 - **Comportamiento operativo idéntico:** los despachos de prueba participan en todos los procesos regulares de la cola; pueden filtrarse, asignarse a repartidores, reordenarse en ruta, reasignarse y cancelarse bajo las mismas reglas de negocio que un despacho real.
 - **Autogeneración por omisión:** si el payload de la petición está vacío (`{}`), el sistema asigna valores coherentes de forma aleatoria garantizando que la zona pertenezca a una zona activa de F-01 y que los valores físicos sean positivos y razonables.
-- **Validación de parámetros personalizados:** si la petición define una zona o valores de carga específicos, se valida que la zona exista y esté activa, y que el peso, volumen y cantidad de paquetes sean mayores a cero; de lo contrario, se rechaza la solicitud.
+- **Validación de parámetros personalizados:** si la petición define una zona o valores de carga específicos, se valida que la zona exista y esté activa, y que el peso y el volumen sean mayores a cero; de lo contrario, se rechaza la solicitud. La cantidad de paquetes no es un parámetro de entrada: el sistema registra siempre `1` para mantener la coherencia con el alcance inicial y la restricción del modelo de datos.
 - **Distintivo visual y metadatos:** todo despacho originado por simulación debe incluir el indicador booleano `esSimulacion=true` para que la interfaz lo identifique con el badge neutral punteado "Simulado".
 - **Fecha programada inmediata:** la fecha programada se establece de forma predeterminada como la fecha de hoy para habilitar su asignación operativa inmediata sin restricciones temporales.
 - **Seguridad:** el endpoint requiere estrictamente el rol `GESTOR_DESPACHO`; las invocaciones anónimas o con otros roles son rechazadas con `403 Forbidden`.
@@ -45,7 +45,6 @@ Permitir que el Gestor de Despacho o el equipo técnico autogenere de forma aut�
   - `idZona` (opcional, string).
   - `pesoKg` (opcional, decimal mayor a 0).
   - `volumenM3` (opcional, decimal mayor a 0).
-  - `cantidadPaquetes` (opcional, entero mayor a 0).
   - `observaciones` (opcional, string).
 - Encabezado `Authorization: Bearer <jwt_usuario>`.
 
@@ -56,7 +55,7 @@ Permitir que el Gestor de Despacho o el equipo técnico autogenere de forma aut�
   - `codigoRastreo`: código de seguimiento (ej. `TRK-SIM-000245`).
   - `idPedido`: referencia simulada (ej. `PED-SIM-000245`).
   - `estado`: `PENDIENTE_ASIGNACION`.
-  - `idZona`, `direccionDestino`, `pesoKg`, `volumenM3`, `cantidadPaquetes`.
+  - `idZona`, `direccionDestino`, `pesoKg`, `volumenM3`, `cantidadPaquetes` (siempre `1`).
   - `fechaProgramada`: fecha de hoy.
   - `esSimulacion`: `true`.
 - Notificación toast en frontend y actualización reactiva de la cola de pendientes.

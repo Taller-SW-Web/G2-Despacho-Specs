@@ -34,9 +34,9 @@ Esta funcionalidad incluye:
 
 - Las operaciones del panel requieren un token JWT con rol `GESTOR_DESPACHO`.
 - La recepción y la cancelación desde Ventas y Postventa requieren un token de servicio de `modulo-ventas` con `despachos:crear` o `despachos:cancelar`, respectivamente.
-- Una solicitud de despacho corresponde a un pedido pagado ya preparado y sellado, e incluye: identificador de pedido, destinatario, destino, peso, volumen, cantidad de paquetes físicos y fecha comprometida. Las coordenadas son opcionales y `cantidadPaquetes` normalmente vale `1`.
+- Una solicitud de despacho corresponde a un pedido pagado, preparado y listo para entrega, e incluye: identificador de pedido, destinatario, destino y las líneas del pedido con `sku` y `cantidad`. Las coordenadas y el código postal son opcionales. Ventas y Postventa no envía peso, volumen, cantidad de paquetes ni fecha comprometida: antes de persistir el despacho, Despacho consulta los datos físicos vigentes de cada SKU ante Productos y Ofertas, calcula `pesoTotalKg` y `volumenTotalM3`, registra internamente `cantidadPaquetes = 1` y calcula `fechaProgramada` a partir de la zona, el plazo aplicable y el calendario operativo. Si Productos y Ofertas no está disponible o faltan datos físicos válidos, no se crea el despacho.
 - Al crear un despacho nuevo, el destino debe estar cubierto por una zona activa de F-01. Los despachos existentes conservan la zona registrada y pueden continuar su ciclo o ser reprogramados aunque posteriormente esa zona sea desactivada.
-- Solo se asignan despachos en `PENDIENTE_ASIGNACION` cuya fecha de entrega programada sea igual o anterior a la fecha actual. Los despachos reprogramados a futuro permanecen en cola en modo solo lectura hasta su fecha comprometida.
+- Solo se asignan despachos en `PENDIENTE_ASIGNACION` cuya fecha de entrega programada sea igual o anterior a la fecha actual. Los despachos reprogramados a futuro permanecen en cola en modo solo lectura hasta su fecha programada.
 - El repartidor debe tener una asignación operativa diaria activa provista por F-06 y encontrarse en estado operativo `DISPONIBLE` o `EN_RUTA`.
 - El peso, el volumen y la cantidad física de paquetes del despacho no deben superar la capacidad remanente del repartidor en ninguna de sus tres variables (evaluación tridimensional obligatoria).
 
@@ -55,7 +55,7 @@ Esta funcionalidad incluye:
 
 ### 4.3. Resultados
 
-- Una solicitud válida crea un despacho en `PENDIENTE_ASIGNACION` con código operativo interno y de rastreo único, zona, fecha programada igual a la fecha comprometida y contador de intentos en cero.
+- Una solicitud válida crea un despacho en `PENDIENTE_ASIGNACION` con código operativo interno y de rastreo único, zona resuelta, peso y volumen calculados con los datos físicos vigentes de Productos y Ofertas, cantidad de paquetes registrada internamente en `1`, fecha programada calculada por Despacho y contador de intentos en cero.
 - Una solicitud repetida para el mismo pedido no crea un segundo despacho y responde de forma idempotente.
 - Una generación de prueba crea un despacho simulado en `PENDIENTE_ASIGNACION` disponible de inmediato en la cola.
 - Una asignación válida cambia el estado a `ASIGNADO`, registra repartidor, jornada, observaciones y secuencia, reflejándose en la ocupación calculada por F-06.
@@ -72,13 +72,13 @@ El sistema DEBE registrar las solicitudes de despacho recibidas desde Ventas y P
 
 #### CA-01. Recepción exitosa desde Ventas y Postventa
 
-- **DADO** que Ventas y Postventa envía una solicitud con identificador de pedido, destinatario, dirección, distrito, peso, volumen, cantidad de paquetes y fecha comprometida válidos, y el destino está cubierto por una zona activa.
-- **CUANDO** la solicitud se procesa con un token de servicio válido.
-- **ENTONCES** el sistema crea el despacho en `PENDIENTE_ASIGNACION`, genera un código operativo interno y responde `201 Created` con ambos identificadores; los canales consultan el seguimiento por `idPedido`.
+- **DADO** que Ventas y Postventa envía una solicitud con identificador de pedido, destinatario, dirección, distrito y líneas con `sku` y `cantidad` válidos, el destino está cubierto por una zona activa y Productos y Ofertas devuelve los datos físicos vigentes de cada SKU.
+- **CUANDO** la solicitud se procesa con un token de servicio válido y un `Idempotency-Key` válido.
+- **ENTONCES** el sistema consulta los datos físicos en lote, calcula el peso y el volumen totales, registra la cantidad de paquetes en `1`, calcula la fecha programada, crea el despacho en `PENDIENTE_ASIGNACION`, genera un código operativo interno y responde `201 Created` con ambos identificadores; los canales consultan el seguimiento por `idPedido`.
 
 #### CA-02. Rechazo de solicitud con datos incompletos o inconsistentes
 
-- **DADO** una solicitud sin dirección o con peso, volumen o cantidad de paquetes menor o igual a cero.
+- **DADO** una solicitud sin distrito, sin líneas, con una línea sin `sku` o con una `cantidad` menor o igual a cero.
 - **CUANDO** es evaluada.
 - **ENTONCES** el sistema responde `400 Bad Request`, detalla los campos inválidos y no persiste registros parciales.
 
@@ -144,7 +144,7 @@ El sistema DEBE registrar un historial auditable de cada operación sobre el des
 
 ### RF-05. Integridad de la recepción
 
-El sistema DEBE impedir despachos duplicados y despachos sin cobertura.
+El sistema DEBE impedir despachos duplicados, despachos sin cobertura y despachos sin datos físicos válidos.
 
 #### CA-11. Solicitud repetida para el mismo pedido
 
@@ -157,6 +157,12 @@ El sistema DEBE impedir despachos duplicados y despachos sin cobertura.
 - **DADO** una solicitud cuyo destino no pertenece a ninguna zona activa de F-01.
 - **CUANDO** es evaluada.
 - **ENTONCES** el sistema responde `422 Unprocessable Entity` con el código `DESP_ERROR_SIN_COBERTURA` y no persiste el despacho.
+
+#### CA-21. Rechazo por datos físicos no disponibles
+
+- **DADO** una solicitud con un `sku` que Productos y Ofertas no reconoce o sin peso o dimensiones válidos, o con Productos y Ofertas temporalmente no disponible.
+- **CUANDO** el sistema intenta obtener los datos físicos de las líneas antes de persistir el despacho.
+- **ENTONCES** el sistema responde `422 Unprocessable Entity` con `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` o `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`, o `503 Service Unavailable` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE`, respectivamente, y no crea el despacho.
 
 ### RF-06. Programación de la jornada y secuencia de ruta
 
@@ -239,7 +245,7 @@ La interfaz debe deshabilitar acciones inválidas, pero todas las reglas se vali
 
 | Componente lógico | Responsabilidad |
 |---|---|
-| Receptor de solicitudes | Validar la solicitud, controlar duplicados por pedido, resolver la zona con F-01 y crear el despacho. |
+| Receptor de solicitudes | Validar la solicitud, controlar duplicados por pedido, resolver la zona con F-01, consultar los datos físicos de las líneas ante Productos y Ofertas, calcular peso, volumen y fecha programada y crear el despacho. |
 | Generador de simulaciones | Autogenerar despachos de prueba con datos físicos consistentes en zonas activas (`POST /api/v1/despachos/simulaciones`). |
 | Consulta de cola | Recuperar despachos pendientes con filtros, orden por fecha programada y paginación. |
 | Caso de uso de asignación | Validar estado, fecha programada, habilitación y capacidad remanente de forma transaccional. |
@@ -256,7 +262,7 @@ Las rutas, cuerpos, respuestas y códigos se centralizan en `integraciones/api-c
 - **Seguridad:** el panel requiere JWT con rol `GESTOR_DESPACHO`; la recepción y la cancelación requieren los scopes de servicio `despachos:crear` y `despachos:cancelar`.
 - **Aislamiento:** el módulo no accede a bases de datos de otros módulos.
 - **Concurrencia:** la asignación, el reordenamiento, la reasignación y la cancelación usan bloqueo optimista para impedir operaciones simultáneas sobre el mismo despacho.
-- **Idempotencia:** la recepción es idempotente por identificador de pedido.
+- **Idempotencia:** la recepción exige `Idempotency-Key` como UUID v4 de hasta 128 caracteres y es además idempotente por identificador de pedido: un reintento con la misma clave o el mismo pedido devuelve el despacho existente sin crear otro.
 - **Rendimiento:** la cola responde en menos de 250 ms para páginas de hasta 100 registros; la recepción responde en menos de 500 ms.
 - **Trazabilidad:** cada operación registra marca temporal en UTC y usuario o sistema origen.
 - **Usabilidad:** el panel es adaptable a escritorio (1440 × 1024 px) y tablet (1024 × 768 px).
@@ -277,12 +283,13 @@ Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendien
 
 | Criterios | Verificación automatizada | Nivel | Evidencia esperada |
 |---|---|---|---|
-| CA-01 y CA-02 | Enviar solicitudes válidas e inválidas. | Integración y unitaria | `201` con zona asignada y `400` para datos inválidos. |
+| CA-01 y CA-02 | Enviar solicitudes válidas e inválidas. | Integración y unitaria | `201` con zona, totales físicos y fecha programada, y `400` para datos inválidos. |
 | CA-03 y CA-04 | Consultar la cola con y sin pendientes. | Integración y frontend | Tabla paginada ordenada y estado vacío con opción de prueba. |
 | CA-05 | Invocar la cola y la asignación sin credenciales o con rol incorrecto. | Integración de seguridad | `403 Forbidden`. |
 | CA-06 a CA-09 | Asignar con capacidad suficiente, excedida por cada límite (kg, m³, paquetes), repartidor no habilitado y conflicto concurrente. | Unitaria e integración | `ASIGNADO` con secuencia; `422` y `409` según corresponda. |
 | CA-10 | Consultar la auditoría tras una asignación. | Integración con persistencia | Registro completo con jornada, secuencia y ocupación resultante. |
 | CA-11 y CA-12 | Repetir una solicitud y enviar un destino sin cobertura. | Integración | Un único despacho por pedido y `422` sin persistencia. |
+| CA-21 | Enviar una solicitud con SKU desconocido, datos físicos incompletos y con Productos no disponible. | Integración | `422` o `503` sin creación del despacho. |
 | CA-13 y CA-14 | Asignar un despacho programado a futuro y reordenar una ruta. | Unitaria e integración | `409` para fecha futura; secuencia continua y reflejada en F-03. |
 | CA-15 y CA-16 | Reasignar un despacho `ASIGNADO` y otro `EN_CAMINO`. | Integración | Cambio de repartidor en el primer caso y `409` en el segundo. |
 | CA-17 a CA-19 | Cancelar despachos en cada estado. | Unitaria e integración | `CANCELADO`, `409` o anulación registrada según el estado. |
@@ -298,7 +305,7 @@ Además, se ejecutarán tres recorridos funcionales completos:
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-20` están implementados y cuentan con pruebas automatizadas exitosas.
+- Los criterios `CA-01` a `CA-21` están implementados y cuentan con pruebas automatizadas exitosas.
 - Los tres recorridos funcionales han sido verificados de extremo a extremo.
 - No existe más de un despacho por pedido.
 - Ninguna asignación supera la capacidad en kg, m³ o paquetes informada por F-06.

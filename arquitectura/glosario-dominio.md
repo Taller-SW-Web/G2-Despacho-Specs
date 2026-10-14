@@ -27,7 +27,7 @@ Un pedido puede contener varias líneas y unidades de producto sin dejar de repr
 | **Cotización calculada** | Resultado obtenido enviando destino y líneas de productos. Despacho consulta peso y dimensiones por SKU y calcula el costo logístico con esos datos. En el contrato actual se identifica como `tipoCotizacion=EXACTA`, pero no equivale al precio comercial final. |
 | **Costo logístico calculado** | Importe que Despacho comunica como resultado de aplicar sus reglas de cobertura y tarifa. Sirve como insumo para los canales y Ventas. |
 | **Importe cobrado al cliente** | Precio comercial decidido por Ventas y Postventa. Puede incorporar promociones, envío gratuito, descuentos o cobro parcial y no pertenece a Despacho. |
-| **Plazo estimado** | Cantidad de días hábiles calculada para una zona. Es informativa y no crea por sí misma una fecha comprometida. |
+| **Plazo estimado** | Cantidad de días hábiles calculada para una zona. Es informativa y sirve de insumo para que Despacho calcule la fecha programada del despacho al crearlo. |
 
 La tarifa base y la cotización base no son sinónimos: la primera es una regla almacenada y la segunda es una respuesta calculada utilizando esa regla. Tampoco debe llamarse “cotización final” a la cotización con productos, porque Ventas conserva la decisión sobre el importe que finalmente cobra.
 
