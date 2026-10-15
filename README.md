@@ -51,7 +51,7 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Macroproceso de despacho](./arquitectura/macroproceso-despacho.md) | Flujo funcional de alto nivel desde la solicitud de Ventas hasta el resultado final. |
 | [Especificaciones funcionales](./funcionalidades/) | Requisitos, escenarios y criterios de completitud por funcionalidad. |
 | [Especificaciones atómicas](./especificaciones/) | Casos de uso concretos derivados de las funcionalidades y su plantilla común. |
-| [Plantillas SDD propuestas](./plantillas/sdd/README.md) | Organización por especificación: comportamiento, UI opcional, plan, tareas y evidencia; componentes React compartidos. |
+| [Plantillas y flujo SDD](./plantillas/sdd/README.md) | Organización aprobada por especificación, con adopción progresiva: comportamiento, UI opcional, plan, tareas y evidencia; componentes React compartidos. |
 | [Historias de usuario](./historias-usuario/) | Historias en formato Jira (COMO/QUIERO/PARA) con criterios de aceptación Gherkin y DoD. |
 | [Reglas del repositorio](./AGENTS.md) | Convenciones para crear y mantener la documentación. |
 | [Guía de contribución](./CONTRIBUTING.md) | Flujo de ramas, commits y revisión de cambios. |

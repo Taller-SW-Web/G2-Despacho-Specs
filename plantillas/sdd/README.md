@@ -1,14 +1,14 @@
-# Propuesta de plantillas y flujo SDD
+# Plantillas y flujo SDD
 
-**Estado:** Propuesta para revisión del equipo.
+**Estado:** Organización por carpetas aprobada por Gerardo el 15/10/2026; adopción progresiva.
 
 **Alcance:** Plantillas reutilizables para desarrollar cada especificación atómica con trazabilidad desde los requisitos hasta su verificación.
 
-Esta propuesta toma como referencia las diapositivas del curso «SDD y los componentes React» y «SDD: el contrato primero», compartidas por Gerardo. Su secuencia es: especificación funcional, UI y contrato de API como entradas del plan; especificaciones de componentes React compartidos; tareas e implementación incremental con verificación de cada criterio. Los nombres de archivos y la organización de carpetas siguientes son una propuesta del equipo, no una exigencia literal de las diapositivas.
+Este flujo toma como referencia las diapositivas del curso «SDD y los componentes React» y «SDD: el contrato primero», compartidas por Gerardo. Su secuencia es: especificación funcional, UI y contrato de API como entradas del plan; especificaciones de componentes React compartidos; tareas e implementación incremental con verificación de cada criterio. Los nombres de archivos y la organización de carpetas siguientes son la convención adoptada por el proyecto, no una exigencia literal de las diapositivas. Su aprobación no implica que los requisitos, planes, componentes o implementaciones estén aprobados o completados.
 
-## 1. Organización propuesta
+## 1. Organización aprobada
 
-Las seis funcionalidades conservan su alcance general en `funcionalidades/`. Cada comportamiento atómico mantiene su identificador `ES-FXX-NN` y, al adoptar la propuesta, tendrá una carpeta propia:
+Las seis funcionalidades conservan su alcance general en `funcionalidades/`. Cada comportamiento atómico mantiene su identificador `ES-FXX-NN`. Las especificaciones nuevas o migradas tienen una carpeta propia:
 
 ```text
 G2-Despacho-Specs/
@@ -20,14 +20,14 @@ G2-Despacho-Specs/
 │   ├── SYSTEM-DESIGN.md                     # Referencia visual transversal
 │   └── componentes-react.md                 # Especificación compartida ya redactada; implementación pendiente
 ├── especificaciones/
-│   └── ES-FXX-NN-NombreEnPascalCase/         # Carpeta futura de una especificación
+│   └── ES-FXX-NN-NombreEnPascalCase/         # Una carpeta por comportamiento atómico
 │       ├── spec.md                          # Comportamiento y criterios de aceptación
 │       ├── ui.md                            # Solo si crea o modifica una interfaz
 │       ├── plan.md                          # Diseño técnico y orden de implementación
 │       ├── tasks.md                         # Trabajo incremental y verificable
 │       └── evidence.md                      # Resultados reales y trazabilidad
 └── plantillas/
-    └── sdd/                                 # Plantillas de esta propuesta
+    └── sdd/                                 # Plantillas del flujo aprobado
         ├── README.md
         ├── componentes-react.md
         └── especificacion/
@@ -38,7 +38,7 @@ G2-Despacho-Specs/
             └── evidence.md
 ```
 
-Ya existe la [especificación compartida de componentes React](../../disenio/componentes-react.md), redactada a partir de esta plantilla y del sistema de diseño; su implementación está pendiente. Las carpetas futuras por especificación no se han creado ni se han movido las especificaciones existentes. La sección 3.7 de [AGENTS.md](../../AGENTS.md) conserva la organización vigente de archivos sueltos; su adaptación y la actualización de enlaces e índices formarán parte de una adopción posterior [cite: 1].
+Ya existe la [especificación compartida de componentes React](../../disenio/componentes-react.md), redactada a partir de esta plantilla y del sistema de diseño; su implementación está pendiente. La sección 3.7 de [AGENTS.md](../../AGENTS.md) establece esta organización y su adopción progresiva: los archivos sueltos existentes siguen siendo válidos hasta preparar su desarrollo. Cada migración traslada el contenido a `spec.md`, conserva los identificadores y actualiza las referencias y el índice en el mismo cambio. No exige migrar todas las funcionalidades de una vez ni mantener copias activas del mismo comportamiento [cite: 1].
 
 ## 2. Qué contiene cada archivo
 
@@ -57,7 +57,7 @@ El documento de componentes React complementa [SYSTEM-DESIGN.md](../../disenio/S
 
 ## 3. Contrato de API como referencia
 
-El contrato vigente continúa siendo [integraciones/api-contract.md](../../integraciones/api-contract.md), conforme a la sección 5.3 de las reglas del repositorio [cite: 1, 3]. Esta propuesta no agrega un `api.md` ni otro contrato en cada carpeta.
+El contrato vigente continúa siendo [integraciones/api-contract.md](../../integraciones/api-contract.md), conforme a la sección 5.3 de las reglas del repositorio [cite: 1, 3]. Este flujo no agrega un `api.md` ni otro contrato en cada carpeta.
 
 En `spec.md` y `plan.md`, identificar las operaciones que se consumen o implementan y enlazar la sección exacta del contrato. Los campos, encabezados, scopes, respuestas y errores se definen allí. Antes de implementar una operación nueva o modificar una existente, actualizar y revisar el contrato central; luego ajustar las especificaciones que lo referencian.
 
@@ -78,7 +78,8 @@ La trazabilidad debe poder recorrerse en ambos sentidos: `CA-NN` → decisión d
 
 ## 5. Cómo usar las plantillas
 
-- Copiar los archivos de `especificacion/` a la carpeta de la especificación cuando el equipo adopte la organización. Reutilizar el contenido de la especificación existente como `spec.md`, en lugar de mantener dos versiones activas del mismo comportamiento.
+- Para una especificación nueva, copiar los archivos aplicables de `especificacion/` a su carpeta. Para una existente, trasladar su contenido a `spec.md` y completar los documentos restantes con estas plantillas, en lugar de mantener dos versiones activas del mismo comportamiento. Conservar los criterios y sus identificadores.
+- Actualizar el enlace del índice funcional para que apunte a `spec.md`, corregir las referencias a la ruta anterior y comprobar los enlaces relativos. La plantilla anterior `especificaciones/PLANTILLA-ESPECIFICACION.md` se conserva como referencia histórica.
 - Reemplazar los marcadores `[por completar]` y adaptar las secciones al alcance. Marcar «No aplica» con una razón cuando corresponda.
 - Corregir los enlaces al copiar: desde `especificaciones/ES-FXX-NN-Nombre/` los documentos generales se alcanzan con `../../`; entre sus cinco archivos se usan enlaces como `./spec.md`.
 - Consultar y mantener la [especificación compartida existente](../../disenio/componentes-react.md). La plantilla `componentes-react.md` se conserva como referencia de estructura; las funcionalidades enlazan el documento compartido y sus identificadores, sin crear otra copia.
@@ -96,7 +97,7 @@ La trazabilidad debe poder recorrerse en ambos sentidos: `CA-NN` → decisión d
 - [ ] El plan distingue frontend, backend, servicios propietarios y dependencias.
 - [ ] Las tareas cubren todos los criterios y permiten verificación incremental.
 - [ ] La evidencia distingue implementado, simulado, fallido y pendiente, con referencias comprobables.
-- [ ] La adopción de carpetas actualiza las reglas, los enlaces y la trazabilidad del índice.
+- [ ] La carpeta cumple las reglas SDD vigentes y su creación o migración actualiza los enlaces y la trazabilidad del índice.
 
 ## 7. Referencias
 

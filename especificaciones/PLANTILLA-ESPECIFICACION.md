@@ -1,6 +1,6 @@
 # ES-FXX-XX: Nombre breve del caso de uso
 
-> Copiar este archivo en la misma carpeta `especificaciones/`, reemplazar los datos de ejemplo y eliminar esta indicación. Cada archivo debe describir un solo comportamiento concreto, implementable y verificable.
+> Referencia histórica del formato anterior. Para crear o migrar una especificación, utilizar las [plantillas SDD](../plantillas/sdd/README.md) y su carpeta por comportamiento, conforme a [AGENTS.md, sección 3.7](../AGENTS.md#37-especificaciones-atómicas). Cada especificación describe un solo comportamiento concreto, implementable y verificable.
 
 **Funcionalidad padre:** F-XX — Nombre de la funcionalidad  
 **Responsable:** Nombre del integrante  

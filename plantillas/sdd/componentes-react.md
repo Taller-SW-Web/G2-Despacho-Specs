@@ -1,6 +1,6 @@
 # Plantilla de especificación compartida de componentes React
 
-**Estado:** Plantilla propuesta; componentes todavía por definir.
+**Estado:** Plantilla reutilizable del flujo SDD; completar al utilizarla. Los ejemplos no acreditan componentes implementados.
 
 **Responsable:** [por completar].
 

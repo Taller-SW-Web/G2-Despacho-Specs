@@ -75,11 +75,15 @@
 - Formato: `F-XX-NombreEnPascalCase.md` (ej. `F-01-Gestor_ZonasGeograficas.md`, `F-02-ProgramacionAsignacionDespachos.md`, `F-04-GestionEntregasFallidas.md`).
 
 ### 3.7 Especificaciones atómicas
-- Las especificaciones derivadas de las funcionalidades se guardan juntas en `especificaciones/`, sin subcarpetas por funcionalidad.
-- Cada archivo describe un único comportamiento concreto, implementable y verificable.
-- Se usa como base `especificaciones/PLANTILLA-ESPECIFICACION.md`.
-- El nombre sigue el formato `ES-FXX-NN-NombreEnPascalCase.md` (ej. `ES-F04-01-ConfirmarRecepcionPaquete.md`).
+
+- La organización SDD por carpetas está aprobada. Cada especificación describe un único comportamiento concreto, implementable y verificable, y tiene su propia carpeta directamente en `especificaciones/`, sin agruparlas en carpetas por funcionalidad.
+- El nombre de la carpeta sigue el formato `ES-FXX-NN-NombreEnPascalCase/` (ej. `ES-F04-01-ConsultarEntregasFallidas/`).
+- Se usan las plantillas de `plantillas/sdd/especificacion/`, conforme a la [guía SDD](./plantillas/sdd/README.md).
+- Cada carpeta contiene `spec.md` (comportamiento y criterios), `plan.md` (solución técnica), `tasks.md` (incrementos verificables) y `evidence.md` (resultados reales). Incluye también `ui.md` cuando crea o modifica una interfaz; si no aplica, se justifica en `spec.md` y `plan.md`.
 - La especificación referencia su funcionalidad padre y el contrato de API; no duplica el contenido completo de esos documentos.
+- La adopción es progresiva: los archivos sueltos existentes se conservan hasta preparar su desarrollo. Al migrar uno, se traslada su contenido a `spec.md`, se mantienen su identificador y los IDs de sus criterios, y se actualizan los enlaces e índices en el mismo cambio. No se mantienen dos versiones activas del comportamiento.
+- `especificaciones/PLANTILLA-ESPECIFICACION.md` queda como referencia histórica; las especificaciones nuevas o migradas utilizan las plantillas SDD.
+- La aprobación de esta organización no aprueba automáticamente los requisitos, los planes ni las implementaciones. Las tareas y la evidencia comienzan pendientes y solo se completan con comprobaciones reales.
 
 ---
 
@@ -93,7 +97,7 @@
 - **Toda vez que se cree, renombre o elimine** un archivo de especificación funcional dentro de `funcionalidades/`, se debe actualizar el índice en `funcionalidades/funcionalidad.md`.
 - Toda vez que se agregue una sección relevante al repositorio, se debe actualizar `README.md`.
 - No se permite agregar archivos de especificación sin actualizar el índice correspondiente.
-- Toda vez que se cree, renombre o elimine una especificación atómica en `especificaciones/`, se debe actualizar su trazabilidad en `funcionalidades/funcionalidad.md`.
+- Toda vez que se cree, renombre, migre o elimine una especificación atómica en `especificaciones/`, se debe actualizar su trazabilidad en `funcionalidades/funcionalidad.md`. Para una carpeta SDD, el índice enlaza su `spec.md`; también se corrigen todas las referencias a la ruta anterior.
 
 ---
 

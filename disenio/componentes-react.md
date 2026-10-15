@@ -28,7 +28,7 @@ Las diapositivas compartidas en el curso denominan el enfoque **SDD**. Para una 
 
 - Este archivo se mantiene una vez en `disenio/`; las especificaciones consumidoras lo enlazan mediante identificadores `CR-NN` y criterios `CCR-NN-XX`.
 - Cada `ui.md` decide cómo compone los componentes, qué datos presenta y cuándo habilita las acciones; cada `plan.md` identifica los componentes que necesita implementar o reutilizar antes de su pantalla.
-- Se conserva la organización actual de las 39 especificaciones atómicas en archivos sueltos. La migración a carpetas con `spec.md`, `ui.md`, `plan.md`, `tasks.md` y `evidence.md` sigue la propuesta de plantillas y requiere actualizar reglas, enlaces e índice al realizarse [cite: 5, 7].
+- La organización SDD por carpetas está aprobada y se adopta progresivamente. Cada especificación nueva o migrada contiene `spec.md`, `plan.md`, `tasks.md`, `evidence.md` y, cuando aplica, `ui.md`. Los archivos sueltos existentes se conservan hasta su migración, actualizando enlaces e índice en ese cambio [cite: 5, 7].
 - F-05 corresponde al registro de repartidores y furgonetas; F-06, a jornadas, disponibilidad y monitoreo. El diseño visual todavía agrupa ambas áreas en su guía F-05. En este documento los consumidores se identifican según el índice funcional vigente [cite: 1, 5, 6].
 
 ### 1.2. Fuentes y responsabilidades
@@ -635,7 +635,7 @@ Verificación prevista con las herramientas de pruebas del frontend una vez crea
 | Visual y accesibilidad | Tema, contraste previsto, teclado, foco, etiquetas, movimiento reducido, viewport administrativo, tableta y móvil aplicables | Capturas de estados y registro de pasos; herramienta de accesibilidad si se usa, sin sustituir la revisión de teclado. |
 | Integración real | Contrato central, autorización, errores, concurrencia, carga/lectura de foto y cambios confirmados por backend | Registro de entorno, revisiones frontend/backend, datos de prueba y resultados; URLs firmadas y tokens ocultos. |
 
-En la tarea que implemente el componente, registrar `CR-NN` → `CCR-NN-XX` → `TCR-NN` → archivo/commit frontend → prueba → evidencia real. El `evidence.md` de cada especificación consumidora enlaza esa evidencia compartida y añade la comprobación de su integración. Hasta adoptar las carpetas, usar un registro trazable en el PR o trabajo de implementación; no enlazar rutas de evidencia inexistentes [cite: 7].
+En la tarea que implemente el componente, registrar `CR-NN` → `CCR-NN-XX` → `TCR-NN` → archivo/commit frontend → prueba → evidencia real. El `evidence.md` de cada especificación consumidora enlaza esa evidencia compartida y añade la comprobación de su integración. Para una especificación todavía sin migrar, usar un registro trazable en el PR o trabajo de implementación; no enlazar rutas de evidencia inexistentes [cite: 7].
 
 ### 4.3. Mapa de consumidores y límites
 
