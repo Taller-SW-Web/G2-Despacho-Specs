@@ -47,7 +47,7 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [C4 de contenedores](./arquitectura/c4-contenedores.md) | Aplicaciones, microservicios, persistencias y comunicaciones internas. |
 | [Glosario de dominio](./arquitectura/glosario-dominio.md) | Significado común de pedidos, despachos, cotizaciones, capacidad y operación. |
 | [Estados del despacho](./arquitectura/diagrama-estados-despacho.md) | Estados, transiciones, precondiciones y operaciones no permitidas. |
-| [Componentes React compartidos](./disenio/componentes-react.md) | Contratos de componentes, estados, accesibilidad, consumidores y criterios de aceptación basados en el sistema de diseño. |
+| [Componentes React compartidos](./disenio/componentes-react.md) | Contratos, criterios de aceptación y estilos con Mantine; reparto entre seis integrantes y ubicación en el paquete compartido del frontend. |
 | [Macroproceso de despacho](./arquitectura/macroproceso-despacho.md) | Flujo funcional de alto nivel desde la solicitud de Ventas hasta el resultado final. |
 | [Especificaciones funcionales](./funcionalidades/) | Requisitos, escenarios y criterios de completitud por funcionalidad. |
 | [Especificaciones atómicas](./especificaciones/) | Casos de uso concretos derivados de las funcionalidades y su plantilla común. |
@@ -118,15 +118,16 @@ Los endpoints, modelos, códigos de respuesta y ejemplos no se duplicarán en es
 
 ## 👥 Equipo
 
-El equipo está conformado por 5 integrantes:
+El equipo está conformado por 6 integrantes:
 
-| Integrante | Rol transversal |
+| Integrante | Rol transversal o responsabilidad |
 |---|---|
 | **Tarqui** | Product Owner |
 | **Gerardo** | Líder del equipo y responsable de Calidad |
 | **Rhamses** | Responsable de DevOps y Cloud |
 | **Max** | Responsable de Frontend y UI/UX |
 | **Valqui** | Responsable de Arquitectura y Base de Datos |
+| **Luis** | Responsable de F-06: disponibilidad y capacidad diaria de la flota |
 
 ## 🚧 Evolución del proyecto
 

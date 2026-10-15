@@ -6,11 +6,15 @@
 
 **Fecha:** 14/10/2026.
 
+**Revisión del reparto y de la estructura frontend:** 15/10/2026.
+
 **Responsable de referencia:** Max, Frontend y UI/UX; coordinación técnica con Rhamses.
 
 **Aplicaciones consumidoras:** aplicación administrativa y web responsive del repartidor.
 
 **Fuentes locales revisadas:** repositorio de especificaciones, commit `5b59986`; `SYSTEM-DESIGN.md`, versión 1.0 del 02/10/2026.
+
+**Frontend revisado para esta actualización:** `G2-Despacho-Frontend`, commit `d2bc27d`; monorepositorio con dos aplicaciones y paquetes compartidos. Sus archivos de inicio no acreditan la implementación completa de los CR.
 
 Este documento desarrolla la [plantilla compartida](../plantillas/sdd/componentes-react.md). Define el comportamiento reutilizable que necesitan las pantallas antes de generar su código. Los componentes y comprobaciones siguientes están **por implementar**: su descripción no acredita código, pruebas ni evidencia de ejecución.
 
@@ -44,7 +48,7 @@ Si dos fuentes discrepan, registrar la diferencia en §5. Usar el sistema de dis
 
 - Usar React y TypeScript con Mantine, según `SYSTEM-DESIGN.md` §15. No implementar una segunda biblioteca visual con Tailwind. Las versiones e instalación quedan sujetas a DC-01; aquí no se añade un `package.json` [cite: 1, 3].
 - Reutilizar directamente los controles Mantine que cubran la necesidad. Los **patrones de configuración** CR-01 y CR-02 y el adaptador CR-15 no obligan a crear un componente envoltorio. Crear componentes propios para composiciones con responsabilidad compartida [cite: 1].
-- El tema en `src/theme/theme.ts` y los tokens de `src/theme/tokens.css` son únicos. Usar Inter en cuerpo y controles; Oswald 700 en títulos H1–H3; colores, espacios, radios e iconos de §§4–8. No ofrecer colores o radios arbitrarios como propiedades de los componentes de dominio.
+- El tema y los tokens son únicos para ambas aplicaciones: en el frontend actual se encuentran en `packages/componentes-compartidos/src/index.ts` (exportación `tema`) y `packages/componentes-compartidos/src/tokens.css`. Estas ubicaciones adaptan las rutas orientativas `src/theme/` del diseño al monorepositorio existente. Usar Inter en cuerpo y controles; Oswald 700 en títulos H1–H3; colores, espacios, radios e iconos de §§4–8. No ofrecer colores o radios arbitrarios como propiedades de los componentes de dominio.
 - Las propiedades controladas reciben su valor del consumidor; los eventos solicitan cambios y el consumidor devuelve el nuevo valor. Los componentes visuales no consultan APIs, leen tokens, deciden permisos, recalculan capacidad de la flota ni confirman transiciones por su cuenta.
 - Los contenedores de cada funcionalidad realizan consultas y mutaciones, adaptan DTO a modelos de presentación y actualizan la vista con la respuesta confirmada. Las cifras mostradas o una acción deshabilitada nunca sustituyen la validación del backend [cite: 4, 6].
 - Los límites, catálogos, obligatoriedad y fechas permitidas se toman de la especificación y contrato aplicables. Los ejemplos visuales no añaden nuevos campos, reglas ni operaciones al contrato.
@@ -83,6 +87,19 @@ type PaginacionUi = { pagina: number; tamanioPagina: number; total: number };
 | `xl`, desde 1408 px | Ancho máximo de contenido de 1320 px; referencia administrativa de 1440 × 1024. |
 
 Estas son referencias del documento de diseño, no una configuración de dependencias verificada. F-02 también se revisa a 1024 × 768; F-03 a 390 × 844. Ninguna barra fija debe cubrir el último control ni el foco [cite: 1].
+
+### 1.5. Cómo aplicar estilos sin Tailwind
+
+Gerardo aclara que `SYSTEM-DESIGN.md` recoge el acuerdo visual común entre módulos. Se mantiene su base de Mantine sin Tailwind; la actualización pendiente del stack debe reflejar ese acuerdo, sin cambiar la guía común desde este trabajo.
+
+| Recurso | Responsabilidad | Regla de uso |
+|---|---|---|
+| Tema exportado desde `packages/componentes-compartidos/src/index.ts` y `MantineProvider` de cada aplicación | Paletas, tipografía, espaciados, radios y valores predeterminados de los controles | Completar la base existente según §§15.2 y 15.4 del diseño. Puede separarse el tema en otro archivo del paquete conservando su exportación pública. |
+| Props y componentes de composición Mantine | Aplicar variantes, tamaños y distribución con `Button`, `Stack`, `Group`, `Grid` y otros controles | Usar los nombres y tokens acordados; no reconstruir los controles con estilos distintos por integrante. |
+| `packages/componentes-compartidos/src/tokens.css` | Variables y reglas globales del sistema de diseño | Completar los tokens existentes y mantener la correspondencia con el tema y con las variables de Figma, según §15.3. |
+| Archivos `*.module.css` | Estilos específicos de una composición, estados visuales y responsive que lo requieran | Referenciar variables `--ia-*` o `--mantine-*` apropiadas. Aplicar con `className` o `classNames` según la Styles API; evitar valores arbitrarios. |
+
+Mantine ya aporta estilos a sus controles. El CSS adicional adapta lo necesario usando los tokens del diseño; «sin Tailwind» no significa «sin CSS». Cambiar un token global requiere actualizar sus representaciones de forma coordinada, no sobreescribirlo de manera independiente en cada pantalla [cite: 1].
 
 ## 2. Catálogo y dependencias
 
@@ -314,7 +331,7 @@ El estado de **todos** los elementos del catálogo es `Especificado; implementac
 
 ### CR-09. BadgeEstado
 
-- **Propósito y límites:** resolver etiqueta, icono y apariencia desde una configuración única en `src/components/dominio/estados.ts`. No cambiar estados ni interpretar la disponibilidad del recurso.
+- **Propósito y límites:** resolver etiqueta, icono y apariencia desde una configuración única prevista en `packages/componentes-compartidos/src/dominio/estados.ts`. No cambiar estados ni interpretar la disponibilidad del recurso.
 - **Diseño y consumidores:** §§11.7 y 16; ambas aplicaciones [cite: 1, 6].
 
 | Propiedad | Tipo | Obligatoria | Valor por defecto | Comportamiento |
@@ -647,6 +664,86 @@ Ejemplo documental para [ES-F04-03](../especificaciones/ES-F04-03-ConfirmarRecep
 4. `tasks.md` incluye reutilizar/verificar los componentes antes del formulario, después la mutación y la actualización de listado/detalle.
 5. `evidence.md` enlaza las pruebas compartidas y demuestra la recepción del caso concreto: el despacho permanece Fallido, la recepción se actualiza y la capacidad se libera mediante los servicios responsables [cite: 4, 6, 7].
 
+### 4.5. Distribución propuesta de responsabilidades
+
+**Estado del reparto:** propuesta preparada a solicitud de Gerardo; trabajo de implementación pendiente. No crea issues, no envía asignaciones a los integrantes ni acredita su aceptación. Los componentes se implementan en el repositorio frontend; este repositorio conserva su especificación y trazabilidad.
+
+El reparto toma como referencia las seis personas y sus funcionalidades, confirmadas por Gerardo, y los roles del [índice funcional](../funcionalidades/funcionalidad.md) y del [equipo](../README.md). Max, Valqui, Rhamses y Luis asumen tres elementos cada uno; Tarqui y Gerardo asumen cuatro. La complejidad varía y la preparación inicial se comparte. Luis es responsable de F-06; Rhamses conserva F-05 y DevOps. Los componentes son del equipo: un responsable mantiene la primera implementación y otra persona la revisa. La revisión funcional se complementa con la revisión visual de Max cuando se modifique la apariencia compartida.
+
+| Responsable propuesto | Componentes o patrones | Relación con su trabajo | Revisor propuesto |
+|---|---|---|---|
+| Max, F-03 y Frontend/UI | CR-04 ShellRepartidor; CR-16 TarjetaDespacho; CR-17 CapturaEvidencia | Experiencia del repartidor y revisión del tema existente. CR-17 se coordina con Rhamses para almacenamiento y con el contrato para política y autorización, sin trasladar llamadas HTTP al componente visual. | Gerardo; Rhamses participa en evidencia. |
+| Valqui, F-01 y Arquitectura | CR-01 AccionesUi; CR-02 CamposFormulario; CR-13 BarraAccionesFija | Controles y composición necesarios para zonas, tarifas y formularios; interfaces de uso comunes. CR-01/02 son configuraciones verificadas de Mantine, no envoltorios obligatorios. | Max. |
+| Tarqui, F-02 | CR-05 EncabezadoPagina; CR-06 BarraFiltros; CR-07 TablaDatos; CR-20 TarjetaRepartidor | Listados, búsqueda y selección de candidatos para asignación y reasignación. | Valqui; Luis revisa el consumo de métricas en la selección. |
+| Gerardo, F-04 y Calidad | CR-08 EstadoVista; CR-12 ModalConfirmacion; CR-18 VisorEvidencia; CR-19 HistorialEstados | Estados de consulta, confirmaciones, acceso a evidencia y trazabilidad necesarios para entregas fallidas. | Max; Rhamses participa en acceso autorizado a evidencia. |
+| Rhamses, F-05 y DevOps | CR-03 ShellAdministrativo; CR-09 BadgeEstado; CR-15 NotificacionOperacion | Estructura administrativa y presentación transversal de estados y resultados; coordinación de herramientas del monorepositorio. CR-15 es un adaptador, no un segundo proveedor. | Max; Gerardo revisa estados de recepción y resultados de F-04. |
+| Luis, F-06 | CR-10 TarjetaKpi; CR-11 BarraOcupacion; CR-14 FranjaEstado | Indicadores, ocupación de flota y avisos de datos desactualizados; métricas reutilizadas por F-02 y F-04. | Tarqui; Gerardo revisa indicadores de recepción y retorno. |
+
+#### 4.5.1. Preparación compartida del frontend
+
+| Trabajo previo | Responsable propuesto | Resultado verificable |
+|---|---|---|
+| Alinear `stack-frontend.md` con la guía común, verificar dependencias y scripts existentes y añadir herramientas de prueba | Rhamses, con revisión de Max | Reutilizar Vite/TypeScript, workspaces y lockfile existentes. Hay scripts `build` y `typecheck`; en la revisión no hay script ni dependencias de pruebas. Verificar la base, sin reinicializarla ni actualizar versiones solo por ser las más recientes. |
+| Completar tema, tokens y fuentes existentes, y revisar estilos y proveedores de ambas aplicaciones | Max, con apoyo de Rhamses | Ambas aplicaciones ya importan `tema` y `tokens.css` del paquete y usan `MantineProvider` y `Notifications`. Comparar la base con el diseño y completar diferencias; esto no acredita los CR completos. |
+| Incorporar componentes y exportaciones al paquete existente y acordar uso de tipos comunes de §1.3 | Max y Valqui; revisión de Gerardo | Seguir §4.6, mantener la exportación `tema` y coordinar cambios en `src/index.ts` y `package.json`. Declarar en el paquete las dependencias que utilice cada componente, sin depender solo de las instaladas en las apps. |
+
+Esta preparación corresponde al prerrequisito de ICR-01. La base visual ya está definida por la guía común; siguen pendientes su conciliación documental y su comprobación técnica (DC-01).
+
+#### 4.5.2. Orden para integrar el reparto
+
+| Fase | Elementos a implementar y verificar | Dependencia |
+|---|---|---|
+| 0 | Configuración, tema, tokens, proveedores y herramientas | Preparación de §4.5.1. |
+| 1 | CR-01, CR-02, CR-09, CR-10, CR-11 y CR-15 | Fase 0. |
+| 2 | CR-03, CR-05, CR-06, CR-08, CR-12, CR-13, CR-14 y CR-20 | Elementos de fase 1 que declara cada componente en el catálogo. |
+| 3 | CR-04, CR-07, CR-16, CR-17, CR-18 y CR-19 | Dependencias de las fases anteriores; políticas y contrato aplicables para integración real. |
+
+Las fases complementan los incrementos ICR/TCR de §4.1; no sustituyen sus criterios ni exigen esperar a todos los componentes de una fase para comenzar otro cuyos prerrequisitos ya estén integrados. Cada TCR que involucre varios integrantes se descompone en tareas por `CR-NN`, manteniendo la cobertura de sus criterios. Los datos simulados permiten verificar componentes aislados; los pendientes del contrato siguen bloqueando la integración real afectada.
+
+Para el primer listado de F-04, Gerardo prepara en paralelo sus documentos `spec`, UI, plan y tareas, y coordina la disponibilidad de CR-01/02/03/05/06/07/08/09/10. CR-12/15 intervienen al integrar las confirmaciones y sus resultados; CR-18/19 corresponden al detalle de incidencia. No es necesario terminar los 20 elementos para implementar el listado.
+
+#### 4.5.3. Entrega de cada responsable
+
+- Implementar el `CR-NN` contra las propiedades, eventos, estados y criterios definidos, manteniendo sus identificadores.
+- Incluir comprobaciones de sus criterios `CCR-NN-XX`, teclado, errores y responsive aplicables; documentar los límites de cualquier simulación.
+- Reutilizar el tema y los controles Mantine. Si falta una propiedad o surge otra responsabilidad compartida, actualizar primero la especificación afectada y revisar consumidores.
+- Entregar un PR del frontend con componentes, pruebas y evidencia reproducible; indicar qué CR quedan disponibles y qué dependencias faltan. Los cambios de especificación se enlazan desde un PR del repositorio de documentación.
+- El revisor comprueba el resultado y sus consumidores; el responsable actualiza la trazabilidad con los commits y resultados reales. Ninguna asignación de esta tabla cuenta como implementación completada.
+
+### 4.6. Ubicación en el frontend existente
+
+El checkout actualizado usa workspaces npm. Los componentes de este catálogo se implementan en **`G2-Despacho-Frontend/packages/componentes-compartidos/src/`**; las dos aplicaciones los consumen mediante el paquete **`@despacho/componentes-compartidos`**. No crear una biblioteca distinta dentro de cada app ni una tercera aplicación para los componentes.
+
+Estructura de destino propuesta dentro de las carpetas actuales; las subcarpetas de componentes todavía no existen en la revisión `d2bc27d`:
+
+```text
+G2-Despacho-Frontend/
+├── packages/
+│   ├── componentes-compartidos/
+│   │   ├── package.json                 # Existe; define el nombre y exportaciones del paquete
+│   │   └── src/
+│   │       ├── index.ts                 # Existe; exporta tema y exportará componentes/patrones
+│   │       ├── tokens.css               # Existe; completar según el diseño
+│   │       ├── layout/                  # CR-03, CR-04, CR-05, CR-13
+│   │       ├── formularios/             # CR-01, CR-02, CR-06, CR-12, CR-17
+│   │       ├── tablas/                  # CR-07
+│   │       ├── feedback/                # CR-08, CR-14, CR-15
+│   │       └── dominio/                 # CR-09, CR-10, CR-11, CR-16, CR-18, CR-19, CR-20
+│   ├── tipos-compartidos/src/index.ts   # Existe; tipos transversales entre capas/apps
+│   └── cliente-api/src/index.ts         # Existe; cliente y utilidades de comunicación
+└── apps/
+    ├── despacho-administrativo/src/
+    │   └── features/entregas-fallidas/   # Previsto: páginas, formularios y contenedores propios de F-04
+    └── despacho-repartidor/src/         # Existe; páginas y contenedores de F-03
+```
+
+- Un componente propio puede tener juntos `NombreComponente.tsx`, `NombreComponente.module.css` si necesita CSS, y sus pruebas al configurar las herramientas. Los patrones CR-01/02 y el adaptador CR-15 no requieren un archivo TSX por obligación.
+- `src/index.ts` es la entrada pública existente. Al implementar un componente, agregar su exportación manteniendo `tema`; no crear importaciones desde una app hacia archivos internos de la otra. La exportación de tipos se define según su uso: tipos exclusivos de UI pueden permanecer en este paquete; los transversales entre aplicaciones o capas pueden vivir en `tipos-compartidos`.
+- Los contenedores de cada aplicación consultan mediante `cliente-api`, resuelven permisos y transforman datos al modelo de UI. Pasan datos y callbacks a los componentes compartidos, que no dependen de la sesión ni de rutas internas de una app.
+- Las llamadas al API, la carga autorizada de imágenes y las decisiones de negocio permanecen en sus adaptadores o contenedores. El paquete compartido aporta la visualización, interacción y eventos definidos en cada CR.
+- Ambas apps ya consumen el paquete. Ejemplo de una importación **futura, después de implementar y exportar** CR-12: `import { ModalConfirmacion } from '@despacho/componentes-compartidos'`. Actualmente `src/index.ts` exporta el tema, no los 20 componentes.
+- Antes de integrar un cambio compartido, verificar ambas aplicaciones con los scripts existentes `npm run typecheck` y `npm run build`, además de las pruebas del CR cuando estén configuradas. No afirmar que estas comprobaciones se han ejecutado por registrar esta guía.
+
 ## 5. Decisiones y evolución
 
 ### 5.1. Diferencias detectadas y decisiones pendientes
@@ -655,7 +752,7 @@ Los responsables siguientes son los roles de referencia del proyecto, no asignac
 
 | ID | Hallazgo o decisión pendiente | Tratamiento de este documento | Responsable de referencia | Bloquea |
 |---|---|---|---|---|
-| DC-01 | `stack-frontend.md` propone React 18, Tailwind y react-hot-toast; `SYSTEM-DESIGN.md` §15 propone React/TypeScript, Mantine y su proveedor de notificaciones. El checkout local del frontend no contiene aún archivos de aplicación. | Usar Mantine como base visual solicitada. Conciliar los documentos, comprobar compatibilidad y fijar versiones en el repositorio frontend antes de instalar; no afirmar que ya existe la biblioteca. | Max y Rhamses | Configuración real del frontend e ICR-01. |
+| DC-01 | `stack-frontend.md` aún propone React 18, Tailwind y react-hot-toast; el frontend `d2bc27d` ya declara React 19.2 y Mantine 9.6.2, tiene lockfile y contiene un tema y tokens iniciales compartidos. | Mantener el acuerdo común de Mantine sin Tailwind. Actualizar la documentación del stack, verificar la base existente, completar tema/tokens y configurar pruebas; la inicialización no demuestra cumplimiento de los CR ni integración real. | Max y Rhamses, según §4.5.1 | Conciliación documental y verificación de la base para ICR-01; no requiere crear de nuevo el proyecto. |
 | DC-02 | Las guías UI agrupan registro, jornadas y monitoreo en F-05; el índice los separa en F-05/F-06. | Mapear consumidores según el índice y conservar enlaces actuales; ajustar nombres de guías y futuras atómicas F-06 al preparar sus trabajos. | Responsables de F-05/F-06 y UI | Trazabilidad definitiva de planes F-06; no bloquea componentes visuales. |
 | DC-03 | Formatos, máximo de archivo, compresión y EXIF siguen pendientes en F-03. Las atómicas y `pendiente.md` aún dejan abierto almacenamiento/acceso, mientras el contrato §10 ya describe bucket privado y URLs firmadas. | CR-17 recibe política explícita; CR-18 usa el mecanismo contractual. Conciliar las fuentes y completar la política; sin tamaños ni procesamiento inventados. | Max, Arquitectura y Backend | Aceptación real de captura, carga y acceso a evidencia; las pruebas simuladas no la cierran. |
 | DC-04 | Las tablas de endpoints no detallan todos los parámetros/metadatos de paginación, orden y filtros, ni todos los DTO de historial y métricas necesarias para las tarjetas. | Modelos de presentación controlados; concretar solicitudes y respuestas en el único contrato antes de integrar. No convertir estos modelos en contratos HTTP implícitos. | Responsables funcionales, Frontend y Backend | Integración de listados, historial, indicadores y selección con capacidad; no sus pruebas aisladas. |

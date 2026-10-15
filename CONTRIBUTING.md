@@ -6,7 +6,7 @@ Este documento establece los acuerdos de colaboración, estrategia de ramas en G
 
 ## 1. Estrategia de Ramas en Git
 
-Para asegurar que los 5 integrantes puedan trabajar de forma simultánea sin generar conflictos de integración:
+Para asegurar que los 6 integrantes puedan trabajar de forma simultánea sin generar conflictos de integración:
 
 ### 1.1 Rama Principal (`main`)
 - Contiene el código fuente y la documentación estable, probada y lista para despliegue en la nube (Render para backend y Vercel para frontend).
