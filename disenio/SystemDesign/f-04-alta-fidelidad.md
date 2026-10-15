@@ -96,7 +96,7 @@ Etiquetas especiales (badge `sm`):
 | Simulado | neutral con borde punteado | F-02 |
 | Programado para [fecha] | info | F-02 |
 | Reintento / Intento 2 de 2 | warning | F-02, F-03, F-04 |
-| No intentado | neutral | F-04 |
+| No intentado en esta salida | neutral | F-04 |
 | Pedido anulado | error | F-04 |
 | Retorno atrasado | warning | F-04 |
 | Activo / Inactivo (zona, repartidor, furgoneta) | success / neutral | F-01, F-05 |
@@ -139,7 +139,9 @@ Etiquetas especiales (badge `sm`):
 
 **Componentes y tratamiento visual**
 
-- **Tabla:** la columna de recepción usa un badge info ("Recibido en centro") o neutral ("Pendiente de retorno"). La de evidencia muestra `IconCamera` en `text/primary` o un guion en `disabled`. Las filas "Recibido en centro" llevan un indicador izquierdo de 4 px en `action/primary` porque esperan una decisión.
+- **Tabla:** una fila por despacho con su incidencia vigente, sin heredar recepción anterior. La columna "Intentos consumidos" conserva el acumulado; `NO_INTENTADO` añade "No intentado en esta salida". El orden es recibidos primero y pendientes después, con la incidencia más antigua primero en cada grupo y desempate del backend. La recepción y sus colores siguen el sistema de diseño vigente (§16.4); la evidencia usa un indicador sin descargar la fotografía.
+
+La apertura no restringe fechas. Los KPI cuentan toda la base filtrada por motivo/fechas, independientemente de página y grupo; atrasados es parte de pendientes. Sus clics filtran la tabla sin alterar las otras cifras. La jornada desconocida tiene aviso explícito y el KPI de atrasados muestra "No disponible" cuando no puede calcularse exactamente. El detalle de interacción y recuperación corresponde a [UI de ES-F04-01](../../especificaciones/ES-F04-01-ConsultarEntregasFallidas/ui.md).
 - **Línea de tiempo del historial:** puntos de 12 px del color semántico de cada estado, línea de 2 px en `border/default`, estado en Label, fecha y ejecutor en Auxiliary `secondary` y observación en Body/Small.
 - **Evidencia:** imagen en proporción 4:3 con `radius/md` y el botón "Ampliar" (`IconZoomIn`), que abre un modal a pantalla completa con fondo `ink`.
 - **Panel de decisión:** tarjeta blanca con H4 "Decisión". "Reprogramar" es principal `fullWidth` y "Cerrar como devuelto a origen" es outline. Si el paquete aún no se recibió, ambos botones aparecen deshabilitados con la ayuda "Confirma primero la recepción en centro" y "Confirmar recepción" pasa a ser la acción principal.

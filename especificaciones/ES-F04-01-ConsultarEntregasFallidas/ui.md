@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Borrador; pendiente de revisión e implementación.
+**Estado:** Comportamiento del listado acordado el 15/10/2026; implementación y verificación de UI pendientes.
 
 **Aplicabilidad:** Página de consulta en la aplicación administrativa.
 
@@ -35,21 +35,25 @@ Composición: estructura administrativa CR-03 → encabezado CR-05 → tres indi
 | Elemento | Contenido y comportamiento |
 |---|---|
 | Encabezado | Un único H1 «Entregas fallidas». |
-| Indicadores | «Pendientes de retorno», «Recibidos en centro» y «Retornos atrasados». No calcular totales globales desde la página actual ni convertir valores ausentes en cero. Su fuente y relación con los filtros quedan pendientes en DT-01 del plan. |
-| Filtros | Motivo, rango de fecha del incidente y recepción: Todos / Pendiente de retorno / Recibido en centro. «Limpiar filtros» restablece la consulta y la primera página. |
-| Columnas | Código operativo interno, fecha del incidente, motivo, intento sobre máximo configurado, repartidor, recepción, indicador de evidencia, etiquetas especiales y acciones. |
-| Etiquetas | «No intentado», «Pedido anulado» y «Retorno atrasado», solo cuando correspondan. El retorno atrasado destaca la fila y al repartidor según §23.B del diseño. |
+| Indicadores | «Pendientes de retorno», «Recibidos en centro» y «Retornos atrasados». Cifras del backend sobre todo el conjunto filtrado por motivo/fechas, independientes de página y grupo. Los atrasados están incluidos en pendientes. El valor desconocido se muestra como «No disponible», nunca cero. |
+| Filtros | Motivo del catálogo completo, incluidos `NO_INTENTADO` e inactivos; fechas de la incidencia vigente y recepción: Todos / Pendiente de retorno / Recibido en centro. Al entrar sin URL previa no se limita ninguna fecha. «Limpiar filtros» elimina motivo, fechas y grupo y vuelve a la primera página, conservando el tamaño elegido. |
+| Columnas | Código operativo interno, fecha de incidencia, motivo, «Intentos consumidos» sobre el máximo, repartidor, recepción, indicador de evidencia, etiquetas especiales y acciones. Una fila por despacho, con los datos de su incidencia vigente. |
+| Etiquetas | «No intentado en esta salida», «Pedido anulado» y «Retorno atrasado», solo cuando correspondan. La primera no reinicia el contador: puede acompañar «0 de 2» o «1 de 2» bajo «Intentos consumidos». El retorno atrasado destaca la fila y al repartidor según §23.B del diseño. |
 | Evidencia | Icono con nombre accesible «Tiene evidencia» o guion; el listado no muestra ni descarga la fotografía. |
 | Acciones | «Ver detalle» y, únicamente para recepción pendiente, «Confirmar recepción». La consulta no ejecuta ninguna mutación. |
-| Paginación y orden | Usar el total confirmado y el orden del backend. El diseño pide recibidos primero; el orden estable y el desempate se concretan en DT-01 antes de la integración. |
+| Paginación y orden | Primera página y 20 filas por defecto; tamaños de UI 20/50/100 dentro del contrato. Recibidos primero, pendientes después y, en cada grupo, incidencia más antigua primero, con desempate del backend. No reordenar ni paginar localmente. Si una actualización deja la página solicitada después de la última, solicitar la última disponible, o la primera cuando no existan resultados. |
 
 | Acción | Respuesta de la interfaz | Criterio funcional |
 |---|---|---|
 | Abrir la página | Solicitar la primera página y mostrar la carga inicial. | CA-01 |
 | Cambiar filtros | Conservar controles y consultar desde la primera página; una respuesta anterior no reemplaza la consulta vigente. | CA-02 |
 | Cambiar de página | Solicitar y presentar la página válida; no volver a paginar localmente una respuesta ya paginada. | CA-01, CA-02 |
+| Pulsar un indicador | Conservar motivo/fechas, filtrar el grupo y volver a la primera página. Volver a pulsarlo elimina el grupo. Las otras cifras no cambian por esta selección. «Retornos atrasados» activa recepción pendiente y solo atrasados; elegir recepción desde el selector desactiva solo atrasados. | CA-08 |
 | Limpiar filtros | Restablecer filtros, indicadores seleccionados y paginación de manera coherente. | CA-02, CA-03 |
 | Recibir un rechazo de permisos | Retirar filas, indicadores y filtros protegidos. | CA-04 |
+| Volver del detalle o actualizar tras una recepción | Restaurar la consulta de la URL y volver a obtener filas y cifras. Un reprogramado/cerrado ya no aparece; una incidencia nueva no hereda datos visuales de la anterior. | CA-06, CA-07 |
+
+Ejemplo de indicadores: «7 pendientes», «5 recibidos» y «2 atrasados» describen 12 casos. Una ayuda visible en la tarjeta de atrasados indica «Incluidos en pendientes de retorno». La tarjeta seleccionada refleja el filtro real, también al restaurar una URL. El total de la tabla corresponde al grupo seleccionado; puede diferir de la suma de las dos primeras tarjetas.
 
 Las acciones hacia ES-F04-02/03 deben integrarse con sus implementaciones verificadas. Mientras no existan, su ausencia se registra como dependencia; no se enlazan destinos inexistentes ni se presenta una confirmación ficticia.
 
@@ -64,14 +68,18 @@ Las acciones hacia ES-F04-02/03 deben integrarse con sus implementaciones verifi
 | Error inicial | Mensaje comprensible de CR-08, sin detalles técnicos. | «Reintentar» conservando los filtros. |
 | Error de actualización | Conservar datos anteriores solo mientras sigan autorizados, con aviso de que no se actualizaron. | Reintentar; no presentarlos como resultado confirmado de filtros nuevos. |
 | Sin permisos | Estado de acceso denegado sin datos, indicadores ni filtros protegidos. | Navegación permitida por la aplicación. |
+| Jornada no confirmada | En la fila pendiente: «No se pudo confirmar el cierre de jornada». Sin etiqueta de atrasado ni afirmación de retorno a tiempo. | Reintentar la consulta. |
+| Indicador de atrasados desconocido | «No disponible», tarjeta deshabilitada y aviso con la cantidad de retornos que no pudieron evaluarse. Filas y cifras locales siguen visibles. | Reintentar; las tarjetas de recepción siguen disponibles. |
+| Error al filtrar solo atrasados | Aviso de dependencia, con filtro conservado. No mostrar un subconjunto como completo ni un falso vacío. | «Reintentar» o «Ver todos los grupos», conservando motivo y fechas. |
+| Nombre no recuperado | «Nombre del repartidor no disponible» y su identificador. | Reintentar sin bloquear los demás datos. |
 
 Envío de mutación y confirmación de éxito: no aplican a esta consulta. Las notificaciones posteriores a una recepción pertenecen a ES-F04-03 y a su integración con el listado.
 
 ## 5. Formularios y mensajes
 
-Los controles son filtros, no un formulario de modificación. Los códigos del catálogo, nombres de parámetros, límites, errores y DTO definitivos pertenecen al [contrato central](../../integraciones/api-contract.md#11-api-de-f-04-entregas-fallidas). DT-01 del plan debe resolverlos antes de conectarlos por HTTP; no se define un payload alternativo aquí [cite: 3].
+Los controles son filtros, no un formulario de modificación. Catálogo, parámetros, límites, errores, respuesta y valores desconocidos están definidos en el [contrato central](../../integraciones/api-contract.md), §§10.4, 11.1 y 13.5. No se define un payload alternativo aquí [cite: 3]. Filtros inválidos muestran la validación correspondiente; no se presentan como «sin coincidencias».
 
-La presentación usa fechas de la zona operativa `America/Lima` indicada por el modelo de datos. Los límites del rango y su conversión a los filtros de la API se concretan en DT-01. Un indicador de «Retorno atrasado» se basa en el cierre de jornada confirmado por el servicio responsable, no solo en la hora del navegador.
+La presentación usa `America/Lima`; ambos días seleccionados se incluyen y pueden usarse límites abiertos conforme al contrato. El listado inicial no presupone «Hoy». «Retorno atrasado» se basa en el cierre manual o automático confirmado de la jornada de esa incidencia, no en la hora del navegador ni en la jornada actual del repartidor.
 
 ## 6. Accesibilidad y adaptación
 
@@ -84,18 +92,18 @@ La presentación usa fechas de la zona operativa `America/Lima` indicada por el 
 
 | ID | Condición y acción | Resultado observable | Criterio funcional |
 |---|---|---|---|
-| CUI-01 | Abrir un listado con los indicadores y casos especiales de prueba. | Columnas, etiquetas y recepción correctas; el indicador de evidencia no muestra la foto. | CA-01 |
-| CUI-02 | Combinar filtros, cambiar página, limpiar y volver del detalle disponible. | Controles, URL y resultados coherentes; se reinicia la página al cambiar filtros y no aparecen respuestas anteriores. | CA-02 |
+| CUI-01 | Abrir un listado con fallos antiguos/recientes, varias incidencias, `NO_INTENTADO` con cero/un intento previo y más de una página. | Una fila vigente por despacho, columnas y etiquetas correctas, recibidos primero y antigua primero en cada grupo; el indicador de evidencia no muestra la foto. | CA-01, CA-06, CA-07, CA-09 |
+| CUI-02 | Combinar filtros, pulsar tarjetas, cambiar página/tamaño, limpiar y volver del detalle. | Controles, URL y resultados coherentes; indicadores independientes de página/grupo, atraso incluido en pendientes y validación de filtros; no aparecen respuestas anteriores. | CA-02, CA-08, CA-11 |
 | CUI-03 | Probar carga, cero incidencias, cero coincidencias y fallo de red. | Estados distintos; limpiar y reintentar realizan la recuperación esperada. | CA-03 |
 | CUI-04 | Recibir `403` después de mostrar datos. | Se retiran todos los datos e indicadores protegidos, incluidos los filtros. | CA-04 |
-| CUI-05 | Mostrar jornadas cerradas/activas con recepción pendiente/confirmada. | «Retorno atrasado» aparece solo para jornada cerrada y recepción pendiente. | CA-05 |
-| CUI-06 | Recorrer la pantalla con teclado en escritorio y viewport móvil. | Controles y acciones alcanzables; foco, nombres accesibles, texto y desplazamiento utilizables. | CA-01 a CA-05 |
+| CUI-05 | Mostrar jornadas cerradas/activas/desconocidas, recepción pendiente/confirmada y nombre ausente. | Atraso solo con cierre confirmado y recepción pendiente; avisos, cifra desconocida, tarjeta deshabilitada y recuperación correctos. | CA-05, CA-10 |
+| CUI-06 | Recorrer la pantalla con teclado en escritorio y viewport móvil. | Controles, tarjetas y acciones alcanzables; selección y deshabilitados accesibles, foco, texto y desplazamiento utilizables. | CA-01 a CA-11 |
 
-Los fixtures visuales permiten comprobar presentación e interacción; la integración real queda pendiente hasta cerrar el contrato, las fuentes de datos y los componentes necesarios. Registrar resultados en [evidence.md](./evidence.md).
+Los fixtures visuales comprueban presentación e interacción. La definición documental del contrato y fuentes ya existe; su implementación, componentes y comprobación real siguen pendientes. Registrar resultados en [evidence.md](./evidence.md).
 
 ## 8. Referencias
 
-1. [Especificación funcional](./spec.md), criterios CA-01 a CA-05.
+1. [Especificación funcional](./spec.md), criterios CA-01 a CA-11.
 2. [Sistema de diseño](../../disenio/SYSTEM-DESIGN.md), [guía F-04](../../disenio/funcionalidades/f-04.md) y [componentes React](../../disenio/componentes-react.md).
 3. [Contrato de API](../../integraciones/api-contract.md), §§3.3, 3.5 y 11; [modelo de datos](../../arquitectura/modelo-datos.md), §1.
 4. [Plan](./plan.md), [tareas](./tasks.md) y [evidencia](./evidence.md).

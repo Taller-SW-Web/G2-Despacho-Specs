@@ -1308,7 +1308,7 @@ Todo estado se comunica con **texto + icono + color** (§4.2). Los badges usan `
 | Programado para [fecha] | F-02 | `info/background` + ink | `IconCalendarTime` |
 | Reintento | F-02 | `warning/background` + ink | `IconRepeat` |
 | Tiempo de espera elevado | F-02 | Solo icono en `text/primary` (§4.5) con `aria-label` "Tiempo de espera elevado" y tooltip | `IconClockExclamation` |
-| No intentado | F-04 | `cloud-subtle` + ink | `IconClockPause` |
+| No intentado en esta salida | F-04 | `cloud-subtle` + ink | `IconClockPause` |
 | Pedido anulado | F-04 | `error/background` + ink | `IconBan` |
 | Retorno atrasado | F-04 | `error/background` + ink; la fila completa lleva borde izquierdo de 4 px `error/default` y fondo `error/background` | `IconAlertTriangle` |
 | Sin tarifa configurada | F-01 | `warning/background` + ink | `IconAlertTriangle` |
@@ -1978,15 +1978,21 @@ Estados adicionales: sin pendientes ("No tienes despachos pendientes. Puedes cer
 | Título | `Title order={1}` | H1 | "Entregas fallidas" |
 | KPI | `TarjetaKpi` (clic filtra) | §23.B | "Pendientes de retorno", "Recibidos en centro", "Retornos atrasados" |
 | Filtros | `Select size="sm"` motivo, `DatePickerInput type="range" size="sm"`, `Select size="sm"` recepción | — | "Motivo", "Fecha del incidente", "Recepción" |
-| Columnas | Código, fecha del incidente, motivo, intento ("1 de 2", `ia-num`), repartidor, recepción (`BadgeEstado`), evidencia (`IconCamera` con `aria-label="Tiene evidencia"` o "—"), etiquetas especiales, acciones | — | — |
+| Columnas | Código operativo interno, fecha de incidencia vigente, motivo, "Intentos consumidos" ("1 de 2", `ia-num`), repartidor, recepción (`BadgeEstado`), evidencia (`IconCamera` con `aria-label="Tiene evidencia"` o "—"), etiquetas especiales, acciones | Una fila por despacho; `NO_INTENTADO` conserva el contador y se etiqueta "No intentado en esta salida" | — |
 | Acciones de fila | `Button variant="outline" size="sm"` (solo pendiente de retorno) + `Button variant="subtle" size="sm"` | — | "Confirmar recepción" / "Ver detalle" |
 
 | Estado | Presentación |
 |---|---|
 | Vacío | `EstadoVacio` `IconPackageOff`: "No hay entregas fallidas por resolver" |
-| Orden por defecto | Filas "Recibido en centro" primero (esperan decisión) |
+| Orden fijo | Recibidos primero y pendientes después; en cada grupo, incidencia más antigua primero, con desempate del backend. Se mantiene al filtrar. |
 | Retorno atrasado | Fila destacada (§23.B) con badge "Retorno atrasado" y nombre del repartidor |
 | Éxito | Notificación verde tras confirmar recepción o decidir |
+
+La apertura sin URL previa no limita fechas y muestra todos los fallidos aún sin resolver. Al volver del detalle se restaura la consulta y se vuelve a obtener el listado. Los indicadores respetan motivo/fechas, sin depender de página ni grupo; atrasados está incluido en pendientes. Pulsar una tarjeta filtra las filas y conserva las otras cifras; volver a pulsarla elimina el grupo. La ayuda de atrasados dice "Incluidos en pendientes de retorno".
+
+Una jornada pendiente no confirmada se muestra como "No se pudo confirmar el cierre de jornada". Si el total de atrasados no puede calcularse exactamente, la tarjeta muestra "No disponible", queda deshabilitada y se informa cuántos retornos no pudieron evaluarse, con reintento. Los recibidos no se marcan como atrasados. Un nombre ausente conserva su identificador y muestra "Nombre del repartidor no disponible". La consulta de solo atrasados que no puede completarse muestra el error de dependencia y permite reintentar o ver todos los grupos.
+
+La especificación de comportamiento vigente es [ES-F04-01](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md), junto con su [UI](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/ui.md) y el contrato único, §§10.4, 11.1 y 13.5.
 
 #### P2 Detalle de la incidencia
 
@@ -1994,7 +2000,7 @@ Estados adicionales: sin pendientes ("No tienes despachos pendientes. Puedes cer
 
 | Elemento | Componente y props | Texto |
 |---|---|---|
-| Incidencia | `Card` con pares etiqueta/valor | Motivo, comentario, fecha y hora, repartidor, "Intento 1 de 2" |
+| Incidencia | `Card` con pares etiqueta/valor | Motivo, comentario, fecha y hora, repartidor, "Intentos consumidos: 1 de 2" |
 | Recepción en centro | `Card`; si está pendiente, `BadgeEstado` "Pendiente de retorno"; si no, fecha, usuario, "Sello intacto: Sí/No" y observaciones | — |
 | Historial de estados | `Card` + `Timeline bulletSize={20}` | Estado, fecha, ejecutor, observación |
 | Evidencia | `Card` + `Image radius="md"` 4:3 clicable → `Modal size="xl"` | `alt="Evidencia de la incidencia del despacho DSP-000123"` |
@@ -2005,7 +2011,7 @@ Estados adicionales: sin pendientes ("No tienes despachos pendientes. Puedes cer
 | Evidencia cargando | `Skeleton` 4:3 |
 | Sin evidencia | `EstadoVacio` compacto: "No intentado — sin foto" |
 | Enlace expirado | `Alert` amarillo + `Button variant="subtle"` "Volver a cargar" |
-| No intentado | `Alert` azul: "Este despacho no consumió intento" |
+| No intentado | `Alert` azul: "Esta salida no consumió intento; se conserva el contador acumulado" |
 | `409` | `Alert` amarillo: "El despacho cambió de estado. Se actualizó la información." |
 | `404` | `EstadoVacio` "No encontramos este despacho" + "Volver al listado" |
 
@@ -2036,7 +2042,7 @@ Estados: ya registrada ("La recepción ya fue confirmada", `Alert` azul), error 
 
 | Elemento | Componente y props | Texto |
 |---|---|---|
-| Resumen | Franja `cloud-subtle` | Código, motivo, "Intento 1 de 2" |
+| Resumen | Franja `cloud-subtle` | Código, motivo, "Intentos consumidos: 1 de 2" |
 | Fecha | `DatePickerInput required minDate={mañana} locale="es" valueFormat="DD/MM/YYYY"` | "Nueva fecha de entrega" |
 | Información | `Alert color="blue" variant="light"` | "El despacho volverá a la cola de programación para la fecha elegida. El contador de intentos se mantiene en 1." |
 | Acciones | "Cancelar" + "Confirmar reprogramación" | — |
