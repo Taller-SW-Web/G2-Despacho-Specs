@@ -96,7 +96,7 @@ Permitir que el Gestor de Despacho consulte el catálogo de zonas de cobertura c
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-01-Gestor_ZonasGeograficas.md`, RF-01, CA-04 y CA-15.
-- [cite: 2] `integraciones/api-contract.md`, secciones 3.3 y 9.1.
+- [cite: 2] `integraciones/api-contract.md`, secciones 3.3, 3.5 y 9.1.
 - [cite: 3] `disenio/funcionalidades/f-01.md`, Pantalla 1: Panel de Gestión de Zonas.
 - [cite: 4] `disenio/SystemDesign/f-01-alta-fidelidad.md`, tabla de zonas y estados.
 - [cite: 5] `arquitectura/modelo-datos.md`, tablas `zonas`, `zona_distritos` y `tarifas_zona`.

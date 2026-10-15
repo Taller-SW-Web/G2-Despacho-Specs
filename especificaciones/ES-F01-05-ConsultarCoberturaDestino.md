@@ -51,7 +51,7 @@ Permitir que los canales de venta consulten si un destino está dentro de la cob
 ### Integraciones
 
 - La cobertura procede de las tablas propias de zonas de Gestión de Despachos.
-- Marketplace y Chatbot son los consumidores previstos; Ventas y Postventa puede consultar la cobertura cuando lo requiere.
+- Marketplace y Chatbot son los únicos consumidores previstos, con el scope `cotizaciones:calcular`; Ventas y Postventa no invoca esta operación.
 - Seguridad y Usuarios emite los tokens de servicio con los scopes concedidos.
 - La ruta, los cuerpos, las respuestas y los códigos de error se rigen exclusivamente por `integraciones/api-contract.md` [cite: 2].
 

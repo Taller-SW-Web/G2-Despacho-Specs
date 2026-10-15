@@ -109,7 +109,7 @@ Garantizar que cada cambio aceptado sobre zonas y tarifas deje un registro audit
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-01-Gestor_ZonasGeograficas.md`, RF-01, RF-02, CA-16, CA-17, CA-18 y requisito de trazabilidad de la sección 8.
-- [cite: 2] `integraciones/api-contract.md`, secciones 3.2, 9.1 y 14.
+- [cite: 2] `integraciones/api-contract.md`, secciones 3.3, 9.1 y 14.
 - [cite: 3] `arquitectura/modelo-datos.md`, tablas `zonas`, `tarifas_zona` y `auditoria_configuracion`.
 - [cite: 4] `overview.md`, RT-02 sobre historial auditable.
 - [cite: 5] `disenio/funcionalidades/f-01.md`, Pantalla 1, columna de última modificación.

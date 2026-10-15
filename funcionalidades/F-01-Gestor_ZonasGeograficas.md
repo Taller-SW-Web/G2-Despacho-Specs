@@ -7,7 +7,7 @@
 
 ## 1. Contexto
 
-Todos los envíos de la tienda salen de un único centro de despacho. La determinación de la cobertura y del costo de envío desde ese centro es el primer paso del ciclo de despacho. Antes de que un pedido se confirme, Ventas y Postventa y los canales de venta necesitan saber si la dirección del cliente está dentro de la cobertura y cuánto cuesta el envío.
+Todos los envíos de la tienda salen de un único centro de despacho. La determinación de la cobertura y del costo de envío desde ese centro es el primer paso del ciclo de despacho. Antes de que un pedido se confirme, los canales de venta necesitan saber si la dirección del cliente está dentro de la cobertura y cuánto cuesta el envío.
 
 Esta funcionalidad opera sobre sus propias tablas de zonas y tarifas dentro de la base de datos del módulo. No requiere información de clientes ni del estado de los pedidos, pero sí utiliza el identificador, el peso y las dimensiones de cada producto proporcionados por Productos y Ofertas para calcular el peso y el volumen cotizables.
 
@@ -24,7 +24,7 @@ Esta funcionalidad incluye:
 - Administración de zonas de cobertura: registro, edición, consulta, activación y desactivación mediante distritos y códigos postales.
 - Matriz de tarifas: una regla vigente por zona con tarifa base, peso incluido, recargo por kilogramo adicional, factor volumétrico, moneda y plazo estimado en días hábiles.
 - Consulta de los datos físicos de cada producto ante Productos y Ofertas, en lote y con token propio, para calcular el peso y el volumen cotizables.
-- Cotización de envíos para Marketplace y Chatbot, y para Ventas y Postventa cuando lo requiera, con costo en soles y plazo estimado.
+- Cotización de envíos para Marketplace y Chatbot, con costo en soles y plazo estimado.
 - Validación de cobertura y resolución de zona para un destino, como servicio interno para F-02 y F-05.
 - Registro de auditoría de los cambios en zonas y tarifas.
 
@@ -49,8 +49,8 @@ Quedan fuera de la cotización la resolución por geometría o por polígonos, l
 |---|---|
 | Seguridad y Usuarios | Emitir el JWT humano con `GESTOR_DESPACHO` y los tokens de servicio con scopes. |
 | Productos y Ofertas | Proveer para cada producto su identificador, peso y dimensiones vigentes. |
-| Ventas y Postventa | Consumir la cotización e incorporar el costo de despacho al total del pedido. |
-| Canal Marketplace y Canal Chatbot | Solicitar o mostrar la cotización durante el checkout o la conversación, según el acuerdo de integración con Ventas y Postventa. |
+| Ventas y Postventa | Definir el cobro del envío, las promociones y el importe finalmente cobrado al cliente sobre el costo logístico calculado; no invoca la cotización. |
+| Canal Marketplace y Canal Chatbot | Solicitar la cotización durante el checkout o la conversación y mostrar el resultado al cliente. |
 | Programación y Asignación (F-02) | Solicitar la resolución de zona al recibir una solicitud de despacho y rechazar destinos sin cobertura. |
 | Monitoreo de Flota (F-05) | Utilizar el catálogo de zonas activas para asignar la zona de trabajo del repartidor en la jornada. |
 

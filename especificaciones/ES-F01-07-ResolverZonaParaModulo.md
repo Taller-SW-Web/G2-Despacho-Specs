@@ -33,7 +33,6 @@ Determinar qué zona de cobertura activa contiene un destino y entregar esa reso
 - La resolución no aplica tarifas ni calcula costos: esos datos corresponden al motor de cotización de ES-F01-06.
 - El consumidor no puede forzar una zona distinta de la que resulta de la cobertura, ni declarar cobertura cuando el sistema la niega.
 - La resolución debe ser estable para el mismo destino mientras la configuración no cambie, de modo que F-02 y F-05 observen la misma zona.
-- El límite de solicitudes por consumidor se aplica también a esta operación interna.
 - Un destino sin `distrito` ni `codigoPostal` identificables no puede resolverse y se rechaza con `400 Bad Request`.
 
 ## 5. Entradas, salidas e integraciones
@@ -53,7 +52,7 @@ Determinar qué zona de cobertura activa contiene un destino y entregar esa reso
 
 - F-02 consume la resolución al crear un despacho y rechaza los destinos sin cobertura.
 - F-05 consume el catálogo de zonas activas para asignar la zona de trabajo del repartidor.
-- El mecanismo concreto por el que F-05, que pertenece al microservicio de Operación de Reparto y Flota, accede a esta información es un acuerdo pendiente de documentar en `integraciones/api-contract.md` [cite: 2].
+- El mecanismo concreto por el que F-05, que pertenece al microservicio de Operación de Reparto y Flota, acceda a esta resolución no está definido en las rutas internas de `integraciones/api-contract.md` (sección 13) y permanece como acuerdo pendiente de documentar en ese contrato [cite: 2].
 - La zona es propiedad de Gestión de Despachos; ningún consumidor accede a su base de datos.
 
 ## 6. Criterios de aceptación

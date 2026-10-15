@@ -24,7 +24,7 @@
 
 - **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-01`, Criterios `CA-01`, `CA-03`).
 - **Endpoints asociados:**
-  - CRUD de zonas de cobertura bajo `/api/v1/zonas` (creación `POST /api/v1/zonas` y listado `GET /api/v1/zonas`, definido en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
+  - CRUD de zonas de cobertura bajo `/api/v1/zonas`: creación `POST /api/v1/zonas`, listado `GET /api/v1/zonas`, consulta `GET /api/v1/zonas/{idZona}` y edición `PUT /api/v1/zonas/{idZona}` (sección 9.1 de [integraciones/api-contract.md](../../integraciones/api-contract.md)). El cambio de estado se atiende con `PATCH /api/v1/zonas/{idZona}/estado`, cubierto en HU-F01-02.
 - **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
   - Formulario de Zona: registrar o editar una zona con nombre, distritos comprendidos, códigos postales y estado.
