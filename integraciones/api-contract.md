@@ -762,7 +762,7 @@ Todos los recursos requieren un JWT humano con `tipo=acceso`. El backend toma el
 | `POST` | `/api/v1/repartidor/despachos/{idDespacho}/fallo` | Registrar `FALLIDO` |
 | `POST` | `/api/v1/repartidor/jornada/cierre` | Cerrar la jornada |
 | `GET` | `/api/v1/repartidor/jornada/resumen` | Consultar el resumen propio |
-| `GET` | `/api/v1/catalogos/motivos-fallo` | Consultar motivos seleccionables |
+| `GET` | `/api/v1/catalogos/motivos-fallo` | Consultar catálogo y selección permitida según §10.4 |
 | `POST` | `/api/v1/evidencias/{idEvidencia}/acceso` | Obtener URL firmada de lectura |
 
 Los comandos de transición deben ser idempotentes. Se recomienda enviar `Idempotency-Key`; su obligatoriedad como encabezado común aún debe acordarse.
@@ -820,6 +820,27 @@ Motivos permitidos para el repartidor:
 
 `NO_INTENTADO` es exclusivo del cierre manual o automático de jornada.
 
+### 10.4. Catálogo único de motivos de fallo
+
+- **Método y ruta:** `GET /api/v1/catalogos/motivos-fallo`.
+- **Autorización:** JWT humano válido y rol `GESTOR_DESPACHO`, o perfil local de repartidor activo vinculado al `sub`. Consultar el catálogo no exige una jornada abierta.
+- **Respuesta `200 OK`:** objeto con `motivos`, arreglo de objetos con `codigo`, `etiqueta`, `seleccionableEnCampo`, `consumeIntento` y `activo`. Los tres últimos campos son booleanos obligatorios. Orden por `codigo` ascendente. No recibe filtros ni paginación.
+- Devuelve el catálogo completo, incluidos motivos inactivos conservados para consultas históricas. F-03 ofrece para registrar únicamente los que tengan `activo=true` y `seleccionableEnCampo=true`; F-04 admite todos los códigos como filtro. La validación del backend aplica la misma restricción al registrar un fallo.
+- `NO_INTENTADO` tiene `seleccionableEnCampo=false` y `consumeIntento=false`; lo genera exclusivamente el cierre de jornada. No se mantiene un segundo catálogo para F-04.
+- Token no aceptado: `401`; usuario sin autorización: `403`, conforme a §3.5. Una caída al consultar el catálogo muestra un error y permite reintentar; el frontend no fabrica motivos.
+
+Ejemplo de un elemento de `motivos`:
+
+```json
+{
+  "codigo": "NO_INTENTADO",
+  "etiqueta": "No intentado por fin de jornada",
+  "seleccionableEnCampo": false,
+  "consumeIntento": false,
+  "activo": true
+}
+```
+
 ## 11. API de F-04: entregas fallidas
 
 Todos los recursos requieren JWT con rol `GESTOR_DESPACHO`.
@@ -831,6 +852,111 @@ Todos los recursos requieren JWT con rol `GESTOR_DESPACHO`.
 | `POST` | `/api/v1/despachos/{idDespacho}/recepcion-centro` | Confirmar el retorno físico |
 | `POST` | `/api/v1/despachos/{idDespacho}/reprogramacion` | Reprogramar un nuevo intento |
 | `POST` | `/api/v1/despachos/{idDespacho}/devolucion-origen` | Cerrar como `DEVUELTO_A_ORIGEN` |
+
+### 11.1. Consultar entregas fallidas — ES-F04-01
+
+`GET /api/v1/despachos/fallidos` es una consulta de solo lectura y no requiere `Idempotency-Key`. Devuelve únicamente despachos cuyo estado actual es `FALLIDO`, sin limitar las fechas al abrir la pantalla. No es una consulta del historial completo.
+
+Se devuelve una fila por despacho. `idIncidencia` identifica el registro de `intentos_entrega` enlazado por `despachos.ultima_incidencia_id`, correspondiente a su última transición aceptada a `FALLIDO`, incluso si fue `NO_INTENTADO`. Motivo, fecha, repartidor, jornada, recepción e indicador de evidencia proceden de ese mismo registro. El contador acumulado y el máximo configurado son datos distintos de la identidad de la incidencia. No se selecciona una incidencia por el contador ni se reutiliza la recepción de una anterior.
+
+#### Parámetros de consulta
+
+| Parámetro | Tipo y valor por defecto | Regla |
+|---|---|---|
+| `pagina` | Entero; `1` | Mínimo `1`. |
+| `tamanoPagina` | Entero; `20` | De `1` a `100`. |
+| `motivo` | Código del catálogo; omitido | Un único código exacto de §10.4, incluido `NO_INTENTADO` o un motivo inactivo. Omitir no restringe el motivo. |
+| `fechaDesde` | Fecha `YYYY-MM-DD`; omitida | Inicio inclusivo del día en `America/Lima`, aplicado a la incidencia vigente. |
+| `fechaHasta` | Fecha `YYYY-MM-DD`; omitida | Incluye todo el día en `America/Lima`; internamente se excluye el inicio del día siguiente. |
+| `recepcion` | Enum; `TODOS` | `TODOS`, `PENDIENTE_RETORNO` o `RECIBIDO_EN_CENTRO`. |
+| `soloRetornosAtrasados` | Booleano; `false` | `true` exige recepción pendiente y jornada confirmada como cerrada. Puede combinarse con recepción omitida, `TODOS` o `PENDIENTE_RETORNO`. |
+
+Los límites de fecha son independientes: puede enviarse solo uno o ninguno. Si se envían ambos, `fechaDesde` no puede superar `fechaHasta`. Una fecha futura válida puede producir cero coincidencias. Los instantes de respuesta se expresan en UTC; esta regla de fechas civiles especifica cómo aplicar el filtro de días.
+
+Parámetros desconocidos, repetidos, vacíos, formatos incorrectos, códigos/enum no admitidos, enteros fuera de rango o `soloRetornosAtrasados=true` junto con `recepcion=RECIBIDO_EN_CENTRO` responden `400` con `code=DESP_ERROR_FILTROS_INVALIDOS` y `errores` por campo según §3.5. Los booleanos aceptan solo `true` o `false`. No se admite orden libre: el orden contractual es fijo.
+
+#### Orden, paginación e indicadores
+
+1. Construir una base con un registro vigente por despacho `FALLIDO` y aplicar motivo y fechas.
+2. Calcular los indicadores sobre toda esa base, sin aplicar recepción, `soloRetornosAtrasados` ni paginación.
+3. Aplicar recepción y retorno atrasado a las filas; calcular `totalElementos` con esos filtros.
+4. Ordenar primero `RECIBIDO_EN_CENTRO` y luego `PENDIENTE_RETORNO`; dentro de cada grupo, `fechaIncidencia` ascendente y, como desempate estable, `idDespacho` ascendente. Este orden también se conserva al filtrar.
+5. Paginar el resultado. Una página posterior a la última devuelve `contenido=[]` conservando los totales y la página solicitada; si no hay coincidencias, `totalPaginas=0`.
+
+| Indicador | Significado |
+|---|---|
+| `pendientesRetorno` | Cantidad de filas de la base sin recepción confirmada. |
+| `recibidosCentro` | Cantidad de filas de la base con recepción confirmada. |
+| `retornosAtrasados` | Subconjunto de pendientes cuya jornada de esa incidencia está confirmada como cerrada. Es `null` si alguna jornada pendiente de la base no puede confirmarse. |
+| `retornosSinJornadaConfirmada` | Número de pendientes de la base cuya jornada no pudo confirmarse; `0` con información completa. |
+
+Los dos primeros indicadores particionan la base; los atrasados ya están incluidos en pendientes y no se suman como un tercer grupo. Pulsar una tarjeta cambia el filtro de las filas y reinicia la página, conservando las cifras de las otras tarjetas mientras no cambien motivo o fechas. Los totales se calculan antes de paginar; el frontend no los deduce de las filas visibles.
+
+#### Respuesta `200 OK`
+
+```json
+{
+  "contenido": [
+    {
+      "idDespacho": "DSP-100234",
+      "idIncidencia": "INC-0021",
+      "versionDespacho": 8,
+      "codigoRastreoInterno": "TRK-78901",
+      "fechaIncidencia": "2026-10-14T23:00:00Z",
+      "motivo": {
+        "codigo": "NO_INTENTADO",
+        "etiqueta": "No intentado por fin de jornada"
+      },
+      "numeroIntentos": 1,
+      "maximoIntentos": 2,
+      "consumeIntento": false,
+      "repartidor": {
+        "idRepartidor": "REP-0012",
+        "nombre": "Juan Pérez"
+      },
+      "recepcion": "PENDIENTE_RETORNO",
+      "jornada": {
+        "idJornada": "JOR-20261014-0012",
+        "estado": "CERRADA",
+        "cerradaEn": "2026-10-14T23:00:00Z",
+        "consultadaEn": "2026-10-15T14:30:00Z"
+      },
+      "retornoAtrasado": true,
+      "tieneEvidencia": false,
+      "pedidoAnulado": false
+    }
+  ],
+  "pagina": 1,
+  "tamanoPagina": 20,
+  "totalElementos": 1,
+  "totalPaginas": 1,
+  "indicadores": {
+    "pendientesRetorno": 1,
+    "recibidosCentro": 0,
+    "retornosAtrasados": 1,
+    "retornosSinJornadaConfirmada": 0
+  },
+  "consultadoEn": "2026-10-15T14:30:01Z"
+}
+```
+
+Todos los campos del ejemplo son obligatorios. Identificadores y textos son cadenas; versión, contadores y metadatos son enteros; los indicadores de evidencia/anulación y `consumeIntento` son booleanos. `recepcion` usa los dos valores operativos de la tabla de filtros. `motivo` conserva el código y etiqueta del catálogo aun si está inactivo. `numeroIntentos` es el acumulado del despacho y no se pone a cero por `NO_INTENTADO`; el ejemplo representa un fallo anterior seguido de una salida no intentada. La UI titula la columna `Intentos consumidos`, presenta `1 de 2` y añade `No intentado en esta salida`.
+
+`jornada.estado` es `ACTIVA`, `CERRADA` o `DESCONOCIDA`. `cerradaEn` solo tiene valor con cierre confirmado; `consultadaEn` es la marca UTC de la respuesta de Operación o `null` si no se obtuvo. `repartidor.nombre` puede ser `null` si ese dato no se recuperó: se conserva su identificador y se muestra `Nombre del repartidor no disponible`. Las referencias de repartidor/jornada pertenecen a la incidencia vigente, no a la jornada actual del repartidor.
+
+La respuesta no contiene fotografía, URL firmada, comentario del repartidor, condición del sello, teléfono ni dirección del destinatario. Son datos del detalle autorizado. La selección de incidencias, los contadores locales y las filas proceden de una misma lectura consistente de Gestión; un cambio concurrente se observa al volver a consultar. `consultadoEn` identifica la elaboración de la respuesta, sin prometer una transacción compartida con Operación.
+
+#### Jornada desconocida y degradación de la consulta
+
+Gestión consulta los datos operativos mediante §13.5. No interpreta una ausencia de información como jornada activa ni infiere cierre por medianoche o por el reloj del navegador.
+
+- Con recepción confirmada, `retornoAtrasado=false` aunque no se pueda consultar la jornada.
+- Con recepción pendiente y jornada `ACTIVA`, vale `false`; con jornada `CERRADA`, vale `true`; con jornada `DESCONOCIDA`, vale `null` y la fila muestra `No se pudo confirmar el cierre de jornada`.
+- La consulta normal conserva `200`, las filas y los indicadores locales exactos aunque Operación falle. Si existe alguna jornada pendiente desconocida en la base, `indicadores.retornosAtrasados=null`: se muestra `No disponible`, nunca cero ni una cifra parcial. La tarjeta de atrasados permanece visible y deshabilitada; las otras dos siguen disponibles. Se informa `retornosSinJornadaConfirmada` y se ofrece reintentar la consulta.
+- Si se pidió `soloRetornosAtrasados=true` y falta confirmar alguna jornada pendiente de la base, se responde `503` con `code=DESP_ERROR_JORNADAS_NO_DISPONIBLES`; no se devuelve una página parcial ni un total inventado. Si la base no tiene pendientes, el filtro devuelve cero coincidencias sin necesitar esa dependencia.
+- `401` y `403` se aplican antes de consultar y nunca devuelven filas ni indicadores. Los filtros válidos sin coincidencias responden `200` con contenido vacío; los fallos no se presentan como un estado vacío.
+
+### 11.2. Comandos de recepción, reprogramación y cierre
 
 Confirmación de recepción:
 
@@ -1009,6 +1135,8 @@ Los motivos iniciales son `ENTREGA`, `CANCELACION`, `RECEPCION_EN_CENTRO`, `REAS
 
 Gestión valida la máquina de estados, modifica el estado, incrementa el intento cuando corresponda, escribe el historial y registra el evento para Ventas. Operación nunca modifica directamente la base de datos de Gestión.
 
+Al aceptar `FALLIDO`, Gestión crea el registro de incidencia en `intentos_entrega` y actualiza `despachos.ultima_incidencia_id` dentro de esa transacción. La misma regla se aplica a `NO_INTENTADO`, aunque no incremente el contador. Esa referencia es la utilizada por la consulta de §11.1 y no se sustituye por la jornada actual del repartidor.
+
 ### 13.4. Gestión comunica el estado confirmado a Operación
 
 - **Método:** `POST`
@@ -1041,6 +1169,44 @@ Gestión valida la máquina de estados, modifica el estado, incrementa el intent
 ```
 
 Al asignar o reasignar se envía la información completa necesaria para la ruta móvil. En cambios posteriores puede enviarse el mismo esquema actualizado. La proyección no es el estado canónico: una versión repetida se ignora y una versión anterior nunca reemplaza una posterior.
+
+### 13.5. Gestión consulta repartidores y jornadas de incidencias
+
+- **Método y ruta:** `POST /internal/v1/operacion/consulta-incidencias`.
+- **Proveedor:** Operación de Reparto y Flota; consumidor autorizado: Gestión de Despachos, con credencial de servicio conforme a §13. No se expone en el Gateway.
+- Es una lectura por lotes; no modifica datos ni requiere clave de idempotencia.
+- Cuerpo obligatorio: `idsRepartidor` e `idsJornada`, arreglos de identificadores opacos únicos, de `0` a `100` elementos cada uno; al menos uno debe contener elementos. Elementos vacíos, duplicados, límites excedidos o campos desconocidos responden `400` con el formato de §3.5.
+
+```json
+{
+  "idsRepartidor": ["REP-0012"],
+  "idsJornada": ["JOR-20261014-0012"]
+}
+```
+
+Respuesta `200 OK`:
+
+```json
+{
+  "repartidores": [
+    { "idRepartidor": "REP-0012", "nombre": "Juan Pérez" }
+  ],
+  "jornadas": [
+    {
+      "idJornada": "JOR-20261014-0012",
+      "estado": "CERRADA",
+      "cerradaEn": "2026-10-14T23:00:00Z"
+    }
+  ],
+  "consultadoEn": "2026-10-15T14:30:00Z"
+}
+```
+
+Se responde exactamente un elemento por identificador solicitado, sin elementos adicionales y conservando su orden. Un repartidor inexistente tiene `nombre=null`; uno dado de baja conserva su nombre histórico disponible. Una jornada inexistente tiene `estado=DESCONOCIDA` y `cerradaEn=null`; una activa tiene `estado=ACTIVA` y `cerradaEn=null`; una cerrada tiene `estado=CERRADA` y su fecha de cierre. La respuesta no incluye datos de contacto. El cierre manual o automático produce la misma condición `CERRADA`.
+
+Gestión deduplica las jornadas de todas las incidencias pendientes de retorno de la base definida en §11.1 y las consulta en lotes de hasta 100 antes de filtrar atrasados o paginar. Así no calcula ese indicador con una sola página. Para los nombres basta consultar los repartidores de la página devuelta. Si solo faltan nombres, conserva filas y totales. No se efectúa una petición por fila ni se consultan tablas de Operación desde Gestión.
+
+Cada lote obtenido aporta su `consultadoEn`. Una omisión o respuesta incoherente se trata como dato desconocido para los elementos afectados. Un timeout o indisponibilidad del servicio convierte en desconocidos los elementos del lote no obtenido y aplica la degradación de §11.1; no se usa como confirmación una copia antigua de una jornada activa. Si Operación no puede ejecutar su lectura, responde `503` con `code=DESP_ERROR_OPERACION_NO_DISPONIBLE`. Las credenciales inválidas se rechazan según §3.5; Gestión no omite la autenticación ni expone errores internos al usuario.
 
 ## 14. Reglas de idempotencia y concurrencia
 

@@ -286,7 +286,7 @@ El sistema DEBE consumir el catálogo canónico de motivos expuesto por Gestión
 
 - **DADO** que la vista de campo o F-04 necesitan los motivos vigentes.
 - **CUANDO** consultan el catálogo.
-- **ENTONCES** reciben los motivos seleccionables con código y etiqueta (Anexo B), sin los de uso exclusivo del sistema.
+- **ENTONCES** reciben el catálogo único con código, etiqueta, vigencia y los indicadores de selección en campo y consumo de intento definidos en el contrato. F-03 ofrece para registrar solo motivos activos seleccionables en campo; F-04 incluye también `NO_INTENTADO` y motivos inactivos para filtrar incidencias existentes. El backend impide registrar manualmente un motivo no seleccionable o inactivo.
 
 ### RF-11. Trazabilidad de las transiciones
 

@@ -295,6 +295,7 @@ Representa la jornada de un repartidor: con qué furgoneta y en qué zona trabaj
 | `reserva_capacidad_id_externa` | `UUID` | NULL | Reserva (BD 1). |
 | `secuencia_ruta` | `INTEGER` | NULL, CHECK (> 0) | Posición en ruta. |
 | `numero_intentos` | `INTEGER` | NOT NULL, DEFAULT 0 | Contador de intentos. |
+| `ultima_incidencia_id` | `UUID` | FK → `intentos_entrega.id`, NULL al crear | Registro de la última transición aceptada a `FALLIDO`, incluido `NO_INTENTADO`; referencia local de Gestión. |
 | `pedido_anulado_en` | `TIMESTAMPTZ` | NULL | Momento de anulación registrada. |
 | `version` | `INTEGER` | NOT NULL, DEFAULT 1 | Bloqueo optimista. |
 | `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
@@ -340,6 +341,12 @@ Datos iniciales: los siete motivos del Anexo B de F-03.
 | `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
 
 Índices: `idx_intentos_entrega_despacho` (`despacho_id`), `idx_intentos_entrega_motivo` (`motivo_codigo`).
+
+Para ES-F04-01, `despachos.ultima_incidencia_id` se actualiza en la misma transacción que acepta cada transición a `FALLIDO`, apuntando a un registro de ese mismo despacho. Todo despacho vigente en `FALLIDO` debe tener esa referencia. La reprogramación conserva el registro histórico; un fallo posterior crea otro registro y sustituye la referencia, por lo que no hereda la recepción anterior. La lectura usa el identificador del registro como `idIncidencia`, independientemente de si consume un intento. No se usa `numero_intentos` ni un desempate de fechas para identificar la última incidencia.
+
+El listado selecciona una fila por despacho a partir de esa referencia. Los datos de recepción y evidencia pertenecen al mismo registro; los campos `consume_intento` y `numero_intentos` representan, respectivamente, la condición de esa salida y el acumulado del despacho. La FK se incorpora una vez creadas ambas tablas; no introduce relaciones entre microservicios.
+
+Operación provee nombres y cierre de las jornadas referenciadas mediante la lectura por lotes de `integraciones/api-contract.md`, §13.5. Gestión no guarda un estado de jornada inventado ante una caída: la consulta expone `DESCONOCIDA` y los indicadores de §11.1. El mecanismo de los comandos de recepción para identificar su salida y recuperar fallas de liberación se revisará en ES-F04-03; esta definición concreta la lectura del listado.
 
 #### `evidencias` (Operación de Reparto y Flota; escribe F-03)
 

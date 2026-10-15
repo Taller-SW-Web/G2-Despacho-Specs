@@ -84,7 +84,7 @@ El despacho queda disponible para que F-04 lo resuelva, y el paquete regresa con
 
 - **DADO** que el repartidor abre el formulario de incidencia.
 - **CUANDO** se cargan los motivos del catálogo.
-- **ENTONCES** el campo muestra los motivos seleccionables con código y etiqueta, sin los de uso exclusivo del sistema.
+- **ENTONCES** el campo ofrece solo los motivos con `activo=true` y `seleccionableEnCampo=true` del catálogo único definido en el contrato (§10.4), sin `NO_INTENTADO`. El backend aplica la misma restricción aunque se fuerce una solicitud manual; F-04 puede utilizar el catálogo completo para consultar, sin cambiar esta regla de registro.
 
 ### CA-04. Pérdida de conexión durante el envío (F-03 CA-21)
 
