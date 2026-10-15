@@ -26,7 +26,7 @@
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-01`, indicadores de `RF-06` y `RF-07`; `CA-01`, `CA-02`, `CA-03` y `CA-18` [cite: 1].
 - **Especificación atómica:** [ES-F04-01](../../especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md).
-- **Contrato asociado:** [API, sección 11](../../integraciones/api-contract.md#11-api-de-f-04-entregas-fallidas). La ruta de consulta ya está definida; los parámetros y respuestas completos siguen pendientes de concreción en el contrato único [cite: 2].
+- **Contrato asociado:** [API](../../integraciones/api-contract.md), §§10.4, 11.1 y 13.5: catálogo, consulta y lectura operativa por lotes. La definición documental no acredita que los endpoints ya estén implementados [cite: 2].
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada. Un usuario sin el rol requerido no debe acceder a la información.
 - **Componentes de Frontend:**
   - Pantalla responsive de Entregas Fallidas.
@@ -35,9 +35,13 @@
   - Acciones `Ver detalle` y `Confirmar recepción`; la confirmación pertenece a HU-F04-06.
 - **Reglas de negocio y visuales:**
   - Solo deben incluirse despachos cuyo estado vigente sea `FALLIDO`.
-  - Cada resultado muestra código operativo interno, fecha del incidente, motivo, contador sobre el máximo configurado, repartidor, recepción, indicador de evidencia e indicador de pedido anulado.
-  - `NO_INTENTADO` se identifica como `No intentado` y no consume intentos. La definición del catálogo para filtrar se resolverá en el contrato único; esta historia no autoriza a seleccionar ese motivo al registrar un fallo en campo.
-  - Un paquete sin recepción cuya jornada ya terminó se identifica como `Retorno atrasado`, junto con el repartidor responsable. La fuente del cierre de jornada se concretará con Operación según los pendientes del plan de ES-F04-01.
+  - La apertura sin filtros muestra todos los despachos que continúan `FALLIDO`, incluidos los de días anteriores, con una fila por despacho y los datos de su incidencia vigente. No se hereda una recepción anterior tras un nuevo fallo.
+  - Cada resultado muestra código operativo interno, fecha del incidente, motivo, `Intentos consumidos` sobre el máximo, repartidor, recepción, indicador de evidencia y pedido anulado.
+  - El orden es recibidos primero y pendientes después; dentro de cada grupo, incidencia más antigua primero, con desempate estable definido en el contrato.
+  - `NO_INTENTADO` se muestra como `No intentado en esta salida`, sin aumentar ni reiniciar el contador. Se permite filtrar por ese motivo, pero F-03 no lo ofrece para registrar un fallo manual.
+  - Los tres indicadores respetan motivo y fechas, sin depender de página ni grupo; los atrasados ya están incluidos en pendientes. Pulsar una tarjeta filtra las filas y conserva las otras cifras.
+  - El retorno atrasado requiere cierre manual o automático confirmado de la jornada de esa incidencia. La lectura por lotes de Operación está definida en el contrato, §13.5.
+  - Una jornada desconocida se informa sin fabricar atraso ni descartarlo. Se conservan la consulta normal y las cifras locales; el indicador de atrasados queda no disponible. El filtro de solo atrasados devuelve el error contractual si no puede calcularse completamente.
   - La ausencia de incidencias debe representarse mediante un estado vacío y no mediante datos pertenecientes a otros estados.
   - El listado debe admitir paginación y no cargar todas las incidencias en una sola solicitud.
 - **Datos involucrados:** despacho, reporte de fallo, intento y referencia de evidencia disponibles en el módulo.
@@ -73,7 +77,7 @@
 - [ ] Consulta paginada implementada en backend, limitada a despachos con estado `FALLIDO`.
 - [ ] Control de acceso implementado y validado para el rol `GESTOR_DESPACHO`.
 - [ ] Pantalla responsive implementada con estados de carga, vacío, error y éxito.
-- [ ] Pruebas de integración cubren filtros combinados, paginación, listado con datos, vacío, acceso sin permisos y retorno atrasado.
+- [ ] Pruebas de integración cubren CA-01 a CA-11 de ES-F04-01: consulta sin corte de fechas, incidencia vigente, filtros, orden, indicadores, paginación, permisos, `NO_INTENTADO`, retorno atrasado y dependencia no disponible.
 - [ ] Se distinguen recepción pendiente/confirmada, `NO_INTENTADO`, pedido anulado y presencia/ausencia de evidencia.
 - [ ] La consulta no confirma recepciones, cambia estados, libera capacidad ni publica eventos.
 - [ ] Pruebas de frontend verifican la información mínima y los estados visuales definidos.
