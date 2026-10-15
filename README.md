@@ -50,7 +50,7 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Componentes React compartidos](./disenio/componentes-react.md) | Contratos, criterios de aceptación y estilos con Mantine; reparto entre seis integrantes y ubicación en el paquete compartido del frontend. |
 | [Macroproceso de despacho](./arquitectura/macroproceso-despacho.md) | Flujo funcional de alto nivel desde la solicitud de Ventas hasta el resultado final. |
 | [Especificaciones funcionales](./funcionalidades/) | Requisitos, escenarios y criterios de completitud por funcionalidad. |
-| [Especificaciones atómicas](./especificaciones/) | Casos de uso concretos derivados de las funcionalidades y su plantilla común. |
+| [Especificaciones atómicas](./especificaciones/) | Casos de uso concretos derivados de las funcionalidades; primera carpeta SDD preparada: [ES-F04-01, consultar entregas fallidas](./especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md). |
 | [Plantillas y flujo SDD](./plantillas/sdd/README.md) | Organización aprobada por especificación, con adopción progresiva: comportamiento, UI opcional, plan, tareas y evidencia; componentes React compartidos. |
 | [Historias de usuario](./historias-usuario/) | Historias en formato Jira (COMO/QUIERO/PARA) con criterios de aceptación Gherkin y DoD. |
 | [Reglas del repositorio](./AGENTS.md) | Convenciones para crear y mantener la documentación. |

@@ -42,6 +42,8 @@ Ya existe la [especificación compartida de componentes React](../../disenio/com
 
 ## 2. Qué contiene cada archivo
 
+La primera carpeta preparada con este flujo es [ES-F04-01: Consultar entregas fallidas](../../especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md), con sus documentos de [UI](../../especificaciones/ES-F04-01-ConsultarEntregasFallidas/ui.md), [plan](../../especificaciones/ES-F04-01-ConsultarEntregasFallidas/plan.md), [tareas](../../especificaciones/ES-F04-01-ConsultarEntregasFallidas/tasks.md) y [evidencia](../../especificaciones/ES-F04-01-ConsultarEntregasFallidas/evidence.md). Su contenido sigue en borrador y la implementación está pendiente; sirve como ejemplo de organización y trazabilidad.
+
 | Archivo | Pregunta que responde | Aplicabilidad |
 |---|---|---|
 | [spec.md](./especificacion/spec.md) | ¿Qué comportamiento debe cumplirse y cómo se acepta? | Siempre. Un comportamiento atómico, con criterios identificables. |

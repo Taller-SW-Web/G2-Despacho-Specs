@@ -1,9 +1,18 @@
 # ES-F04-01: Consultar entregas fallidas
 
-**Funcionalidad padre:** F-04 — Entregas fallidas y reprogramaciones  
-**Responsable:** Gerardo  
-**Estado:** Borrador  
+**Funcionalidad padre:** [F-04 — Entregas fallidas y reprogramaciones](../../funcionalidades/F-04-GestionEntregasFallidas.md)
+
+**Responsable:** Gerardo
+
+**Estado:** Borrador
+
 **Actor principal:** Gestor de Despacho
+
+**UI:** Aplica; listado de entregas fallidas en la aplicación administrativa.
+
+**Servicio propietario:** Gestión de Despachos.
+
+**Origen:** Especificación existente en la revisión `8586a78`; migrada al flujo SDD el 15/10/2026, conservando las reglas y los criterios CA-01 a CA-05.
 
 ## 1. Objetivo
 
@@ -93,18 +102,37 @@ Permitir que el Gestor de Despacho consulte únicamente los despachos cuyo estad
 - **CUANDO** el Gestor consulta el listado.
 - **ENTONCES** el resultado se identifica como `Retorno atrasado` junto al repartidor responsable.
 
-## 7. Fuera de alcance y referencias
-
-### Fuera de alcance
+## 7. Fuera de alcance
 
 - Consultar el detalle completo, el historial o la fotografía de la incidencia.
 - Confirmar la recepción física del paquete.
 - Reprogramar o cerrar el despacho.
 - Registrar el fallo en campo o cerrar la jornada del repartidor.
 
-### Referencias
+## 8. UI, backend y verificación
 
-- [cite: 1] `funcionalidades/F-04-GestionEntregasFallidas.md`, RF-01, RF-06, RF-07 y CA-01 a CA-03, CA-14 y CA-18.
-- [cite: 2] `integraciones/api-contract.md`, sección 11, API de F-04.
-- [cite: 3] `disenio/funcionalidades/f-04.md`, Pantalla 1: Listado de Entregas Fallidas.
-- [cite: 4] `overview.md`, integración de F-03, F-04, F-05 y F-06.
+- La interacción, los estados, la accesibilidad y los criterios de UI se detallan en [ui.md](./ui.md).
+- El backend realiza una consulta autorizada de solo lectura. Este comportamiento no confirma recepciones, cambia estados, libera capacidad ni publica eventos.
+- El listado expone solo sus indicadores operativos; no devuelve fotografías, URLs firmadas ni comentarios internos del detalle.
+- Los detalles pendientes del contrato y de las fuentes de datos se registran en [plan.md, sección 7](./plan.md#7-decisiones-y-pendientes). Su resolución precede a la integración real afectada.
+
+| Criterio | Comprobación prevista | Datos necesarios |
+|---|---|---|
+| CA-01 | Consulta de integración y renderizado de la página | Despachos fallidos y de otros estados; recepción, intentos e indicadores variados. |
+| CA-02 | Combinación de filtros y paginación | Motivos, fechas y recepción distintos; más resultados que una página. |
+| CA-03 | Listado vacío y búsqueda sin coincidencias | Sin fallidos o filtros sin resultados; existen despachos de otros estados. |
+| CA-04 | Autorización del endpoint y retirada de datos en UI | Usuario autenticado con otro rol; vista con datos cargados antes del rechazo. |
+| CA-05 | Cálculo y presentación de retorno atrasado | Jornada cerrada/activa y recepción pendiente/confirmada. |
+
+La descomposición está en [tasks.md](./tasks.md). Los resultados se registrarán en [evidence.md](./evidence.md); todas las comprobaciones de comportamiento están pendientes.
+
+- [ ] Los criterios CA-01 a CA-05 y los criterios de UI tienen evidencia real.
+- [ ] El contrato y las fuentes de datos necesarios están definidos y verificados.
+- [ ] La revisión del alcance y los commits de implementación están enlazados.
+
+## 9. Referencias
+
+- [cite: 1] [Funcionalidad F-04](../../funcionalidades/F-04-GestionEntregasFallidas.md), RF-01, RF-06, RF-07 y CA-01 a CA-03, CA-14 y CA-18.
+- [cite: 2] [Contrato de API, sección 11](../../integraciones/api-contract.md#11-api-de-f-04-entregas-fallidas), API de F-04; secciones 3.3 y 3.5 para autorización y errores.
+- [cite: 3] [Diseño de F-04](../../disenio/funcionalidades/f-04.md), Pantalla 1; [SYSTEM-DESIGN.md](../../disenio/SYSTEM-DESIGN.md), sección 23 para su presentación vigente.
+- [cite: 4] [Visión general](../../overview.md), integración de F-03, F-04, F-05 y F-06.

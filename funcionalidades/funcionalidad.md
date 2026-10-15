@@ -41,7 +41,7 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 
 | ID | Comportamiento | Especificación | Estado |
 |---|---|---|---|
-| **ES-F04-01** | Consultar entregas fallidas | [Ver especificación](../especificaciones/ES-F04-01-ConsultarEntregasFallidas.md) | Borrador |
+| **ES-F04-01** | Consultar entregas fallidas | [Especificación](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md) · [UI](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/ui.md) · [Plan](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/plan.md) · [Tareas](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/tasks.md) · [Evidencia](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/evidence.md) | Borrador SDD; implementación pendiente |
 | **ES-F04-02** | Consultar el detalle de una incidencia | [Ver especificación](../especificaciones/ES-F04-02-ConsultarDetalleIncidencia.md) | Borrador |
 | **ES-F04-03** | Confirmar la recepción del paquete | [Ver especificación](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete.md) | Borrador |
 | **ES-F04-04** | Reprogramar un despacho fallido | [Ver especificación](../especificaciones/ES-F04-04-ReprogramarDespachoFallido.md) | Borrador |
