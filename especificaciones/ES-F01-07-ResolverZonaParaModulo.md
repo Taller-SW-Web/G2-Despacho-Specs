@@ -53,7 +53,7 @@ Determinar qué zona de cobertura activa contiene un destino y entregar esa reso
 
 - F-02 consume la resolución al crear un despacho y rechaza los destinos sin cobertura.
 - F-05 consume el catálogo de zonas activas para asignar la zona de trabajo del repartidor.
-- El mecanismo concreto por el que F-05, que pertenece al microservicio de Operación de Reparto y Flota, accede a esta información es un acuerdo pendiente de documentar en `integraciones/api-contract.md` [cite: 2].
+- El mecanismo concreto por el que F-05, que pertenece al microservicio de Operación de Reparto y Flota, accede a esta información es un acuerdo pendiente de documentar en `integraciones/api-contract-gestion-despachos.md` [cite: 2].
 - La zona es propiedad de Gestión de Despachos; ningún consumidor accede a su base de datos.
 
 ## 6. Criterios de aceptación
@@ -100,7 +100,7 @@ Determinar qué zona de cobertura activa contiene un destino y entregar esa reso
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-01-Gestor_ZonasGeograficas.md`, RF-04, CA-02, CA-12 y CA-13.
-- [cite: 2] `integraciones/api-contract.md`, secciones 3.2, 3.4, 9.1 y 13.
+- [cite: 2] `integraciones/api-contract-gestion-despachos.md`, Común §3.2, Común §3.4, Gestión §3.1, Gestión §6, Operación §5. Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#32-encabezados), [Gestión](../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas), [Operación](../integraciones/api-contract-operacion-reparto.md#5-api-interna-provista-por-operación).
 - [cite: 3] `arquitectura/modelo-datos.md`, tablas `zonas`, `zona_distritos` y `asignaciones_diarias`.
 - [cite: 4] `overview.md`, secciones 3.1 y 3.2 sobre relaciones entre F-01, F-02 y F-05.
 - [cite: 5] `arquitectura/macroproceso-despacho.md`, solicitud de despacho y resolución de zona.

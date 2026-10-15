@@ -77,7 +77,7 @@ Envío de mutación y confirmación de éxito: no aplican a esta consulta. Las n
 
 ## 5. Formularios y mensajes
 
-Los controles son filtros, no un formulario de modificación. Catálogo, parámetros, límites, errores, respuesta y valores desconocidos están definidos en el [contrato central](../../integraciones/api-contract.md), §§10.4, 11.1 y 13.5. No se define un payload alternativo aquí [cite: 3]. Filtros inválidos muestran la validación correspondiente; no se presentan como «sin coincidencias».
+Los controles son filtros, no un formulario de modificación. Catálogo, parámetros, límites, errores, respuesta y valores desconocidos están definidos en el [contrato correspondiente](../../integraciones/api-contract-gestion-despachos.md), Gestión §4, Gestión §5.1, Operación §5.4. No se define un payload alternativo aquí [cite: 3]. Filtros inválidos muestran la validación correspondiente; no se presentan como «sin coincidencias». Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 
 La presentación usa `America/Lima`; ambos días seleccionados se incluyen y pueden usarse límites abiertos conforme al contrato. El listado inicial no presupone «Hoy». «Retorno atrasado» se basa en el cierre manual o automático confirmado de la jornada de esa incidencia, no en la hora del navegador ni en la jornada actual del repartidor.
 
@@ -105,5 +105,5 @@ Los fixtures visuales comprueban presentación e interacción. La definición do
 
 1. [Especificación funcional](./spec.md), criterios CA-01 a CA-11.
 2. [Sistema de diseño](../../disenio/SYSTEM-DESIGN.md), [guía F-04](../../disenio/funcionalidades/f-04.md) y [componentes React](../../disenio/componentes-react.md).
-3. [Contrato de API](../../integraciones/api-contract.md), §§3.3, 3.5 y 11; [modelo de datos](../../arquitectura/modelo-datos.md), §1.
+3. [Contrato de API](../../integraciones/api-contract-gestion-despachos.md), Común §3.3, Común §3.5, Gestión §5; [modelo de datos](../../arquitectura/modelo-datos.md), §1. Referencia: [Convenciones e integración externa](../../integraciones/api-contract.md#33-roles-humanos-y-tokens-de-servicio).
 4. [Plan](./plan.md), [tareas](./tasks.md) y [evidencia](./evidence.md).

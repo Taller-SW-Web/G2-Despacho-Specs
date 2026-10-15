@@ -54,7 +54,7 @@ Permitir que el Gestor de Despacho active o desactive una zona de cobertura y ve
 
 - F-02 y los canales observan el efecto del cambio a través de la resolución de zona y de la cotización, sin recibir notificaciones adicionales.
 - Seguridad y Usuarios emite el JWT que habilita el acceso administrativo.
-- La ruta, el cuerpo de la operación y las formas de respuesta y error se rigen exclusivamente por `integraciones/api-contract.md` [cite: 2].
+- La ruta, el cuerpo de la operación y las formas de respuesta y error se rigen exclusivamente por `integraciones/api-contract-gestion-despachos.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -106,7 +106,7 @@ Permitir que el Gestor de Despacho active o desactive una zona de cobertura y ve
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-01-Gestor_ZonasGeograficas.md`, RF-01, CA-04, CA-13 y CA-17.
-- [cite: 2] `integraciones/api-contract.md`, secciones 3.3, 9.1 y 14.
+- [cite: 2] `integraciones/api-contract-gestion-despachos.md`, Común §3.3, Gestión §3.1, Común §9. Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#33-roles-humanos-y-tokens-de-servicio), [Gestión](../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas).
 - [cite: 3] `disenio/funcionalidades/f-01.md`, Pantalla 4: Confirmación de Desactivación de Zona.
 - [cite: 4] `disenio/SystemDesign/f-01-alta-fidelidad.md`, modal de desactivación.
 - [cite: 5] `arquitectura/modelo-datos.md`, columna `estado` de `zonas` y relaciones con `despachos`.

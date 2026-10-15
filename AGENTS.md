@@ -112,5 +112,13 @@
 - Si una funcionalidad es compartida entre módulos, se referencia el archivo original usando `[cite: N]` en vez de copiar el contenido.
 - Si existe duda sobre si una funcionalidad ya fue documentada, **consultar el índice** (`funcionalidades/funcionalidad.md`) antes de crear un nuevo archivo.
 
-### 5.3 Contrato único de comunicación
-- El archivo `integraciones/api-contract.md` es el **único** contrato de comunicación entre frontend y backend. No se crearán contratos adicionales fuera de este archivo.
+### 5.3 Contratos de comunicación por ámbito
+
+- La organización aprobada consta exactamente de tres archivos en `integraciones/`:
+  - `api-contract.md`: integraciones con módulos externos y convenciones compartidas de formato, seguridad, errores e idempotencia.
+  - `api-contract-gestion-despachos.md`: API provista por Gestión de Despachos, incluida su API interna y referencias a las integraciones externas que implementa.
+  - `api-contract-operacion-reparto.md`: API provista por Operación de Reparto y Flota, incluida su API interna y referencias a las integraciones que consume.
+- Cada operación tiene una sola definición canónica de ruta, payload, permisos y respuestas. Los demás archivos la enlazan; no duplican esquemas ni crean versiones paralelas.
+- Las convenciones compartidas se definen en el contrato externo y se referencian desde los contratos de microservicio. Las APIs internas se documentan en el contrato del servicio proveedor.
+- Al mover una operación se actualizan sus referencias y anclas en especificaciones, historias, arquitectura y diseños. No se agregan contratos por funcionalidad ni `api.md` en las carpetas SDD.
+- No se crea un `README.md` en `integraciones/`; el README principal enlaza directamente los tres contratos.

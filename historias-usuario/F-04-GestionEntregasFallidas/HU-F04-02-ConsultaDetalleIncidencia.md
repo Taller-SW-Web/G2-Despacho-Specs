@@ -26,7 +26,7 @@
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-02`, `CA-04` y `CA-05`; restricciones de `RF-03`, `RF-06` y `RF-07` [cite: 1].
 - **Especificación atómica:** [ES-F04-02](../../especificaciones/ES-F04-02-ConsultarDetalleIncidencia.md).
-- **Contrato asociado:** [API, secciones 10 y 11](../../integraciones/api-contract.md). La consulta de incidencia y el acceso temporal a evidencia ya tienen rutas; las respuestas completas se concretarán en el contrato único [cite: 2].
+- **Contrato asociado:** [API, Operación §3, Gestión §5](../../integraciones/api-contract-gestion-despachos.md). La consulta de incidencia y el acceso temporal a evidencia ya tienen rutas; las respuestas completas se concretarán en el contrato correspondiente [cite: 2]. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#3-api-de-f-03-operación-del-repartidor).
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada.
 - **Componentes de Frontend:**
   - Vista responsive de detalle de la incidencia.
@@ -70,5 +70,5 @@
 - [ ] Pruebas de frontend verifican la presentación de toda la información requerida y la ausencia de datos parciales ante error.
 - [ ] Integración con el mecanismo autorizado de consulta de evidencia de F-03 verificada cuando exista evidencia.
 - [ ] Verificadas las variantes sin fotografía por `NO_INTENTADO`, enlace expirado y panel de decisiones con restricciones combinadas.
-- [ ] Contrato HTTP validado y actualizado en [integraciones/api-contract.md](../../integraciones/api-contract.md) antes de cerrar la historia.
+- [ ] Contrato HTTP validado y actualizado en [integraciones/api-contract-gestion-despachos.md](../../integraciones/api-contract-gestion-despachos.md) antes de cerrar la historia.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

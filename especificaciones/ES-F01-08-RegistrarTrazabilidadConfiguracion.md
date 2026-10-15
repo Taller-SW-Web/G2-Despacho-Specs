@@ -56,7 +56,7 @@ Garantizar que cada cambio aceptado sobre zonas y tarifas deje un registro audit
 
 - ES-F01-02, ES-F01-03 y ES-F01-04 originan los registros de esta especificación.
 - Seguridad y Usuarios emite el JWT del cual se obtiene la identidad del ejecutor.
-- Las rutas y respuestas se rigen por `integraciones/api-contract.md` [cite: 2].
+- Las rutas y respuestas se rigen por `integraciones/api-contract-gestion-despachos.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -109,7 +109,7 @@ Garantizar que cada cambio aceptado sobre zonas y tarifas deje un registro audit
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-01-Gestor_ZonasGeograficas.md`, RF-01, RF-02, CA-16, CA-17, CA-18 y requisito de trazabilidad de la sección 8.
-- [cite: 2] `integraciones/api-contract.md`, secciones 3.2, 9.1 y 14.
+- [cite: 2] `integraciones/api-contract-gestion-despachos.md`, Común §3.2, Gestión §3.1, Común §9. Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#32-encabezados), [Gestión](../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas).
 - [cite: 3] `arquitectura/modelo-datos.md`, tablas `zonas`, `tarifas_zona` y `auditoria_configuracion`.
 - [cite: 4] `overview.md`, RT-02 sobre historial auditable.
 - [cite: 5] `disenio/funcionalidades/f-01.md`, Pantalla 1, columna de última modificación.

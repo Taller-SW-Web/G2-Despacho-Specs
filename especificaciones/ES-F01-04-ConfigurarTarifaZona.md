@@ -58,7 +58,7 @@ Permitir que el Gestor de Despacho defina la regla de cobro de una zona mediante
 
 - El motor de cotización de esta misma funcionalidad consume la tarifa vigente; esta especificación no calcula costos.
 - Seguridad y Usuarios emite el JWT que habilita el acceso administrativo.
-- La ruta, el cuerpo de la tarifa, la respuesta y los códigos de error se rigen exclusivamente por `integraciones/api-contract.md` [cite: 2].
+- La ruta, el cuerpo de la tarifa, la respuesta y los códigos de error se rigen exclusivamente por `integraciones/api-contract-gestion-despachos.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -104,7 +104,7 @@ Permitir que el Gestor de Despacho defina la regla de cobro de una zona mediante
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-01-Gestor_ZonasGeograficas.md`, RF-02, CA-05, CA-06 y CA-18.
-- [cite: 2] `integraciones/api-contract.md`, secciones 3.3, 3.5 y 9.1.
+- [cite: 2] `integraciones/api-contract-gestion-despachos.md`, Común §3.3, Común §3.5, Gestión §3.1. Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#33-roles-humanos-y-tokens-de-servicio), [Gestión](../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas).
 - [cite: 3] `disenio/funcionalidades/f-01.md`, Pantalla 3: Formulario de Tarifas de la Zona.
 - [cite: 4] `disenio/SystemDesign/f-01-alta-fidelidad.md`, panel de tarifas.
 - [cite: 5] `arquitectura/modelo-datos.md`, tabla `tarifas_zona` y su índice único parcial.

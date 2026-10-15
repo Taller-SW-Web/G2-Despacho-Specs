@@ -24,7 +24,7 @@
 
 - **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-09`, Criterio `CA-20`).
 - **Endpoints asociados:**
-  - `POST /api/v1/despachos/simulaciones` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md), sección 9.2).
+  - `POST /api/v1/despachos/simulaciones` (detallado en [integraciones/api-contract-gestion-despachos.md](../../integraciones/api-contract-gestion-despachos.md), Gestión §3.2).
 - **Componentes de Frontend:**
   - Botón "Generar Pedido de Prueba" ubicado en la barra superior o cabecera del Panel de Programación.
 - **Roles requeridos:** `GESTOR_DESPACHO` (autenticación JWT).

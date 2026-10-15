@@ -56,7 +56,7 @@ Permitir que el Gestor de Despacho consulte el catálogo de zonas de cobertura c
 
 - Los datos proceden exclusivamente de las tablas propias de zonas y tarifas de Gestión de Despachos; esta especificación no consulta a otros módulos.
 - Seguridad y Usuarios emite el JWT que habilita el acceso administrativo.
-- La ruta, los parámetros de consulta y la forma de error se rigen exclusivamente por `integraciones/api-contract.md` [cite: 2].
+- La ruta, los parámetros de consulta y la forma de error se rigen exclusivamente por `integraciones/api-contract-gestion-despachos.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -96,7 +96,7 @@ Permitir que el Gestor de Despacho consulte el catálogo de zonas de cobertura c
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-01-Gestor_ZonasGeograficas.md`, RF-01, CA-04 y CA-15.
-- [cite: 2] `integraciones/api-contract.md`, secciones 3.3 y 9.1.
+- [cite: 2] `integraciones/api-contract-gestion-despachos.md`, Común §3.3, Gestión §3.1. Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#33-roles-humanos-y-tokens-de-servicio), [Gestión](../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas).
 - [cite: 3] `disenio/funcionalidades/f-01.md`, Pantalla 1: Panel de Gestión de Zonas.
 - [cite: 4] `disenio/SystemDesign/f-01-alta-fidelidad.md`, tabla de zonas y estados.
 - [cite: 5] `arquitectura/modelo-datos.md`, tablas `zonas`, `zona_distritos` y `tarifas_zona`.

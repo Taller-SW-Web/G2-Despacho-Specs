@@ -67,7 +67,7 @@ Permitir que el Gestor de Despacho consulte, filtre y priorice de forma paginada
 - **Zonas de Cobertura (F-01):** provee los identificadores y nombres de zonas activas para el filtro.
 - **Entregas Fallidas (F-04):** provee los despachos que reingresaron a la cola tras una reprogramación con su nuevo intento.
 - **Modal de Asignación (ES-F02-04):** recibe el despacho seleccionado mediante el botón "Asignar".
-- Las rutas y parámetros se detallan en `integraciones/api-contract.md` (Sección 9.2).
+- Las rutas y parámetros se detallan en `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 
 ## 6. Criterios de aceptación
 
@@ -112,5 +112,5 @@ Permitir que el Gestor de Despacho consulte, filtre y priorice de forma paginada
 ### Referencias
 
 - Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-02).
-- Contrato de API: `integraciones/api-contract.md` (Sección 9.2).
+- Contrato de API: `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 - Diseño de interfaz: `disenio/funcionalidades/f-02.md` (Pantalla 1) y `disenio/SYSTEM-DESIGN.md` (Sección 21.D).

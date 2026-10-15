@@ -99,6 +99,6 @@ Permitir que los canales de venta consulten si un destino está dentro de la cob
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-01-Gestor_ZonasGeograficas.md`, RF-03 y RF-04, CA-02, CA-10, CA-19 y CA-20.
-- [cite: 2] `integraciones/api-contract.md`, secciones 3.4, 3.5, 5.1 y 15.1.
+- [cite: 2] `integraciones/api-contract.md`, Común §3.4, Común §3.5, Externo §5.1, Externo §10.1. Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#34-scopes-de-servicio-de-despacho).
 - [cite: 3] `arquitectura/modelo-datos.md`, tablas `zonas` y `zona_distritos`.
 - [cite: 4] `overview.md`, sección 7 sobre integración con Marketplace, Chatbot y Ventas y Postventa.

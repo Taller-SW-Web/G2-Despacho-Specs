@@ -58,7 +58,7 @@ Garantizar que cada recepción, reprogramación y cierre aceptado de F-04 deje u
 
 - Las especificaciones ES-F04-03, ES-F04-04 y ES-F04-05 originan los registros.
 - El componente transversal de historial definido por RT-02 persiste y expone la trazabilidad.
-- La consulta del historial forma parte del detalle definido en ES-F04-02 y respeta `integraciones/api-contract.md` [cite: 2].
+- La consulta del historial forma parte del detalle definido en ES-F04-02 y respeta `integraciones/api-contract-gestion-despachos.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -110,6 +110,6 @@ Garantizar que cada recepción, reprogramación y cierre aceptado de F-04 deje u
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-04-GestionEntregasFallidas.md`, RF-05 y CA-13.
-- [cite: 2] `integraciones/api-contract.md`, secciones 11 y 14.
+- [cite: 2] `integraciones/api-contract-gestion-despachos.md`, Gestión §5, Común §9. Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#5-api-de-f-04-entregas-fallidas), [Convenciones e integración externa](../integraciones/api-contract.md#9-reglas-de-idempotencia-y-concurrencia).
 - [cite: 3] `overview.md`, RT-02 sobre historial auditable.
 - [cite: 4] `disenio/funcionalidades/f-04.md`, historial de la Pantalla 2.

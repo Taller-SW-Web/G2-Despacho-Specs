@@ -93,8 +93,8 @@ Este registro describe asistencia en documentación y el cierre documental de T-
 
 | Hallazgo | Criterios afectados | Efecto y siguiente acción |
 |---|---|---|
-| DT-01: contrato definido en §§10.4 y 11.1; implementación pendiente. | CA-01 a CA-11 y CUI-02. | Implementar y comprobar consumidores conforme a T-07/08; T-05 solo acredita documentación. |
-| DT-02: fuente y degradación definidas en §13.5 y §11.1; proveedor/adaptador pendientes. | CA-01/05/06/08/10 y CUI-01/05. | Implementar lectura por lotes, referencia de incidencia y pruebas contra Operación en T-06/07. |
+| DT-01: contrato definido en Gestión §4, Gestión §5.1; implementación pendiente. | CA-01 a CA-11 y CUI-02. | Implementar y comprobar consumidores conforme a T-07/08; T-05 solo acredita documentación. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
+| DT-02: fuente y degradación definidas en Operación §5.4 y Gestión §5.1; proveedor/adaptador pendientes. | CA-01/05/06/08/10 y CUI-01/05. | Implementar lectura por lotes, referencia de incidencia y pruebas contra Operación en T-06/07. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 | DT-03/04: bases de ejecución y componentes aún por verificar/implementar. | Todos. | Coordinar preparación y componentes, ejecutar tareas y registrar resultados. |
 
 ## 6. Entrega y revisión

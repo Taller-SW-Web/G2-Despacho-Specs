@@ -61,7 +61,7 @@ Registrar que el paquete asociado a un despacho fallido regresó físicamente al
 
 - F-06 recibe la liberación idempotente de la reserva por el motivo `RECEPCION_EN_CENTRO`.
 - El componente transversal de historial registra la operación junto con su ejecutor y marca temporal.
-- La solicitud y la integración interna se rigen por `integraciones/api-contract.md` [cite: 2].
+- La solicitud y la integración interna se rigen por `integraciones/api-contract-gestion-despachos.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -113,6 +113,6 @@ Registrar que el paquete asociado a un despacho fallido regresó físicamente al
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-04-GestionEntregasFallidas.md`, RF-07 y CA-16 a CA-18.
-- [cite: 2] `integraciones/api-contract.md`, secciones 11, 13.2 y 14.
+- [cite: 2] `integraciones/api-contract-gestion-despachos.md`, Gestión §5, Operación §5.2, Común §9. Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#5-api-de-f-04-entregas-fallidas), [Operación](../integraciones/api-contract-operacion-reparto.md#52-gestión-libera-una-reserva-en-operación), [Convenciones e integración externa](../integraciones/api-contract.md#9-reglas-de-idempotencia-y-concurrencia).
 - [cite: 3] `disenio/funcionalidades/f-04.md`, Pantalla 3: Confirmación de Recepción en Centro.
 - [cite: 4] `overview.md`, RT-02 e integración entre F-04 y F-06.

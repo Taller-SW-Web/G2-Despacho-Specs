@@ -45,7 +45,7 @@ Mostrar al repartidor la información necesaria para ejecutar la entrega de un d
 
 - F-02 Programación y Asignación: destinatario, dirección, teléfono y fecha programada.
 - Ventas y Postventa: origen del teléfono y la referencia de dirección (acuerdo pendiente, Anexo C n.º 2 de F-03).
-- Ver `integraciones/api-contract.md`.
+- Ver `integraciones/api-contract-operacion-reparto.md`.
 
 ## 6. Criterios de aceptación
 
@@ -78,5 +78,5 @@ Mostrar al repartidor la información necesaria para ejecutar la entrega de un d
 ### Referencias
 
 - `funcionalidades/F-03-AppMovilRepartidor.md`, RF-03 y sección 8.
-- `integraciones/api-contract.md`.
+- `integraciones/api-contract-operacion-reparto.md`.
 - Wireframe del detalle del despacho.

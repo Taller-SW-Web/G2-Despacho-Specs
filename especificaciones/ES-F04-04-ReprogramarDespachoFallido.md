@@ -66,7 +66,7 @@ Permitir que el Gestor de Despacho programe un nuevo intento de entrega para un 
 - F-02 consume el despacho reprogramado en su cola de programación y asignación.
 - F-03 es la fuente del motivo y del contador de intentos; `NO_INTENTADO` no incrementa dicho contador.
 - Ventas y Postventa recibe el resultado mediante el evento asíncrono definido por RT-03.
-- La operación y el evento se rigen por `integraciones/api-contract.md` [cite: 2].
+- La operación y el evento se rigen por `integraciones/api-contract-gestion-despachos.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -130,6 +130,6 @@ Permitir que el Gestor de Despacho programe un nuevo intento de entrega para un 
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-04-GestionEntregasFallidas.md`, RF-03, RF-06, RF-07 y CA-06 a CA-09, CA-14, CA-15 y CA-17.
-- [cite: 2] `integraciones/api-contract.md`, secciones 7.3, 11 y 14.
+- [cite: 2] `integraciones/api-contract-gestion-despachos.md`, Externo §7.3, Gestión §5, Común §9. Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa), [Gestión](../integraciones/api-contract-gestion-despachos.md#5-api-de-f-04-entregas-fallidas).
 - [cite: 3] `disenio/funcionalidades/f-04.md`, Pantalla 4: Reprogramación.
 - [cite: 4] `overview.md`, RT-01 a RT-03 e integración entre F-04 y F-02.

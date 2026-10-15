@@ -280,7 +280,7 @@ La interfaz debe impedir acciones conocidas como inválidas, pero las mismas reg
 | Control de límite de solicitudes | Aplicar el límite configurado por `sub` del cliente técnico e IP. |
 | Persistencia y auditoría | Almacenar zonas, tarifas y sus cambios con usuario y marca temporal. |
 
-Las rutas, cuerpos, respuestas, códigos de error y la operación de Productos y Ofertas se centralizan en `integraciones/api-contract.md` y se publicarán mediante Swagger UI desde el backend desplegado. Las entidades y sus restricciones se encuentran en `arquitectura/modelo-datos.md`.
+Las rutas administrativas, cuerpos, respuestas y códigos de error se definen en el [contrato de Gestión](../integraciones/api-contract-gestion-despachos.md); la cotización y la consulta de datos físicos a Productos y Ofertas, en el [contrato externo](../integraciones/api-contract.md#5-f-01-cotización-para-marketplace-y-chatbot). Se publicarán mediante Swagger UI desde el backend desplegado. Las entidades y sus restricciones se encuentran en `arquitectura/modelo-datos.md`.
 
 ## 8. Requisitos no funcionales
 

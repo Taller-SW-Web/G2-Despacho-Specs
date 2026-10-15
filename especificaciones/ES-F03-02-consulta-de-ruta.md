@@ -46,7 +46,7 @@ Mostrar al repartidor, en la vista "Mi Ruta", únicamente sus despachos de la jo
 
 - F-02 Programación y Asignación: jornada, secuencia, destinatario y dirección de cada despacho.
 - F-05 Monitoreo de Flota: resolución del repartidor.
-- Ver `integraciones/api-contract.md`.
+- Ver `integraciones/api-contract-operacion-reparto.md`.
 
 ## 6. Criterios de aceptación
 
@@ -85,5 +85,5 @@ Mostrar al repartidor, en la vista "Mi Ruta", únicamente sus despachos de la jo
 ### Referencias
 
 - `funcionalidades/F-03-AppMovilRepartidor.md`, RF-02 y sección 8 (Protección de datos).
-- `integraciones/api-contract.md`.
+- `integraciones/api-contract-operacion-reparto.md`.
 - Wireframe de la vista "Mi Ruta".

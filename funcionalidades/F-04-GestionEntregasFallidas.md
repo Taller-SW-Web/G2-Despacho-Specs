@@ -226,7 +226,7 @@ Si no puede confirmarse la jornada, el listado informa `No se pudo confirmar el 
 | Política de intentos | Leer y aplicar el máximo configurable. |
 | Persistencia y auditoría | Guardar recepciones y decisiones de manera consistente. |
 
-Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `integraciones/api-contract.md`.
+Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `integraciones/api-contract-gestion-despachos.md`.
 
 ## 8. Requisitos no funcionales
 

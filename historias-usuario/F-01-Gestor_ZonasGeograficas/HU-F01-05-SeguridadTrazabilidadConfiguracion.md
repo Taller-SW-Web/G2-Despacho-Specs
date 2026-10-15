@@ -25,7 +25,7 @@
 - **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisitos `RF-01` y `RF-03`, Criterios `CA-04`, `CA-11`).
 - **Endpoints asociados:**
   - Administrativos de zonas y tarifas (requieren token JWT con rol `GESTOR_DESPACHO`).
-  - `POST /api/v1/zonas/cotizar` (público o protegido por API Key de canal comercial; detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
+  - `POST /api/v1/zonas/cotizar` (público o protegido por API Key de canal comercial; detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md#51-solicitar-cotización)).
 - **Rol requerido:** `GESTOR_DESPACHO` para todas las operaciones de registro o modificación de zonas y tarifas.
 - **Reglas de negocio y persistencia:**
   - Un usuario sin `GESTOR_DESPACHO` que intente registrar o modificar zonas o tarifas recibe `403 Forbidden` y no accede a información de configuración.

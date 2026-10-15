@@ -331,7 +331,7 @@ La interfaz debe impedir acciones conocidas como inválidas, pero las reglas sie
 | Control de idempotencia | Registrar la clave de operación y devolver el resultado original ante reintentos. |
 | Catálogo de motivos | Exponer los motivos tipificados. |
 
-Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `integraciones/api-contract.md`.
+Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `integraciones/api-contract-operacion-reparto.md`.
 
 ## 8. Requisitos no funcionales
 

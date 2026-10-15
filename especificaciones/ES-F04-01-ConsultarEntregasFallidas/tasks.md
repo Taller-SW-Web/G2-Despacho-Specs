@@ -16,7 +16,7 @@ La revisión del 15/10/2026 concreta el contrato y actualiza las tareas de imple
 | T-02 | CR-08 EstadoVista implementado y verificado. | Componente compartido | T-01 y patrones CR-01 necesarios. | CCR-08-01; soporte de CA-03/04 y CUI-03/04. | Pendiente |
 | T-03 | Resto de componentes del listado disponibles y verificados. | Componentes compartidos | T-01 y dependencias de cada CR; CR-07 depende de T-02. | CUI-01/02/05/06. | Pendiente |
 | T-04 | Página de consulta verificable con fixtures de presentación. | Frontend, I-01 | T-02 y T-03. | CUI-01 a CUI-06, sin acreditar backend real. | Pendiente |
-| T-05 | Contrato documentado y comprobado, sin acreditar implementación. | Contrato | DT-01/02 definidos en API §§10.4, 11.1 y 13.5. | CA-01 a CA-11; soporte de CUI-02/05. | Completada |
+| T-05 | Contrato documentado y comprobado, sin acreditar implementación. | Contrato | DT-01/02 definidos en API Gestión §4, Gestión §5.1, Operación §5.4. | CA-01 a CA-11; soporte de CUI-02/05. | Completada. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo), [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias). |
 | T-06 | Persistencia y lectura operativa por lotes implementadas. | Datos e integración | T-05 y bases de DT-03. | CA-01/02/05/06/08/10. | Pendiente |
 | T-07 | Endpoint de consulta autorizado y probado. | Backend, I-02 | T-05, T-06 y base JWT/errores/rutas de DT-03. | CA-01 a CA-11. | Pendiente |
 | T-08 | Página conectada a la consulta real. | Integración, I-03 | T-04, T-07 y Gateway accesible. | CA-01 a CA-11; CUI-01 a CUI-06. | Pendiente |
@@ -64,11 +64,11 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 - Comprobación: CUI-01 a CUI-06 con pruebas de interacción y recorrido responsive. Los filtros locales de demostración y los indicadores de prueba se identifican como simulados.
 - Cierre y evidencia: documentar los límites de la simulación y los destinos ES-F04-02/03 aún no disponibles. No crear un contrato HTTP implícito a partir del fixture.
 
-### T-05. Concretar el contrato central del listado
+### T-05. Concretar el contrato correspondiente del listado
 
 - [x] Definición documental completada y comprobada el 15/10/2026; implementación no acreditada.
 
-- Alcance: API §§10.4, 11.1 y 13.5: catálogo, filtros/límites, respuesta, paginación, métricas, orden, lectura operativa por lotes y errores; fuente inequívoca de la incidencia en el modelo.
+- Alcance: API Gestión §4, Gestión §5.1, Operación §5.4: catálogo, filtros/límites, respuesta, paginación, métricas, orden, lectura operativa por lotes y errores; fuente inequívoca de la incidencia en el modelo. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo), [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 - Responsable: Gerardo con Backend/Frontend y Arquitectura.
 - Comprobación: seis acuerdos del listado reflejados en criterios, contrato y UI; ejemplos JSON válidos, referencias locales y trazabilidad completas, sin contratos duplicados. No sustituye pruebas HTTP.
 - Cierre y evidencia: contratos en `4bad49d`, reglas en `1f556c0` y comprobación documental EV-05 de [evidence.md](./evidence.md). Implementación y pruebas reales permanecen en T-06 a T-09.
@@ -77,7 +77,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 
 - [ ] Implementada y verificada.
 
-- Alcance: revisar esquema/migraciones y crear la referencia `ultima_incidencia_id`; implementar la lectura por lotes de Operación (§13.5) y su adaptador en Gestión, con jornadas históricas y nombres de repartidor, conforme a DT-02/03.
+- Alcance: revisar esquema/migraciones y crear la referencia `ultima_incidencia_id`; implementar la lectura por lotes de Operación (Operación §5.4) y su adaptador en Gestión, con jornadas históricas y nombres de repartidor, conforme a DT-02/03. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 - Responsable: Gerardo con Arquitectura y responsables de Operación; coordinar la base compartida con DevOps.
 - Comprobación: varios estados y varias incidencias por despacho; jornadas activas/cerradas/desconocidas y nombres ausentes; lotes de más de 100 jornadas divididos sin llamadas por fila, totales antes de paginar y ninguna consulta cruzada de bases. Comprobar migraciones en una base aislada.
 - Cierre y evidencia: registrar revisiones y decisiones de integración, disponibilidad de las dependencias y cualquier doble de prueba utilizado.
@@ -89,7 +89,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 - Alcance: controlador, caso de uso, puertos y adaptadores mínimos dentro de la funcionalidad de incidencias de Gestión; ruta pública a través del Gateway.
 - Entradas: contrato cerrado, datos de T-06, base de seguridad y errores disponible; reglas y verificaciones de [spec.md](./spec.md).
 - Comprobación: `./mvnw.cmd test` desde Gestión; verificar CA-01 a CA-11 con PostgreSQL aislado, filtros inválidos, orden/empates, métricas 7/5/2, incidencia vigente, `NO_INTENTADO`, matriz de jornada desconocida y degradación. Probar rol diferente y token ausente/inválido.
-- Cierre y evidencia: CA-01 a CA-11 cubiertos en backend, con límites de dobles explícitos y pruebas de contrato de §13.5. La lectura no cambia datos de negocio ni genera eventos.
+- Cierre y evidencia: CA-01 a CA-11 cubiertos en backend, con límites de dobles explícitos y pruebas de contrato de Operación §5.4. La lectura no cambia datos de negocio ni genera eventos. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 
 ### T-08. Conectar el frontend a la API real
 

@@ -200,7 +200,7 @@ El sistema DEBE mantener el estado operativo coherente con los despachos y cerra
 | Panel de monitoreo | Proveer resumen de flota y ocupación por repartidor con datos actualizados. |
 | Persistencia y auditoría | Registrar asignaciones, cierres y cambios de estado con usuario y marca temporal en UTC. |
 
-Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract.md`.
+Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract-operacion-reparto.md`.
 
 ## 8. Requisitos no funcionales
 

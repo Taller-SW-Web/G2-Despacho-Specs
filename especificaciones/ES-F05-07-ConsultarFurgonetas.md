@@ -49,7 +49,7 @@ Permitir que el Gestor de Despacho consulte el catálogo de furgonetas del módu
 
 ### Integraciones
 
-- La ruta, parámetros y forma de error se rigen por `integraciones/api-contract.md` [cite: 2].
+- La ruta, parámetros y forma de error se rigen por `integraciones/api-contract-operacion-reparto.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -94,4 +94,4 @@ Permitir que el Gestor de Despacho consulte el catálogo de furgonetas del módu
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-05-GestionRepartidoresVehiculos.md`, RF-02 y CA-13.
-- [cite: 2] `integraciones/api-contract.md`.
+- [cite: 2] `integraciones/api-contract-operacion-reparto.md`.

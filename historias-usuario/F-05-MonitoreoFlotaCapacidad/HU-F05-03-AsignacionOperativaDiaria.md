@@ -60,5 +60,5 @@
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) cubriendo los 2 escenarios (`CA-08`, `CA-09`).
 - [ ] Prueba de integración verificando que el repartidor asignado aparece en `GET /api/v1/repartidores/disponibles` con los límites correctos.
 - [ ] Interfaz de Asignación Diaria implementada en React + Tailwind con validación de disponibilidad antes de confirmar.
-- [ ] Endpoint de asignación diaria consolidado en [integraciones/api-contract.md](../../integraciones/api-contract.md) antes de cerrar la historia.
+- [ ] Endpoint de asignación diaria consolidado en [integraciones/api-contract-operacion-reparto.md](../../integraciones/api-contract-operacion-reparto.md) antes de cerrar la historia.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

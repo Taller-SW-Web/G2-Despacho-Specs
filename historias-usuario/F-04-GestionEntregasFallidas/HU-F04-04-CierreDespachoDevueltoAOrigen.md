@@ -26,9 +26,9 @@
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-04`, restricciones de `RF-06` y `RF-07`; `CA-10`, `CA-11`, `CA-12`, `CA-15` y `CA-17` [cite: 1].
 - **Especificación atómica:** [ES-F04-05](../../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen.md).
-- **Contrato asociado:** [API, secciones 7.3, 11 y 14](../../integraciones/api-contract.md), operación de cierre, evento e idempotencia [cite: 2].
+- **Contrato asociado:** [API, Externo §7.3, Gestión §5, Común §9](../../integraciones/api-contract-gestion-despachos.md), operación de cierre, evento e idempotencia [cite: 2]. Referencia: [Convenciones e integración externa](../../integraciones/api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa).
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada.
-- **Dependencia externa:** RT-03 entrega el evento a Ventas y Postventa de forma asíncrona mediante webhook HTTPS y bandeja de salida. El cierre local no espera la disponibilidad de Ventas; el contrato único define autenticación y reintentos.
+- **Dependencia externa:** RT-03 entrega el evento a Ventas y Postventa de forma asíncrona mediante webhook HTTPS y bandeja de salida. El cierre local no espera la disponibilidad de Ventas; el contrato correspondiente define autenticación y reintentos.
 - **Componentes de Frontend:**
   - Confirmación explícita del cierre desde el detalle, con motivo obligatorio y recepción previamente confirmada.
   - Advertencia clara sobre el efecto de la decisión.
@@ -79,6 +79,6 @@
 - [ ] Intentos de comunicación externa persistidos con estado exitoso, pendiente o fallido.
 - [ ] Interfaz responsive implementada con confirmación y mensajes diferenciados para los resultados previstos.
 - [ ] Pruebas cubren cierre voluntario, máximo alcanzado, pedido anulado, recepción pendiente, motivo ausente, repetición e indisponibilidad de Ventas y Postventa.
-- [ ] Contrato de integración con Ventas y Postventa acordado y documentado únicamente en [integraciones/api-contract.md](../../integraciones/api-contract.md).
+- [ ] Contrato de integración con Ventas y Postventa acordado y documentado en [integraciones/api-contract.md](../../integraciones/api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa).
 - [ ] Verificado que una falla externa conserva el estado local y no se pierde silenciosamente.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

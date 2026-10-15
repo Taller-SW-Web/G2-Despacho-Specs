@@ -346,7 +346,7 @@ Para ES-F04-01, `despachos.ultima_incidencia_id` se actualiza en la misma transa
 
 El listado selecciona una fila por despacho a partir de esa referencia. Los datos de recepción y evidencia pertenecen al mismo registro; los campos `consume_intento` y `numero_intentos` representan, respectivamente, la condición de esa salida y el acumulado del despacho. La FK se incorpora una vez creadas ambas tablas; no introduce relaciones entre microservicios.
 
-Operación provee nombres y cierre de las jornadas referenciadas mediante la lectura por lotes de `integraciones/api-contract.md`, §13.5. Gestión no guarda un estado de jornada inventado ante una caída: la consulta expone `DESCONOCIDA` y los indicadores de §11.1. El mecanismo de los comandos de recepción para identificar su salida y recuperar fallas de liberación se revisará en ES-F04-03; esta definición concreta la lectura del listado.
+Operación provee nombres y cierre de las jornadas referenciadas mediante la lectura por lotes de `integraciones/api-contract-operacion-reparto.md`, §5.4. Gestión no guarda un estado de jornada inventado ante una caída: la consulta expone `DESCONOCIDA` y los indicadores de Gestión §5.1. El mecanismo de los comandos de recepción para identificar su salida y recuperar fallas de liberación se revisará en ES-F04-03; esta definición concreta la lectura del listado. Referencia: [Operación](../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
 
 #### `evidencias` (Operación de Reparto y Flota; escribe F-03)
 

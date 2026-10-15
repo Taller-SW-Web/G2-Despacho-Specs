@@ -26,7 +26,7 @@
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-03`, `RF-06` y precondición de `RF-07`; `CA-06` a `CA-09`, `CA-14`, `CA-15` y `CA-17` [cite: 1].
 - **Especificación atómica:** [ES-F04-04](../../especificaciones/ES-F04-04-ReprogramarDespachoFallido.md).
-- **Contrato asociado:** [API, secciones 7.3, 11 y 14](../../integraciones/api-contract.md), operación de reprogramación, evento e idempotencia. No se define un contrato alternativo en esta historia [cite: 2].
+- **Contrato asociado:** [API, Externo §7.3, Gestión §5, Común §9](../../integraciones/api-contract-gestion-despachos.md), operación de reprogramación, evento e idempotencia. No se define un contrato alternativo en esta historia [cite: 2]. Referencia: [Convenciones e integración externa](../../integraciones/api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa).
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada.
 - **Componentes de Frontend:**
   - Formulario de reprogramación desde el detalle de la incidencia.
@@ -97,5 +97,5 @@
 - [ ] Pruebas unitarias cubren las reglas de fecha, estado y política de intentos.
 - [ ] Pruebas de integración y frontend cubren `CA-06` a `CA-09`, `CA-14`, `CA-15` y `CA-17`, incluidos concurrencia y reintentos sin efectos duplicados.
 - [ ] Verificada la conservación de zona y la visibilidad inmediata en F-02 con asignación bloqueada hasta la fecha programada.
-- [ ] Contrato HTTP validado y actualizado en [integraciones/api-contract.md](../../integraciones/api-contract.md) antes de cerrar la historia.
+- [ ] Contrato HTTP validado y actualizado en [integraciones/api-contract-gestion-despachos.md](../../integraciones/api-contract-gestion-despachos.md) antes de cerrar la historia.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

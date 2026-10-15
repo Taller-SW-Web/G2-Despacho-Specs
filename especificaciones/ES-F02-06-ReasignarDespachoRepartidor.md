@@ -51,7 +51,7 @@ Permitir que el Gestor de Despacho transfiera un despacho que aún permanece fí
 ### Entradas
 
 - Ruta: `POST /api/v1/despachos/{idDespacho}/reasignacion`.
-- Payload JSON conforme a `integraciones/api-contract.md`:
+- Payload JSON conforme a `integraciones/api-contract-gestion-despachos.md`:
   ```json
   {
     "idNuevoRepartidor": "REP-0018",
@@ -78,7 +78,7 @@ Permitir que el Gestor de Despacho transfiera un despacho que aún permanece fí
 - **Disponibilidad y Capacidad Diaria (F-06):** gestiona la transferencia transaccional de reservas de capacidad entre ambas furgonetas.
 - **Web del Repartidor (F-03):** actualiza las rutas de ambos repartidores; en el repartidor emisor el despacho desaparece y en el receptor aparece al final.
 - **Trazabilidad (ES-F02-08):** registra la auditoría con el motivo y los dos repartidores involucrados.
-- Contrato especificado en `integraciones/api-contract.md` (Sección 9.2).
+- Contrato especificado en `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 
 ## 6. Criterios de aceptación
 
@@ -129,6 +129,6 @@ Permitir que el Gestor de Despacho transfiera un despacho que aún permanece fí
 ### Referencias
 
 - Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-07).
-- Contrato de API: `integraciones/api-contract.md` (Sección 9.2).
+- Contrato de API: `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 - Disponibilidad y capacidad de flota: `funcionalidades/F-06-DisponibilidadCapacidadDiaria.md`.
 - Diseño de interfaz: `disenio/funcionalidades/f-02.md` (Pantalla 4).

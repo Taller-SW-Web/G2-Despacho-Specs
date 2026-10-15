@@ -49,7 +49,7 @@ Permitir que el Gestor de Despacho modifique los datos de contacto, la licencia 
 
 ### Integraciones
 
-- La ruta, cuerpos y códigos se rigen por `integraciones/api-contract.md` [cite: 2].
+- La ruta, cuerpos y códigos se rigen por `integraciones/api-contract-operacion-reparto.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -88,4 +88,4 @@ Permitir que el Gestor de Despacho modifique los datos de contacto, la licencia 
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-05-GestionRepartidoresVehiculos.md`, RF-01 y CA-03.
-- [cite: 2] `integraciones/api-contract.md`.
+- [cite: 2] `integraciones/api-contract-operacion-reparto.md`.

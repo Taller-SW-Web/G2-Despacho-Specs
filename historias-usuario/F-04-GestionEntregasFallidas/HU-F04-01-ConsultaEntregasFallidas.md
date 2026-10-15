@@ -26,7 +26,7 @@
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-01`, indicadores de `RF-06` y `RF-07`; `CA-01`, `CA-02`, `CA-03` y `CA-18` [cite: 1].
 - **Especificación atómica:** [ES-F04-01](../../especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md).
-- **Contrato asociado:** [API](../../integraciones/api-contract.md), §§10.4, 11.1 y 13.5: catálogo, consulta y lectura operativa por lotes. La definición documental no acredita que los endpoints ya estén implementados [cite: 2].
+- **Contrato asociado:** [API](../../integraciones/api-contract-gestion-despachos.md), Gestión §4, Gestión §5.1, Operación §5.4: catálogo, consulta y lectura operativa por lotes. La definición documental no acredita que los endpoints ya estén implementados [cite: 2]. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada. Un usuario sin el rol requerido no debe acceder a la información.
 - **Componentes de Frontend:**
   - Pantalla responsive de Entregas Fallidas.
@@ -40,7 +40,7 @@
   - El orden es recibidos primero y pendientes después; dentro de cada grupo, incidencia más antigua primero, con desempate estable definido en el contrato.
   - `NO_INTENTADO` se muestra como `No intentado en esta salida`, sin aumentar ni reiniciar el contador. Se permite filtrar por ese motivo, pero F-03 no lo ofrece para registrar un fallo manual.
   - Los tres indicadores respetan motivo y fechas, sin depender de página ni grupo; los atrasados ya están incluidos en pendientes. Pulsar una tarjeta filtra las filas y conserva las otras cifras.
-  - El retorno atrasado requiere cierre manual o automático confirmado de la jornada de esa incidencia. La lectura por lotes de Operación está definida en el contrato, §13.5.
+  - El retorno atrasado requiere cierre manual o automático confirmado de la jornada de esa incidencia. La lectura por lotes está definida en [Operación, §5.4](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
   - Una jornada desconocida se informa sin fabricar atraso ni descartarlo. Se conservan la consulta normal y las cifras locales; el indicador de atrasados queda no disponible. El filtro de solo atrasados devuelve el error contractual si no puede calcularse completamente.
   - La ausencia de incidencias debe representarse mediante un estado vacío y no mediante datos pertenecientes a otros estados.
   - El listado debe admitir paginación y no cargar todas las incidencias en una sola solicitud.
@@ -81,5 +81,5 @@
 - [ ] Se distinguen recepción pendiente/confirmada, `NO_INTENTADO`, pedido anulado y presencia/ausencia de evidencia.
 - [ ] La consulta no confirma recepciones, cambia estados, libera capacidad ni publica eventos.
 - [ ] Pruebas de frontend verifican la información mínima y los estados visuales definidos.
-- [ ] Contrato HTTP validado y actualizado en [integraciones/api-contract.md](../../integraciones/api-contract.md) antes de cerrar la historia.
+- [ ] Contrato HTTP validado y actualizado en [integraciones/api-contract-gestion-despachos.md](../../integraciones/api-contract-gestion-despachos.md) antes de cerrar la historia.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

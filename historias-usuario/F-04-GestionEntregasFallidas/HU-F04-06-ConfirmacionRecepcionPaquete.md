@@ -22,7 +22,7 @@
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-07`, `CA-16`, `CA-17` y relación con `CA-18` [cite: 1].
 - **Especificación atómica:** [ES-F04-03](../../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete.md).
-- **Contrato asociado:** [API, secciones 11, 13.2 y 14](../../integraciones/api-contract.md), recepción, liberación de reserva e idempotencia [cite: 2].
+- **Contrato asociado:** [API, Gestión §5, Operación §5.2, Común §9](../../integraciones/api-contract-gestion-despachos.md), recepción, liberación de reserva e idempotencia [cite: 2]. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#52-gestión-libera-una-reserva-en-operación), [Convenciones e integración externa](../../integraciones/api-contract.md#9-reglas-de-idempotencia-y-concurrencia).
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada.
 - **Precondiciones:** despacho vigente en `FALLIDO`, recepción pendiente y paquete físicamente en el centro.
 - **Componentes de Frontend:** modal accesible desde listado o detalle con resumen, selección obligatoria del sello sin valor por defecto, observación y confirmación.
@@ -56,7 +56,7 @@ La presentación del retorno atrasado de `CA-18` se verifica en HU-F04-01. Los e
 
 - [ ] Confirmación con validación de estado, rol, recepción pendiente y sello informado.
 - [ ] Fecha, usuario, sello, observación aplicable e historial persistidos sin cambiar `FALLIDO`.
-- [ ] Liberación de capacidad integrada con Operación conforme al contrato único, sin efectos duplicados.
+- [ ] Liberación de capacidad integrada con Operación conforme al contrato correspondiente, sin efectos duplicados.
 - [ ] Modal y actualización del listado/detalle verificados, con errores y operación ya registrada.
 - [ ] Verificados `CA-16`, `CA-17` y los escenarios complementarios de ES-F04-03.
 - [ ] Ninguna decisión se habilita antes de la recepción; después se respetan intentos y anulación.

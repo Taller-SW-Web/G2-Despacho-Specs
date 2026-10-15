@@ -63,7 +63,7 @@ El cierre lo ejecuta el repartidor; si no lo hace, un corte automático a la hor
 - F-05 Monitoreo de Flota: cierre del turno.
 - F-04 Entregas Fallidas: consume los despachos `NO_INTENTADO`.
 - Máquina de estados, historial común y publicación de eventos (overview, sección 6, RT-02 y RT-03).
-- Ver `integraciones/api-contract.md`.
+- Ver `integraciones/api-contract-operacion-reparto.md`.
 
 ## 6. Criterios de aceptación
 
@@ -110,5 +110,5 @@ El cierre lo ejecuta el repartidor; si no lo hace, un corte automático a la hor
 ### Referencias
 
 - `funcionalidades/F-03-AppMovilRepartidor.md`, RF-07, RF-08, RF-11, sección 7 y Anexo A.
-- `integraciones/api-contract.md`.
+- `integraciones/api-contract-operacion-reparto.md`.
 - Wireframes del cierre y del resumen de jornada.

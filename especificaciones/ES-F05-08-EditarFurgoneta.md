@@ -53,7 +53,7 @@ Permitir que el Gestor de Despacho modifique los límites de carga de una furgon
 ### Integraciones
 
 - F-06 utiliza los límites vigentes al momento de crear la asignación diaria.
-- La ruta, cuerpos y códigos se rigen por `integraciones/api-contract.md` [cite: 2].
+- La ruta, cuerpos y códigos se rigen por `integraciones/api-contract-operacion-reparto.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -99,4 +99,4 @@ Permitir que el Gestor de Despacho modifique los límites de carga de una furgon
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-05-GestionRepartidoresVehiculos.md`, RF-02 y CA-10.
-- [cite: 2] `integraciones/api-contract.md`.
+- [cite: 2] `integraciones/api-contract-operacion-reparto.md`.

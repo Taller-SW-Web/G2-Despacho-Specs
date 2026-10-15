@@ -24,7 +24,7 @@
 
 - **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-03`, Criterios `CA-07`, `CA-08`, `CA-09`, `CA-10`).
 - **Endpoints asociados:**
-  - `POST /api/v1/despachos/{idDespacho}/asignar` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md)).
+  - `POST /api/v1/despachos/{idDespacho}/asignar` (detallado en [integraciones/api-contract-gestion-despachos.md](../../integraciones/api-contract-gestion-despachos.md)).
   - Consulta de integración con Flota: `GET /api/v1/repartidores/disponibles` (provisto por F-05).
 - **Roles requeridos:** `GESTOR_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
@@ -71,5 +71,5 @@
 - [ ] Control de concurrencia optimista implementado y validado ante peticiones simultáneas.
 - [ ] Pruebas unitarias completas con `JUnit 5 + Mockito` cubriendo los 4 escenarios (`CA-07`, `CA-08`, `CA-09`, `CA-10`).
 - [ ] Modal interactivo en React + Tailwind con selección de chofer, cálculo visual de capacidad en tiempo real y manejo de errores.
-- [ ] Respuestas HTTP alineadas al contrato en [integraciones/api-contract.md](../../integraciones/api-contract.md).
+- [ ] Respuestas HTTP alineadas al contrato en [integraciones/api-contract-gestion-despachos.md](../../integraciones/api-contract-gestion-despachos.md).
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

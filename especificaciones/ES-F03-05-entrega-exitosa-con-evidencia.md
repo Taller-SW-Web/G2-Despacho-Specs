@@ -58,7 +58,7 @@ Esto deja prueba verificable de cada entrega y libera la ocupación del repartid
 - Servicio de evidencia (por definir): almacenamiento de la fotografía.
 - Máquina de estados, historial común y publicación de eventos (overview, sección 6 y RT-03).
 - F-05: recálculo de ocupación a partir del estado.
-- Ver `integraciones/api-contract.md`.
+- Ver `integraciones/api-contract-operacion-reparto.md`.
 
 ## 6. Criterios de aceptación
 
@@ -104,5 +104,5 @@ Esto deja prueba verificable de cada entrega y libera la ocupación del repartid
 
 - `funcionalidades/F-03-AppMovilRepartidor.md`, RF-05, RF-11 y sección 8 (Evidencia fotográfica).
 - `funcionalidades/pendiente.md`, sección F-03.
-- `integraciones/api-contract.md`.
+- `integraciones/api-contract-operacion-reparto.md`.
 - Wireframe del formulario de entrega.

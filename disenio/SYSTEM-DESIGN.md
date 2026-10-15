@@ -1992,7 +1992,7 @@ La apertura sin URL previa no limita fechas y muestra todos los fallidos aún si
 
 Una jornada pendiente no confirmada se muestra como "No se pudo confirmar el cierre de jornada". Si el total de atrasados no puede calcularse exactamente, la tarjeta muestra "No disponible", queda deshabilitada y se informa cuántos retornos no pudieron evaluarse, con reintento. Los recibidos no se marcan como atrasados. Un nombre ausente conserva su identificador y muestra "Nombre del repartidor no disponible". La consulta de solo atrasados que no puede completarse muestra el error de dependencia y permite reintentar o ver todos los grupos.
 
-La especificación de comportamiento vigente es [ES-F04-01](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md), junto con su [UI](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/ui.md) y el contrato único, §§10.4, 11.1 y 13.5.
+La especificación de comportamiento vigente es [ES-F04-01](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md), junto con su [UI](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/ui.md), el [catálogo de Gestión, §4](../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo), su [listado de fallidos, §5.1](../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01) y la [lectura por lotes de Operación, §5.4](../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 
 #### P2 Detalle de la incidencia
 

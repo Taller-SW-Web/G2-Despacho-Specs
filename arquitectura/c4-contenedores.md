@@ -1,6 +1,6 @@
 # Arquitectura C4: Diagrama de Contenedores
 
-> **Estado:** Diseño base alineado con `overview.md` e `integraciones/api-contract.md`. Las decisiones técnicas que todavía pueden cambiar se indican en la sección 8.
+> **Estado:** Diseño base alineado con `overview.md` y los tres contratos de `integraciones/`. Las decisiones técnicas que todavía pueden cambiar se indican en la sección 8.
 
 Este documento presenta el nivel 2 del modelo C4. Muestra una arquitectura con dos aplicaciones frontend, dos microservicios, un API Gateway, persistencia administrada y notificación asíncrona mediante webhook HTTPS con outbox.
 

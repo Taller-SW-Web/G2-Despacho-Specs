@@ -60,7 +60,7 @@ Permitir que el Gestor de Despacho cierre definitivamente un despacho fallido cu
 
 - Ventas y Postventa recibe el evento del cierre y decide el tratamiento posterior del pedido.
 - El componente transversal de estados, historial y eventos garantiza la transición y la entrega asíncrona.
-- La operación, el evento y sus reintentos se rigen por `integraciones/api-contract.md` [cite: 2].
+- La operación, el evento y sus reintentos se rigen por `integraciones/api-contract-gestion-despachos.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -118,6 +118,6 @@ Permitir que el Gestor de Despacho cierre definitivamente un despacho fallido cu
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-04-GestionEntregasFallidas.md`, RF-04, RF-06, RF-07 y CA-10 a CA-12, CA-15 y CA-17.
-- [cite: 2] `integraciones/api-contract.md`, secciones 7.3, 11 y 14.
+- [cite: 2] `integraciones/api-contract-gestion-despachos.md`, Externo §7.3, Gestión §5, Común §9. Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa), [Gestión](../integraciones/api-contract-gestion-despachos.md#5-api-de-f-04-entregas-fallidas).
 - [cite: 3] `disenio/funcionalidades/f-04.md`, Pantalla 5: Cierre como Devuelto a Origen.
 - [cite: 4] `overview.md`, RT-01 a RT-03.

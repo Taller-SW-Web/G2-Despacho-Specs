@@ -62,7 +62,7 @@ Garantizar que toda operación de recepción, simulación, asignación, reordena
 
 - Las especificaciones atómicas ES-F02-01, ES-F02-02, ES-F02-04, ES-F02-05, ES-F02-06 y ES-F02-07 generan los eventos de trazabilidad.
 - El componente transversal de máquina de estados e historial (RT-01 y RT-02) administra el modelo de datos de trazabilidad.
-- `integraciones/api-contract.md` (Sección 9.2) define el endpoint de consulta del detalle e historial.
+- `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2) define el endpoint de consulta del detalle e historial. Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 
 ## 6. Criterios de aceptación
 
@@ -107,4 +107,4 @@ Garantizar que toda operación de recepción, simulación, asignación, reordena
 
 - Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-04, CA-10).
 - Requisito transversal de trazabilidad: `overview.md` (Sección 6, RT-02).
-- Contrato de API: `integraciones/api-contract.md` (Sección 9.2).
+- Contrato de API: `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).

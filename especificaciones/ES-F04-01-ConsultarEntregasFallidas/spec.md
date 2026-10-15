@@ -50,7 +50,7 @@ Permitir que el Gestor consulte una bandeja de trabajo con todos los despachos c
 - La consulta inicial incluye fallidos de días anteriores aún sin resolver. Las fechas solo restringen la búsqueda cuando se seleccionan explícitamente y corresponden a la incidencia vigente, con días inclusivos en `America/Lima`.
 - Si un despacho falló, fue recibido, se reprogramó y vuelve a fallar, reaparece una sola vez con los datos de la nueva incidencia. Su recepción anterior no acredita el retorno del nuevo reparto. El historial completo pertenece a ES-F04-02.
 - Al reprogramarse o cerrarse deja de aparecer en la siguiente consulta, porque ya no está `FALLIDO`.
-- Primero se muestran los `Recibidos en centro`, luego los `Pendientes de retorno`. Dentro de cada grupo, la incidencia más antigua primero; el desempate estable y la paginación se definen en el contrato, §11.1. Se conserva este orden al filtrar.
+- Primero se muestran los `Recibidos en centro`, luego los `Pendientes de retorno`. Dentro de cada grupo, la incidencia más antigua primero; el desempate estable y la paginación se definen en el contrato, Gestión §5.1. Se conserva este orden al filtrar. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
 - El filtro de motivos incluye `NO_INTENTADO` y motivos históricos inactivos desde el catálogo único. Esto no habilita su registro manual en F-03.
 
 ### 4.2. Indicadores y filtros de grupo
@@ -95,9 +95,9 @@ Las tres tarjetas respetan motivo y fechas, pero no el filtro de grupo ni la pá
 - F-03 proporciona el fallo, el motivo, el intento, la referencia del repartidor y la referencia de evidencia.
 - F-05 proporciona los datos básicos del perfil local del repartidor que se muestran en la consulta.
 - F-02 registra la anulación del pedido que debe mostrarse como indicador.
-- Operación, como propietario de los perfiles de F-05 y jornadas de F-06, provee la lectura por lotes de la sección 13.5 del contrato. Se consultan las jornadas necesarias para el conjunto base antes de paginar; los nombres pueden resolverse solo para la página.
+- Operación, como propietario de los perfiles de F-05 y jornadas de F-06, provee la lectura por lotes de la sección 5.4 de su contrato [cite: 2]. Se consultan las jornadas necesarias para el conjunto base antes de paginar; los nombres pueden resolverse solo para la página.
 - Gestión no consulta tablas de Operación ni modifica el cierre de turno o las reglas de capacidad de F-06.
-- Ruta, parámetros, respuesta, nulabilidad, orden y errores se rigen exclusivamente por `integraciones/api-contract.md`, §§10.4, 11.1 y 13.5 [cite: 2].
+- Ruta, parámetros, respuesta, nulabilidad, orden y errores se rigen exclusivamente por `integraciones/api-contract-gestion-despachos.md`, Gestión §4, Gestión §5.1, Operación §5.4 [cite: 2]. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo), [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 
 ## 6. Criterios de aceptación
 
@@ -179,7 +179,7 @@ Las tres tarjetas respetan motivo y fechas, pero no el filtro de grupo ni la pá
 - La interacción, los estados, la accesibilidad y los criterios de UI se detallan en [ui.md](./ui.md).
 - El backend realiza una consulta autorizada de solo lectura. Este comportamiento no confirma recepciones, cambia estados, libera capacidad ni publica eventos.
 - El listado expone solo sus indicadores operativos; no devuelve fotografías, URLs firmadas ni comentarios internos del detalle.
-- Las decisiones documentales del contrato y las fuentes se concretan en sus secciones 10.4, 11.1 y 13.5. Su implementación, pruebas de contrato y dependencias se registran en [plan.md, sección 7](./plan.md#7-decisiones-y-pendientes); documentarlas no acredita disponibilidad real.
+- Las decisiones documentales y las fuentes se concretan en Gestión §§4 y 5.1 y Operación §5.4, enlazadas en [cite: 2]. Su implementación, pruebas de contrato y dependencias se registran en [plan.md, sección 7](./plan.md#7-decisiones-y-pendientes); documentarlas no acredita disponibilidad real.
 
 | Criterio | Comprobación prevista | Datos necesarios |
 |---|---|---|
@@ -193,7 +193,7 @@ Las tres tarjetas respetan motivo y fechas, pero no el filtro de grupo ni la pá
 | CA-08 | Agregados antes de paginar y filtros de grupo | Base 7/5/2, varias páginas, cambio de motivo/fecha y tarjetas. |
 | CA-09 | Contador independiente de la incidencia | `NO_INTENTADO` con cero o un fallo previo. |
 | CA-10 | Degradación y error al filtrar atrasados | Lote fallido, jornada desconocida, nombre ausente y recibido con jornada desconocida. |
-| CA-11 | Rechazo de filtros inválidos | Casos y límites de §11.1 del contrato. |
+| CA-11 | Rechazo de filtros inválidos | Casos y límites de Gestión §5.1 del contrato. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 
 La descomposición está en [tasks.md](./tasks.md). Los resultados se registrarán en [evidence.md](./evidence.md); todas las comprobaciones de comportamiento están pendientes.
 
@@ -204,6 +204,6 @@ La descomposición está en [tasks.md](./tasks.md). Los resultados se registrar�
 ## 9. Referencias
 
 - [cite: 1] [Funcionalidad F-04](../../funcionalidades/F-04-GestionEntregasFallidas.md), RF-01, RF-06, RF-07 y CA-01 a CA-03, CA-14 y CA-18.
-- [cite: 2] [Contrato de API](../../integraciones/api-contract.md), §§10.4, 11.1 y 13.5 para catálogo, listado y lectura operativa; §§3.3 y 3.5 para autorización y errores.
+- [cite: 2] [Contrato de API](../../integraciones/api-contract-gestion-despachos.md), Gestión §4, Gestión §5.1, Operación §5.4 para catálogo, listado y lectura operativa; Común §3.3, Común §3.5 para autorización y errores. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Convenciones e integración externa](../../integraciones/api-contract.md#33-roles-humanos-y-tokens-de-servicio).
 - [cite: 3] [Diseño de F-04](../../disenio/funcionalidades/f-04.md), Pantalla 1; [SYSTEM-DESIGN.md](../../disenio/SYSTEM-DESIGN.md), sección 23 para su presentación vigente.
 - [cite: 4] [Visión general](../../overview.md), integración de F-03, F-04, F-05 y F-06.

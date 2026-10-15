@@ -73,7 +73,7 @@ Recibir, validar e incorporar de forma segura e idempotente en el Módulo de Des
 - **Zonas y Cotizador (F-01):** resuelve la zona de cobertura mediante el distrito o código postal.
 - **Productos y Ofertas:** provee en lote el peso y las dimensiones vigentes de cada SKU; los datos siguen siendo de su propiedad.
 - **Seguridad y Usuarios:** valida la firma y vigencia del token de servicio y emite el token propio que el módulo utiliza contra Productos y Ofertas.
-- Las rutas, formatos y códigos siguen exclusivamente `integraciones/api-contract.md` (Sección 7).
+- Las rutas, formatos y códigos siguen exclusivamente `integraciones/api-contract.md` (Externo §7). Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#7-f-02-integración-con-ventas-y-postventa).
 
 ## 6. Criterios de aceptación
 
@@ -124,5 +124,5 @@ Recibir, validar e incorporar de forma segura e idempotente en el Módulo de Des
 ### Referencias
 
 - Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-01 y RF-05).
-- Contrato de API: `integraciones/api-contract.md` (Sección 7).
+- Contrato de API: `integraciones/api-contract.md` (Externo §7). Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#7-f-02-integración-con-ventas-y-postventa).
 - Requisito transversal de estados: `arquitectura/diagrama-estados-despacho.md`.

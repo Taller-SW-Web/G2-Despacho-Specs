@@ -44,7 +44,7 @@ Permitir visualizar la fotografía de evidencia de un despacho solo a usuarios a
 
 - Servicio de evidencia (por definir).
 - F-04 Entregas Fallidas: consulta la evidencia de los despachos `FALLIDO`.
-- Ver `integraciones/api-contract.md`.
+- Ver `integraciones/api-contract-operacion-reparto.md`.
 
 ## 6. Criterios de aceptación
 
@@ -77,4 +77,4 @@ Permitir visualizar la fotografía de evidencia de un despacho solo a usuarios a
 
 - `funcionalidades/F-03-AppMovilRepartidor.md`, RF-09.
 - `funcionalidades/pendiente.md`, sección F-03.
-- `integraciones/api-contract.md`.
+- `integraciones/api-contract-operacion-reparto.md`.
