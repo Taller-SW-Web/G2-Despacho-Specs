@@ -47,6 +47,7 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [C4 de contenedores](./arquitectura/c4-contenedores.md) | Aplicaciones, microservicios, persistencias y comunicaciones internas. |
 | [Glosario de dominio](./arquitectura/glosario-dominio.md) | Significado común de pedidos, despachos, cotizaciones, capacidad y operación. |
 | [Estados del despacho](./arquitectura/diagrama-estados-despacho.md) | Estados, transiciones, precondiciones y operaciones no permitidas. |
+| [Componentes React compartidos](./disenio/componentes-react.md) | Contratos de componentes, estados, accesibilidad, consumidores y criterios de aceptación basados en el sistema de diseño. |
 | [Macroproceso de despacho](./arquitectura/macroproceso-despacho.md) | Flujo funcional de alto nivel desde la solicitud de Ventas hasta el resultado final. |
 | [Especificaciones funcionales](./funcionalidades/) | Requisitos, escenarios y criterios de completitud por funcionalidad. |
 | [Especificaciones atómicas](./especificaciones/) | Casos de uso concretos derivados de las funcionalidades y su plantilla común. |
