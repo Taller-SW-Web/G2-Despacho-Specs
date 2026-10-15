@@ -18,7 +18,7 @@ G2-Despacho-Specs/
 ├── arquitectura/                            # C4, estados y modelo de datos
 ├── disenio/
 │   ├── SYSTEM-DESIGN.md                     # Referencia visual transversal
-│   └── componentes-react.md                 # Documento futuro de componentes compartidos
+│   └── componentes-react.md                 # Especificación compartida ya redactada; implementación pendiente
 ├── especificaciones/
 │   └── ES-FXX-NN-NombreEnPascalCase/         # Carpeta futura de una especificación
 │       ├── spec.md                          # Comportamiento y criterios de aceptación
@@ -38,7 +38,7 @@ G2-Despacho-Specs/
             └── evidence.md
 ```
 
-La estructura futura no se ha creado ni se han movido las especificaciones existentes. La sección 3.7 de [AGENTS.md](../../AGENTS.md) conserva la organización vigente de archivos sueltos; su adaptación y la actualización de enlaces e índices formarán parte de una adopción posterior [cite: 1].
+Ya existe la [especificación compartida de componentes React](../../disenio/componentes-react.md), redactada a partir de esta plantilla y del sistema de diseño; su implementación está pendiente. Las carpetas futuras por especificación no se han creado ni se han movido las especificaciones existentes. La sección 3.7 de [AGENTS.md](../../AGENTS.md) conserva la organización vigente de archivos sueltos; su adaptación y la actualización de enlaces e índices formarán parte de una adopción posterior [cite: 1].
 
 ## 2. Qué contiene cada archivo
 
@@ -49,7 +49,7 @@ La estructura futura no se ha creado ni se han movido las especificaciones exist
 | [plan.md](./especificacion/plan.md) | ¿Cómo se implementará sobre los contratos y componentes acordados? | Siempre, antes de implementar. |
 | [tasks.md](./especificacion/tasks.md) | ¿Qué incremento se implementa y verifica a continuación? | Siempre. Las tareas concretan el plan. |
 | [evidence.md](./especificacion/evidence.md) | ¿Qué se implementó, qué se probó y dónde se puede comprobar? | Se inicia como pendiente y se completa con resultados reales. |
-| [componentes-react.md](./componentes-react.md) | ¿Qué componentes se reutilizan y cuál es su comportamiento? | Compartido por las especificaciones con frontend. Se completa una vez y evoluciona cuando cambian los componentes. |
+| [componentes-react.md](../../disenio/componentes-react.md) ([plantilla](./componentes-react.md)) | ¿Qué componentes se reutilizan y cuál es su comportamiento? | Compartido por las especificaciones con frontend. Ya redactado; evoluciona cuando cambian los componentes. |
 
 `ui.md` no se necesita para una API consumida por otro módulo, un webhook o un proceso interno sin interfaz propia. Registrar «UI: No aplica» y el motivo en `spec.md` y `plan.md`; retirar la copia de `ui.md`. Si una operación backend cambia lo que muestra una pantalla existente, sí se documenta ese impacto visual.
 
@@ -81,7 +81,7 @@ La trazabilidad debe poder recorrerse en ambos sentidos: `CA-NN` → decisión d
 - Copiar los archivos de `especificacion/` a la carpeta de la especificación cuando el equipo adopte la organización. Reutilizar el contenido de la especificación existente como `spec.md`, en lugar de mantener dos versiones activas del mismo comportamiento.
 - Reemplazar los marcadores `[por completar]` y adaptar las secciones al alcance. Marcar «No aplica» con una razón cuando corresponda.
 - Corregir los enlaces al copiar: desde `especificaciones/ES-FXX-NN-Nombre/` los documentos generales se alcanzan con `../../`; entre sus cinco archivos se usan enlaces como `./spec.md`.
-- Copiar la plantilla `componentes-react.md` a `disenio/componentes-react.md` al redactar la especificación compartida; ajustar sus enlaces a la nueva ubicación.
+- Consultar y mantener la [especificación compartida existente](../../disenio/componentes-react.md). La plantilla `componentes-react.md` se conserva como referencia de estructura; las funcionalidades enlazan el documento compartido y sus identificadores, sin crear otra copia.
 - Mantener identificadores estables de requisitos, criterios, tareas y evidencias. En referencias, combinar enlaces navegables con `[cite: N]` y registrar la revisión o commit cuando se requiera reproducibilidad.
 - No marcar tareas como completadas ni pruebas como aprobadas al copiar la plantilla. `evidence.md` nace pendiente, sin capturas o resultados ficticios.
 - Si se utiliza IA, proporcionar los documentos y sus revisiones como entrada de la tarea; registrar su uso y la revisión humana. Los prompts por sí solos no demuestran que los criterios se hayan cumplido.
