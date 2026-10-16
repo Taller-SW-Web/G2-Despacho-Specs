@@ -21,7 +21,7 @@ Esta funcionalidad incluye:
 
 - Asignación operativa diaria: emparejamiento repartidor – furgoneta – zona para la jornada.
 - Estado operativo del repartidor calculado a partir de su jornada y sus despachos: `FUERA_DE_TURNO`, `DISPONIBLE`, `EN_RUTA`, `SATURADO`.
-- Cálculo de ocupación en kg, m³ y paquetes a partir de los despachos en poder del repartidor: `ASIGNADO`, `EN_CAMINO` y `FALLIDO` aún no recibidos en el centro de despacho.
+- Cálculo de ocupación en kg, m³ y paquetes a partir de reservas activas locales, incluidas las de retornos cuya liberación todavía no se confirmó.
 - Panel de monitoreo con indicadores por repartidor y resumen de la flota.
 - Consulta de repartidores disponibles con su capacidad remanente para F-02.
 - Cierre de turno, invocado por F-03 al cerrar la jornada o por el Gestor de Despacho.
@@ -49,7 +49,7 @@ Esta funcionalidad incluye:
 ### 4.3. Resultados
 
 - La asignación diaria pone al repartidor en `DISPONIBLE` con los límites de la furgoneta asignada y la zona de trabajo.
-- La ocupación y el estado operativo se recalculan cada vez que cambia un despacho del repartidor.
+- La ocupación y el estado operativo se recalculan al actualizar reservas/proyecciones de la jornada, incluida una liberación confirmada después de registrar el retorno físico.
 - El cierre de turno pone al repartidor en `FUERA_DE_TURNO` y libera la furgoneta para futuras asignaciones.
 
 ### 4.4. Estado operativo del repartidor en la jornada
@@ -63,15 +63,15 @@ Esta funcionalidad incluye:
 
 ### 4.5. Regla de cálculo de ocupación
 
-F-06 calcula la ocupación sumando el peso, el volumen y la cantidad de paquetes según estas reglas:
+F-06 calcula la ocupación exclusivamente sumando sus reservas `ACTIVA` en peso, volumen y paquetes. Estas reglas describen su relación con el despacho y la sincronización:
 
 - Un despacho `ASIGNADO` ocupa capacidad.
 - Un despacho `EN_CAMINO` ocupa capacidad.
 - Un despacho `FALLIDO` sin recepción confirmada en el centro ocupa capacidad.
-- Un despacho `FALLIDO` recibido en el centro deja de ocupar capacidad, aunque esté pendiente de reprogramación o cierre por F-04.
-- Los despachos `ENTREGADO`, `CANCELADO` y `DEVUELTO_A_ORIGEN` no ocupan capacidad.
+- Un despacho `FALLIDO` recibido solicita liberar su reserva; deja de ocupar capacidad cuando Operación confirma la liberación, aunque siga pendiente de reprogramación o cierre.
+- Los despachos `ENTREGADO`, `CANCELADO` y `DEVUELTO_A_ORIGEN` deben terminar sin reserva activa. Mientras una liberación de F-04 siga pendiente, esa reserva conserva su ocupación de forma conservadora, incluso si el despacho ya se reprogramó o cerró.
 
-Cuando F-04 confirma la recepción de un paquete fallido, Gestión de Despachos solicita a Operación liberar la reserva de capacidad. F-06 refleja la liberación en el siguiente cálculo; la comunicación usa la API interna definida en el contrato.
+Cuando F-04 confirma la recepción, Gestión registra una solicitud durable para la reserva y jornada originales. Operación aplica su liberación idempotente y F-06 refleja el resultado en la siguiente consulta. Si hay caída se conserva la recepción y se reintenta; no se libera otra reserva ni se modifica el cierre de jornada. El retorno físico y la sincronización no se confunden; antes de una asignación nueva, F-02 debe esperar a que la reserva anterior deje de estar activa. Contratos: [Gestión §5.2.1](../integraciones/api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03) y [Operación §5.2](../integraciones/api-contract-operacion-reparto.md#52-gestión-libera-una-reserva-en-operación).
 
 ## 5. Requisitos y criterios de aceptación automatizables
 
@@ -178,8 +178,8 @@ El sistema DEBE mantener el estado operativo coherente con los despachos y cerra
 #### CA-15. Liberación de capacidad por recepción de paquete fallido
 
 - **DADO** un repartidor `SATURADO` con un despacho `FALLIDO` que ocupaba 100 kg.
-- **CUANDO** F-04 confirma la recepción del paquete en el centro de despacho.
-- **ENTONCES** la ocupación del repartidor se reduce en 100 kg, y su estado operativo se recalcula (puede pasar de `SATURADO` a `DISPONIBLE` o `EN_RUTA`).
+- **CUANDO** F-04 registra la recepción y Operación confirma liberar la reserva original.
+- **ENTONCES** la siguiente consulta reduce la ocupación en 100 kg y recalcula el estado operativo de esa jornada; si ya está cerrada no reabre el turno. Si Operación no confirmó, la reserva sigue contando y F-04 muestra sincronización pendiente.
 
 ## 6. Frontend
 
@@ -195,7 +195,7 @@ El sistema DEBE mantener el estado operativo coherente con los despachos y cerra
 | Componente lógico | Responsabilidad |
 |---|---|
 | Asignación diaria | Crear y cerrar jornadas repartidor – furgoneta – zona, validando precondiciones con F-05 y F-01. |
-| Motor de ocupación | Calcular kg, m³ y paquetes a partir de los despachos en poder del repartidor (`ASIGNADO`, `EN_CAMINO` y `FALLIDO` no recibidos en el centro) y derivar el estado operativo. |
+| Motor de ocupación | Sumar reservas activas locales de la jornada en kg, m³ y paquetes, incluidas liberaciones todavía pendientes, y derivar su estado operativo. |
 | Consulta de disponibilidad | Devolver los repartidores habilitados con capacidad remanente en menos de 200 ms. |
 | Panel de monitoreo | Proveer resumen de flota y ocupación por repartidor con datos actualizados. |
 | Persistencia y auditoría | Registrar asignaciones, cierres y cambios de estado con usuario y marca temporal en UTC. |
@@ -206,7 +206,7 @@ Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract-oper
 
 - **Rendimiento:** la consulta de disponibilidad responde en menos de 200 ms.
 - **Seguridad:** la configuración y consulta administrativa requieren `GESTOR_DESPACHO`.
-- **Fuente única:** ninguna otra funcionalidad mantiene saldos de capacidad; la ocupación se calcula siempre desde el estado de los despachos.
+- **Fuente única:** ninguna otra funcionalidad mantiene saldos de capacidad; Operación calcula ocupación desde sus reservas activas, sin consultas SQL a Gestión ni descuentos anticipados por una respuesta `202` de recepción.
 - **Aislamiento:** no se accede a bases de datos de otros módulos.
 - **Trazabilidad:** asignaciones diarias y cierres registran usuario y marca temporal en UTC.
 - **Escalabilidad:** el panel pagina a partir de 50 repartidores.

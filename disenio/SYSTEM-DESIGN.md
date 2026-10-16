@@ -2001,7 +2001,7 @@ La especificación de comportamiento vigente es [ES-F04-01](../especificaciones/
 | Elemento | Componente y props | Texto |
 |---|---|---|
 | Incidencia | `Card` con pares etiqueta/valor | Motivo, comentario, fecha y hora, repartidor, "Intentos consumidos: 1 de 2" |
-| Recepción en centro | `Card`; si está pendiente, `BadgeEstado` "Pendiente de retorno"; si no, fecha, usuario, "Sello intacto: Sí/No" y observaciones | — |
+| Recepción en centro | `Card`; pendiente o fecha, usuario, sello Sí/No y observaciones; tras recibir, estado de sincronización separado | "Liberación de capacidad pendiente", pendiente de revisión o "Capacidad liberada", según contrato |
 | Historial de estados | `Card` + `Timeline bulletSize={20}` | Operación, estados, fecha del servidor, ejecutor, origen y datos relevantes; incluye recepción sin transición |
 | Comunicación con Ventas | `Card` con estado local por evento | Pendiente, enviado o envío fallido; sin reenvío desde esta lectura |
 | Evidencia | `Card` + `Image radius="md"` 4:3 clicable → `Modal size="xl"` | `alt="Evidencia de la incidencia del despacho DSP-000123"` |
@@ -2038,11 +2038,11 @@ El comportamiento vigente corresponde a [ES-F04-02](../especificaciones/ES-F04-0
 |---|---|---|
 | Resumen | Franja `cloud-subtle` | Código, repartidor, motivo, fecha del incidente |
 | Sello | `Radio.Group required` con "Sí" y "No", sin valor por defecto | "¿El sello del paquete está intacto?" |
-| Observaciones | `Textarea autosize`; si sello = "No", `description` "Describe el estado del paquete" y `withAsterisk` | "Observaciones" |
+| Observaciones | `Textarea autosize`, opcional, sin `withAsterisk`; hasta 500 caracteres conforme al contrato. Si sello = "No", ayuda destacada | "Observaciones (opcional)"; "Puedes describir el estado del paquete" |
 | Nota | `Alert color="blue" variant="light"` | "El despacho seguirá en Fallido; después podrás reprogramarlo o cerrarlo." |
 | Acciones | "Cancelar" (`outline`) + "Confirmar recepción" (`primary`, deshabilitado sin sello) | — |
 
-Estados: ya registrada ("La recepción ya fue confirmada", `Alert` azul), error con "Reintentar" y éxito con notificación y fila actualizada a "Recibido en centro".
+Estados: envío en curso sin doble confirmación, rechazo recuperable conservando campos, `409` con actualización/revisión y resultado desconocido que primero consulta el detalle. `202` significa retorno persistido: "Paquete recibido. Liberación de capacidad pendiente", cierre del modal y origen actualizado. La recepción permanece aunque falle Operación; el detalle distingue pendiente, pendiente de revisión y liberada. Repetición exacta devuelve el resultado original y la UI consulta el actual. Reglas: [ES-F04-03](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/spec.md) y [Gestión §5.2.1](../integraciones/api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03).
 
 #### P4 Reprogramación
 

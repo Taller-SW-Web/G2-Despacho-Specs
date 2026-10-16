@@ -3,7 +3,7 @@
 Este documento define el modelo relacional de los dos microservicios del módulo de Despacho y Entrega, derivado de F-01 a F-05, de los requisitos transversales RT-01 a RT-04 del [overview](../overview.md), del [contrato de API](../integraciones/api-contract.md) y del [C4 de contenedores](./c4-contenedores.md).
 
 - **Gestión de Despachos:** F-01, F-02 y F-04; es dueño de zonas, tarifas, despacho canónico, intentos, recepción en centro, historial y eventos.
-- **Operación de Reparto y Flota:** F-03 y F-05; es dueño de repartidores, furgonetas, jornadas, reservas de capacidad, proyección móvil y evidencias.
+- **Operación de Reparto y Flota:** F-03, F-05 y F-06; es dueño de repartidores, furgonetas, jornadas, reservas de capacidad, proyección móvil y evidencias.
 
 Cada microservicio usa una credencial de base de datos distinta. Para el curso pueden emplearse dos esquemas aislados en un mismo proyecto de Supabase, pero un servicio no consulta las tablas del otro y no existen claves foráneas ni relaciones JPA entre esquemas.
 
@@ -49,6 +49,17 @@ erDiagram
     motivos_fallo ||--o{ intentos_entrega : tipifica
     despachos ||--o{ historial_estados_despacho : historial
     despachos ||--o{ eventos_salientes : publica
+    despachos ||--o{ liberaciones_capacidad : solicita
+    intentos_entrega ||--o| liberaciones_capacidad : origina
+
+    liberaciones_capacidad {
+        uuid id PK
+        uuid despacho_id FK
+        uuid incidencia_id FK, UK
+        uuid reserva_id_externa UK
+        varchar estado
+        timestamptz proximo_intento_en
+    }
 
     despachos {
         uuid id PK
@@ -94,6 +105,7 @@ erDiagram
     }
     reservas_capacidad {
         uuid id PK
+        uuid clave_asignacion UK
         uuid asignacion_diaria_id FK
         uuid id_despacho_externo
         numeric peso_kg
@@ -325,6 +337,7 @@ Datos iniciales: los siete motivos del Anexo B de F-03.
 | `despacho_id` | `UUID` | FK → `despachos.id`, NOT NULL | Despacho. |
 | `asignacion_diaria_id_externa` | `UUID` | NULL | Jornada de Operación. |
 | `repartidor_id_externo` | `UUID` | NULL | Repartidor ejecutor. |
+| `reserva_capacidad_id_externa` | `UUID` | NULL para datos históricos pendientes de regularizar | Instantánea de la reserva de esa salida; obligatoria para nuevos fallos, incluido `NO_INTENTADO`, sin FK entre servicios. |
 | `resultado` | `TEXT` | NOT NULL | Resultado (`ENTREGADO`, `FALLIDO`). |
 | `motivo_codigo` | `TEXT` | FK → `motivos_fallo.codigo`, NULL | Motivo cuando aplica. |
 | `consume_intento` | `BOOLEAN` | NOT NULL, DEFAULT true | Indica si consume intento. |
@@ -346,7 +359,35 @@ Para ES-F04-01/02, `despachos.ultima_incidencia_id` se actualiza en la misma tra
 
 El listado selecciona una fila por despacho a partir de esa referencia. Los datos de recepción y evidencia pertenecen al mismo registro; los campos `consume_intento` y `numero_intentos` representan, respectivamente, la condición de esa salida y el acumulado del despacho. La FK se incorpora una vez creadas ambas tablas; no introduce relaciones entre microservicios.
 
-Operación provee nombres y cierre de las jornadas referenciadas mediante la lectura por lotes de `integraciones/api-contract-operacion-reparto.md`, §5.4. Gestión no guarda un estado de jornada inventado ante una caída: la consulta expone `DESCONOCIDA` y los indicadores de Gestión §5.1. El mecanismo de los comandos de recepción para identificar su salida y recuperar fallas de liberación se revisará en ES-F04-03; esta definición concreta la lectura del listado. Referencia: [Operación](../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
+Operación provee nombres y cierre de jornadas mediante su lectura por lotes, §5.4. Gestión expone `DESCONOCIDA` ante una caída. Al aceptar cada fallo copia también la reserva de la asignación en la incidencia; una reasignación/reprogramación posterior no modifica esa referencia. ES-F04-03 utiliza esa instantánea y la solicitud durable de abajo; nunca obtiene la reserva de una salida posterior. Referencia: [Operación](../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [recepción de Gestión](../integraciones/api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03).
+
+#### `liberaciones_capacidad` (Gestión de Despachos; solicitud durable de ES-F04-03)
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | `UUID` | PK | Identificador de solicitud. |
+| `despacho_id` | `UUID` | FK → `despachos.id`, NOT NULL | Despacho recibido. |
+| `incidencia_id` | `UUID` | FK → `intentos_entrega.id`, NOT NULL, UNIQUE | Una solicitud por incidencia recibida. |
+| `reserva_id_externa` | `UUID` | NOT NULL, UNIQUE | Reserva original de Operación; nunca se sustituye durante reintentos. |
+| `jornada_id_externa` | `UUID` | NOT NULL | Jornada original de la incidencia. |
+| `solicitada_por` | `UUID` | NOT NULL | `sub` del Gestor que confirmó. |
+| `version_solicitada` | `INTEGER` | NOT NULL, CHECK (> 0) | Versión presentada al confirmar. |
+| `hash_contenido` | `TEXT` | NOT NULL | Identidad del cuerpo normalizado para reconocer reintentos y rechazar contenido diferente. |
+| `respuesta_original` | `JSONB` | NOT NULL | Cuerpo original del `202`; se conserva después de completar para reconocer una repetición del ejecutor original. |
+| `estado` | `TEXT` | NOT NULL, CHECK (`PENDIENTE`, `CONFIRMADA`) | Estado de sincronización; no es un estado nuevo del despacho. |
+| `requiere_revision` | `BOOLEAN` | NOT NULL, DEFAULT false | Error de credenciales, referencia o respuesta que necesita revisión operativa; la solicitud no se descarta. |
+| `intentos_envio` | `INTEGER` | NOT NULL, DEFAULT 0, CHECK (>= 0) | Intentos iniciados por el procesador. |
+| `proximo_intento_en` | `TIMESTAMPTZ` | NOT NULL mientras está pendiente; NULL al confirmar | Calendario durable de reintentos. |
+| `ultimo_intento_en`, `confirmada_en` | `TIMESTAMPTZ` | NULL hasta que corresponda | Último envío y confirmación local de liberación. |
+| `ultimo_codigo_error` | `TEXT` | NULL | Clasificación técnica sin tokens ni cuerpos de error externos. |
+| `bloqueada_hasta`, `token_procesamiento` | `TIMESTAMPTZ`, `UUID` | NULL sin procesamiento | Exclusión temporal y propietario del intento; no se conserva una transacción abierta durante HTTP. |
+| `creado_en`, `actualizado_en` | `TIMESTAMPTZ` | NOT NULL | Auditoría técnica del envío. |
+
+Recepción, historial, incremento de `despachos.version` y solicitud se guardan en una sola transacción local. La incidencia debe tener reserva/jornada/repartidor coherentes antes de aceptar; datos históricos incompletos se regularizan desde información verificable, sin seleccionar la reserva actual por conjetura. La recepción y su solicitud no se eliminan al reprogramar o cerrar.
+
+El procesador reclama pendientes vencidas con exclusión de 60 segundos, confirma esa reclamación y realiza HTTP con límite total de cinco segundos fuera de la transacción. Completa el intento solo si conserva el token; tras caída, otra instancia puede retomarlo cuando vence la exclusión. La idempotencia de Operación por reserva hace segura una entrega repetida. Al confirmar no se crea otro historial de recepción ni cambia la versión del despacho; solo se actualiza esta solicitud. Calendario y estados de consulta: [Gestión §5.2.1](../integraciones/api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03).
+
+Índices: unicidad de incidencia/reserva y `(estado, proximo_intento_en, bloqueada_hasta)` para el procesador. Esta bandeja interna es independiente de `eventos_salientes` hacia Ventas; no comparte su máximo de cinco reintentos.
 
 #### `evidencias` (Operación de Reparto y Flota; escribe F-03)
 
@@ -370,6 +411,7 @@ Si Gestión acepta la transición, Operación cambia la evidencia a `ASOCIADA`. 
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | `UUID` | PK | Identificador de reserva. |
+| `clave_asignacion` | `UUID` | NOT NULL, UNIQUE | `Idempotency-Key` de la operación de asignación; se conserva con la reserva, incluso liberada, para no depender solo de una caché temporal. |
 | `despacho_id_externo` | `UUID` | NOT NULL | Despacho de Gestión. |
 | `asignacion_diaria_id` | `UUID` | FK → `asignaciones_diarias`, NOT NULL | Jornada que transportará el paquete. |
 | `peso_kg` | `NUMERIC(10,3)` | NOT NULL, CHECK (> 0) | Peso reservado. |
@@ -460,6 +502,7 @@ Valores iniciales:
 | Servicio | Clave | Valor inicial | Usado por |
 |---|---|---|---|
 | Gestión | `MAXIMO_INTENTOS` | `2` | F-04 |
+| Gestión | `REINTENTOS_LIBERACION_SEGUNDOS` | `30,120,600,1800,3600` | ES-F04-03; tras el primer envío inmediato se aplican esas esperas y se repite la última hasta confirmar. |
 | Operación | `HORA_CORTE_JORNADA` | `21:00` | F-03 CA-24 |
 | Operación | `VIGENCIA_URL_FIRMADA_SEGUNDOS` | `300` | F-03 CA-27 |
 | Gestión | `LIMITE_COTIZACIONES_POR_MINUTO` | `60` | F-01 CA-14 |
@@ -512,6 +555,7 @@ Idempotencia significa que repetir una solicitud porque se perdió la respuesta 
 | `furgonetas.estado` | `DISPONIBLE`, `EN_MANTENIMIENTO`, `INACTIVA` |
 | `asignaciones_diarias.estado` | `ACTIVA`, `CERRADA` |
 | `reservas_capacidad.estado` | `ACTIVA`, `LIBERADA` |
+| `liberaciones_capacidad.estado` | `PENDIENTE`, `CONFIRMADA` |
 | `proyecciones_despacho.estado` | Mismos valores del despacho canónico |
 | `intentos_entrega.resultado` | `ENTREGADO`, `FALLIDO` |
 | `evidencias.estado` | `AUTORIZADA`, `CARGADA`, `ASOCIADA`, `EXPIRADA` |
@@ -575,6 +619,7 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 | Gestión | `intentos_entrega` | `(despacho_id, registrado_en)` | Historial de intentos |
 | Gestión | `historial_estados_despacho` | `(despacho_id, registrado_en)` | Hitos públicos y auditoría |
 | Gestión | `eventos_salientes` | `(estado_envio, proximo_intento_en)` | Reintentos |
+| Gestión | `liberaciones_capacidad` | `(estado, proximo_intento_en, bloqueada_hasta)` | Recuperación durable de liberaciones de ES-F04-03 |
 | Operación | `asignaciones_diarias` | `(fecha_jornada, estado)` | Jornada actual |
 | Operación | `reservas_capacidad` | `(asignacion_diaria_id, estado)` | Ocupación |
 | Operación | `proyecciones_despacho` | `(asignacion_diaria_id, secuencia_ruta)` | Ruta móvil |
@@ -591,7 +636,8 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 | `despachos`, `intentos_entrega` | Gestión | F-02 y F-04; F-03 origina comandos | F-02, F-03 y F-04 |
 | `historial_estados_despacho`, `eventos_salientes` | Gestión | RT-01 a RT-04 | Estados, seguimiento y eventos |
 | `repartidores`, `furgonetas`, `asignaciones_diarias` | Operación | F-05 y F-03 | F-05 RF-01 a RF-07 |
-| `reservas_capacidad` | Operación | F-02 consume por API; F-05 es propietario | Asignación y ocupación |
+| `liberaciones_capacidad` | Gestión | F-04 registra; procesador invoca Operación | Recepción recuperable de ES-F04-03 |
+| `reservas_capacidad` | Operación | F-02 consume por API; F-06 calcula ocupación | Asignación y ocupación |
 | `proyecciones_despacho`, `evidencias` | Operación | F-03 | Ruta, transición y evidencia |
 | `claves_idempotencia` | Cada servicio | Usuarios y clientes técnicos | Reintentos seguros |
 | `vista_ocupacion_repartidor` | Operación | F-05; Gestión consulta por API | F-05 RF-04, RF-05 y RF-07 |

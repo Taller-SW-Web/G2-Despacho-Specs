@@ -54,7 +54,7 @@ Esta funcionalidad incluye:
 
 ### 4.3. Resultados
 
-- Una recepción confirmada registra fecha, usuario y observaciones del estado del paquete, sin cambiar el estado del despacho.
+- Una recepción confirmada registra fecha, usuario, sello y observación opcional, sin cambiar `FALLIDO`, e inserta una solicitud durable de liberación. La capacidad se considera liberada solo cuando Operación la confirma; una caída no revierte el retorno físico.
 - Una reprogramación válida cambia el estado a `PENDIENTE_ASIGNACION`, registra la nueva fecha programada y conserva el contador de intentos.
 - Un cierre cambia el estado a `DEVUELTO_A_ORIGEN` y genera el evento correspondiente hacia Ventas y Postventa.
 - Toda operación registra usuario, fecha, estado anterior, estado nuevo y observaciones.
@@ -181,13 +181,13 @@ El sistema DEBE tratar de forma diferenciada los despachos no intentados y los p
 
 ### RF-07. Recepción del paquete en el centro de despacho
 
-El sistema DEBE registrar el retorno físico del paquete antes de cualquier decisión.
+El sistema DEBE registrar el retorno físico de cada paquete antes de cualquier decisión. Normalmente ocurre al volver del recorrido; el cierre de jornada no confirma recepciones ni obliga a recibir automáticamente todos los pendientes. [ES-F04-03](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/spec.md) concreta la recepción individual, idempotencia y recuperación de la liberación, sin requerir jornada cerrada para un fallo ya registrado.
 
 #### CA-16. Confirmación de recepción
 
 - **DADO** un despacho en `FALLIDO` marcado como "Pendiente de retorno".
 - **CUANDO** el Gestor confirma que el paquete llegó al centro de despacho, indicando si el sello está intacto.
-- **ENTONCES** el despacho se marca como "Recibido en centro" sin cambiar de estado, se registra la auditoría y el paquete deja de contar en la ocupación del repartidor y la furgoneta en F-06.
+- **ENTONCES** responde `202`, marca "Recibido en centro" sin cambiar `FALLIDO` y guarda recepción, auditoría, versión y solicitud durable en una transacción local. F-06 deja de contar la reserva cuando Operación confirma su liberación; mientras tanto el detalle informa sincronización pendiente sin revertir la recepción.
 
 #### CA-17. Decisión sin recepción confirmada
 
@@ -219,7 +219,7 @@ Si no puede confirmarse la jornada, el listado informa `No se pudo confirmar el 
 | Componente lógico | Responsabilidad |
 |---|---|
 | Consulta de incidencias | Recuperar despachos `FALLIDO` con filtros y paginación. |
-| Registro de recepción | Marcar el paquete como recibido en el centro y registrar la auditoría. |
+| Registro de recepción | Guardar retorno, auditoría, versión y solicitud durable; recuperar la liberación por la reserva original y exponer su estado pendiente/confirmado. |
 | Consulta de detalle | Componer los datos canónicos, historial y acciones; devolver la referencia de evidencia para que el contenedor de UI solicite su lectura a Operación. |
 | Caso de uso de reprogramación | Validar estado, recepción, fecha, límite de intentos y anulación antes de solicitar la transición. |
 | Caso de uso de cierre | Validar recepción y solicitar la transición a `DEVUELTO_A_ORIGEN`. |
@@ -232,7 +232,7 @@ Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se 
 
 - **Seguridad:** todas las operaciones requieren rol `GESTOR_DESPACHO`.
 - **Aislamiento:** no se accede a bases de datos de otros módulos.
-- **Consistencia:** el cambio de estado, la auditoría y el registro del evento pendiente se persisten en la misma transacción.
+- **Consistencia:** cambios de estado, auditoría y eventos asociados se persisten en la misma transacción local. La recepción persiste junto con su historial y solicitud de liberación; Operación se actualiza después con entrega recuperable e idempotente.
 - **Idempotencia:** la recepción y el cierre repetidos no producen efectos duplicados.
 - **Trazabilidad:** las recepciones, las decisiones y el estado de su comunicación son consultables.
 - **Usabilidad y escalabilidad:** pantalla responsive y listados paginados.

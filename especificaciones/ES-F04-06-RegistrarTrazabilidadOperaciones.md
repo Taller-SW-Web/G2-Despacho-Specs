@@ -28,12 +28,13 @@ Garantizar que cada recepción, reprogramación y cierre aceptado de F-04 deje u
 
 - Toda recepción, reprogramación o cierre aceptado debe producir exactamente un registro de negocio.
 - El registro incluye como mínimo identificador del despacho, funcionalidad origen, tipo de operación, usuario, fecha del servidor en UTC, estado anterior, estado nuevo y observaciones aplicables.
-- En una recepción, que no cambia el estado del despacho, el estado anterior y el nuevo se registran como `FALLIDO`, junto con el estado del sello y la observación.
+- En una recepción, que no cambia el estado del despacho, el estado anterior y el nuevo se registran como `FALLIDO`, junto con incidencia, reserva original, sello y observación. Recepción, historial, versión y solicitud durable de liberación se confirman en la misma transacción local conforme a Gestión §5.2.1.
 - En una reprogramación se registra la nueva fecha programada y la transición de `FALLIDO` a `PENDIENTE_ASIGNACION`.
 - En un cierre se registra el motivo y la transición de `FALLIDO` a `DEVUELTO_A_ORIGEN`.
 - La identidad del usuario nunca se toma de un campo libre enviado por el cliente.
 - Una operación rechazada no se registra como una decisión de negocio aceptada.
 - Una repetición idempotente no genera un segundo registro.
+- Los reintentos técnicos y la confirmación de liberación actualizan su solicitud durable; no se registran como otra recepción ni como una transición del despacho.
 - La trazabilidad no puede editarse ni eliminarse mediante las operaciones de F-04.
 - El orden mostrado en el historial se basa en la marca temporal persistida por el servidor.
 

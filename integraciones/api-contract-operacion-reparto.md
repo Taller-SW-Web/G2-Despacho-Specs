@@ -188,7 +188,7 @@ Estas rutas las implementa Operación y las consume Gestión con credencial de s
 
 - **Método:** `POST`
 - **Ruta:** `/internal/v1/capacidad/reservas`
-- **Idempotencia:** `idDespacho`.
+- **Idempotencia:** `Idempotency-Key` obligatorio, UUID v4 generado y conservado por Gestión para cada operación de asignación. Repetir clave y contenido devuelve la reserva original; otra carga con esa clave responde `409`. Operación conserva esa clave con la reserva incluso liberada, no solo en caché temporal. Una salida/asignación nueva usa otra clave; `idDespacho` garantiza una sola reserva activa, no una única reserva para toda la vida del despacho.
 
 ```json
 {
@@ -215,7 +215,7 @@ Estas rutas las implementa Operación y las consume Gestión con credencial de s
 }
 ```
 
-Una capacidad insuficiente responde `422` con `DESP_ERROR_CAPACIDAD_EXCEDIDA`. La cancelación, reasignación, entrega o recepción de un paquete fallido debe liberar o actualizar la reserva de manera idempotente.
+Una capacidad insuficiente responde `422` con `DESP_ERROR_CAPACIDAD_EXCEDIDA`. Si otra operación intenta reservar un despacho cuya reserva anterior sigue activa, responde `409` con `DESP_ERROR_RESERVA_ANTERIOR_ACTIVA`, sin crear otra reserva ni reutilizarla como éxito de una asignación nueva. Una repetición reconocida por su clave se resuelve antes de esa comprobación. La cancelación, reasignación, entrega o recepción debe liberar o actualizar su reserva de manera idempotente; una reserva liberada no se reactiva para una salida nueva.
 
 ### 5.2. Gestión libera una reserva en Operación
 
@@ -230,7 +230,13 @@ Una capacidad insuficiente responde `422` con `DESP_ERROR_CAPACIDAD_EXCEDIDA`. L
 }
 ```
 
-Los motivos iniciales son `ENTREGA`, `CANCELACION`, `RECEPCION_EN_CENTRO`, `REASIGNACION` y `COMPENSACION`. Un despacho `FALLIDO` no libera capacidad hasta que F-04 confirma su recepción física.
+Los motivos iniciales son `ENTREGA`, `CANCELACION`, `RECEPCION_EN_CENTRO`, `REASIGNACION` y `COMPENSACION`. Con `RECEPCION_EN_CENTRO`, Gestión invoca esta operación únicamente después de persistir el retorno físico y su solicitud durable conforme a [Gestión §5.2.1](./api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03).
+
+- Validar credencial técnica y existencia de `idReserva`; comprobar que su despacho coincide con `idDespacho`. No buscar ni sustituir otra reserva si la referencia no coincide.
+- Si está `ACTIVA`, marcarla `LIBERADA` en una transacción local con motivo y fecha del servidor; peso, volumen y paquetes se obtienen de esa reserva. Si ya está liberada, devolverla sin alterar fecha, motivo ni ocupación por segunda vez.
+- Respuesta `200`: `idReserva`, `idDespacho`, `estado=LIBERADA`, `motivoLiberacion` y `liberadaEn`, todos obligatorios; identificadores/motivo como cadenas y fecha UTC. Conserva los datos de la primera liberación, aunque otro motivo posterior solicite liberar la misma reserva ya liberada.
+- `400` por datos inválidos, `401/403` por credencial técnica, `404` con `DESP_ERROR_RESERVA_NO_ENCONTRADA`, `409` con `DESP_ERROR_RESERVA_NO_COINCIDE` si pertenece a otro despacho y `503` con `DESP_ERROR_OPERACION_NO_DISPONIBLE` ante indisponibilidad. Aplicar Común §3.5; ningún rechazo libera otra reserva.
+- F-06 calcula ocupación con reservas `ACTIVA`: no anticipa una liberación por recibir `FALLIDO`, cerrar jornada o consultar el detalle. Tras la liberación confirmada refleja el resultado en la siguiente consulta, sin reabrir ni modificar jornadas.
 
 ### 5.3. Gestión comunica el estado confirmado a Operación
 

@@ -226,7 +226,7 @@ Gestión consulta los datos operativos mediante Operación §5.4. No interpreta 
 
 Los tres comandos requieren `idIncidencia` (cadena opaca) y `versionDespacho` (entero positivo) obtenidos del detalle o listado. Tras autenticar y reconocer una repetición exacta ya aceptada, Gestión compara ambos con la incidencia vigente y la versión actual; una diferencia responde `409` con `code=DESP_ERROR_DESPACHO_DESACTUALIZADO`, sin mutación. La UI vuelve a consultar y solicita una nueva confirmación; nunca reenvía automáticamente la decisión sobre otra incidencia. Campo ausente o formato inválido responde `400` normalizado por campo.
 
-La identidad de un comando aceptado se compone de despacho, incidencia, tipo de operación y versión presentada; se compara además su contenido con el ya aceptado. Una repetición exacta conserva el resultado original y no vuelve a producir efectos; reutilizar esa identidad con contenido diferente responde `409`. Esta protección es local al comando y no requiere compartir una transacción con Operación; la recuperación de la liberación de capacidad se concreta en ES-F04-03.
+La identidad de un comando aceptado se compone de despacho, incidencia, tipo de operación y versión presentada; se compara además su contenido normalizado y el `sub` del ejecutor con los ya aceptados. Una repetición exacta conserva el resultado original y no vuelve a producir efectos; reutilizar esa identidad con contenido o ejecutor diferente responde `409`. Esta protección es local al comando y no requiere compartir una transacción con Operación; la recepción y su liberación recuperable se concretan en §5.2.1.
 
 Confirmación de recepción:
 
@@ -239,7 +239,7 @@ Confirmación de recepción:
 }
 ```
 
-La recepción no cambia el estado `FALLIDO`, pero libera la capacidad de la furgoneta y habilita la reprogramación o el cierre.
+La recepción no cambia `FALLIDO`: registra el retorno físico y habilita las decisiones según recepción, intentos y anulación. La capacidad se libera de forma recuperable en Operación conforme a §5.2.1; no se promete una confirmación distribuida instantánea.
 
 Reprogramación:
 
@@ -262,6 +262,49 @@ Cierre:
   "observacion": "Paquete queda a disposición de Ventas"
 }
 ```
+
+#### 5.2.1. Confirmar recepción en centro — ES-F04-03
+
+- **Método y ruta:** `POST /api/v1/despachos/{idDespacho}/recepcion-centro`; JWT humano válido con `GESTOR_DESPACHO`. No requiere `Idempotency-Key`; aplica la identidad de operación de §5.2, con el ejecutor autenticado.
+- **Cuerpo:** únicamente `idIncidencia`, `versionDespacho`, `selloIntacto` y `observacion` opcional, según el ejemplo de §5.2. Identificadores como cadenas opacas no vacías, versión entera positiva y sello booleano obligatorio; `false` es válido. No admite campos extra ni parámetros de consulta.
+- `observacion`: cadena de hasta 500 puntos de código Unicode después de recortar espacios en extremos, conservando saltos de línea internos; omisión, `null` o texto de solo espacios se normalizan a `null`. Cualquier otro tipo o longitud excedida responde `400` por campo. Es opcional incluso con sello No.
+- La solicitud nueva exige despacho `FALLIDO`, incidencia vigente y recepción pendiente. Gestión obtiene reserva, jornada y repartidor de la instantánea de esa incidencia. Usuario y fecha proceden del JWT y del servidor; no se aceptan como campos editables.
+- La disponibilidad de Operación, el cierre de jornada, anulación del pedido, máximo de intentos, `NO_INTENTADO` o fotografía no condicionan la recepción física. Una inconsistencia local de referencias sí se rechaza antes de persistir.
+
+**Transacción local:** registrar recepción, incrementar `despachos.version`, insertar un único historial `RECEPCION_EN_CENTRO` y una solicitud durable en `liberaciones_capacidad`. La solicitud fija despacho, incidencia, reserva y jornada originales, ejecutor, versión presentada, contenido normalizado y respuesta original. Todo se confirma o revierte junto; sin transacción aceptada no se invoca la liberación. No modifica intentos ni genera un evento a Ventas porque no cambia el estado del despacho.
+
+**Respuesta nueva `202 Accepted`:** recepción ya persistida y liberación asíncrona pendiente; `Cache-Control: no-store`. Todos los campos siguientes son obligatorios y solo los declarados admiten `null`:
+
+| Campo | Tipo | Contenido |
+|---|---|---|
+| `idDespacho`, `idIncidencia` | Cadenas | Identidades aceptadas. |
+| `estado` | Enum | `FALLIDO`. |
+| `versionDespacho` | Entero positivo | Versión posterior a registrar la recepción. |
+| `recepcion` | Objeto | `estado=RECIBIDO_EN_CENTRO`, `confirmadaEn` UTC, `idUsuario` cadena, `selloIntacto` booleano, `observacion` cadena o `null` y `liberacionCapacidad` según §5.3. |
+
+La respuesta original contiene liberación `PENDIENTE`, `requiereRevision=false` y `confirmadaEn=null`. Una repetición exacta del mismo ejecutor devuelve ese mismo `202` y cuerpo, aunque ya se haya liberado la reserva o resuelto el despacho; se conserva la respuesta durable, no solo una caché temporal. Para conocer la situación actual se usa el GET de §5.3. Una recepción existente recibida con una identidad nueva no se sobrescribe.
+
+| HTTP | Código | Efecto |
+|---|---|---|
+| `400` | `DESP_ERROR_DATOS_RECEPCION_INVALIDOS` | Campos ausentes, extra o inválidos; `errores` por campo según Común §3.5; sin escrituras. |
+| `401` / `403` | Convenciones compartidas | Sin datos ni cambios; autenticar antes de consultar existencia/resultados. |
+| `404` | `DESP_ERROR_DESPACHO_NO_ENCONTRADO` | Despacho inexistente. |
+| `409` | `DESP_ERROR_OPERACION_REUTILIZADA` | Identidad ya aceptada con contenido normalizado o ejecutor diferente. |
+| `409` | `DESP_ERROR_DESPACHO_DESACTUALIZADO` | Incidencia/versión actuales distintas en una solicitud nueva. |
+| `409` | `DESP_ERROR_ESTADO_INCOMPATIBLE` | Estado actual distinto de `FALLIDO`, una vez comprobada la versión. |
+| `409` | `DESP_ERROR_RECEPCION_YA_CONFIRMADA` | Recepción existente ante una solicitud nueva; se consulta el resultado sin editarlo. |
+| `500` | `DESP_ERROR_DATOS_INCONSISTENTES` | Falta referencia a reserva/jornada/repartidor de la incidencia o relación local inválida; no inventar otra referencia. |
+| `503` | `DESP_ERROR_RECEPCION_NO_DISPONIBLE` | No se pudo confirmar el resultado al cliente; consultar el detalle antes de repetir exactamente la solicitud. |
+
+El orden es autenticación/autorización, formato, repetición aceptada y, para una solicitud nueva, identidad/versión, estado, recepción pendiente e integridad local. Una transacción revertida no deja escrituras parciales. Si se desconoce el resultado de la confirmación o se perdió la respuesta, consultar el detalle antes de reenviar la misma solicitud original; no afirmar una reversión sin haberla comprobado.
+
+**Entrega recuperable a Operación:** el procesador toma solicitudes pendientes con exclusión temporal y tiempo máximo de procesamiento; no mantiene una transacción de base abierta durante HTTP. Un reinicio permite retomarlas sin perder la solicitud y llamadas repetidas resultan seguras por `idReserva`.
+
+- Primer intento tan pronto como se confirma la transacción. Tras fallo, esperas de 30 s, 2 min, 10 min, 30 min y luego 60 min entre intentos hasta confirmar; el calendario se configura en Gestión con ese valor inicial. Se conserva un próximo intento persistido, incluso después de reiniciar.
+- Con timeout, `429`, `5xx` o respuesta perdida, conservar `PENDIENTE` y la misma reserva. Solo una respuesta `200` de Operación §5.2 con los identificadores esperados y `estado=LIBERADA` permite marcar `CONFIRMADA`.
+- Ante `401/403`, `404/409`, otros `4xx` o respuesta incoherente, marcar también `requiereRevision=true`, dejar aviso operativo y limitar los siguientes intentos a uno cada 60 min hasta corregir la causa. No descartar la solicitud, sustituir su reserva ni afirmar capacidad libre; tras confirmación se limpia el aviso.
+- La confirmación se guarda en la solicitud local con su fecha, sin otro historial de recepción ni incremento del contador/versión del despacho. Si se pierde esa actualización local, el siguiente intento recibe la misma reserva ya liberada y completa el registro.
+- Una liberación pendiente no revierte el retorno ni bloquea por sí sola reprogramación/cierre. Operación sigue contando su reserva activa; una asignación nueva de F-02 se rechaza mientras esa reserva anterior permanezca activa. El GET no ejecuta reintentos.
 
 ### 5.3. Consultar el detalle de una incidencia — ES-F04-02
 
@@ -295,10 +338,12 @@ Todos los campos siguientes están presentes. Los identificadores son cadenas op
 | `comentario` | Cadena o `null` | Texto registrado; `null` se presenta como `Sin comentario`. |
 | `consumeIntento` | Booleano | Condición de esta salida, independiente del acumulado. |
 | `repartidor`, `jornada`, `retornoAtrasado` | Objetos y booleano o `null` | Mismos campos, nulabilidad y regla de §5.1, usando las referencias de esta incidencia. |
-| `recepcion` | Objeto | `estado`: `PENDIENTE_RETORNO` o `RECIBIDO_EN_CENTRO`; `confirmadaEn`, `idUsuario`, `selloIntacto` y `observacion`. |
+| `recepcion` | Objeto | `estado`: `PENDIENTE_RETORNO` o `RECIBIDO_EN_CENTRO`; `confirmadaEn`, `idUsuario`, `selloIntacto`, `observacion` y `liberacionCapacidad`. |
 | `evidencia` | Objeto | `idEvidencia`: cadena o `null`; `estadoReferencia`: `REFERENCIADA`, `SIN_EVIDENCIA` o `REFERENCIA_AUSENTE`. No contiene fotografía ni URL firmada. |
 
 En recepción pendiente, `confirmadaEn`, `idUsuario`, `selloIntacto` y `observacion` son `null`. En recepción confirmada, son respectivamente un instante UTC, una cadena de identificador, un booleano y una cadena o `null`; `selloIntacto=false` significa No. La recepción pertenece a esta incidencia, no a otra salida del despacho.
+
+`liberacionCapacidad` es `null` antes de recibir. Después es un objeto con `idSolicitud` cadena, `estado` (`PENDIENTE` o `CONFIRMADA`), `requiereRevision` booleano, `actualizadaEn` UTC y `confirmadaEn` UTC o `null`. Pendiente exige `confirmadaEn=null`; confirmada exige fecha no nula y `requiereRevision=false`. Una pendiente muestra `Liberación de capacidad pendiente` o `Liberación de capacidad pendiente de revisión`; solo la confirmada muestra `Capacidad liberada`. Se consulta la solicitud de esa incidencia, incluso en detalle histórico; una recepción ya confirmada sin solicitud durable es inconsistencia local. Estos son estados de sincronización, no estados nuevos del despacho ni motivos adicionales de bloqueo de sus decisiones.
 
 Con identificador de evidencia, `estadoReferencia=REFERENCIADA`: acredita la referencia local, no la disponibilidad de la imagen. Sin identificador y con `NO_INTENTADO`, vale `SIN_EVIDENCIA`; sin identificador en un fallo real, vale `REFERENCIA_AUSENTE`. Ninguno de esos estados de lectura altera el ciclo de vida de la evidencia. La autorización de lectura se solicita por separado a [Operación §3.4](./api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia).
 
@@ -313,8 +358,8 @@ Cada entrada de `historial` contiene `id`, `fechaServidor`, `tipoOperacion`, `es
 
 | Operación registrada | Campos permitidos en `datos`, presentes cuando se registraron |
 |---|---|
-| Fallo real o `NO_INTENTADO` | `idIncidencia`, `idRepartidor`, `idJornada`, `consumeIntento`, `numeroIntentos`. Referencias como cadenas; consumo booleano y contador entero. |
-| Recepción | `idIncidencia`, `selloIntacto` booleano, `observacionRecepcion` cadena o `null`. |
+| Fallo real o `NO_INTENTADO` | `idIncidencia`, `idRepartidor`, `idJornada`, `idReserva`, `consumeIntento`, `numeroIntentos`. Referencias como cadenas; consumo booleano y contador entero. |
+| Recepción | `idIncidencia`, `idReserva`, `selloIntacto` booleano, `observacionRecepcion` cadena o `null`. |
 | Reprogramación | `idIncidencia`, `nuevaFechaProgramada` como fecha civil `YYYY-MM-DD`. |
 | Cierre a origen | `idIncidencia`, `motivoCierre` como cadena. |
 | Asignación o reasignación | `idRepartidor`, `idJornada`, `idNuevoRepartidor`, `idNuevaJornada`, según corresponda. |
@@ -375,7 +420,7 @@ Gestión valida la máquina de estados, modifica el estado, incrementa el intent
 
 Al aceptar `FALLIDO`, Gestión crea el registro de incidencia en `intentos_entrega` y actualiza `despachos.ultima_incidencia_id` dentro de esa transacción. La misma regla se aplica a `NO_INTENTADO`, aunque no incremente el contador. Esa referencia es la utilizada por la consulta de Gestión §5.1 y no se sustituye por la jornada actual del repartidor. Referencia: [Gestión](./api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
 
-El historial de esa transición conserva en `datos` la identidad de incidencia, repartidor/jornada, condición de consumo y contador resultante conforme a §5.3. Las operaciones posteriores conservan su propia referencia a la incidencia; así el detalle puede reconstruir cada salida sin rellenar eventos antiguos con datos actuales.
+Al aceptar un fallo, Gestión captura también la reserva de capacidad que ya conserva para la asignación y la vincula de forma inmutable a la incidencia junto con repartidor/jornada. No requiere un identificador de reserva editable enviado por el repartidor. El historial conserva esas referencias, condición de consumo y contador resultante conforme a §5.3. Las operaciones posteriores conservan su propia referencia a la incidencia; así el detalle y la liberación no usan una reserva de una salida posterior.
 
 
 ## 7. APIs de Operación consumidas por Gestión

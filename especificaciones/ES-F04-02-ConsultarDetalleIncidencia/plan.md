@@ -52,6 +52,7 @@ Los nombres y ubicaciones nuevos son propuestas técnicas; se adaptarán al cód
 - Acciones: calcularlas con estado, recepción, anulación y máximo vigente; devolver todos los bloqueos en el orden contractual. Reutilizar reglas de dominio, sin duplicar una política distinta para cada pantalla.
 - Datos/migraciones: en la base inspeccionada no aparecen migraciones SQL de estas tablas. Coordinar/reutilizar las de ES-F04-01 y del historial común; añadir solo cambios necesarios, con pruebas PostgreSQL. No crear un esquema completo duplicado para este GET.
 - Historial: los comandos propietarios conservan en `datos` la incidencia y datos de operación; verificar su disponibilidad antes de acreditar historia real. No reconstruir operaciones antiguas con la incidencia actual ni inventar datos faltantes.
+- Recepción: leer también su solicitud de `liberaciones_capacidad` según ES-F04-03; retorno y sincronización son independientes. El GET no entrega ni reencola la solicitud y no añade condiciones a la matriz de decisiones por su estado pendiente.
 - Operación §5.4: reutilizar lotes de nombres/jornadas, aunque para el detalle sea una sola incidencia. Configurar un límite total de cinco segundos para este enriquecimiento, inferior al timeout de diez segundos del Gateway consultado; una caída produce datos desconocidos, no pérdida de la lectura local.
 - Seguridad interna: credenciales de servicio según contratos de proveedor; su aprovisionamiento es DT-03. Sin acceso directo a otra base, credenciales de servicio en frontend ni scopes inventados.
 - Evidencia: §3.4 valida JWT, Gestor o propietario local, asociación y objeto; firma HTTPS con parámetro vigente y errores normalizados. Verificar un Gestor sin perfil de repartidor y una evidencia histórica. No añadir compresión, EXIF, carga o retención al alcance.
@@ -86,7 +87,7 @@ El frontend aislado y el backend pueden prepararse por separado. La falta de for
 | CA-08 | Operaciones sin transición, origen automático, orden empatado y consulta posterior. | Integración de historial y CR-19, sin inventar estado Recibido. |
 | CA-09 | Timeout de lotes, nombre/jornada desconocidos y fallos de autorización/imagen. | Dobles controlados, luego servicios reales; recuperación por bloque. |
 | CA-10 | Temporizador, respuestas fuera de orden, conflicto y regreso con URL. | Pruebas de interacción con reloj controlado y recorrido real de I-06. |
-| CA-11 | Comparar datos antes/después de lecturas y renovación. | Integración de persistencia, reservas e historial/outbox; sin reenvíos. |
+| CA-11 | Comparar datos antes/después de lecturas y renovación, controlando el procesador autónomo de liberaciones para no atribuirle efectos al GET. | Integración de persistencia, reservas e historial/outbox; sin reenvíos disparados por leer. |
 | CUI-01 a CUI-08 | Matrices de UI, teclado, foco, móvil y ampliación. | Fixtures identificados y página real conectada. |
 
 Comandos previstos: `npm run typecheck` y `npm run build` desde el frontend; `./mvnw.cmd test` desde Gestión, Operación y Gateway cuando corresponda. Configurar y registrar el comando de pruebas de interacción en T-01; no se afirma que exista actualmente. Testcontainers necesita Docker. Los resultados, commits, preparación y límites se registrarán en [evidence.md](./evidence.md).

@@ -145,7 +145,7 @@ La apertura no restringe fechas. Los KPI cuentan toda la base filtrada por motiv
 - **Línea de tiempo del historial:** puntos de 12 px del color semántico de cada estado, línea de 2 px en `border/default`, estado en Label, fecha y ejecutor en Auxiliary `secondary` y observación en Body/Small.
 - **Evidencia:** imagen en proporción 4:3 con `radius/md` y el botón "Ampliar" (`IconZoomIn`), que abre un modal a pantalla completa con fondo `ink`.
 - **Panel de decisión:** tarjeta blanca con H4 "Decisión". "Reprogramar" es principal `fullWidth` y "Cerrar como devuelto a origen" es outline. Si el paquete aún no se recibió, ambos botones aparecen deshabilitados con la ayuda "Confirma primero la recepción en centro" y "Confirmar recepción" pasa a ser la acción principal.
-- **Modales** (`md`): el de recepción usa un Checkbox de sello y Textarea; si el sello está marcado como "No", las observaciones se resaltan con borde `warning/default` y texto de ayuda. La reprogramación usa DatePickerInput con fechas pasadas deshabilitadas. El cierre usa Select de motivo y un botón destructivo.
+- **Modales** (`md`): recepción usa Radio.Group Sí/No sin valor inicial y Textarea opcional, sin asterisco; con sello No se invita a describir el paquete. Tras `202` informa retorno registrado y liberación pendiente según ES-F04-03. La reprogramación usa DatePickerInput con fechas pasadas deshabilitadas. El cierre usa Select de motivo y un botón destructivo.
 
 **Estados**
 

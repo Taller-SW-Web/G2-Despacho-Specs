@@ -37,7 +37,7 @@ Composición: estructura administrativa → breadcrumb y H1 con código operativ
 | Identificación | Código, estado actual, última actualización y etiquetas aplicables. Aviso de consulta histórica fuera de `FALLIDO`. |
 | Incidencia | Motivo del catálogo, comentario o `Sin comentario`, fecha/hora, repartidor e identificador si falta su nombre. `Intentos consumidos` sobre el máximo vigente. |
 | Salida no intentada | `No intentado en esta salida` y explicación de que conserva el acumulado; no se muestra `Intento 0`. |
-| Recepción | Pendiente o datos de confirmación de esa incidencia: fecha, usuario, sello Sí/No y observación o `Sin observaciones`. `false` no se interpreta como dato ausente. |
+| Recepción | Pendiente o datos de confirmación de esa incidencia: fecha, usuario, sello Sí/No y observación o `Sin observaciones`. `false` no se interpreta como dato ausente. Tras recibir, distinguir liberación pendiente, pendiente de revisión o capacidad liberada según Gestión §5.3; no añadir bloqueos al panel por sincronización. |
 | Historial | CR-19 con todas las operaciones y su orden contractual; distingue recepción sin transición y origen automático. No oculta observaciones necesarias ni recorta entradas silenciosamente. |
 | Evidencia | CR-18; solicitud autorizada, carga, visualización y ampliación. Solo la fotografía de la incidencia principal. |
 | Decisión | Usa `acciones` del backend y la matriz de `spec.md`, §5.2. Todos los motivos de bloqueo son visibles; recepción ya confirmada y acciones históricas se ocultan según esa matriz. |
@@ -49,7 +49,7 @@ Composición: estructura administrativa → breadcrumb y H1 con código operativ
 | Ver o ampliar foto | Solicitar autorización para la referencia actual; mostrar CR-18 y devolver el foco al cerrar. | CA-02/03 |
 | Renovar enlace | Solicitar una URL nueva tras validar permisos; descartar una respuesta de otra incidencia. | CA-02/09 |
 | Pulsar una decisión | Abrir el formulario propietario con identidad y versión consultadas; no ejecutar una mutación por abrirlo. | CA-07/10/11 |
-| Recibir confirmación de recepción | Recargar detalle y actualizar datos, historial y acciones. | CA-10 |
+| Recibir `202` de recepción | El retorno ya está guardado; informar liberación pendiente y recargar detalle, historial y acciones. Una lectura posterior fallida no convierte el guardado en rechazo. | CA-10 |
 | Reprogramar o cerrar con éxito | Volver al listado, restaurar consulta y recargar filas/indicadores. | CA-10 |
 | Regresar o usar el historial del navegador | Conservar filtros, página y tamaño del listado; sin origen, usar su consulta inicial. | CA-10 |
 
@@ -97,7 +97,7 @@ La página no tiene formulario de modificación propio. Los botones abren los fl
 | CUI-04 | Abrir/ampliar, vencer/renovar URL y cambiar de despacho/incidencia con respuesta anterior pendiente. | No aparece foto/URL ajena o vencida; cierre y foco funcionan. | CA-02/03/05/06/09 |
 | CUI-05 | Mostrar recepción sin transición, orígenes automáticos, fechas empatadas y estados de envío. | Historial completo y estable; comunicaciones separadas; consulta sin efectos. | CA-01/08/11 |
 | CUI-06 | Actualizar con temporizador, error, conflicto y formularios; volver a la URL de origen. | Cumple 30 segundos, descarta respuestas obsoletas y restaura/recarga el listado. | CA-10/11 |
-| CUI-07 | Simular nombre/jornada y fotografía no disponibles. | Mensajes locales sin inventar datos ni bloquear toda la consulta canónica. | CA-09 |
+| CUI-07 | Simular nombre/jornada y fotografía no disponibles; recepción con liberación pendiente/confirmada o revisión requerida. | Mensajes por bloque sin inventar datos; retorno físico y capacidad diferenciados, sin nuevos bloqueos de decisión. | CA-09 |
 | CUI-08 | Recorrer con teclado y viewport móvil, incluido visor e historial. | Foco, avisos, textos y acciones utilizables sin desbordar la página. | CA-01/02/07/08/10 |
 
 La implementación visual y sus comprobaciones están pendientes; resultados reales en [evidence.md](./evidence.md). Una prueba con fixtures acredita solo presentación/interacción.
