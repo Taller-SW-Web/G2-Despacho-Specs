@@ -98,6 +98,7 @@ El filtro `tipoIntento` de la cola admite `TODOS`, `PRIMER_INTENTO` y `REINTENTO
 - Devuelve el catálogo completo, incluidos motivos inactivos conservados para consultas históricas. F-03 ofrece para registrar únicamente los que tengan `activo=true` y `seleccionableEnCampo=true`; F-04 admite todos los códigos como filtro. La validación del backend aplica la misma restricción al registrar un fallo.
 - `NO_INTENTADO` tiene `seleccionableEnCampo=false` y `consumeIntento=false`; lo genera exclusivamente el cierre de jornada. No se mantiene un segundo catálogo para F-04.
 - Token no aceptado: `401`; usuario sin autorización: `403`, conforme a Común §3.5. Una caída al consultar el catálogo muestra un error y permite reintentar; el frontend no fabrica motivos. Referencia: [Convenciones e integración externa](./api-contract.md#35-errores).
+- Si la lectura local no está disponible, responde `503` con `DESP_ERROR_CONSULTA_NO_DISPONIBLE` y el formato compartido, sin motivos parciales ni detalles de infraestructura.
 
 Ejemplo de un elemento de `motivos`:
 

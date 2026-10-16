@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Plan actualizado con los acuerdos del 15/10/2026 y avances backend del 16/10/2026; listado HTTP verificado con dependencias de prueba. Integración real y frontend pendientes.
+**Estado:** Listado HTTP y catálogo del Gestor implementados y verificados con dependencias de prueba. Cierre backend pendiente de fuentes compartidas; frontend pendiente.
 
 **UI:** Aplica; página administrativa `/entregas-fallidas`.
 
@@ -81,6 +81,10 @@ La definición contractual y de fuentes puede prepararse mientras se desarrolla 
 
 ## 6. Estrategia de verificación
 
+Actualización del 16/10/2026, backend `536a0f3`: se completa la API de catálogo para el Gestor, leyendo la tabla canónica, y su ruta del Gateway se mueve a Gestión. EV-10 añade dos pruebas HTTP prioritarias y amplía una del Gateway; ejecuta una selección de 15 pruebas, sin repetir toda la suite, por la prioridad de tiempo indicada por Gerardo. El acceso de repartidores al catálogo conserva su requisito de perfil activo y queda pendiente de su integración de F-03/Operación; no se inventan roles ni consultas a bases ajenas.
+
+Al finalizar el código se consultan los remotos: `origin/develop` continúa en `bad76eb` y no contiene migraciones de despachos/incidencias ni Operación §5.4. Specs `origin/main` `10d6b83` se integra en `83c0b4b`, sin conflictos. La lectura conjunta sobre fuentes reales no puede verificarse todavía; responsables de dependencias: F-02/F-03 y Arquitectura para las migraciones/escritores, Operación para su proveedor y credencial. No se añaden esquemas de producción alternativos a sus cambios en curso.
+
 | Criterio | Comprobación | Nivel y datos |
 |---|---|---|
 | CA-01 | Excluir otros estados; campos e indicadores correctos; página sin duplicados. | Integración PostgreSQL del backend y recorrido UI; varios estados y más de una página. |
@@ -102,7 +106,7 @@ Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; de
 
 | ID | Punto por resolver | Fuente y responsable de coordinación | Bloquea |
 |---|---|---|---|
-| DT-01 | Listado HTTP y validación de códigos implementados; API compartida del catálogo y su ruta Gateway pendientes. El contrato de Gestión §§4 y 5.1 sigue siendo la fuente única. | Gerardo con Backend/Frontend y Arquitectura; coordinar autorización de repartidores y propietario de la ruta. | Filtros reales de T-08 y cierre de T-06/07. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
+| DT-01 | Listado, validación de códigos y catálogo del Gestor implementados; ruta Gateway a Gestión corregida. Pendiente perfil activo para el consumidor repartidor y migraciones compartidas. | Gerardo con F-03/Operación y Arquitectura. | Verificación real de fuentes y filtros en T-06/07/08; el consumidor de campo se completa con F-03. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
 | DT-02 | Consumidor, ensamblaje y degradación verificados con HTTP simulado en EV-06/09. Pendientes proveedor real y obtención/renovación de la credencial técnica. | Gerardo con Operación y Arquitectura; modelo de datos y T-06. | CA-01/05/06/08/10 e integración real de I-02/03. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 | DT-03 | Esquema/migraciones necesarios y base compartida de JWT, errores, conexión de datos y rutas del Gateway. | Inicialización actual del backend y modelo. Gerardo coordina con Arquitectura y DevOps. | Ejecución real de I-02/03. |
 | DT-04 | Disponibilidad y verificación de componentes, tema y herramientas de pruebas. | Componentes React §§4.5–4.6. Gerardo para CR-08; coordinación con los responsables del resto. | Composición y aceptación de I-01 según sus dependencias. |
