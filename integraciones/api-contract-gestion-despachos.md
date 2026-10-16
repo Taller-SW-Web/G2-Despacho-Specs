@@ -224,10 +224,16 @@ Gestión consulta los datos operativos mediante Operación §5.4. No interpreta 
 
 ### 5.2. Comandos de recepción, reprogramación y cierre
 
+Los tres comandos requieren `idIncidencia` (cadena opaca) y `versionDespacho` (entero positivo) obtenidos del detalle o listado. Tras autenticar y reconocer una repetición exacta ya aceptada, Gestión compara ambos con la incidencia vigente y la versión actual; una diferencia responde `409` con `code=DESP_ERROR_DESPACHO_DESACTUALIZADO`, sin mutación. La UI vuelve a consultar y solicita una nueva confirmación; nunca reenvía automáticamente la decisión sobre otra incidencia. Campo ausente o formato inválido responde `400` normalizado por campo.
+
+La identidad de un comando aceptado se compone de despacho, incidencia, tipo de operación y versión presentada; se compara además su contenido con el ya aceptado. Una repetición exacta conserva el resultado original y no vuelve a producir efectos; reutilizar esa identidad con contenido diferente responde `409`. Esta protección es local al comando y no requiere compartir una transacción con Operación; la recuperación de la liberación de capacidad se concreta en ES-F04-03.
+
 Confirmación de recepción:
 
 ```json
 {
+  "idIncidencia": "INC-0021",
+  "versionDespacho": 8,
   "selloIntacto": true,
   "observacion": "Paquete recibido sin daño visible"
 }
@@ -239,6 +245,8 @@ Reprogramación:
 
 ```json
 {
+  "idIncidencia": "INC-0021",
+  "versionDespacho": 8,
   "nuevaFechaProgramada": "2026-09-26",
   "observacion": "Cliente confirmó disponibilidad"
 }
@@ -248,10 +256,99 @@ Cierre:
 
 ```json
 {
+  "idIncidencia": "INC-0021",
+  "versionDespacho": 8,
   "motivo": "MAXIMO_INTENTOS_ALCANZADO",
   "observacion": "Paquete queda a disposición de Ventas"
 }
 ```
+
+### 5.3. Consultar el detalle de una incidencia — ES-F04-02
+
+- **Método y ruta:** `GET /api/v1/despachos/{idDespacho}/incidencia`; sin cuerpo ni parámetros de consulta y sin `Idempotency-Key`.
+- **Autorización:** JWT humano válido, `tipo=acceso` y rol `GESTOR_DESPACHO`, antes de consultar existencia o datos. Aplican los errores de [Común §3.5](./api-contract.md#35-errores).
+- Devuelve `200` si existe una incidencia histórica, aunque el despacho ya no esté `FALLIDO`. Selecciona `despachos.ultima_incidencia_id`, igual que §5.1; no selecciona por contador ni mezcla salidas. Fuera de `FALLIDO` la consulta es histórica y todas las acciones de resolución están bloqueadas.
+- Estado, versión, incidencia, recepción, contador, máximo vigente, anulación e historial proceden de una misma lectura consistente de Gestión. Los datos de Operación se componen por su [lectura interna §5.4](./api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias); no se promete una transacción entre servicios.
+- Respuestas con `Cache-Control: no-store`. La consulta no modifica datos de negocio, libera reservas, publica eventos ni reenvía comunicaciones.
+
+#### Respuesta `200 OK`
+
+Todos los campos siguientes están presentes. Los identificadores son cadenas opacas; los instantes son ISO 8601 UTC. Solo los campos declarados admiten `null`. La interfaz presenta fechas en `America/Lima`.
+
+| Campo raíz | Tipo | Regla |
+|---|---|---|
+| `idDespacho`, `codigoRastreoInterno` | Cadenas | Identificación del despacho; el segundo se presenta como código operativo interno. |
+| `estado` | Enum de despacho | Estado canónico actual conforme a [Común §6.1](./api-contract.md#61-consultar-por-identificador-de-pedido). |
+| `versionDespacho` | Entero positivo | Versión leída; se conserva junto con la identidad de incidencia al iniciar un comando. |
+| `actualizadoEn`, `ultimoCambioEstadoEn`, `consultadoEn` | Instantes | Última actualización del despacho, última transición registrada y elaboración de esta respuesta, respectivamente. |
+| `numeroIntentos`, `maximoIntentos` | Enteros | Acumulado no negativo y máximo vigente positivo. `NO_INTENTADO` no reinicia ni aumenta el acumulado; contador igual o mayor al máximo bloquea reprogramación. |
+| `pedidoAnulado` | Booleano | Derivado de la marca local de F-02; no consulta Ventas. |
+| `incidencia` | Objeto | Última incidencia, con el esquema siguiente. |
+| `historial` | Arreglo | Historial completo del despacho, sin truncamiento ni paginación en este incremento. |
+| `comunicaciones` | Arreglo | Estado local de los eventos salientes del despacho destinados a Ventas. |
+| `acciones` | Objeto | Contiene `confirmarRecepcion`, `reprogramar` y `cerrarComoDevueltoAOrigen`. |
+
+| Campo de `incidencia` | Tipo | Regla |
+|---|---|---|
+| `idIncidencia`, `fechaIncidencia` | Cadena, instante | Identificador del registro enlazado y su `registrado_en`. |
+| `motivo` | Objeto | `codigo` y `etiqueta` del catálogo de §4, aunque esté inactivo. |
+| `comentario` | Cadena o `null` | Texto registrado; `null` se presenta como `Sin comentario`. |
+| `consumeIntento` | Booleano | Condición de esta salida, independiente del acumulado. |
+| `repartidor`, `jornada`, `retornoAtrasado` | Objetos y booleano o `null` | Mismos campos, nulabilidad y regla de §5.1, usando las referencias de esta incidencia. |
+| `recepcion` | Objeto | `estado`: `PENDIENTE_RETORNO` o `RECIBIDO_EN_CENTRO`; `confirmadaEn`, `idUsuario`, `selloIntacto` y `observacion`. |
+| `evidencia` | Objeto | `idEvidencia`: cadena o `null`; `estadoReferencia`: `REFERENCIADA`, `SIN_EVIDENCIA` o `REFERENCIA_AUSENTE`. No contiene fotografía ni URL firmada. |
+
+En recepción pendiente, `confirmadaEn`, `idUsuario`, `selloIntacto` y `observacion` son `null`. En recepción confirmada, son respectivamente un instante UTC, una cadena de identificador, un booleano y una cadena o `null`; `selloIntacto=false` significa No. La recepción pertenece a esta incidencia, no a otra salida del despacho.
+
+Con identificador de evidencia, `estadoReferencia=REFERENCIADA`: acredita la referencia local, no la disponibilidad de la imagen. Sin identificador y con `NO_INTENTADO`, vale `SIN_EVIDENCIA`; sin identificador en un fallo real, vale `REFERENCIA_AUSENTE`. Ninguno de esos estados de lectura altera el ciclo de vida de la evidencia. La autorización de lectura se solicita por separado a [Operación §3.4](./api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia).
+
+#### Historial y comunicaciones
+
+Cada entrada de `historial` contiene `id`, `fechaServidor`, `tipoOperacion`, `estadoAnterior`, `estadoNuevo`, `funcionalidadOrigen`, `ejecutorTipo`, `ejecutorId`, `origen`, `motivo`, `observacion` y `datos`. `fechaServidor` es la marca persistida; orden ascendente por ella y desempate por `id` ascendente. No se ordena con la hora del navegador.
+
+- `tipoOperacion`: `TRANSICION`, `REASIGNACION`, `REORDENAMIENTO`, `RECEPCION_EN_CENTRO` o `ANULACION_REGISTRADA`; estados y funcionalidad conservan sus valores canónicos.
+- `estadoAnterior` es `null` solo en la creación; `estadoNuevo` siempre existe. Una recepción conserva `FALLIDO` en ambos y se describe como operación, no como un estado nuevo.
+- `ejecutorTipo`: `USUARIO`, `SERVICIO` o `SISTEMA`; `ejecutorId` admite `null` para procesos sin identificador. `origen` es `MANUAL` o `AUTOMATICO`; no se inventan nombres de usuario.
+- `motivo` es un objeto con `codigo` y `etiqueta` o `null` cuando no aplica; `observacion` es cadena o `null`. `datos` es un objeto de presentación con los campos registrados que correspondan a la operación, definidos a continuación; no se vuelca JSON interno arbitrario.
+
+| Operación registrada | Campos permitidos en `datos`, presentes cuando se registraron |
+|---|---|
+| Fallo real o `NO_INTENTADO` | `idIncidencia`, `idRepartidor`, `idJornada`, `consumeIntento`, `numeroIntentos`. Referencias como cadenas; consumo booleano y contador entero. |
+| Recepción | `idIncidencia`, `selloIntacto` booleano, `observacionRecepcion` cadena o `null`. |
+| Reprogramación | `idIncidencia`, `nuevaFechaProgramada` como fecha civil `YYYY-MM-DD`. |
+| Cierre a origen | `idIncidencia`, `motivoCierre` como cadena. |
+| Asignación o reasignación | `idRepartidor`, `idJornada`, `idNuevoRepartidor`, `idNuevaJornada`, según corresponda. |
+| Reordenamiento | `despachos`: arreglo de `idDespacho` y `posicion` entera positiva, conforme a §3.2. |
+
+Los valores específicos se recuperan del registro histórico de la operación, nunca del último fallo para rellenar operaciones previas. Las entradas sin datos específicos usan `{}`; observaciones y motivos no aplicables usan `null`.
+
+Cada comunicación contiene `idEvento`, `tipoEvento` y `estadoEnvio` como cadenas, `creadoEn` como instante y `enviadoEn` como instante o `null`. `estadoEnvio` es `PENDIENTE`, `ENVIADO` o `ENVIO_FALLIDO`, con el significado de [Común §7.3](./api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa). Orden por `creadoEn` e `idEvento` ascendentes; sin eventos usa `[]`, incluidos despachos simulados. No se devuelve `payload`, credenciales ni `ultimo_error`. El reenvío manual de RT-03 es una operación transversal separada, fuera de este GET.
+
+#### Acciones, actualización y errores
+
+Cada acción contiene `habilitada` booleano y `motivosBloqueo`, arreglo de códigos sin duplicados. Habilitada exige `[]`; bloqueada exige al menos un código. Se calculan con los datos locales de esta respuesta; no dependen del nombre, de la jornada recuperada ni del éxito del visor.
+
+| Acción | Condición de habilitación en `FALLIDO` | Códigos de bloqueo aplicables |
+|---|---|---|
+| `confirmarRecepcion` | Recepción pendiente | `RECEPCION_YA_CONFIRMADA` si ya se recibió. |
+| `reprogramar` | Recibido, pedido no anulado y contador menor al máximo | `RECEPCION_PENDIENTE`, `PEDIDO_ANULADO`, `MAXIMO_INTENTOS_ALCANZADO`, en ese orden. |
+| `cerrarComoDevueltoAOrigen` | Recibido | `RECEPCION_PENDIENTE`. |
+
+Con estado distinto de `FALLIDO`, las tres usan únicamente `ESTADO_NO_FALLIDO` y la UI oculta las acciones. Con recepción pendiente, anulación y límite no habilitan el cierre. Se devuelven todos los motivos aplicables para reprogramar. El texto visible lo presenta la UI; no compara mensajes para decidir permisos.
+
+El cliente conserva `idIncidencia` y `versionDespacho`, compara la identidad al actualizar y descarta respuestas anteriores. Actualiza la vista activa como máximo cada 30 segundos y tras operaciones o `409`; ante fallo de actualización indica datos desactualizados y bloquea acciones hasta renovar. Los comandos de §5.2 reciben esa identidad y versión y vuelven a validar sus propias reglas y concurrencia conforme a Común §9; esta lectura no sustituye esa validación.
+
+| HTTP | Código o tratamiento | Resultado |
+|---|---|---|
+| `400` | `DESP_ERROR_CONSULTA_INVALIDA` | Cuerpo o parámetros de consulta no admitidos; error normalizado por campo. |
+| `401` / `403` | Convenciones compartidas de autenticación/autorización | Sin datos; `401` incluye `WWW-Authenticate: Bearer`. |
+| `404` | `DESP_ERROR_DESPACHO_NO_ENCONTRADO` | Despacho inexistente. |
+| `404` | `DESP_ERROR_INCIDENCIA_NO_ENCONTRADA` | Despacho existente, fuera de `FALLIDO`, que nunca tuvo incidencia. |
+| `500` | `DESP_ERROR_DATOS_INCONSISTENTES` | `FALLIDO` sin incidencia enlazada, referencia rota/de otro despacho o política inválida; sin detalle parcial. |
+| `200` degradado | Nombre `null`, jornada `DESCONOCIDA` y aviso en UI | Operación no disponible; no inventa atraso ni nombre y conserva los datos locales. |
+| `503` | `DESP_ERROR_CONSULTA_NO_DISPONIBLE` | No puede obtenerse la lectura canónica; no devuelve un falso `404` ni vacío. |
+
+Los fallos al autorizar o cargar la fotografía se resuelven en el visor mediante Operación §3.4 y no sustituyen el resultado de este GET.
 
 ## 6. API interna provista por Gestión
 
@@ -277,6 +374,8 @@ Estas rutas las implementa Gestión y las consume Operación con credencial de s
 Gestión valida la máquina de estados, modifica el estado, incrementa el intento cuando corresponda, escribe el historial y registra el evento para Ventas. Operación nunca modifica directamente la base de datos de Gestión.
 
 Al aceptar `FALLIDO`, Gestión crea el registro de incidencia en `intentos_entrega` y actualiza `despachos.ultima_incidencia_id` dentro de esa transacción. La misma regla se aplica a `NO_INTENTADO`, aunque no incremente el contador. Esa referencia es la utilizada por la consulta de Gestión §5.1 y no se sustituye por la jornada actual del repartidor. Referencia: [Gestión](./api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
+
+El historial de esa transición conserva en `datos` la identidad de incidencia, repartidor/jornada, condición de consumo y contador resultante conforme a §5.3. Las operaciones posteriores conservan su propia referencia a la incidencia; así el detalle puede reconstruir cada salida sin rellenar eventos antiguos con datos actuales.
 
 
 ## 7. APIs de Operación consumidas por Gestión

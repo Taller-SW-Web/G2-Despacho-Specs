@@ -48,6 +48,7 @@ Permitir que el Gestor de Despacho programe un nuevo intento de entrega para un 
 ### Entradas
 
 - Identificador del despacho.
+- Identificador de incidencia y versión leídos del detalle; Gestión §5.2 exige nueva consulta y confirmación ante `409`, sin trasladar automáticamente la decisión a otra salida.
 - Nueva fecha programada.
 - Observación opcional.
 - Identidad y roles obtenidos del JWT.
@@ -84,7 +85,7 @@ Permitir que el Gestor de Despacho programe un nuevo intento de entrega para un 
 
 ### CA-03. Límite de intentos alcanzado
 
-- **DADO** un despacho cuyo contador es igual al máximo configurado.
+- **DADO** un despacho recibido cuyo contador es igual o superior al máximo configurado.
 - **CUANDO** el Gestor consulta el detalle o intenta reprogramarlo.
 - **ENTONCES** el frontend deshabilita la acción, el backend responde `422 Unprocessable Entity` ante el intento y solo queda disponible el cierre.
 
@@ -108,7 +109,7 @@ Permitir que el Gestor de Despacho programe un nuevo intento de entrega para un 
 
 ### CA-07. Pedido anulado
 
-- **DADO** un despacho fallido sobre el cual F-02 registró la anulación del pedido.
+- **DADO** un despacho fallido recibido sobre el cual F-02 registró la anulación del pedido.
 - **CUANDO** el Gestor intenta reprogramarlo.
 - **ENTONCES** el frontend mantiene la acción deshabilitada y el backend responde `409 Conflict`, dejando disponible únicamente el cierre.
 
@@ -116,7 +117,7 @@ Permitir que el Gestor de Despacho programe un nuevo intento de entrega para un 
 
 - **DADO** una reprogramación ya aceptada.
 - **CUANDO** se repite exactamente la operación.
-- **ENTONCES** el sistema devuelve el resultado vigente sin duplicar transición, historial ni evento.
+- **ENTONCES** el sistema devuelve el resultado original aceptado sin duplicar transición, historial ni evento; la UI vuelve a consultar el estado actual.
 
 ## 7. Fuera de alcance y referencias
 

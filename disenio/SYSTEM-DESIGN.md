@@ -1996,35 +1996,41 @@ La especificación de comportamiento vigente es [ES-F04-01](../especificaciones/
 
 #### P2 Detalle de la incidencia
 
-**Layout:** `Breadcrumbs` → encabezado con código (H1), `BadgeEstado` "Fallido" y etiquetas → `Grid` con `Grid.Col span={{ base: 12, lg: 7 }}` (información) y `span={{ base: 12, lg: 5 }}` (evidencia y decisión).
+**Layout:** `Breadcrumbs` → encabezado con código operativo interno (H1), `BadgeEstado` con el estado actual y etiquetas → `Grid` con `Grid.Col span={{ base: 12, lg: 7 }}` (información) y `span={{ base: 12, lg: 5 }}` (evidencia y decisión). Fuera de `FALLIDO` se conserva la consulta histórica sin panel de resolución.
 
 | Elemento | Componente y props | Texto |
 |---|---|---|
 | Incidencia | `Card` con pares etiqueta/valor | Motivo, comentario, fecha y hora, repartidor, "Intentos consumidos: 1 de 2" |
 | Recepción en centro | `Card`; si está pendiente, `BadgeEstado` "Pendiente de retorno"; si no, fecha, usuario, "Sello intacto: Sí/No" y observaciones | — |
-| Historial de estados | `Card` + `Timeline bulletSize={20}` | Estado, fecha, ejecutor, observación |
+| Historial de estados | `Card` + `Timeline bulletSize={20}` | Operación, estados, fecha del servidor, ejecutor, origen y datos relevantes; incluye recepción sin transición |
+| Comunicación con Ventas | `Card` con estado local por evento | Pendiente, enviado o envío fallido; sin reenvío desde esta lectura |
 | Evidencia | `Card` + `Image radius="md"` 4:3 clicable → `Modal size="xl"` | `alt="Evidencia de la incidencia del despacho DSP-000123"` |
 | Panel de decisión | `Card` *sticky* con tres `Button fullWidth` según §23.D.1 | — |
 
 | Estado | Presentación |
 |---|---|
 | Evidencia cargando | `Skeleton` 4:3 |
-| Sin evidencia | `EstadoVacio` compacto: "No intentado — sin foto" |
+| Sin evidencia | `EstadoVacio` compacto: "No intentado — sin foto" solo para ese caso; en fallo real sin referencia: "Falta la referencia de evidencia" |
 | Enlace expirado | `Alert` amarillo + `Button variant="subtle"` "Volver a cargar" |
 | No intentado | `Alert` azul: "Esta salida no consumió intento; se conserva el contador acumulado" |
-| `409` | `Alert` amarillo: "El despacho cambió de estado. Se actualizó la información." |
-| `404` | `EstadoVacio` "No encontramos este despacho" + "Volver al listado" |
+| `409` | Bloquear acciones mientras se consulta; después: "El despacho cambió. Revisa la información antes de confirmar" |
+| `404` | `EstadoVacio` diferencia despacho inexistente de despacho sin incidencia según el código contractual; "Volver al listado" |
+| Fallo de actualización | Aviso de datos desactualizados, reintento y acciones bloqueadas hasta renovar |
+| Fallo del visor o de datos operativos | Recuperación en el bloque afectado; conservar los datos canónicos autorizados |
 
 ##### 23.D.1. Panel de decisión
 
 | Situación | Confirmar recepción | Reprogramar | Cerrar como devuelto a origen |
 |---|---|---|---|
-| Pendiente de retorno | `primary` | Deshabilitado + "Primero confirma la recepción del paquete" | Deshabilitado + mismo motivo |
+| `FALLIDO`, pendiente de retorno, incluso con anulación/límite | `primary` | Deshabilitado + todos los motivos aplicables | Deshabilitado + "Primero confirma la recepción del paquete" |
 | Recibido y reprogramable | Oculto | `primary` | `variant="outline" color="red"` |
-| Máximo de intentos | Oculto | Deshabilitado + "Se alcanzó el máximo de intentos (2 de 2)" | `color="red"` (`filled`, pasa a ser la acción principal) |
-| Pedido anulado | Oculto | Deshabilitado + "El pedido fue anulado por Ventas y Postventa" | `color="red"` (`filled`) |
+| Recibido, máximo de intentos alcanzado | Oculto | Deshabilitado + contador/máximo dinámicos | `color="red"` (`filled`, pasa a ser la acción principal) |
+| Recibido, pedido anulado | Oculto | Deshabilitado + "El pedido fue anulado por Ventas y Postventa" y límite si aplica | `color="red"` (`filled`) |
+| Estado distinto de `FALLIDO` | Oculto | Oculto | Oculto |
 
 El motivo de cada botón deshabilitado se muestra como texto visible debajo del botón y se asocia con `aria-describedby`.
+
+El comportamiento vigente corresponde a [ES-F04-02](../especificaciones/ES-F04-02-ConsultarDetalleIncidencia/spec.md), incluida la actualización de 30 segundos, acciones bloqueadas durante actualización, cambio de incidencia, degradación y regreso con filtros. Consumir [Gestión §5.3](../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) y [Operación §3.4](../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia); no construir contratos HTTP desde componentes visuales.
 
 #### P3 Confirmación de recepción
 

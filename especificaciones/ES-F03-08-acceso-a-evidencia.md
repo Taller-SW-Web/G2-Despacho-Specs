@@ -19,31 +19,31 @@ Permitir visualizar la fotografía de evidencia de un despacho solo a usuarios a
 
 1. El usuario solicita ver la evidencia de un despacho.
 2. El sistema valida el token y verifica que sea el repartidor propietario o tenga rol `GESTOR_DESPACHO`.
-3. El sistema concede el acceso mediante el mecanismo autorizado que defina el equipo.
+3. Operación concede una URL firmada temporal mediante el mecanismo definido en su contrato, §3.4.
 4. El usuario visualiza la fotografía.
 
 ## 4. Reglas y validaciones
 
 - La evidencia nunca se expone de forma pública.
-- Acceso directo, o con autorización ausente o vencida: denegado.
+- Acceso al objeto sin firma válida o con enlace vencido: denegado. Renovar el enlace exige validar otra vez la autorización del usuario.
 - Usuario que no es el repartidor propietario ni tiene rol `GESTOR_DESPACHO`: `403 Forbidden`.
-- El mecanismo de acceso autorizado está pendiente de decisión del equipo (`pendiente.md`, sección F-03).
+- El mecanismo de lectura está definido en [Operación §3.4](../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia): respuesta, vigencia configurable, permisos y errores. Su implementación y comprobación real permanecen pendientes; no se exige perfil de repartidor al Gestor.
 
 ## 5. Entradas, salidas e integraciones
 
 ### Entradas
 
 - JWT del usuario.
-- Código del despacho.
+- Identificador de evidencia obtenido del recurso autorizado; Operación valida su asociación y devuelve el identificador del despacho correspondiente.
 
 ### Salidas
 
-- Acceso a la fotografía o respuesta de denegación.
+- URL firmada de lectura y vencimiento, o error contractual; una URL expirada o un fallo de carga no significan ausencia de fotografía.
 
 ### Integraciones
 
-- Servicio de evidencia (por definir).
-- F-04 Entregas Fallidas: consulta la evidencia de los despachos `FALLIDO`.
+- Operación de Reparto y Flota: evidencia asociada en almacenamiento privado y autorización temporal.
+- F-04 Entregas Fallidas: consume la referencia de su incidencia y permite consulta histórica después de resolver el despacho.
 - Ver `integraciones/api-contract-operacion-reparto.md`.
 
 ## 6. Criterios de aceptación
@@ -52,11 +52,11 @@ Permitir visualizar la fotografía de evidencia de un despacho solo a usuarios a
 
 - **DADO** un despacho con evidencia.
 - **CUANDO** el repartidor propietario o un usuario con rol `GESTOR_DESPACHO` solicita verla.
-- **ENTONCES** el sistema permite visualizar la evidencia mediante el mecanismo de acceso autorizado que defina el equipo.
+- **ENTONCES** Operación devuelve URL firmada y vencimiento conforme a §3.4; el visor permite verla y renovar explícitamente un enlace vencido, sin persistir URLs ni conservar la fotografía de otro recurso.
 
 ### CA-02. Acceso sin autorización válida (F-03 CA-28)
 
-- **DADO** un acceso directo o con una autorización ausente o vencida.
+- **DADO** un acceso al objeto sin firma válida o con enlace vencido.
 - **CUANDO** se solicita la evidencia.
 - **ENTONCES** el acceso es denegado.
 
@@ -70,7 +70,7 @@ Permitir visualizar la fotografía de evidencia de un despacho solo a usuarios a
 
 ### Fuera de alcance
 
-- Decisión técnica sobre almacenamiento y mecanismo de acceso.
+- Carga, procesamiento y conservación de fotografías; esta consulta consume el almacenamiento privado y la autorización definidos en el contrato.
 - Eliminación o edición de evidencias.
 
 ### Referencias

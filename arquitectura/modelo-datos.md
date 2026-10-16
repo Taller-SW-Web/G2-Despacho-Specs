@@ -318,7 +318,7 @@ Representa la jornada de un repartidor: con qué furgoneta y en qué zona trabaj
 
 Datos iniciales: los siete motivos del Anexo B de F-03.
 
-#### `intentos_entrega` (escribe F-03; F-04 completa la recepción)
+#### `intentos_entrega` (Gestión persiste los resultados de F-03; F-04 completa la recepción)
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | `UUID` | PK | Identificador. |
@@ -342,7 +342,7 @@ Datos iniciales: los siete motivos del Anexo B de F-03.
 
 Índices: `idx_intentos_entrega_despacho` (`despacho_id`), `idx_intentos_entrega_motivo` (`motivo_codigo`).
 
-Para ES-F04-01, `despachos.ultima_incidencia_id` se actualiza en la misma transacción que acepta cada transición a `FALLIDO`, apuntando a un registro de ese mismo despacho. Todo despacho vigente en `FALLIDO` debe tener esa referencia. La reprogramación conserva el registro histórico; un fallo posterior crea otro registro y sustituye la referencia, por lo que no hereda la recepción anterior. La lectura usa el identificador del registro como `idIncidencia`, independientemente de si consume un intento. No se usa `numero_intentos` ni un desempate de fechas para identificar la última incidencia.
+Para ES-F04-01/02, `despachos.ultima_incidencia_id` se actualiza en la misma transacción que acepta cada transición a `FALLIDO`, apuntando a un registro de ese mismo despacho. Todo despacho vigente en `FALLIDO` debe tener esa referencia. La reprogramación y el cierre conservan el registro y su referencia para consultar el detalle histórico; un fallo posterior crea otro registro y sustituye la referencia, por lo que no hereda la recepción anterior. La lectura usa el identificador del registro como `idIncidencia`, independientemente de si consume un intento. No se usa `numero_intentos` ni un desempate de fechas para identificar la última incidencia.
 
 El listado selecciona una fila por despacho a partir de esa referencia. Los datos de recepción y evidencia pertenecen al mismo registro; los campos `consume_intento` y `numero_intentos` representan, respectivamente, la condición de esa salida y el acumulado del despacho. La FK se incorpora una vez creadas ambas tablas; no introduce relaciones entre microservicios.
 
@@ -421,6 +421,8 @@ Tabla de solo inserción: sus filas nunca se modifican ni se eliminan.
 | `observaciones` | `VARCHAR(500)` | NULL | Observaciones. |
 | `datos` | `JSONB` | NULL | Detalle propio de la operación: repartidor anterior y nuevo, nueva fecha, ocupación resultante (F-02 CA-11). |
 | `registrado_en` | `TIMESTAMPTZ` | NOT NULL | Marca temporal del servidor. |
+
+En fallos, recepciones, reprogramaciones y cierres, `datos` conserva el `idIncidencia` afectado y los datos propios de la operación definidos por [Gestión §5.3](../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02). La consulta histórica no rellena eventos anteriores usando la incidencia actual ni expone el JSON interno completo. El detalle lee también el estado local de `eventos_salientes` sin reenviarlos ni consultar Ventas.
 
 #### `eventos_salientes` (RT-03; escribe el componente común)
 | Columna | Tipo | Restricciones | Descripción |

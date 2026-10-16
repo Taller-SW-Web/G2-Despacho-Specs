@@ -12,7 +12,7 @@ El estado canónico del despacho pertenece a [Gestión de Despachos](./api-contr
 
 ## 3. API de F-03: operación del repartidor
 
-Todos los recursos requieren un JWT humano con `tipo=acceso`. El backend toma el `sub`, resuelve el perfil local de repartidor vinculado y comprueba que esté activo; el cliente no puede elegir otro `idRepartidor`. No se exige un rol global `REPARTIDOR` ni un claim `idRepartidor`.
+Todos los recursos requieren un JWT humano con `tipo=acceso`. En las rutas `/repartidor/`, el backend toma el `sub`, resuelve el perfil local de repartidor vinculado y comprueba que esté activo; el cliente no puede elegir otro `idRepartidor`. No se exige un rol global `REPARTIDOR` ni un claim `idRepartidor`. La lectura de evidencia admite también al Gestor conforme a §3.4, sin exigirle perfil de repartidor.
 
 | Método | Ruta | Propósito |
 |---|---|---|
@@ -81,6 +81,27 @@ Motivos permitidos para el repartidor:
 
 `NO_INTENTADO` es exclusivo del cierre manual o automático de jornada.
 
+
+### 3.4. Autorizar la lectura de evidencia
+
+- **Método y ruta:** `POST /api/v1/evidencias/{idEvidencia}/acceso`, sin cuerpo ni parámetros de consulta; no requiere `Idempotency-Key`.
+- **Autorización:** JWT humano válido y rol `GESTOR_DESPACHO`, o perfil local de repartidor activo vinculado al `sub` y propietario del despacho en la proyección de Operación. No exige jornada abierta para leer evidencia. Autenticación y permisos se comprueban antes de devolver referencias o URLs.
+- **Precondición:** evidencia `ASOCIADA` al despacho; no permite visualizar cargas pendientes de asociación. El Gestor puede consultar evidencia histórica aunque el despacho ya no esté `FALLIDO`.
+- **Respuesta `200`:** objeto con `idEvidencia`, `idDespacho`, `urlLectura` y `venceEn`, todos obligatorios. Identificadores como cadenas, URL HTTPS firmada para lectura del objeto privado e instante de vencimiento en UTC.
+- La vigencia se obtiene de `VIGENCIA_URL_FIRMADA_SEGUNDOS` de Operación (valor inicial `300` en el modelo de datos). `venceEn` corresponde al enlace emitido, no al vencimiento de una carga sin asociar. Una renovación vuelve a validar permisos y genera una URL nueva; no cambia el estado de evidencia, despacho ni historial de negocio.
+- La respuesta incluye `Cache-Control: no-store`. No expone credenciales, una URL pública permanente ni un campo de ruta interna. La URL firmada es el único acceso temporal que se entrega; no se registra en logs, almacenamiento del navegador ni evidencia de pruebas.
+- El frontend vincula la respuesta al despacho e identificador solicitados; una respuesta de un recurso anterior se descarta. Al cerrar el visor, cambiar de despacho/incidencia o perder autorización, retira imagen y URL.
+- El vencimiento o fallo de imagen no se presenta como ausencia de fotografía. Se ofrece renovar/reintentar explícitamente, sin bucles de renovación ni construir rutas públicas. El error permanece dentro del visor y conserva el resto del detalle autorizado.
+
+| HTTP | Código o tratamiento | Significado |
+|---|---|---|
+| `400` | `DESP_ERROR_CONSULTA_INVALIDA` | Cuerpo o parámetros no admitidos. |
+| `401` / `403` | [Común §3.5](./api-contract.md#35-errores) | Token no aceptado o usuario sin autorización; no entrega URL. |
+| `404` | `DESP_ERROR_EVIDENCIA_NO_ENCONTRADA` | Referencia de evidencia inexistente u objeto eliminado; no se sustituye por otra fotografía. |
+| `409` | `DESP_ERROR_EVIDENCIA_NO_ASOCIADA` | La evidencia existe, pero aún no quedó asociada; permite reintentar. |
+| `503` | `DESP_ERROR_EVIDENCIA_NO_DISPONIBLE` | No puede autorizarse/comprobarse la lectura por indisponibilidad temporal. |
+
+El almacenamiento deniega accesos sin firma válida y enlaces vencidos. Un fallo de descarga se distingue en UI de los errores HTTP de esta autorización; `Volver a cargar` ejecuta nuevamente esta operación.
 
 ## 4. API de F-05 y F-06: perfiles, flota y jornadas
 

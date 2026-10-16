@@ -35,7 +35,7 @@ Registrar que el paquete asociado a un despacho fallido regresó físicamente al
 - La marca temporal y el usuario que confirma proceden del servidor y del JWT; no pueden ser sustituidos por valores libres del cliente.
 - La recepción no cambia el estado del despacho: el estado anterior y el vigente continúan siendo `FALLIDO`.
 - La recepción habilita las decisiones posteriores, pero no las ejecuta automáticamente.
-- Una repetición exacta es idempotente: devuelve el resultado vigente sin duplicar recepción, auditoría ni liberación de ocupación.
+- Una repetición exacta es idempotente: devuelve el resultado original de la operación aceptada sin duplicar recepción, auditoría ni liberación de ocupación; la UI vuelve a consultar el estado actual.
 - Si otra operación modificó el despacho y ya no está `FALLIDO`, se responde `409 Conflict` y no se registra la recepción.
 - La liberación de ocupación debe utilizar el mecanismo interno e idempotente definido con F-06.
 - Un usuario sin el rol requerido obtiene `403 Forbidden`.
@@ -45,6 +45,7 @@ Registrar que el paquete asociado a un despacho fallido regresó físicamente al
 ### Entradas
 
 - Identificador del despacho.
+- Identificador de incidencia y versión del despacho leídos del listado o detalle; el contrato de Gestión §5.2 rechaza una salida/versión desactualizada con `409`, salvo repetición exacta ya aceptada.
 - Indicador obligatorio `selloIntacto`.
 - Observación opcional sobre la condición del paquete.
 - Identidad y roles obtenidos del JWT.
@@ -81,7 +82,7 @@ Registrar que el paquete asociado a un despacho fallido regresó físicamente al
 
 - **DADO** un despacho cuya recepción ya fue confirmada.
 - **CUANDO** se repite exactamente la confirmación.
-- **ENTONCES** el sistema devuelve el resultado vigente sin duplicar la recepción, la auditoría ni la liberación de ocupación.
+- **ENTONCES** el sistema devuelve el resultado original aceptado sin duplicar la recepción, la auditoría ni la liberación de ocupación.
 
 ### CA-04. Estado incompatible
 

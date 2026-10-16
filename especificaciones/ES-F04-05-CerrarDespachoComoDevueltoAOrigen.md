@@ -37,7 +37,7 @@ Permitir que el Gestor de Despacho cierre definitivamente un despacho fallido cu
 - El cambio de estado, el historial y el registro del evento se persisten en la misma transacción local.
 - La indisponibilidad de Ventas y Postventa no revierte un cierre ya confirmado; el evento conserva su estado pendiente o fallido para reintento.
 - Una repetición exacta es idempotente y no duplica la transición, la auditoría ni el evento.
-- Si el despacho cambió a otro estado por una operación distinta, se responde `409 Conflict`; si ya fue cerrado por la misma operación, se devuelve el resultado vigente.
+- Si el despacho cambió a otro estado por una operación distinta, se responde `409 Conflict`; una repetición exacta ya aceptada devuelve su resultado original conforme a Gestión §5.2.
 - El cierre no determina reembolso, cambio, reintegro de stock ni otra decisión comercial.
 
 ## 5. Entradas, salidas e integraciones
@@ -45,6 +45,7 @@ Permitir que el Gestor de Despacho cierre definitivamente un despacho fallido cu
 ### Entradas
 
 - Identificador del despacho.
+- Identificador de incidencia y versión leídos del detalle; Gestión §5.2 valida ambos antes de una decisión nueva y reconoce por separado la repetición exacta ya aceptada.
 - Motivo obligatorio del cierre.
 - Observación adicional cuando el contrato la permita.
 - Identidad y roles obtenidos del JWT.
@@ -74,7 +75,7 @@ Permitir que el Gestor de Despacho cierre definitivamente un despacho fallido cu
 
 - **DADO** un despacho ya cerrado mediante la misma operación.
 - **CUANDO** se repite exactamente la solicitud.
-- **ENTONCES** el sistema devuelve el resultado vigente sin duplicar el cambio, la auditoría ni el evento.
+- **ENTONCES** el sistema devuelve el resultado original aceptado sin duplicar el cambio, la auditoría ni el evento.
 
 ### CA-03. Ventas y Postventa no disponible
 

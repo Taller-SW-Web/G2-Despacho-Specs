@@ -21,7 +21,7 @@ Esta funcionalidad incluye:
 
 - Panel de despachos en `FALLIDO`, distinguiendo los paquetes pendientes de retorno de los ya recibidos en el centro.
 - Confirmación de la recepción del paquete en el centro de despacho.
-- Detalle del despacho con historial de estados e intentos, y visualización autorizada de la evidencia mediante el mecanismo que se defina en F-03.
+- Detalle del despacho con historial de operaciones e intentos y evidencia mediante el acceso temporal de Operación, §3.4; conserva consulta histórica después de resolverlo.
 - Política de intentos configurable, con valor inicial de dos.
 - Reprogramación con nueva fecha y retorno a la cola de F-02.
 - Tratamiento diferenciado de los despachos `NO_INTENTADO`, que no consumen intentos.
@@ -34,8 +34,8 @@ Esta funcionalidad incluye:
 ### 4.1. Precondiciones
 
 - El usuario está autenticado con rol `GESTOR_DESPACHO`.
-- El despacho existe y está en `FALLIDO`.
-- El registro del fallo contiene motivo, fecha, repartidor y número de intento.
+- Para recibir, reprogramar o cerrar, el despacho existe y está en `FALLIDO`; el detalle de una incidencia histórica sigue consultable en otros estados, sin acciones de resolución.
+- El registro del fallo contiene motivo, fecha, repartidor y condición de consumo de intento; el despacho conserva el contador acumulado.
 - Para reprogramar o cerrar el despacho, su paquete debe haberse recibido en el centro de despacho.
 - La política de intentos está configurada; el valor inicial es dos.
 - La nueva fecha de entrega es posterior a la fecha actual.
@@ -89,13 +89,13 @@ Los indicadores `Pendientes de retorno`, `Recibidos en centro` y `Retornos atras
 
 ### RF-02. Consultar el detalle de una incidencia
 
-El sistema DEBE mostrar la información necesaria para decidir.
+El sistema DEBE mostrar la información necesaria para decidir y conservar su consulta después de la resolución. [ES-F04-02](../especificaciones/ES-F04-02-ConsultarDetalleIncidencia/spec.md) concreta la última incidencia, recepción por salida, historial completo, evidencia, degradación y acciones combinadas; el formato se define en [Gestión §5.3](../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02).
 
 #### CA-04. Detalle exitoso
 
 - **DADO** un despacho en `FALLIDO`.
 - **CUANDO** el Gestor abre su detalle.
-- **ENTONCES** ve motivo, comentario del repartidor, fecha, repartidor, intento actual, datos de recepción, historial de estados y la fotografía mediante el mecanismo de acceso autorizado definido por F-03.
+- **ENTONCES** ve la última incidencia sin mezclar salidas: motivo, comentario, fecha, repartidor, intentos consumidos sobre el máximo vigente, recepción, historial de operaciones y estado local de comunicación con Ventas. La fotografía utiliza el acceso autorizado de Operación; las acciones respetan primero recepción y después límite/anulación. Fuera de `FALLIDO` se muestra el estado actual y se conserva solo la consulta.
 
 #### CA-05. Despacho inexistente
 
@@ -121,9 +121,9 @@ El sistema DEBE permitir fijar una nueva fecha mientras no se haya alcanzado el 
 
 #### CA-08. Límite de intentos alcanzado
 
-- **DADO** un despacho cuyo contador es igual al máximo configurado.
+- **DADO** un despacho cuyo contador es igual o superior al máximo configurado.
 - **CUANDO** el Gestor abre el detalle o intenta reprogramar.
-- **ENTONCES** el frontend deshabilita la reprogramación, el backend responde `422 Unprocessable Entity` ante cualquier intento y solo se ofrece el cierre como `DEVUELTO_A_ORIGEN`.
+- **ENTONCES** el frontend deshabilita la reprogramación, el backend responde `422 Unprocessable Entity` ante el intento que cumple las demás precondiciones y, una vez recibida la devolución física, solo se ofrece el cierre como `DEVUELTO_A_ORIGEN`. Con recepción pendiente, primero se exige confirmarla.
 
 #### CA-09. Estado desactualizado
 
@@ -177,7 +177,7 @@ El sistema DEBE tratar de forma diferenciada los despachos no intentados y los p
 
 - **DADO** un despacho en `FALLIDO` sobre el cual F-02 registró la anulación del pedido.
 - **CUANDO** el Gestor abre su detalle o intenta reprogramarlo.
-- **ENTONCES** la reprogramación está deshabilitada, el backend la rechaza con `409 Conflict` y solo se permite el cierre como `DEVUELTO_A_ORIGEN`.
+- **ENTONCES** la reprogramación está deshabilitada, el backend la rechaza con `409 Conflict` y, después de confirmar la recepción, solo se permite el cierre como `DEVUELTO_A_ORIGEN`.
 
 ### RF-07. Recepción del paquete en el centro de despacho
 
@@ -209,7 +209,7 @@ Si no puede confirmarse la jornada, el listado informa `No se pudo confirmar el 
 |---|---|
 | Pantalla de Entregas Fallidas | Filtros, listado paginado, indicadores de recepción, "No intentado", "Pedido anulado" y "Retorno atrasado", y estados de carga, vacío y error. |
 | Confirmación de recepción | Registro del retorno del paquete con estado del sello y observaciones. |
-| Detalle de la incidencia | Motivo, comentario, intento actual, recepción, historial y fotografía. |
+| Detalle de la incidencia | Última incidencia, intentos consumidos, recepción por salida, historial completo, comunicación con Ventas y fotografía autorizada; consulta histórica tras resolver. |
 | Formulario de reprogramación | Fecha futura con validación; disponible solo con recepción confirmada. |
 | Confirmación de cierre | Motivo obligatorio y advertencia de que el despacho no tendrá más intentos. |
 | Retroalimentación | Éxito, validaciones, conflictos y errores de comunicación. |
@@ -220,7 +220,7 @@ Si no puede confirmarse la jornada, el listado informa `No se pudo confirmar el 
 |---|---|
 | Consulta de incidencias | Recuperar despachos `FALLIDO` con filtros y paginación. |
 | Registro de recepción | Marcar el paquete como recibido en el centro y registrar la auditoría. |
-| Consulta de detalle | Obtener historial, motivo, intentos, recepción y solicitar a F-03 el acceso autorizado a la evidencia. |
+| Consulta de detalle | Componer los datos canónicos, historial y acciones; devolver la referencia de evidencia para que el contenedor de UI solicite su lectura a Operación. |
 | Caso de uso de reprogramación | Validar estado, recepción, fecha, límite de intentos y anulación antes de solicitar la transición. |
 | Caso de uso de cierre | Validar recepción y solicitar la transición a `DEVUELTO_A_ORIGEN`. |
 | Política de intentos | Leer y aplicar el máximo configurable. |
