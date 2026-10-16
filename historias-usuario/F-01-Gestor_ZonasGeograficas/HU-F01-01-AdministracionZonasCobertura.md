@@ -24,7 +24,7 @@
 
 - **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-01`, Criterios `CA-01`, `CA-03`).
 - **Endpoints asociados:**
-  - CRUD de zonas de cobertura bajo `/api/v1/zonas` (creación `POST /api/v1/zonas` y listado `GET /api/v1/zonas`, definido en [integraciones/api-contract-gestion-despachos.md](../../integraciones/api-contract-gestion-despachos.md)).
+  - CRUD de zonas de cobertura bajo `/api/v1/zonas`: creación `POST /api/v1/zonas`, listado `GET /api/v1/zonas`, consulta `GET /api/v1/zonas/{idZona}` y edición `PUT /api/v1/zonas/{idZona}` ([contrato de Gestión, sección 3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas)). El cambio de estado se atiende con `PATCH /api/v1/zonas/{idZona}/estado`, cubierto en HU-F01-02.
 - **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
   - Formulario de Zona: registrar o editar una zona con nombre, distritos comprendidos, códigos postales y estado.
@@ -55,5 +55,5 @@
 - [ ] Entidad JPA y repositorio para `zonas` implementados en Spring Data.
 - [ ] Pruebas de integración del CRUD verificando la creación exitosa de zonas válidas y el rechazo `409` para nombres, distritos o códigos postales duplicados.
 - [ ] Formulario de Zona implementado en React + Tailwind con selección de distritos y códigos postales.
-- [ ] Respuestas HTTP alineadas al contrato en [integraciones/api-contract-gestion-despachos.md](../../integraciones/api-contract-gestion-despachos.md).
+- [ ] Respuestas HTTP alineadas al [contrato de Gestión](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) y sus convenciones compartidas.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

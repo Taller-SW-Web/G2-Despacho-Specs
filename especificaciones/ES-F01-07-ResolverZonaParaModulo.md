@@ -33,7 +33,6 @@ Determinar qué zona de cobertura activa contiene un destino y entregar esa reso
 - La resolución no aplica tarifas ni calcula costos: esos datos corresponden al motor de cotización de ES-F01-06.
 - El consumidor no puede forzar una zona distinta de la que resulta de la cobertura, ni declarar cobertura cuando el sistema la niega.
 - La resolución debe ser estable para el mismo destino mientras la configuración no cambie, de modo que F-02 y F-05 observen la misma zona.
-- El límite de solicitudes por consumidor se aplica también a esta operación interna.
 - Un destino sin `distrito` ni `codigoPostal` identificables no puede resolverse y se rechaza con `400 Bad Request`.
 
 ## 5. Entradas, salidas e integraciones
@@ -53,7 +52,7 @@ Determinar qué zona de cobertura activa contiene un destino y entregar esa reso
 
 - F-02 consume la resolución al crear un despacho y rechaza los destinos sin cobertura.
 - F-05 consume el catálogo de zonas activas para asignar la zona de trabajo del repartidor.
-- El mecanismo concreto por el que F-05, que pertenece al microservicio de Operación de Reparto y Flota, accede a esta información es un acuerdo pendiente de documentar en `integraciones/api-contract-gestion-despachos.md` [cite: 2].
+- El mecanismo concreto por el que F-05, que pertenece al microservicio de Operación de Reparto y Flota, acceda a esta resolución no está definido en la [API interna de Gestión, sección 6](../integraciones/api-contract-gestion-despachos.md#6-api-interna-provista-por-gestión) y permanece como acuerdo pendiente de documentar en ese contrato [cite: 2].
 - La zona es propiedad de Gestión de Despachos; ningún consumidor accede a su base de datos.
 
 ## 6. Criterios de aceptación
@@ -100,7 +99,7 @@ Determinar qué zona de cobertura activa contiene un destino y entregar esa reso
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-01-Gestor_ZonasGeograficas.md`, RF-04, CA-02, CA-12 y CA-13.
-- [cite: 2] `integraciones/api-contract-gestion-despachos.md`, Común §3.2, Común §3.4, Gestión §3.1, Gestión §6, Operación §5. Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#32-encabezados), [Gestión](../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas), [Operación](../integraciones/api-contract-operacion-reparto.md#5-api-interna-provista-por-operación).
+- [cite: 2] [Contrato de Gestión](../integraciones/api-contract-gestion-despachos.md), secciones 3.1 y 6; [convenciones compartidas](../integraciones/api-contract.md#3-convenciones-comunes), secciones 3.2 y 3.4.
 - [cite: 3] `arquitectura/modelo-datos.md`, tablas `zonas`, `zona_distritos` y `asignaciones_diarias`.
 - [cite: 4] `overview.md`, secciones 3.1 y 3.2 sobre relaciones entre F-01, F-02 y F-05.
 - [cite: 5] `arquitectura/macroproceso-despacho.md`, solicitud de despacho y resolución de zona.
