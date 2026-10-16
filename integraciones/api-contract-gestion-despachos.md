@@ -86,6 +86,10 @@ Secuencia:
 }
 ```
 
+**Integración con reprogramaciones de F-04:** una transición aceptada a `PENDIENTE_ASIGNACION` aparece inmediatamente en la cola, sujeta a sus filtros; no espera a la nueva fecha para incorporarse. Se utiliza `fechaProgramada` como fecha civil y «hoy» del servidor en `America/Lima`. Una fecha futura mantiene la fila en solo lectura y el comando de asignación la rechaza con `409`; desde su fecha puede asignarse si cumple las demás condiciones, incluida la liberación de toda reserva anterior conforme a Operación §5.1.
+
+El filtro `tipoIntento` de la cola admite `TODOS`, `PRIMER_INTENTO` y `REINTENTOS`. `REINTENTOS` selecciona despachos con al menos una reprogramación aceptada en su historial; `PRIMER_INTENTO`, los que no tienen ninguna; `TODOS` no aplica esa restricción. No se deduce la reprogramación de `numeroIntentos > 1`: el acumulado cuenta fallos reales, permanece en uno tras el primer fallo reprogramado y puede seguir en cero con `NO_INTENTADO`. La etiqueta `Reintento` y el KPI correspondiente usan esa misma condición, sin incrementar el contador ni presentar una nueva salida como ya realizada. Las demás reglas de la cola se desarrollan en [ES-F02-03](../especificaciones/ES-F02-03-ConsultarColaPendientes.md).
+
 ## 4. Catálogo único de motivos de fallo
 
 - **Método y ruta:** `GET /api/v1/catalogos/motivos-fallo`.
@@ -305,6 +309,104 @@ El orden es autenticación/autorización, formato, repetición aceptada y, para 
 - Ante `401/403`, `404/409`, otros `4xx` o respuesta incoherente, marcar también `requiereRevision=true`, dejar aviso operativo y limitar los siguientes intentos a uno cada 60 min hasta corregir la causa. No descartar la solicitud, sustituir su reserva ni afirmar capacidad libre; tras confirmación se limpia el aviso.
 - La confirmación se guarda en la solicitud local con su fecha, sin otro historial de recepción ni incremento del contador/versión del despacho. Si se pierde esa actualización local, el siguiente intento recibe la misma reserva ya liberada y completa el registro.
 - Una liberación pendiente no revierte el retorno ni bloquea por sí sola reprogramación/cierre. Operación sigue contando su reserva activa; una asignación nueva de F-02 se rechaza mientras esa reserva anterior permanezca activa. El GET no ejecuta reintentos.
+
+#### 5.2.2. Reprogramar un despacho fallido — ES-F04-04
+
+- **Método y ruta:** `POST /api/v1/despachos/{idDespacho}/reprogramacion`; JWT humano válido con `GESTOR_DESPACHO`. No requiere `Idempotency-Key`; utiliza la identidad de comando de §5.2.
+- **Cuerpo:** únicamente `idIncidencia`, `versionDespacho`, `nuevaFechaProgramada` y `observacion` opcional, según el ejemplo de §5.2. Identificadores opacos no vacíos, versión entera positiva y fecha obligatoria. No admite campos extra ni parámetros de consulta.
+- `nuevaFechaProgramada`: cadena de fecha civil real en formato exacto `YYYY-MM-DD`, sin hora, entre los años `0001` y `9999`. Para una solicitud nueva debe ser estrictamente posterior al día del servidor en `America/Lima`, calculado al validar dentro de la operación; no al recibir la página ni según UTC o el navegador. No se excluyen fines de semana/feriados ni se impone un plazo tarifario u otro horizonte de anticipación.
+- `observacion`: cadena de hasta 500 puntos de código Unicode después de recortar espacios en extremos; conserva saltos internos. Omisión, `null` o solo espacios se normalizan a `null`; otros tipos o exceso de longitud responden `400` por campo. No modifica la observación de recepción ni la de asignación.
+- Solicitud nueva: incidencia/versión vigentes, estado `FALLIDO`, recepción confirmada de esa incidencia, pedido no anulado y contador acumulado menor al máximo configurado vigente. Máximo inicial dos; ausente, no entero o no positivo es inconsistencia local. `NO_INTENTADO` no incrementa ni reinicia el contador y está sujeto al mismo límite.
+- La liberación de capacidad pendiente/de revisión, jornada activa/cerrada, sello alterado, foto ausente o caída de Operación no bloquean la decisión. Se conserva la zona original aunque esté inactiva, sin recotizar ni consultar Productos o el estado comercial en Ventas.
+
+**Transacción local:** actualizar a `PENDIENTE_ASIGNACION`, guardar `fecha_programada`, fijar `en_cola_desde` al instante UTC de aceptación e incrementar `despachos.version`. Retirar las referencias de asignación vigente (`repartidor_id_externo`, `asignacion_diaria_id_externa`, `reserva_capacidad_id_externa` y `secuencia_ruta` quedan `null`); conservar sus instantáneas históricas, `ultima_incidencia_id`, recepción y solicitud de liberación. Conservar identidad del despacho/pedido, zona, destino, carga, contador y marca de simulación.
+
+En esa misma transacción insertar un historial `TRANSICION` de `FALLIDO` a `PENDIENTE_ASIGNACION`, funcionalidad `F-04`, origen `MANUAL`, ejecutor del JWT, observación normalizada y `datos` de reprogramación según §5.3; registrar el resultado durable del comando y, si no es simulado, un evento `DESPACHO_REPROGRAMADO`. Todo se confirma o revierte junto, incluida la comparación de versión al escribir. No libera ni reserva capacidad, no modifica la solicitud de ES-F04-03 y no realiza llamadas externas dentro de la transacción.
+
+**Respuesta nueva `200 OK`:** decisión local confirmada; `Cache-Control: no-store`. Todos los campos son obligatorios; solo los declarados admiten `null`:
+
+| Campo | Tipo | Contenido |
+|---|---|---|
+| `idDespacho`, `idIncidencia` | Cadenas | Identidades aceptadas. |
+| `estado` | Enum | `PENDIENTE_ASIGNACION`. |
+| `versionDespacho` | Entero positivo | Versión posterior a la transición. |
+| `fechaProgramada` | Fecha civil | Fecha aceptada, `YYYY-MM-DD`. |
+| `numeroIntentos` | Entero no negativo | Acumulado conservado. |
+| `observacion` | Cadena o `null` | Texto normalizado de esta decisión. |
+| `reprogramadoEn` | Instante UTC | Instante persistido; coincide con entrada a cola e historial de esta transición. |
+| `idEvento` | Cadena o `null` | Evento registrado para envío; `null` únicamente si es simulado. No acredita entrega a Ventas. |
+
+La respuesta original y su identidad, ejecutor y huella del contenido normalizado se conservan de forma durable, junto al historial, no solo en una caché de 24 horas. Una repetición exacta autorizada del mismo ejecutor devuelve ese mismo `200` y cuerpo, incluso si ya pasó la fecha, se asignó el despacho o hay otra incidencia; se reconoce antes de validar las precondiciones actuales. No vuelve a incrementar versión ni cambia entrada a cola, historial o evento. Para conocer la situación actual se consulta §5.3.
+
+**Orden de evaluación:** autenticación/autorización, formato/tipos y normalización, reconocimiento de identidad ya aceptada y, para una solicitud nueva, existencia, coincidencia incidencia/versión, estado `FALLIDO`, recepción de esa incidencia, anulación, integridad/política vigente, límite y fecha futura. Una fecha con formato válido que ya no es futura no impide recuperar un resultado original. Si coinciden anulación y límite se informa primero anulación; si falta recepción se exige primero recibir. La UI sigue mostrando todos los bloqueos calculados por §5.3.
+
+| HTTP | Código | Efecto |
+|---|---|---|
+| `400` | `DESP_ERROR_DATOS_REPROGRAMACION_INVALIDOS` | Campos ausentes, extra, de tipo/formato inválidos, observación excedida o fecha no futura para una solicitud nueva; `errores` por campo según Común §3.5; sin escrituras. |
+| `401` / `403` | Convenciones compartidas | Sin datos ni cambios; autenticar antes de consultar existencia/resultados. |
+| `404` | `DESP_ERROR_DESPACHO_NO_ENCONTRADO` | Despacho inexistente. |
+| `409` | `DESP_ERROR_OPERACION_REUTILIZADA` | Identidad aceptada con contenido normalizado o ejecutor diferente. |
+| `409` | `DESP_ERROR_DESPACHO_DESACTUALIZADO` | Incidencia/versión distintas o comparación de versión fallida al escribir. |
+| `409` | `DESP_ERROR_ESTADO_INCOMPATIBLE` | Estado distinto de `FALLIDO` después de comprobar identidad/versión. |
+| `409` | `DESP_ERROR_RECEPCION_PENDIENTE` | Sin recepción confirmada de esa incidencia. |
+| `409` | `DESP_ERROR_PEDIDO_ANULADO` | F-02 registró anulación; corresponde cierre después de recibir. |
+| `422` | `DESP_ERROR_MAXIMO_INTENTOS_ALCANZADO` | Contador igual o superior al máximo vigente; no consume otro intento. |
+| `500` | `DESP_ERROR_DATOS_INCONSISTENTES` | Política o referencias locales inválidas, incluida recepción confirmada sin su solicitud durable; no inventar datos. |
+| `503` | `DESP_ERROR_REPROGRAMACION_NO_DISPONIBLE` | No se pudo confirmar el resultado al cliente; consultar antes de repetir exactamente la solicitud original. |
+
+Dos reprogramaciones diferentes, reprogramación/cierre o reprogramación/anulación compiten por la versión del mismo despacho. Solo una mutación puede confirmar sobre esa versión; la perdedora recibe `409` sin efectos parciales. Una repetición exacta concurrente se reconoce con el resultado durable ganador. Registrar anulación en `FALLIDO` también incrementa la versión, aunque no cambie el estado. Si ganó reprogramación, una nueva cancelación de F-02 evalúa el estado `PENDIENTE_ASIGNACION`; no se pierde silenciosamente la solicitud de Ventas.
+
+Si se pierde la respuesta, consultar detalle antes de reenviar la misma identidad/contenido original; un GET por sí solo no prueba quién resolvió ni qué resultado recibió otro comando. No reutilizar automáticamente versión/incidencia nuevas. Tras `409/422`, volver a consultar y revisar antes de otra decisión. Un fallo de lectura después de un `200` no convierte el guardado aceptado en un rechazo.
+
+**Integraciones:** F-02 ve la entrada a cola inmediatamente conforme a §3.2; asigna desde la fecha programada si cumple las condiciones de capacidad. La solicitud de liberación anterior continúa por §5.2.1 y no se sustituye por la nueva reserva. RT-03 entrega el evento fuera de la transacción conforme a [Común §7.3](./api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa), con `datos.nuevaFechaProgramada` como fecha civil: una caída de Ventas no revierte la reprogramación, los reintentos conservan `idEvento` y los simulados no generan eventos externos.
+
+#### 5.2.3. Cerrar como devuelto a origen — ES-F04-05
+
+- **Método y ruta:** `POST /api/v1/despachos/{idDespacho}/devolucion-origen`; JWT humano válido, `tipo=acceso` y rol `GESTOR_DESPACHO`. No requiere `Idempotency-Key`; utiliza la identidad de §5.2.
+- **Cuerpo:** únicamente `idIncidencia`, `versionDespacho`, `motivo` y `observacion` opcional, según el ejemplo de §5.2; identificadores opacos no vacíos y versión entera positiva. No admite campos extra ni parámetros de consulta. Ejecutor y fecha proceden del JWT y del servidor.
+- `motivo`: cadena obligatoria de 1 a 500 puntos de código Unicode después de recortar espacios en extremos, conservando saltos internos. Omisión, `null`, tipo incorrecto, vacío/solo espacios o exceso de longitud responden `400` por campo. Es texto libre: `MAXIMO_INTENTOS_ALCANZADO` en el ejemplo es un texto válido, no un catálogo cerrado ni una referencia al catálogo de motivos de fallo.
+- `observacion`: cadena opcional de hasta 500 puntos de código Unicode después de recortar extremos; conserva saltos internos. Omisión, `null` o solo espacios se normalizan a `null`; tipo incorrecto o longitud excedida responde `400`. No sobrescribe el comentario del fallo ni la observación de recepción.
+- Solicitud nueva: despacho en `FALLIDO`, incidencia/versión vigentes y recepción confirmada de esa incidencia. Se permite con máximo alcanzado/superado, pedido anulado, intentos disponibles o `NO_INTENTADO` sin intentos consumidos; siempre exige la decisión explícita del Gestor.
+- Liberación pendiente/de revisión, jornada activa/cerrada, sello alterado, ausencia/fallo de fotografía o caída de Operación no añaden bloqueos. No se consulta Ventas ni su estado comercial como precondición del cierre. No existe cierre automático por esas condiciones.
+
+**Transacción local:** cambiar a `DEVUELTO_A_ORIGEN`, incrementar `despachos.version` e insertar un historial `TRANSICION`, estados `FALLIDO` y `DEVUELTO_A_ORIGEN`, funcionalidad `F-04`, origen `MANUAL`, ejecutor del JWT e instante UTC. Guardar la observación normalizada y `datos.idIncidencia`/`datos.motivoCierre`; el motivo de fallo histórico no cambia. El motivo de cierre no se inserta en `motivo_codigo`, que referencia únicamente el catálogo de fallos.
+
+En ese mismo historial conservar identidad, huella normalizada y respuesta original del comando en metadatos internos durables conforme al modelo; no se agrega una tabla de cierres. Si el despacho es real, registrar un único `DESPACHO_DEVUELTO_A_ORIGEN` en `eventos_salientes`; si es simulado, conservar marca e historial sin evento externo. Estado, versión, historial/resultado y evento se confirman o revierten juntos, con comparación de versión al escribir y unicidad del cierre. No se aceptan efectos parciales ni llamadas externas dentro de la transacción.
+
+Se conservan identidad del despacho/pedido, zona, destino, carga, fecha programada, contador, última incidencia, recepción, referencias históricas y solicitud de liberación. Cerrar no consume intentos, libera otra vez capacidad, reserva carga ni modifica jornadas. Una solicitud de liberación anterior sigue su recuperación por §5.2.1 aunque el despacho ya sea final; no se sustituye por otra reserva.
+
+**Respuesta nueva `200 OK`:** cierre local confirmado; `Cache-Control: no-store`. Todos los campos siguientes son obligatorios; solo los declarados admiten `null`:
+
+| Campo | Tipo | Contenido |
+|---|---|---|
+| `idDespacho`, `idIncidencia` | Cadenas | Identidades aceptadas. |
+| `estado` | Enum | `DEVUELTO_A_ORIGEN`. |
+| `versionDespacho` | Entero positivo | Versión posterior a la transición. |
+| `motivo` | Cadena | Motivo normalizado del cierre. |
+| `observacion` | Cadena o `null` | Observación normalizada de esta decisión. |
+| `numeroIntentos` | Entero no negativo | Acumulado conservado. |
+| `cerradoEn` | Instante UTC | Instante persistido de la transición y su historial. |
+| `idEvento` | Cadena o `null` | Evento registrado para envío; `null` únicamente si es simulado. No acredita entrega a Ventas ni liberación de capacidad. |
+
+Una repetición exacta autorizada del mismo ejecutor devuelve ese mismo `200` y cuerpo originales, incluso después de reiniciar, transcurrir 24 horas o cambiar el estado de envío/liberación. El resultado se reconoce antes de validar las precondiciones actuales; no se reconstruye desde eventos o capacidad actuales ni incrementa nuevamente versión. Otro contenido normalizado o ejecutor con la misma identidad responde `409`. Una identidad nueva sobre un despacho final tampoco permite editar o reemplazar el cierre.
+
+**Orden de evaluación:** autenticación/autorización, formato y normalización, reconocimiento de identidad aceptada y, para una solicitud nueva, existencia, coincidencia incidencia/versión, estado `FALLIDO`, recepción de esa incidencia e integridad local. Dos cierres distintos o cierre/reprogramación/anulación compiten por la versión canónica: solo una mutación confirma sobre esa versión; la perdedora responde `409` y exige nueva consulta/revisión. Un duplicado exacto concurrente recupera el resultado ganador. No se exige agotar intentos para cerrar ni se devuelve `422` por haber alcanzado el máximo.
+
+| HTTP | Código | Efecto |
+|---|---|---|
+| `400` | `DESP_ERROR_DATOS_CIERRE_INVALIDOS` | Campos ausentes, extra o de tipo/formato/longitud inválidos; `errores` por campo según Común §3.5; sin escrituras. |
+| `401` / `403` | Convenciones compartidas | Sin datos ni cambios; autenticar antes de consultar existencia/resultados. |
+| `404` | `DESP_ERROR_DESPACHO_NO_ENCONTRADO` | Despacho inexistente. |
+| `409` | `DESP_ERROR_OPERACION_REUTILIZADA` | Identidad aceptada con contenido normalizado o ejecutor diferente. |
+| `409` | `DESP_ERROR_DESPACHO_DESACTUALIZADO` | Incidencia/versión distintas o comparación de versión fallida al escribir. |
+| `409` | `DESP_ERROR_ESTADO_INCOMPATIBLE` | Estado distinto de `FALLIDO` después de comprobar identidad/versión. |
+| `409` | `DESP_ERROR_RECEPCION_PENDIENTE` | Sin recepción confirmada de esa incidencia; una recepción anterior no sirve. |
+| `500` | `DESP_ERROR_DATOS_INCONSISTENTES` | Referencias locales inválidas o recepción confirmada sin solicitud durable; no inventar otra referencia. |
+| `503` | `DESP_ERROR_CIERRE_NO_DISPONIBLE` | No se pudo confirmar el resultado al cliente; consultar antes de repetir exactamente la solicitud original. |
+
+Si se pierde la respuesta, consultar §5.3 antes de recuperar el comando original con la misma identidad/contenido. Una lectura del estado final no demuestra que otro ejecutor aceptó ese mismo comando. Tras `409` se vuelve a consultar y se revisa antes de una decisión nueva; no trasladar automáticamente el motivo a otra incidencia/versión. Un fallo al recargar después de un `200` no convierte el cierre aceptado en rechazo.
+
+**Integración existente con Ventas:** se emite el mismo evento y payload de [Común §7.3](./api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa), con `datos.motivoCierre` igual al motivo normalizado. Se aplica también a cierres logísticos de `NO_INTENTADO` o con anulación ya registrada por F-02; Gestión comunica el hecho y no solicita una segunda cancelación comercial ni inventa una transición a `EN_CAMINO`. El efecto en el pedido pertenece al contrato de Ventas; esta operación no agrega estados/transiciones comerciales, no realiza reembolsos y no espera ese procesamiento para confirmar localmente. RT-03 entrega fuera de la transacción, conserva `idEvento` y expone `PENDIENTE`, `ENVIADO` o `ENVIO_FALLIDO` en §5.3; se mantienen los reintentos y reenvío manual ya acordados.
 
 ### 5.3. Consultar el detalle de una incidencia — ES-F04-02
 

@@ -51,6 +51,8 @@ erDiagram
     despachos ||--o{ eventos_salientes : publica
     despachos ||--o{ liberaciones_capacidad : solicita
     intentos_entrega ||--o| liberaciones_capacidad : origina
+    despachos ||--o{ reprogramaciones_despacho : reprograma
+    intentos_entrega ||--o{ reprogramaciones_despacho : resuelve
 
     liberaciones_capacidad {
         uuid id PK
@@ -300,7 +302,7 @@ Representa la jornada de un repartidor: con qué furgoneta y en qué zona trabaj
 | `volumen_m3` | `NUMERIC(10,3)` | NULL, CHECK (> 0) | Volumen total calculado. |
 | `cantidad_paquetes` | `INTEGER` | NULL, CHECK (= 1) | Paquete lógico registrado internamente. |
 | `fecha_comprometida` | `DATE` | NULL | Fecha comprometida (si se conserva como referencia). |
-| `fecha_programada` | `DATE` | NULL | Fecha programada calculada por Despacho. |
+| `fecha_programada` | `DATE` | NULL | Fecha inicial calculada por Despacho o nueva fecha civil aceptada por F-04; no es un instante UTC. |
 | `en_cola_desde` | `TIMESTAMPTZ` | NULL | Última entrada a `PENDIENTE_ASIGNACION`. |
 | `repartidor_id_externo` | `UUID` | NULL | Repartidor (BD 1). |
 | `asignacion_diaria_id_externa` | `UUID` | NULL | Jornada (BD 1). |
@@ -314,6 +316,8 @@ Representa la jornada de un repartidor: con qué furgoneta y en qué zona trabaj
 | `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
 
 Índices: `idx_despachos_pedido` (`pedido_id`), `idx_despachos_zona` (`zona_id`), `idx_despachos_estado` (`estado`).
+
+Al aceptar ES-F04-04, Gestión fija `en_cola_desde` al instante de la reprogramación e incrementa `version`; deja `repartidor_id_externo`, `asignacion_diaria_id_externa`, `reserva_capacidad_id_externa` y `secuencia_ruta` en `null`, porque no hay una asignación vigente. Sus referencias anteriores permanecen en incidencia, historial y solicitud de liberación. Conserva `ultima_incidencia_id`, recepción, identidad, zona, destino, carga y contador; la asignación siguiente crea otra reserva. Registrar anulación sobre `FALLIDO` también incrementa `version` para competir con reprogramación/cierre, aunque conserve el estado.
 
 ### 3.4. Intentos y trazabilidad (Gestión de Despachos)
 
@@ -389,6 +393,30 @@ El procesador reclama pendientes vencidas con exclusión de 60 segundos, confirm
 
 Índices: unicidad de incidencia/reserva y `(estado, proximo_intento_en, bloqueada_hasta)` para el procesador. Esta bandeja interna es independiente de `eventos_salientes` hacia Ventas; no comparte su máximo de cinco reintentos.
 
+#### `reprogramaciones_despacho` (Gestión; resultados durables de ES-F04-04)
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | `UUID` | PK | Identificador interno de la decisión aceptada. |
+| `despacho_id` | `UUID` | FK → `despachos.id`, NOT NULL | Despacho reprogramado. |
+| `incidencia_id` | `UUID` | FK → `intentos_entrega.id`, NOT NULL | Incidencia resuelta; debe pertenecer al despacho. |
+| `version_solicitada` | `INTEGER` | NOT NULL, CHECK (> 0) | Versión presentada, anterior al incremento. |
+| `ejecutor_id` | `UUID` | NOT NULL | `sub` del Gestor que confirmó. |
+| `hash_contenido` | `TEXT` | NOT NULL | Huella del cuerpo normalizado, incluida fecha y observación. |
+| `fecha_programada` | `DATE` | NOT NULL | Nueva fecha civil aceptada, inmutable en este registro. |
+| `observacion` | `VARCHAR(500)` | NULL | Observación normalizada de la decisión. |
+| `historial_id` | `UUID` | FK → `historial_estados_despacho.id`, NOT NULL, UNIQUE | Única transición de esta decisión. |
+| `evento_id` | `UUID` | FK → `eventos_salientes.id`, NULL solo si simulado, UNIQUE | Evento externo registrado en la misma transacción cuando corresponde. |
+| `codigo_respuesta` | `INTEGER` | NOT NULL, CHECK (= 200) | HTTP original. |
+| `respuesta_original` | `JSONB` | NOT NULL | Cuerpo original completo, sin reconstruirlo desde el estado actual. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL | Aceptación UTC; coincide con historial y nueva entrada a cola. |
+
+Unicidad de `(despacho_id, incidencia_id, version_solicitada)`; el tipo de comando queda implícito en esta tabla. No incluir el ejecutor en la clave única: reutilizar la identidad desde otro ejecutor debe detectarse como conflicto, no como otra decisión. Relación de incidencia, versión y referencias se valida dentro de la transacción local que confirma despacho, historial, evento y resultado; no se conservan resultados aceptados de transacciones revertidas.
+
+El registro aceptado es inmutable y no expira con `claves_idempotencia`. Permite reconocer la misma operación después de reinicios, medianoche o ciclos posteriores; mismo ejecutor/contenido normalizado devuelve el resultado original y otro contenido/ejecutor responde `409`, según [Gestión §5.2.2](../integraciones/api-contract-gestion-despachos.md#522-reprogramar-un-despacho-fallido--es-f04-04). Las FK al historial/evento se incorporan después de crear esas tablas.
+
+La existencia de una reprogramación aceptada para el despacho identifica `REINTENTOS` en la cola de F-02; no se calcula con `numero_intentos > 1`. La lectura no crea otra salida ni incrementa el contador. Índice de consulta por `despacho_id` cubierto por la unicidad anterior.
+
 #### `evidencias` (Operación de Reparto y Flota; escribe F-03)
 
 | Columna | Tipo | Restricciones | Descripción |
@@ -422,7 +450,7 @@ Si Gestión acepta la transición, Operación cambia la evidencia a `ASOCIADA`. 
 | `creado_en`, `liberado_en` | `TIMESTAMPTZ` | — | Auditoría. |
 | `version` | `INTEGER` | NOT NULL, DEFAULT 0 | Control de concurrencia. |
 
-Un índice único parcial sobre `despacho_id_externo WHERE estado = 'ACTIVA'` garantiza una sola reserva vigente y permite conservar las reservas históricas. Un despacho `FALLIDO` conserva la reserva hasta que Gestión confirme su recepción en el centro. La reprogramación no reutiliza una reserva liberada: crea otra al volver a asignar el despacho.
+Un índice único parcial sobre `despacho_id_externo WHERE estado = 'ACTIVA'` garantiza una sola reserva vigente y permite conservar las reservas históricas. La reserva de la salida fallida sigue activa hasta que Operación confirme su liberación solicitada por la recepción; puede seguir pendiente después de reprogramar. Reprogramar no libera ni crea reservas: F-02 crea otra al volver a asignar, una vez liberada la anterior.
 
 #### `proyecciones_despacho` (Operación de Reparto y Flota)
 
@@ -465,6 +493,12 @@ Tabla de solo inserción: sus filas nunca se modifican ni se eliminan.
 | `registrado_en` | `TIMESTAMPTZ` | NOT NULL | Marca temporal del servidor. |
 
 En fallos, recepciones, reprogramaciones y cierres, `datos` conserva el `idIncidencia` afectado y los datos propios de la operación definidos por [Gestión §5.3](../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02). La consulta histórica no rellena eventos anteriores usando la incidencia actual ni expone el JSON interno completo. El detalle lee también el estado local de `eventos_salientes` sin reenviarlos ni consultar Ventas.
+
+Para ES-F04-05 se reutiliza esta tabla, sin otra tabla de cierres. `datos.motivoCierre` conserva el motivo de cierre normalizado; `motivo_codigo` queda `null` porque no es un motivo del catálogo de fallos. `observaciones` conserva la observación opcional de la decisión. Despacho, incremento de versión, historial y evento si es real se guardan en la misma transacción local.
+
+El mismo registro incluye `datos.controlCierre` con `versionSolicitada` entera positiva, `hashContenido` del cuerpo normalizado, `codigoRespuesta=200` y `respuestaOriginal` completa de Gestión §5.2.3. La identidad se obtiene de despacho, `datos.idIncidencia`, tipo de comando y versión presentada; el ejecutor permanece en `ejecutor_id`. Son metadatos internos inmutables: la consulta del detalle solo proyecta `idIncidencia` y `motivoCierre`, nunca `controlCierre`. Su retención acompaña al historial y no expira con la caché de `claves_idempotencia`.
+
+Un índice único parcial por `despacho_id` para `tipo_operacion=TRANSICION` y `estado_nuevo=DEVUELTO_A_ORIGEN` garantiza un solo cierre final y permite localizar el resultado original. Si coincide identidad, ejecutor y contenido normalizado, se devuelve esa respuesta; si se reutiliza la identidad con otro ejecutor/contenido, se rechaza con `409`. Una identidad nueva sigue validando estado/versión y nunca edita el registro existente. No se depende solo del estado final para afirmar que una solicitud específica fue aceptada. Referencia: [Gestión §5.2.3](../integraciones/api-contract-gestion-despachos.md#523-cerrar-como-devuelto-a-origen--es-f04-05).
 
 #### `eventos_salientes` (RT-03; escribe el componente común)
 | Columna | Tipo | Restricciones | Descripción |
@@ -637,6 +671,7 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 | `historial_estados_despacho`, `eventos_salientes` | Gestión | RT-01 a RT-04 | Estados, seguimiento y eventos |
 | `repartidores`, `furgonetas`, `asignaciones_diarias` | Operación | F-05 y F-03 | F-05 RF-01 a RF-07 |
 | `liberaciones_capacidad` | Gestión | F-04 registra; procesador invoca Operación | Recepción recuperable de ES-F04-03 |
+| `reprogramaciones_despacho` | Gestión | F-04 registra; F-02 consulta condición de reprogramado | Resultado durable e idempotencia de ES-F04-04 |
 | `reservas_capacidad` | Operación | F-02 consume por API; F-06 calcula ocupación | Asignación y ocupación |
 | `proyecciones_despacho`, `evidencias` | Operación | F-03 | Ruta, transición y evidencia |
 | `claves_idempotencia` | Cada servicio | Usuarios y clientes técnicos | Reintentos seguros |

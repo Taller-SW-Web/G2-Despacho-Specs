@@ -26,7 +26,7 @@
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-04`, restricciones de `RF-06` y `RF-07`; `CA-10`, `CA-11`, `CA-12`, `CA-15` y `CA-17` [cite: 1].
 - **Especificación atómica:** [ES-F04-05](../../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen.md).
-- **Contrato asociado:** [API, Externo §7.3, Gestión §5, Común §9](../../integraciones/api-contract-gestion-despachos.md), operación de cierre, evento e idempotencia [cite: 2]. Referencia: [Convenciones e integración externa](../../integraciones/api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa).
+- **Contrato asociado:** [Gestión §5.2.3](../../integraciones/api-contract-gestion-despachos.md#523-cerrar-como-devuelto-a-origen--es-f04-05), definición canónica del cierre; [Común §7.3](../../integraciones/api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa), evento existente a Ventas [cite: 2]. Los criterios completos de identidad/versión, recuperación e integraciones están en la atómica; esta historia no mantiene otro contrato.
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada.
 - **Dependencia externa:** RT-03 entrega el evento a Ventas y Postventa de forma asíncrona mediante webhook HTTPS y bandeja de salida. El cierre local no espera la disponibilidad de Ventas; el contrato correspondiente define autenticación y reintentos.
 - **Componentes de Frontend:**
@@ -35,9 +35,12 @@
   - Retroalimentación diferenciada para operación exitosa, decisión ya procesada y problema de comunicación externa.
 - **Reglas de negocio, idempotencia e integración:**
   - Solo puede cerrarse un despacho cuyo estado vigente sea `FALLIDO` y cuyo paquete tenga recepción confirmada.
-  - El motivo es obligatorio y no puede contener solo espacios.
+  - El motivo es texto libre obligatorio, hasta 500 caracteres normalizados según Gestión §5.2.3; observación adicional opcional. No se crea catálogo de cierre ni se confunde con el motivo de fallo.
   - El Gestor puede cerrar por decisión operativa aunque queden intentos. Si se alcanzó el máximo o el pedido fue anulado, el cierre es la única decisión permitida, después de la recepción.
-  - Una decisión aceptada cambia el estado a `DEVUELTO_A_ORIGEN` y registra el historial y `DESPACHO_DEVUELTO_A_ORIGEN` en la misma transacción local.
+  - Una decisión aceptada responde `200` y guarda `DEVUELTO_A_ORIGEN`, versión, historial con resultado original y `DESPACHO_DEVUELTO_A_ORIGEN` en la misma transacción local si es real; un simulado no genera evento externo.
+  - La liberación pendiente/de revisión no impide cerrar; conserva la solicitud original de recepción, no descuenta capacidad otra vez y no exige jornada cerrada, sello intacto o foto disponible.
+  - Repeticiones exactas del mismo ejecutor recuperan el resultado original; otro contenido/ejecutor o decisión concurrente responde `409`. El motivo no se traslada automáticamente a otra incidencia/versión.
+  - El mismo evento comunica el cierre logístico de un `NO_INTENTADO` o pedido ya anulado; no solicita otra cancelación comercial ni impone estados internos a Ventas.
   - Repetir la misma operación no debe duplicar el cambio de estado, la auditoría de negocio ni la comunicación externa.
   - Una falla al comunicar el resultado no debe revertir el estado local ya aceptado.
   - Todo intento de comunicación debe registrarse como exitoso, pendiente o fallido, con información suficiente para su tratamiento posterior.
@@ -52,7 +55,7 @@
 - [ ] **CA-10: Cierre exitoso**
   - **DADO** un despacho `FALLIDO` con recepción confirmada en el centro.
   - **CUANDO** el Gestor confirma su cierre indicando un motivo.
-  - **ENTONCES** cambia a `DEVUELTO_A_ORIGEN` y se registran el historial y un único evento `DESPACHO_DEVUELTO_A_ORIGEN` para su entrega asíncrona a Ventas y Postventa.
+  - **ENTONCES** responde `200`, cambia a `DEVUELTO_A_ORIGEN` y registra historial/resultado original y un único evento `DESPACHO_DEVUELTO_A_ORIGEN` si es real; el simulado conserva historial sin evento externo.
 
 - [ ] **CA-11: Operación repetida**
   - **DADO** que el despacho ya fue cerrado como `DEVUELTO_A_ORIGEN` por la misma operación.

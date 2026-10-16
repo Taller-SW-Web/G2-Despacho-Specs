@@ -105,13 +105,13 @@ El sistema DEBE mostrar la información necesaria para decidir y conservar su co
 
 ### RF-03. Reprogramar un despacho
 
-El sistema DEBE permitir fijar una nueva fecha mientras no se haya alcanzado el máximo de intentos.
+El sistema DEBE permitir fijar una nueva fecha mientras no se haya alcanzado el máximo de intentos. [ES-F04-04](../especificaciones/ES-F04-04-ReprogramarDespachoFallido.md) concreta recepción por incidencia, fecha civil futura en `America/Lima`, observación opcional, conflictos, idempotencia y retorno inmediato a F-02; [Gestión §5.2.2](../integraciones/api-contract-gestion-despachos.md#522-reprogramar-un-despacho-fallido--es-f04-04) es la definición canónica de la operación.
 
 #### CA-06. Reprogramación válida
 
 - **DADO** un despacho fallido, recibido en el centro, con un intento y máximo configurado de dos.
 - **CUANDO** el Gestor selecciona una fecha futura y confirma.
-- **ENTONCES** el estado cambia a `PENDIENTE_ASIGNACION` ("En centro de despacho"), se guarda la nueva fecha programada, el contador se mantiene en uno y se registra la auditoría. El despacho conserva la zona registrada originalmente y no vuelve a validar que siga activa, porque no se trata de una solicitud nueva.
+- **ENTONCES** responde `200`, cambia a `PENDIENTE_ASIGNACION` ("En centro de despacho"), guarda la nueva fecha, conserva el contador en uno y persiste versión, entrada a cola, auditoría y resultado durable; registra el evento si no es simulado. F-02 lo muestra inmediatamente, con asignación bloqueada hasta la fecha programada y mientras siga activa la reserva anterior. Conserva la zona original aunque esté inactiva, sin recotizar ni crear otra asignación; una liberación pendiente no impide reprogramar.
 
 #### CA-07. Fecha inválida
 
@@ -133,13 +133,13 @@ El sistema DEBE permitir fijar una nueva fecha mientras no se haya alcanzado el 
 
 ### RF-04. Cerrar el despacho como devuelto a origen
 
-El sistema DEBE permitir cerrar un despacho fallido cuyo paquete permanecerá en el centro de despacho y comunicar el resultado a Ventas y Postventa.
+El sistema DEBE permitir cerrar un despacho fallido cuyo paquete permanecerá en el centro de despacho y comunicar el resultado a Ventas y Postventa. [ES-F04-05](../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen.md) concreta el cierre individual con motivo en texto libre, recepción por incidencia, concurrencia y recuperación; [Gestión §5.2.3](../integraciones/api-contract-gestion-despachos.md#523-cerrar-como-devuelto-a-origen--es-f04-05) define la operación. El caso habitual es límite alcanzado o pedido anulado; se conserva la decisión operativa explícita aunque queden intentos, sin cierre automático.
 
 #### CA-10. Cierre exitoso
 
 - **DADO** un despacho en `FALLIDO` recibido en el centro.
 - **CUANDO** el Gestor confirma el cierre indicando un motivo.
-- **ENTONCES** el estado cambia a `DEVUELTO_A_ORIGEN` ("De vuelta en el centro de despacho"), se registra la auditoría y se publica el evento `DESPACHO_DEVUELTO_A_ORIGEN` hacia Ventas y Postventa.
+- **ENTONCES** responde `200`, cambia a `DEVUELTO_A_ORIGEN` ("De vuelta en el centro de despacho") y guarda versión, motivo, auditoría y resultado original; registra el evento `DESPACHO_DEVUELTO_A_ORIGEN` para envío asíncrono si es real. El simulado conserva historial sin evento externo. La liberación pendiente de la recepción continúa sin bloquear ni revertir el cierre.
 
 #### CA-11. Operación repetida
 
@@ -169,7 +169,7 @@ El sistema DEBE tratar de forma diferenciada los despachos no intentados y los p
 
 #### CA-14. Reprogramación de un despacho no intentado
 
-- **DADO** un despacho en `FALLIDO` con motivo `NO_INTENTADO`, recibido en el centro.
+- **DADO** un despacho en `FALLIDO` con motivo `NO_INTENTADO`, recibido en el centro, pedido no anulado y contador inferior al máximo vigente.
 - **CUANDO** el Gestor lo reprograma con una fecha futura.
 - **ENTONCES** el despacho vuelve a `PENDIENTE_ASIGNACION` sin cambiar el contador y deja el listado de fallidos. Antes de decidir, el listado identifica la incidencia como `No intentado en esta salida`; el historial conserva ese motivo aunque existan intentos fallidos previos.
 
@@ -233,7 +233,7 @@ Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se 
 - **Seguridad:** todas las operaciones requieren rol `GESTOR_DESPACHO`.
 - **Aislamiento:** no se accede a bases de datos de otros módulos.
 - **Consistencia:** cambios de estado, auditoría y eventos asociados se persisten en la misma transacción local. La recepción persiste junto con su historial y solicitud de liberación; Operación se actualiza después con entrega recuperable e idempotente.
-- **Idempotencia:** la recepción y el cierre repetidos no producen efectos duplicados.
+- **Idempotencia:** la recepción, reprogramación y cierre repetidos no producen efectos duplicados; un resultado aceptado se reconoce antes de aplicar las precondiciones actuales.
 - **Trazabilidad:** las recepciones, las decisiones y el estado de su comunicación son consultables.
 - **Usabilidad y escalabilidad:** pantalla responsive y listados paginados.
 

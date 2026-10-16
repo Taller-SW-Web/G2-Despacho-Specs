@@ -26,7 +26,7 @@
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-03`, `RF-06` y precondición de `RF-07`; `CA-06` a `CA-09`, `CA-14`, `CA-15` y `CA-17` [cite: 1].
 - **Especificación atómica:** [ES-F04-04](../../especificaciones/ES-F04-04-ReprogramarDespachoFallido.md).
-- **Contrato asociado:** [API, Externo §7.3, Gestión §5, Común §9](../../integraciones/api-contract-gestion-despachos.md), operación de reprogramación, evento e idempotencia. No se define un contrato alternativo en esta historia [cite: 2]. Referencia: [Convenciones e integración externa](../../integraciones/api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa).
+- **Contrato asociado:** [Gestión §5.2.2](../../integraciones/api-contract-gestion-despachos.md#522-reprogramar-un-despacho-fallido--es-f04-04), definición canónica de la reprogramación, y [Común §7.3](../../integraciones/api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa), evento a Ventas [cite: 2]. La atómica conserva los criterios detallados; esta historia no define otro contrato.
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada.
 - **Componentes de Frontend:**
   - Formulario de reprogramación desde el detalle de la incidencia.
@@ -36,7 +36,7 @@
 - **Reglas de negocio y consistencia:**
   - Solo puede reprogramarse un despacho cuyo estado vigente sea `FALLIDO`.
   - El paquete debe tener recepción confirmada mediante HU-F04-06 y el pedido no debe estar anulado.
-  - La nueva fecha debe ser posterior a la fecha actual.
+  - La nueva fecha civil debe ser posterior al día actual del servidor en `America/Lima`, según Gestión §5.2.2; observación opcional normalizada y reglas de formato en ese mismo contrato.
   - El número de intentos debe ser menor que el máximo configurado, cuyo valor inicial es dos.
   - Una reprogramación válida cambia el estado a `PENDIENTE_ASIGNACION` y conserva el contador de intentos.
   - Reprogramar no incrementa el contador; F-03 origina el incremento cuando registra un fallo con intento real. `NO_INTENTADO` tampoco lo incrementa.
@@ -44,6 +44,9 @@
   - El cambio de estado, la nueva fecha, el historial y el evento `DESPACHO_REPROGRAMADO` se registran en la misma transacción local.
   - El despacho sale del listado de fallidos y aparece en la cola de F-02. Si su fecha es futura, permanece visible en solo lectura y F-02 solo permite asignarlo cuando corresponda.
   - Reprogramar no asigna repartidor ni reserva la capacidad del siguiente reparto.
+  - Liberación pendiente/de revisión no bloquea reprogramar; F-02 espera la liberación de la reserva anterior para aceptar otra asignación. Se conservan referencias históricas de la salida y se retiran las de asignación vigente.
+  - El comando conserva incidencia/versión y resultado durable. Un replay exacto autorizado devuelve el resultado original aun después de otra salida; otro contenido/ejecutor con la misma identidad responde `409`. Cierre y anulación concurrentes compiten por la versión.
+  - Una simulación conserva historial y marca de prueba sin emitir eventos externos; la indisponibilidad de Ventas no revierte una decisión local aceptada.
   - El backend debe volver a validar todas las reglas aunque el frontend haya bloqueado previamente una acción inválida.
 - **Datos involucrados:** despacho, fecha reprogramada, política de intentos e historial auditable.
 
