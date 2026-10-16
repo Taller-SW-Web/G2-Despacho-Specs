@@ -295,7 +295,7 @@ Se añade el cierre backend EV-11 por solicitud de Gerardo: migraciones, proveed
 ## 6. Entrega y revisión
 
 - Entrega actual: backend del Gestor completo para ejecución local (EV-06 a EV-11), con migraciones, consumidor/proveedor, credencial automática, listado, catálogo y demo reproducible por Gateway. Frontend no iniciado.
-- Commits backend: `49d40ff`, `df4590a`, `a65ed9f`, `6ffa58c`, `536a0f3` y `27c65a0`; PR hacia `develop` pendiente. Specs incorpora `origin/main` mediante `83c0b4b`; sin publicación remota en estos incrementos.
+- Commits backend: `49d40ff`, `df4590a`, `a65ed9f`, `6ffa58c`, `536a0f3` y `27c65a0`. El 16/10/2026 se actualizan las referencias remotas y se comprueba que ambas ramas ya contienen sus bases, sin conflictos ni cambios nuevos de código. Publicadas en GitHub: backend `feature/f04-consultar-entregas-fallidas` y Specs `docs/f04-evidencia-consulta-fallidas`, con seguimiento remoto configurado. Gerardo abrirá manualmente los PR hacia `develop` y `main`, respectivamente; no se han creado PR ni fusionado las ramas de trabajo en esas bases.
 - Reglas de consulta: confirmadas por Gerardo el 15/10/2026. Revisión técnica y funcional de la implementación: pendientes.
 - Estado del alcance funcional completo: pendiente de frontend; backend local completado.
 - Despliegue con G7, revisión humana y flujos consumidores/escritores de otras especificaciones: pendientes según el plan.
