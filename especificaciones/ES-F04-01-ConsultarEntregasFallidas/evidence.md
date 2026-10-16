@@ -1,6 +1,6 @@
 # Evidencia de ES-F04-01: Consultar entregas fallidas
 
-**Estado:** Implementación backend parcial en T-06; consumidor HTTP simulado y lector local con esquema PostgreSQL de prueba verificados. Verificación funcional pendiente.
+**Estado:** Implementación backend parcial en T-06/T-07; lectores y caso de uso con indicadores/paginación verificados por partes. Endpoint y verificación funcional pendientes.
 
 **Responsable de verificación:** Gerardo.
 
@@ -11,9 +11,9 @@
 - Documentación preparada: [spec.md](./spec.md), [ui.md](./ui.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), incorporados en la misma revisión de esta carpeta.
 - Origen de la especificación y fuentes generales: revisión `8586a78` del repositorio de especificaciones.
 - Base de código consultada: backend `af13989` y frontend `d2bc27d`; no constituyen una implementación de ES-F04-01.
-- Implementación parcial: backend `49d40ff` (consumidor) y `df4590ae2ef9676f99ac69457ed567086080d344` (lector local), rama `feature/f04-consultar-entregas-fallidas` desde `origin/develop` `bad76eb`, activa en el checkout habitual `G2-Despacho-Backend`. Specs: `docs/f04-evidencia-consulta-fallidas`, desde `main`.
+- Implementación parcial: backend `49d40ff` (consumidor), `df4590a` (lector local) y `a65ed9f67900cec63bd489e8d72098877b24f94d` (caso de uso), rama `feature/f04-consultar-entregas-fallidas` desde `origin/develop` `bad76eb`, activa en el checkout habitual `G2-Despacho-Backend`. Specs: `docs/f04-evidencia-consulta-fallidas`, desde `main`.
 - Dependencias de EV-06: HTTP simulado con `MockRestServiceServer`; sin PostgreSQL ni Operación real. Windows, Java Temurin 21.0.12.1, Maven 3.9.11 y Spring Boot 4.1.1 del proyecto.
-- Alcance verificado: preparación documental, consumidor por lotes y lectura local JDBC de T-06. EV-07 usa PostgreSQL real con esquema exclusivamente de pruebas. Ningún criterio de aceptación completo del endpoint o de UI se declara aprobado.
+- Alcance verificado: preparación documental, lectores de T-06 y lógica del caso de uso de T-07. EV-07/08 usan PostgreSQL real con esquema exclusivamente de pruebas; EV-08 comprueba la composición con puertos simulados. Ningún criterio de aceptación completo del endpoint o de UI se declara aprobado.
 - Revisión del 15/10/2026: seis decisiones de comportamiento confirmadas por Gerardo; contrato y modelo en `4bad49d`, reglas de consulta en `1f556c0`. Implementación de fuentes, endpoints y componentes pendiente.
 
 ## 2. Cobertura de criterios
@@ -40,7 +40,7 @@
 
 Resultados permitidos: `Pendiente`, `Aprobado`, `Fallido`, `No ejecutado`. Una comprobación con fixtures o dobles debe identificar su límite y no acredita integración real [cite: 1, 2].
 
-EV-06 aporta comprobaciones del consumidor para CA-05/10 y T-06; EV-07 del lector para CA-01/02/06/09. Los resultados de aceptación anteriores conservan `No ejecutado`: todavía no existe el endpoint del listado ni su conexión frontend. Las pruebas de cada parte no cierran el recorrido funcional completo.
+EV-06 aporta comprobaciones del consumidor para CA-05/10 y T-06; EV-07 del lector para CA-01/02/06/09; EV-08 de la lógica para CA-02/03/05/07/08/09/10/11. Los resultados de aceptación anteriores conservan `No ejecutado`: todavía no existe el endpoint del listado ni su conexión frontend. Las pruebas de cada parte no cierran el recorrido funcional completo.
 
 ## 3. Registros de verificación previstos
 
@@ -139,6 +139,33 @@ Límites: no se acredita llamada a Operación real, PostgreSQL, cálculo de indi
 
 Límites: el esquema de prueba no sustituye ni verifica las migraciones de despachos/intentos de F-02/F-03; no se agregan migraciones de producción. No prueba la transacción que escribe `ultima_incidencia_id`, PostgreSQL del proyecto, Operación real, totales, paginación, validación HTTP ni permisos del endpoint. Falta coordinar las migraciones compartidas y ejecutar el lector sobre ellas. T-06 sigue `En curso`; T-07 conserva su estado pendiente.
 
+### EV-08. Caso de uso, filtros tipados, indicadores, orden y paginación
+
+- Fecha: 16/10/2026, America/Lima. Backend `a65ed9f`, sobre `df4590a`. Trabajo asistido por Codex; revisión humana pendiente.
+- Alcance: composición independiente de T-07 y subpaso de T-06. Se usan los puertos `LectorIncidenciasLocales`, `LectorDatosOperativos` y `CatalogoMotivosFallo`, con un reloj inyectado. El catálogo se consulta sobre la tabla canónica desde `IncidenciasLocalesJdbc`, sin excluir motivos inactivos; no se crea otra fuente de motivos.
+- Código de aplicación: `ConsultarEntregasFallidas`, `FiltrosConsultaFallidos` y `PaginaEntregasFallidas`. Prueba nueva: `ConsultarEntregasFallidasTests`, con lectores simulados, nombres ficticios y reloj fijo `2026-10-16T18:00:00Z`. Ese instante es un dato de prueba, no la hora de ejecución.
+- Entorno: Java 21.0.12.1, Maven 3.9.11, Docker 29.4.0 y Spring Boot 4.1.1. La prueba JDBC conserva PostgreSQL 17 y su esquema aislado; las pruebas existentes de arranque/F-01 conservan su configuración original.
+- Comandos desde `G2-Despacho-Backend/servicio-gestion-despachos`, con `$mavenF04` definido en EV-06:
+
+```powershell
+& $mavenF04 -B -ntp -o '-Dtest=ConsultarEntregasFallidasTests,IncidenciasLocalesJdbcTests' test
+& $mavenF04 -B -ntp -o '-Dtest=OperacionIncidenciasHttpTests,ServicioGestionDespachosApplicationTests,FlujoF01Tests,CalculadoraCotizacionTests,ControladorCotizacionTests,ValidadorTokenDespachoTests' test
+```
+
+- Resultado observado: compilación de 79 fuentes y 10 fuentes de prueba. Primera ejecución: **10 pruebas aprobadas**, seis nuevas del caso de uso y cuatro del lector JDBC; estas últimas amplían las comprobaciones de catálogo histórico e inexistente sin añadir otra prueba. Segunda ejecución: **24 pruebas existentes aprobadas**. Total: **34 pruebas, sin fallos, errores ni omitidas**; ambas ejecuciones terminan con `BUILD SUCCESS`.
+- Reportes Surefire: [seis pruebas del caso de uso](./evidencia/EV-08-caso-uso-fallidos.txt) y [28 pruebas existentes, incluido lector JDBC](./evidencia/EV-08-regresion-backend.txt).
+
+| Comprobación prioritaria | Resultado observado |
+|---|---|
+| Base 7 pendientes, 5 recibidos y 2 atrasados; página parcial y selección de recibidos. | Conserva 7/5/2 en ambos grupos, calcula el total del grupo antes de paginar y pone recibidos primero aunque haya pendientes más antiguos. Consulta todas las jornadas pendientes y pide nombres solo de la página. |
+| Antigüedad, empate de fecha y página máxima entera. | Orden por fecha e identificador; página posterior al final vacía con totales y página conservados, sin desbordar el cálculo de posición. Base vacía tiene cero páginas y no llama a Operación. |
+| Jornada desconocida fuera de la página y nombres no disponibles. | El total de atrasados permanece `null`; informa pendientes sin jornada confirmada, conserva el nombre `null`, y un recibido tiene atraso `false`. Un pendiente desconocido tiene atraso `null`. Pedir solo atrasados genera el error de negocio `503` acordado antes de consultar nombres. |
+| Filtro de solo atrasados con datos completos y sin pendientes. | Selecciona únicamente pendientes con jornada cerrada. Si todos están recibidos, devuelve cero coincidencias sin depender de Operación para ese filtro. |
+| Página/tamaño inválidos, motivo vacío, rango invertido, grupo incompatible y código inexistente. | Genera error de negocio `400` con `DESP_ERROR_FILTROS_INVALIDOS`; no lee incidencias ni datos operativos. El código inexistente se comprueba en el catálogo. |
+| Motivo/fechas válidos y una salida `NO_INTENTADO`. | Delega motivo y fechas al lector; mantiene la identidad de incidencia/jornada y el contador acumulado de 1 sobre 2, con `consumeIntento=false`. |
+
+Límites: el caso de uso aún no está registrado como bean de ejecución ni expuesto por controlador. Los estados `400/503` son errores de negocio probados en Java, no respuestas HTTP verificadas de F-04. Siguen pendientes parámetros crudos repetidos/desconocidos o mal formados, JWT/roles antes de cualquier lectura, serialización de respuesta, ensamblaje del cliente técnico, migraciones/escritores compartidos y recorrido real por Gateway. La composición con puertos simulados no acredita la integración conjunta de JDBC y HTTP de Operación. T-06 y T-07 permanecen `En curso`.
+
 ## 4. Uso de IA
 
 | Trabajo | Herramienta y fecha | Entradas | Instrucción y revisión |
@@ -147,8 +174,9 @@ Límites: el esquema de prueba no sustituye ni verifica las migraciones de despa
 | Revisión de reglas de ES-F04-01 | Codex, 15/10/2026 | Seis recomendaciones confirmadas por Gerardo, carpeta SDD, contrato, modelo y diseños relacionados. | Aplicar los acuerdos y alinear documentos; guardar el trabajo en rama y commits separados según CONTRIBUTING. Revisión de comportamiento por Gerardo: confirmada en la conversación. Verificación contra implementación: pendiente. |
 | Consumidor backend por lotes de T-06 | Codex, 16/10/2026 | Carpeta SDD, contratos Gestión §5.1 y Operación §5.4, modelo y backend `bad76eb`. | Gerardo autoriza backend por partes, pruebas prioritarias, ramas desde `develop` y Specs desde `main`, sin desarrollar componentes React de compañeros. Solo consumidor, seis pruebas y seguimiento parcial. Revisión humana pendiente. |
 | Lectura local JDBC de T-06 | Codex, 16/10/2026 | Mismos documentos y backend `49d40ff`; esquema canónico de Gestión. | Gerardo pide el siguiente incremento dentro del repositorio backend y su rama. Se implementa el lector con cuatro pruebas PostgreSQL y se ejecutan cinco pruebas existentes; migraciones de otros integrantes y endpoint permanecen pendientes. Revisión humana pendiente. |
+| Caso de uso y filtros de T-07 | Codex, 16/10/2026 | Carpeta SDD, contratos y backend `df4590a`; lectores ya preparados. | Gerardo pide continuar y guardar los commits correspondientes, manteniendo avances por partes y pruebas prioritarias. Se componen los puertos, se añaden seis pruebas y se ejecuta la regresión; HTTP e integración real permanecen pendientes. Revisión humana pendiente. |
 
-Este registro describe asistencia documental, cierre documental de T-05 y avances técnicos de T-06 acreditados por EV-06/07. No acredita el cierre de T-06 ni pruebas de aceptación del endpoint del listado o integración real.
+Este registro describe asistencia documental, cierre documental de T-05 y avances técnicos de T-06/T-07 acreditados por EV-06/07/08. No acredita el cierre de esas tareas ni pruebas de aceptación del endpoint del listado o integración real.
 
 ## 5. Diferencias y pendientes
 
@@ -158,11 +186,12 @@ Este registro describe asistencia documental, cierre documental de T-05 y avance
 | DT-02: consumidor por lotes verificado con HTTP simulado en EV-06; proveedor real y ensamblaje pendientes. | CA-01/05/06/08/10 y CUI-01/05. | Coordinar proveedor y credenciales; conectar jornadas/nombres a la consulta y comprobar integración en T-06/07. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 | DT-03/04: bases de ejecución y componentes aún por verificar/implementar. | Todos. | Coordinar preparación y componentes, ejecutar tareas y registrar resultados. |
 | Migraciones de despachos/incidencias ausentes en `bad76eb`; lector preparado con esquema de prueba en EV-07. | CA-01/02/05/06/08/09/10. | Coordinar migraciones/escritores con F-02/F-03 y Arquitectura, y verificar el lector sobre la base compartida real. |
+| Caso de uso preparado en EV-08; entrada HTTP, autorización y ensamblaje pendientes. | CA-01 a CA-11 e integración real. | Continuar T-07 con controlador, validación cruda, seguridad y adaptación de los puertos reales, sin dar por completada T-06. |
 
 ## 6. Entrega y revisión
 
-- Entrega actual: consumidor backend (EV-06) y lector local JDBC (EV-07), con sus pruebas. Endpoint del listado pendiente.
-- Commits backend: `49d40ff` y `df4590a`; PR e integración en `develop` pendientes. Documentación en rama desde `main`; sin publicación remota en estos incrementos.
+- Entrega actual: consumidor backend (EV-06), lector local JDBC (EV-07) y caso de uso/filtros del listado (EV-08), con sus pruebas. Endpoint del listado pendiente.
+- Commits backend: `49d40ff`, `df4590a` y `a65ed9f`; PR e integración en `develop` pendientes. Documentación en rama desde `main`; sin publicación remota en estos incrementos.
 - Reglas de consulta: confirmadas por Gerardo el 15/10/2026. Revisión técnica y funcional de la implementación: pendientes.
 - Estado del alcance funcional: Pendiente.
 - Integración real y destinos de otras especificaciones: pendientes según el plan.

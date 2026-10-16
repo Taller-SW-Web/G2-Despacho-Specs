@@ -4,7 +4,7 @@
 
 **Responsable:** Gerardo
 
-**Estado:** Reglas de consulta acordadas el 15/10/2026; implementación backend iniciada el 16/10/2026 en T-06; verificación funcional pendiente.
+**Estado:** Reglas de consulta acordadas el 15/10/2026; implementación backend parcial en T-06/T-07; endpoint y verificación funcional pendientes.
 
 **Actor principal:** Gestor de Despacho
 
