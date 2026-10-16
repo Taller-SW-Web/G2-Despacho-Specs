@@ -76,15 +76,28 @@ Cada archivo de historia de usuario (`HU-F<XX>-<YY>-NombreCorto.md`) sigue la si
 | Funcionalidad | Responsable | Historias de Usuario | Estado |
 |---|---|---|---|
 | **F-01: Gestor de Zonas Geográficas** | Valqui | [HU-F01-01](./F-01-Gestor_ZonasGeograficas/HU-F01-01-AdministracionZonasCobertura.md)<br>[HU-F01-02](./F-01-Gestor_ZonasGeograficas/HU-F01-02-ConsultaEstadoZonas.md)<br>[HU-F01-03](./F-01-Gestor_ZonasGeograficas/HU-F01-03-ConfiguracionMatrizTarifaria.md)<br>[HU-F01-04](./F-01-Gestor_ZonasGeograficas/HU-F01-04-CotizacionEnviosTiempoReal.md)<br>[HU-F01-05](./F-01-Gestor_ZonasGeograficas/HU-F01-05-SeguridadTrazabilidadConfiguracion.md) | 🟢 Completado (5 HUs) |
-| **F-02: Programación y Asignación** | Tarqui | [HU-F02-01](./F-02-ProgramacionAsignacionDespachos/HU-F02-01-RecepcionSolicitudesDespacho.md)<br>[HU-F02-02](./F-02-ProgramacionAsignacionDespachos/HU-F02-02-GeneracionPedidosPrueba.md)<br>[HU-F02-03](./F-02-ProgramacionAsignacionDespachos/HU-F02-03-ConsultaColaPendientes.md)<br>[HU-F02-04](./F-02-ProgramacionAsignacionDespachos/HU-F02-04-AsignacionDespachoRepartidor.md)<br>[HU-F02-05](./F-02-ProgramacionAsignacionDespachos/HU-F02-05-TrazabilidadAuditoriaAsignacion.md) | 🟢 Completado (5 HUs) |
+| **F-02: Programación y Asignación** | Tarqui | [HU-F02-01](./F-02-ProgramacionAsignacionDespachos/HU-F02-01-RecepcionSolicitudesDespacho.md)<br>[HU-F02-02](./F-02-ProgramacionAsignacionDespachos/HU-F02-02-GeneracionPedidosPrueba.md)<br>[HU-F02-03](./F-02-ProgramacionAsignacionDespachos/HU-F02-03-ConsultaColaPendientes.md)<br>[HU-F02-04](./F-02-ProgramacionAsignacionDespachos/HU-F02-04-AsignacionDespachoRepartidor.md)<br>[HU-F02-05](./F-02-ProgramacionAsignacionDespachos/HU-F02-05-ConsultarReordenarSecuenciaRuta.md)<br>[HU-F02-06](./F-02-ProgramacionAsignacionDespachos/HU-F02-06-ReasignacionDespachoRepartidor.md)<br>[HU-F02-07](./F-02-ProgramacionAsignacionDespachos/HU-F02-07-CancelacionDespachoPorAnulacion.md)<br>[HU-F02-08](./F-02-ProgramacionAsignacionDespachos/HU-F02-08-TrazabilidadAuditoriaOperaciones.md) | Documentación actualizada (8 HUs); implementación pendiente |
 | **F-03: Web Repartidor y Evidencia** | Max Rojas | Pendiente de redacción | ⚪ Pendiente |
 | **F-04: Entregas Fallidas** | Gerardo | [HU-F04-01](./F-04-GestionEntregasFallidas/HU-F04-01-ConsultaEntregasFallidas.md)<br>[HU-F04-02](./F-04-GestionEntregasFallidas/HU-F04-02-ConsultaDetalleIncidencia.md)<br>[HU-F04-03](./F-04-GestionEntregasFallidas/HU-F04-03-ReprogramacionDespachoFallido.md)<br>[HU-F04-04](./F-04-GestionEntregasFallidas/HU-F04-04-CierreDespachoDevueltoAOrigen.md)<br>[HU-F04-05](./F-04-GestionEntregasFallidas/HU-F04-05-TrazabilidadDecisiones.md)<br>[HU-F04-06](./F-04-GestionEntregasFallidas/HU-F04-06-ConfirmacionRecepcionPaquete.md) | Documentación actualizada (6 HUs); implementación pendiente |
 | **F-05: Monitoreo de Flota** | Rhamses | [HU-F05-01](./F-05-MonitoreoFlotaCapacidad/HU-F05-01-GestionRepartidores.md)<br>[HU-F05-02](./F-05-MonitoreoFlotaCapacidad/HU-F05-02-GestionVehiculos.md)<br>[HU-F05-03](./F-05-MonitoreoFlotaCapacidad/HU-F05-03-AsignacionOperativaDiaria.md)<br>[HU-F05-04](./F-05-MonitoreoFlotaCapacidad/HU-F05-04-PanelMonitoreoFlota.md)<br>[HU-F05-05](./F-05-MonitoreoFlotaCapacidad/HU-F05-05-ApiDisponibilidadRepartidores.md) | 🟢 Completado (5 HUs) |
 | **Transversal: Seguimiento** | Equipo | Pendiente de redacción | ⚪ Pendiente |
 
-Los identificadores HU y ES no expresan una secuencia de ejecución. En F-04, HU-F04-06 cubre la recepción previa a las decisiones de HU-F04-03/04; HU-F04-05 registra automáticamente la trazabilidad de las tres operaciones. La actualización documental conserva los IDs de los criterios de F-04 y no acredita implementación ni pruebas [cite: 1].
+Los identificadores HU y ES no expresan una secuencia de ejecución. En F-02, HU-F02-01 recibe las órdenes externas y HU-F02-08 registra automáticamente la trazabilidad de todas las operaciones de asignación, reordenamiento, reasignación y cancelación. En F-04, HU-F04-06 cubre la recepción previa a las decisiones de HU-F04-03/04 y HU-F04-05 audita las resoluciones. La actualización documental conserva los IDs de los criterios de aceptación y no acredita implementación ni pruebas [cite: 1, 2].
 
-### 3.1. Trazabilidad de F-04
+### 3.1. Trazabilidad de F-02
+
+| Historia | Alcance principal | Requisitos y criterios de F-02 | Especificación atómica SDD |
+|---|---|---|---|
+| HU-F02-01 | Recepción de solicitudes e integridad | RF-01, RF-05; CA-01, CA-02, CA-11, CA-12, CA-21 | [ES-F02-01](../especificaciones/ES-F02-01-RecepcionSolicitudDespacho/spec.md) |
+| HU-F02-02 | Generación autónoma de prueba | RF-09; CA-20 | [ES-F02-02](../especificaciones/ES-F02-02-GenerarDespachoPrueba/spec.md) |
+| HU-F02-03 | Consulta de cola y fechas futuras | RF-02, RF-06; CA-03, CA-04, CA-05, CA-13 | [ES-F02-03](../especificaciones/ES-F02-03-ConsultarColaPendientes/spec.md) |
+| HU-F02-04 | Asignación con balance de capacidad | RF-03; CA-06, CA-07, CA-08, CA-09 | [ES-F02-04](../especificaciones/ES-F02-04-AsignarDespachoRepartidor/spec.md) |
+| HU-F02-05 | Secuencia y reordenamiento de ruta | RF-06; CA-14 | [ES-F02-05](../especificaciones/ES-F02-05-ConsultarReordenarSecuenciaRuta/spec.md) |
+| HU-F02-06 | Reasignación antes del traslado | RF-07; CA-15, CA-16 | [ES-F02-06](../especificaciones/ES-F02-06-ReasignarDespachoRepartidor/spec.md) |
+| HU-F02-07 | Cancelación por anulación comercial | RF-08; CA-17, CA-18, CA-19 | [ES-F02-07](../especificaciones/ES-F02-07-CancelarDespachoPorAnulacion/spec.md) |
+| HU-F02-08 | Trazabilidad y auditoría de operaciones | RF-04; CA-10; transversal RT-02 | [ES-F02-08](../especificaciones/ES-F02-08-RegistrarTrazabilidadOperaciones/spec.md) |
+
+### 3.2. Trazabilidad de F-04
 
 | Historia | Alcance principal | Requisitos y criterios de F-04 | Especificación atómica |
 |---|---|---|---|
@@ -95,5 +108,6 @@ Los identificadores HU y ES no expresan una secuencia de ejecución. En F-04, HU
 | HU-F04-05 | Trazabilidad automática | RF-05; CA-13 | [ES-F04-06](../especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones/spec.md) |
 | HU-F04-06 | Recepción física antes de decidir | RF-07; CA-16 y CA-17; relación con CA-18 | [ES-F04-03](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/spec.md) |
 
-- [cite: 1] [Funcionalidad F-04 vigente](../funcionalidades/F-04-GestionEntregasFallidas.md).
+- [cite: 1] [Funcionalidad F-02 vigente](../funcionalidades/F-02-ProgramacionAsignacionDespachos.md).
+- [cite: 2] [Funcionalidad F-04 vigente](../funcionalidades/F-04-GestionEntregasFallidas.md).
 
