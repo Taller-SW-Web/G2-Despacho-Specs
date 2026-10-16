@@ -11,7 +11,7 @@
 - Documentación preparada: [spec.md](./spec.md), [ui.md](./ui.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), incorporados en la misma revisión de esta carpeta.
 - Origen de la especificación y fuentes generales: revisión `8586a78` del repositorio de especificaciones.
 - Base de código consultada: backend `af13989` y frontend `d2bc27d`; no constituyen una implementación de ES-F04-01.
-- Implementación parcial: backend `49d40ff1507e05e909d859c2792ff5eed8203293`, rama `feature/f04-consultar-entregas-fallidas` desde `origin/develop` `bad76eb`. Worktree `trabajo-f04-backend`, para preservar los cambios locales de F-01 del checkout original. Specs: `docs/f04-evidencia-consulta-fallidas`, desde `main`.
+- Implementación parcial: backend `49d40ff1507e05e909d859c2792ff5eed8203293`, rama `feature/f04-consultar-entregas-fallidas` desde `origin/develop` `bad76eb`, activa en el checkout habitual `G2-Despacho-Backend`. Specs: `docs/f04-evidencia-consulta-fallidas`, desde `main`.
 - Dependencias de EV-06: HTTP simulado con `MockRestServiceServer`; sin PostgreSQL ni Operación real. Windows, Java Temurin 21.0.12.1, Maven 3.9.11 y Spring Boot 4.1.1 del proyecto.
 - Alcance verificado: preparación documental y consumidor por lotes de T-06. Ningún criterio de aceptación completo del listado o de UI se declara aprobado.
 - Revisión del 15/10/2026: seis decisiones de comportamiento confirmadas por Gerardo; contrato y modelo en `4bad49d`, reglas de consulta en `1f556c0`. Implementación de fuentes, endpoints y componentes pendiente.
@@ -88,7 +88,7 @@ Cada registro ejecutado debe indicar versión exacta, preparación reproducible,
 - Tarea: avance parcial de T-06, conforme a Operación §5.4 y Gestión §5.1, sin modificar contratos [cite: 1, 2].
 - Código: en Gestión, paquete `incidencias/`, puerto `application/LectorDatosOperativos.java`, modelo `domain/DatosOperativos.java`, adaptador `infrastructure/OperacionIncidenciasHttp.java` y prueba homónima en `src/test/java`. Commit `49d40ff`.
 - Preparación: `RestClient` conectado a `MockRestServiceServer`, credencial y nombres exclusivamente de prueba. Identificadores como cadenas opacas, sin convertirlos a UUID. Sin cuentas ni secretos reales.
-- Comandos desde `trabajo-f04-backend/servicio-gestion-despachos`:
+- Comandos reproducibles desde `G2-Despacho-Backend/servicio-gestion-despachos`:
 
 ```powershell
 $mavenF04 = 'C:\Users\Gerardo\.m2\wrapper\dists\apache-maven-3.9.11-bin\6mqf5t809d9geo83kj4ttckcbc\apache-maven-3.9.11\bin\mvn.cmd'
@@ -109,6 +109,8 @@ $mavenF04 = 'C:\Users\Gerardo\.m2\wrapper\dists\apache-maven-3.9.11-bin\6mqf5t80
 | Lote sin `consultadoEn` y lote posterior válido. | No confirma datos del primero; conserva los datos confirmados del segundo. |
 
 Incidencias del entorno: el Wrapper apunta a Maven 3.10.0 e intentó crear su distribución fuera del workspace, sin permisos en el sandbox; se usó Maven instalado sin modificar el Wrapper. El intento offline encontró dependencias ausentes, descargadas después con acceso de red autorizado. La regresión inicial en sandbox se detuvo por el canal local de Mockito (`attach`, pipe Windows con acceso denegado); repetida fuera del sandbox pasó. Docker no está iniciado: no se ejecutan `FlujoF01Tests` ni `ServicioGestionDespachosApplicationTests`, que requieren contenedores.
+
+Corrección de ubicación del 16/10/2026: las pruebas anteriores se ejecutaron inicialmente en un worktree temporal. Por indicación de Gerardo, la misma rama y el mismo commit se activaron en `G2-Despacho-Backend` y se retiró la carpeta temporal. Se respaldaron en Git y verificaron por SHA-256 los 59 archivos locales previos, sin diferencias de contenido. El traslado no modifica el código probado; los reportes anteriores se conservan como evidencia de esa ejecución, sin declarar una repetición de las pruebas.
 
 Límites: no se acredita llamada a Operación real, PostgreSQL, cálculo de indicadores, autorización de un endpoint de F-04 ni pantalla. El adaptador aún no está registrado como bean: falta suministrar URL interna, tiempos de espera acotados y proveedor de credencial vigente al ensamblarlo. La lectura local y `ultima_incidencia_id` requieren la base compartida de F-02/F-03 y Arquitectura. La decisión de `200` degradado o `503` por solo atrasados corresponde al caso de uso pendiente de T-07. T-06 permanece `En curso`.
 
