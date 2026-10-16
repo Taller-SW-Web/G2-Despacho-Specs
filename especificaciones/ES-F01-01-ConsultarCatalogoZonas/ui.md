@@ -69,13 +69,13 @@ Envío de mutación y confirmación de éxito no aplican a esta consulta.
 
 ## 5. Formularios y mensajes
 
-Los controles son filtros, no un formulario de modificación. Los nombres de parámetros, límites y DTO definitivos pertenecen al [contrato central](../../integraciones/api-contract.md#91-zonas-y-tarifas); se registran en los pendientes del plan y no se redefine aquí un payload alternativo [cite: 3].
+Los controles son filtros, no un formulario de modificación. Los nombres de parámetros, límites y DTO definitivos pertenecen al [contrato de Gestión](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas); se registran en los pendientes del plan y no se redefine aquí un payload alternativo [cite: 3].
 
 | Control | Obligatorio | Validación y momento | Mensaje visible | Fuente contractual |
 |---|---|---|---|---|
-| Búsqueda por nombre | No | Texto libre con debounce; consulta al pausar | «Limpiar búsqueda» | Contrato §9.1 (pendiente de detalle) |
-| Selector de distrito | No | Selección única | «Todos» por defecto | Contrato §9.1 (pendiente de detalle) |
-| Selector de estado | No | Todos / Activo / Inactivo | Sin resultado informado | Contrato §9.1 (pendiente de detalle) |
+| Búsqueda por nombre | No | Texto libre con debounce; consulta al pausar | «Limpiar búsqueda» | Gestión §3.1 (pendiente de detalle) |
+| Selector de distrito | No | Selección única | «Todos» por defecto | Gestión §3.1 (pendiente de detalle) |
+| Selector de estado | No | Todos / Activo / Inactivo | Sin resultado informado | Gestión §3.1 (pendiente de detalle) |
 
 | Resultado o error de API | Mensaje y comportamiento de UI | Recuperación |
 |---|---|---|
@@ -108,5 +108,5 @@ La presentación usa fechas de la zona operativa `America/Lima` indicada por el 
 
 1. [Especificación funcional](./spec.md), criterios CA-01 a CA-04.
 2. [Sistema de diseño](../../disenio/SYSTEM-DESIGN.md), [guía F-01](../../disenio/funcionalidades/f-01.md) y [componentes React](../../disenio/componentes-react.md).
-3. [Contrato de API](../../integraciones/api-contract.md), §§3.3, 3.5 y 9.1; [modelo de datos](../../arquitectura/modelo-datos.md), §3.1.
+3. [Contrato de Gestión, §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) y [convenciones compartidas, §§3.3 y 3.5](../../integraciones/api-contract.md#3-convenciones-comunes); [modelo de datos](../../arquitectura/modelo-datos.md), §3.1.
 4. [Plan](./plan.md), [tareas](./tasks.md) y [evidencia](./evidence.md).

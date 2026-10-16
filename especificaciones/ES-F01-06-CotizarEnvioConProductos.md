@@ -150,7 +150,7 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-01-Gestor_ZonasGeograficas.md`, RF-02 y RF-03, CA-07 a CA-11, CA-14 y CA-19 a CA-23.
-- [cite: 2] `integraciones/api-contract.md`, secciones 3.4, 3.5, 5.1, 5.2 y 15.1.
+- [cite: 2] `integraciones/api-contract.md`, Común §3.4, Común §3.5, Externo §5.1, Externo §5.2, Externo §10.1. Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#34-scopes-de-servicio-de-despacho).
 - [cite: 3] `arquitectura/modelo-datos.md`, tabla `tarifas_zona`.
 - [cite: 4] `overview.md`, sección 7 sobre integración con Productos y Ofertas.
 - [cite: 5] `funcionalidades/pendiente.md`, sección F-01 sobre trabajo futuro.

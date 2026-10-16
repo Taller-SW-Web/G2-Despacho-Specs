@@ -59,7 +59,7 @@ Permitir que el Gestor de Despacho registre un nuevo repartidor en el módulo co
 
 - Seguridad y Usuarios recibe la solicitud de creación de cuenta con rol `REPARTIDOR`.
 - La vinculación posterior se gestiona en ES-F05-05.
-- La ruta, cuerpos y códigos se rigen por `integraciones/api-contract.md` [cite: 2].
+- La ruta, cuerpos y códigos se rigen por `integraciones/api-contract-operacion-reparto.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -105,5 +105,5 @@ Permitir que el Gestor de Despacho registre un nuevo repartidor en el módulo co
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-05-GestionRepartidoresVehiculos.md`, RF-01 y CA-01 a CA-03.
-- [cite: 2] `integraciones/api-contract.md`.
+- [cite: 2] `integraciones/api-contract-operacion-reparto.md`.
 - [cite: 3] `funcionalidades/F-05-GestionRepartidoresVehiculos.md`, RF-03 y CA-14 a CA-15.

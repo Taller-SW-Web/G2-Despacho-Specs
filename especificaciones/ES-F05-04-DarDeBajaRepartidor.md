@@ -51,7 +51,7 @@ Permitir que el Gestor de Despacho cambie el estado de registro de un repartidor
 
 - F-06 excluye al repartidor `INACTIVO` de nuevas asignaciones diarias.
 - F-03 niega el acceso al repartidor `INACTIVO`.
-- La ruta y códigos se rigen por `integraciones/api-contract.md` [cite: 2].
+- La ruta y códigos se rigen por `integraciones/api-contract-operacion-reparto.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -97,4 +97,4 @@ Permitir que el Gestor de Despacho cambie el estado de registro de un repartidor
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-05-GestionRepartidoresVehiculos.md`, RF-01, CA-04 y CA-05.
-- [cite: 2] `integraciones/api-contract.md`.
+- [cite: 2] `integraciones/api-contract-operacion-reparto.md`.

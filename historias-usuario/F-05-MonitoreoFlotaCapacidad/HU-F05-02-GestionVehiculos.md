@@ -68,5 +68,5 @@
 - [ ] Prueba de integración verificando que una furgoneta `EN_MANTENIMIENTO` queda excluida de nuevas jornadas.
 - [ ] Panel de Vehículos implementado en React + Tailwind con tabla responsive y filtros por tipo, estado y placa.
 - [ ] Formulario de Vehículo con validación de capacidad en tiempo real (valores positivos).
-- [ ] Respuestas HTTP alineadas al contrato en [integraciones/api-contract.md](../../integraciones/api-contract.md).
+- [ ] Respuestas HTTP alineadas al contrato en [integraciones/api-contract-operacion-reparto.md](../../integraciones/api-contract-operacion-reparto.md).
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

@@ -6,7 +6,7 @@
 
 **Plan de origen:** [plan.md](./plan.md), misma revisión documental que esta carpeta.
 
-Esta entrega prepara las tareas; no ejecuta cambios de contrato, componentes ni código. Los responsables de componentes son los del [reparto compartido](../../disenio/componentes-react.md), §4.5; esta lista no crea issues ni acredita su aceptación.
+La revisión del 15/10/2026 concreta el contrato y actualiza las tareas de implementación. Solo T-05 se completa documentalmente; los componentes, endpoints y criterios funcionales siguen pendientes. Los responsables compartidos son los de [componentes React](../../disenio/componentes-react.md), §4.5; esta lista no crea issues ni acredita implementación.
 
 ## 1. Orden y dependencias
 
@@ -16,13 +16,13 @@ Esta entrega prepara las tareas; no ejecuta cambios de contrato, componentes ni 
 | T-02 | CR-08 EstadoVista implementado y verificado. | Componente compartido | T-01 y patrones CR-01 necesarios. | CCR-08-01; soporte de CA-03/04 y CUI-03/04. | Pendiente |
 | T-03 | Resto de componentes del listado disponibles y verificados. | Componentes compartidos | T-01 y dependencias de cada CR; CR-07 depende de T-02. | CUI-01/02/05/06. | Pendiente |
 | T-04 | Página de consulta verificable con fixtures de presentación. | Frontend, I-01 | T-02 y T-03. | CUI-01 a CUI-06, sin acreditar backend real. | Pendiente |
-| T-05 | Contrato del listado concretado en su documento central. | Contrato | Revisión posterior DT-01. | CA-01 a CA-05; controles de CUI-02. | Pendiente |
-| T-06 | Persistencia y fuentes operativas de la consulta preparadas. | Datos e integración | T-05 y decisiones DT-02/03. | CA-01/02/05. | Pendiente |
-| T-07 | Endpoint de consulta autorizado y probado. | Backend, I-02 | T-05, T-06 y base JWT/errores/rutas de DT-03. | CA-01 a CA-05. | Pendiente |
-| T-08 | Página conectada a la consulta real. | Integración, I-03 | T-04, T-07 y Gateway accesible. | CA-01 a CA-05; CUI-01 a CUI-06. | Pendiente |
+| T-05 | Contrato documentado y comprobado, sin acreditar implementación. | Contrato | DT-01/02 definidos en API Gestión §4, Gestión §5.1, Operación §5.4. | CA-01 a CA-11; soporte de CUI-02/05. | Completada. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo), [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias). |
+| T-06 | Persistencia y lectura operativa por lotes implementadas. | Datos e integración | T-05 y bases de DT-03. | CA-01/02/05/06/08/10. | Pendiente |
+| T-07 | Endpoint de consulta autorizado y probado. | Backend, I-02 | T-05, T-06 y base JWT/errores/rutas de DT-03. | CA-01 a CA-11. | Pendiente |
+| T-08 | Página conectada a la consulta real. | Integración, I-03 | T-04, T-07 y Gateway accesible. | CA-01 a CA-11; CUI-01 a CUI-06. | Pendiente |
 | T-09 | Cobertura, evidencia y revisión del alcance completadas. | Calidad | T-08 y dependencias reales disponibles. | Todos los criterios del alcance. | Pendiente |
 
-Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al iniciar una tarea cuya dependencia no esté disponible, registrar el bloqueo y su responsable. T-05 puede prepararse en paralelo con I-01; su ejecución queda para la revisión del contrato acordada con Gerardo.
+Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al iniciar una tarea cuya dependencia no esté disponible, registrar el bloqueo y su responsable. T-05 acredita únicamente definición documental y sus comprobaciones; T-06/07/08 verifican la implementación y comunicación reales.
 
 ## 2. Detalle de tareas
 
@@ -64,22 +64,22 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 - Comprobación: CUI-01 a CUI-06 con pruebas de interacción y recorrido responsive. Los filtros locales de demostración y los indicadores de prueba se identifican como simulados.
 - Cierre y evidencia: documentar los límites de la simulación y los destinos ES-F04-02/03 aún no disponibles. No crear un contrato HTTP implícito a partir del fixture.
 
-### T-05. Concretar el contrato central del listado
+### T-05. Concretar el contrato correspondiente del listado
 
-- [ ] Implementada y verificada.
+- [x] Definición documental completada y comprobada el 15/10/2026; implementación no acreditada.
 
-- Alcance: resolver DT-01 en `integraciones/api-contract.md`: filtros y límites, paginación, respuesta, indicadores, orden estable y errores; enlazarlo desde los documentos consumidores.
+- Alcance: API Gestión §4, Gestión §5.1, Operación §5.4: catálogo, filtros/límites, respuesta, paginación, métricas, orden, lectura operativa por lotes y errores; fuente inequívoca de la incidencia en el modelo. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo), [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 - Responsable: Gerardo con Backend/Frontend y Arquitectura.
-- Comprobación: revisión de solicitudes/respuestas representativas para CA-01 a CA-05; verificar que los datos necesarios estén descritos sin crear un segundo contrato.
-- Cierre y evidencia: decisión y revisión enlazadas; los pendientes restantes identifican qué integración impiden. Esta tarea no se ejecuta en la preparación documental actual.
+- Comprobación: seis acuerdos del listado reflejados en criterios, contrato y UI; ejemplos JSON válidos, referencias locales y trazabilidad completas, sin contratos duplicados. No sustituye pruebas HTTP.
+- Cierre y evidencia: contratos en `4bad49d`, reglas en `1f556c0` y comprobación documental EV-05 de [evidence.md](./evidence.md). Implementación y pruebas reales permanecen en T-06 a T-09.
 
 ### T-06. Preparar persistencia y fuentes de datos
 
 - [ ] Implementada y verificada.
 
-- Alcance: revisar el esquema real y las migraciones requeridas; disponer de datos locales y del mecanismo acordado para nombre del repartidor y cierre de jornada, resolviendo DT-02/03.
+- Alcance: revisar esquema/migraciones y crear la referencia `ultima_incidencia_id`; implementar la lectura por lotes de Operación (Operación §5.4) y su adaptador en Gestión, con jornadas históricas y nombres de repartidor, conforme a DT-02/03. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 - Responsable: Gerardo con Arquitectura y responsables de Operación; coordinar la base compartida con DevOps.
-- Comprobación: preparar datos sintéticos de varios estados e intentos; verificar que no se cruzan bases de servicios y que la fuente distingue jornada activa/cerrada. Si hay migraciones nuevas, comprobar su aplicación en una base aislada.
+- Comprobación: varios estados y varias incidencias por despacho; jornadas activas/cerradas/desconocidas y nombres ausentes; lotes de más de 100 jornadas divididos sin llamadas por fila, totales antes de paginar y ninguna consulta cruzada de bases. Comprobar migraciones en una base aislada.
 - Cierre y evidencia: registrar revisiones y decisiones de integración, disponibilidad de las dependencias y cualquier doble de prueba utilizado.
 
 ### T-07. Implementar y probar la consulta backend
@@ -88,8 +88,8 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 
 - Alcance: controlador, caso de uso, puertos y adaptadores mínimos dentro de la funcionalidad de incidencias de Gestión; ruta pública a través del Gateway.
 - Entradas: contrato cerrado, datos de T-06, base de seguridad y errores disponible; reglas y verificaciones de [spec.md](./spec.md).
-- Comprobación: `./mvnw.cmd test` desde Gestión; PostgreSQL aislado para consulta y paginación; autorización de usuario con rol diferente; matriz de retorno atrasado, ausencia de duplicados y exclusión de datos del detalle. Probar también token ausente/inválido conforme al contrato de seguridad.
-- Cierre y evidencia: CA-01 a CA-05 cubiertos en backend, con límites de dobles externos explícitos. La lectura no cambia datos de negocio ni genera eventos.
+- Comprobación: `./mvnw.cmd test` desde Gestión; verificar CA-01 a CA-11 con PostgreSQL aislado, filtros inválidos, orden/empates, métricas 7/5/2, incidencia vigente, `NO_INTENTADO`, matriz de jornada desconocida y degradación. Probar rol diferente y token ausente/inválido.
+- Cierre y evidencia: CA-01 a CA-11 cubiertos en backend, con límites de dobles explícitos y pruebas de contrato de Operación §5.4. La lectura no cambia datos de negocio ni genera eventos. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 
 ### T-08. Conectar el frontend a la API real
 
@@ -97,7 +97,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 
 - Alcance: adaptar la respuesta contractual desde el cliente de API, conectar filtros/URL/paginación y gestionar errores y respuestas fuera de orden; retirar la fuente simulada del recorrido real.
 - Dependencias: I-01 e I-02; autenticación humana y Gateway disponibles. Coordinar los destinos de detalle/recepción cuando estén implementados.
-- Comprobación: filtros combinados y límites, paginación con más de una página, reintentos y `403` después de cargar datos; `npm run typecheck` y `npm run build` en ambas apps.
+- Comprobación: filtros, tarjetas y URL coherentes; totales fuera de la página, orden estable, retorno del detalle, jornada desconocida, error de solo atrasados y permisos revocados; `npm run typecheck` y `npm run build` en ambas apps. No convertir `null` en cero.
 - Cierre y evidencia: resultado real por Gateway enlazado; indicadores procedentes de la fuente acordada, sin totales fabricados desde una página parcial.
 
 ### T-09. Verificar y entregar la especificación
@@ -117,6 +117,12 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 | CA-03 | T-02, T-04, T-07, T-08 | T-07 y T-09 | EV-01 a EV-04 |
 | CA-04 | T-02, T-04, T-07, T-08 | T-07 y T-09 | EV-01 a EV-04 |
 | CA-05 | T-04, T-06, T-07, T-08 | T-07 y T-09 | EV-01, EV-03, EV-04 |
+| CA-06 | T-04, T-06, T-07, T-08 | T-07 y T-09 | EV-01, EV-04 |
+| CA-07 | T-04, T-07, T-08 | T-07 y T-09 | EV-01, EV-03, EV-04 |
+| CA-08 | T-04, T-06, T-07, T-08 | T-07 y T-09 | EV-01, EV-03, EV-04 |
+| CA-09 | T-04, T-07, T-08 | T-07 y T-09 | EV-01, EV-03, EV-04 |
+| CA-10 | T-04, T-06, T-07, T-08 | T-07 y T-09 | EV-01, EV-03, EV-04 |
+| CA-11 | T-04, T-07, T-08 | T-07 y T-09 | EV-01, EV-03, EV-04 |
 | CUI-01 | T-03, T-04, T-08 | T-04 y T-09 | EV-03, EV-04 |
 | CUI-02 | T-03, T-04, T-08 | T-04 y T-09 | EV-03, EV-04 |
 | CUI-03 | T-02, T-04, T-08 | T-04 y T-09 | EV-02 a EV-04 |
@@ -133,6 +139,6 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 
 ## 5. Referencias
 
-1. [Especificación funcional](./spec.md), criterios CA-01 a CA-05 [cite: 1].
+1. [Especificación funcional](./spec.md), criterios CA-01 a CA-11 [cite: 1].
 2. [Plan](./plan.md), incrementos I-01 a I-03 y pendientes DT-01 a DT-04 [cite: 2].
 3. [UI](./ui.md), criterios CUI-01 a CUI-06, y [evidencia](./evidence.md) [cite: 3].

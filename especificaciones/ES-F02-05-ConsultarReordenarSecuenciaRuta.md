@@ -48,7 +48,7 @@ Permitir que el Gestor de Despacho consulte el seguimiento operativo integral de
 
 - Consulta de ruta: `GET /api/v1/jornadas/{idJornada}/ruta`.
 - Actualización de secuencia: `PUT /api/v1/jornadas/{idJornada}/secuencia`.
-- Payload JSON de reordenamiento según `integraciones/api-contract.md`:
+- Payload JSON de reordenamiento según `integraciones/api-contract-gestion-despachos.md`:
   ```json
   {
     "despachos": [
@@ -71,7 +71,7 @@ Permitir que el Gestor de Despacho consulte el seguimiento operativo integral de
 - **Web del Repartidor (F-03):** consume la secuencia persistida a través del endpoint `GET /api/v1/repartidor/mi-ruta`.
 - **Trazabilidad (ES-F02-08):** audita el cambio de secuencia con el identificador del gestor y la jornada.
 - **Reasignación (ES-F02-06):** el botón de fila "Reasignar" disponible en paradas `ASIGNADO` abre el flujo de reasignación.
-- Los contratos y esquemas se rigen por `integraciones/api-contract.md` (Sección 9.2).
+- Los contratos y esquemas se rigen por `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 
 ## 6. Criterios de aceptación
 
@@ -122,6 +122,6 @@ Permitir que el Gestor de Despacho consulte el seguimiento operativo integral de
 ### Referencias
 
 - Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-06).
-- Contrato de API: `integraciones/api-contract.md` (Sección 9.2).
+- Contrato de API: `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 - Seguimiento en ruta y estados: `arquitectura/diagrama-estados-despacho.md`.
 - Diseño de interfaz: `disenio/funcionalidades/f-02.md` (Pantalla 3) y `disenio/SYSTEM-DESIGN.md` (Sección 13.11).

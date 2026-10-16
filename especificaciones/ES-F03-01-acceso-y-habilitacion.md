@@ -52,7 +52,7 @@ Con esto se garantiza que ningún despacho sea operado por alguien no autorizado
 
 - Seguridad y Usuarios: emisión y validación del JWT (acuerdo pendiente, Anexo C n.º 1 de F-03).
 - F-05 Monitoreo de Flota: vínculo usuario–repartidor, estado operativo y asignación diaria.
-- Ver `integraciones/api-contract.md` para rutas y códigos de respuesta.
+- Ver `integraciones/api-contract-operacion-reparto.md` para rutas y códigos de respuesta.
 
 ## 6. Criterios de aceptación
 
@@ -90,5 +90,5 @@ Con esto se garantiza que ningún despacho sea operado por alguien no autorizado
 ### Referencias
 
 - `funcionalidades/F-03-AppMovilRepartidor.md`, RF-01 y sección 8 (Seguridad).
-- `integraciones/api-contract.md`.
+- `integraciones/api-contract-operacion-reparto.md`.
 - Wireframe de la pantalla de acceso de F-03.

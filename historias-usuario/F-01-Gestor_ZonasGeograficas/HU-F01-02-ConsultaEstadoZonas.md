@@ -24,8 +24,8 @@
 
 - **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-01`, Criterios `CA-15`, `CA-17`, `CA-13`).
 - **Endpoints asociados:**
-  - `GET /api/v1/zonas` (listar con filtros y paginación) y `GET /api/v1/zonas/{idZona}` (consultar detalle), definidos en [integraciones/api-contract.md](../../integraciones/api-contract.md), sección 9.1.
-  - `PATCH /api/v1/zonas/{idZona}/estado` (activar o desactivar), definido en la sección 9.1 del mismo contrato.
+  - `GET /api/v1/zonas` (listar con filtros y paginación) y `GET /api/v1/zonas/{idZona}` (consultar detalle), definidos en el [contrato de Gestión, sección 3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas).
+  - `PATCH /api/v1/zonas/{idZona}/estado` (activar o desactivar), definido en la sección 3.1 del mismo contrato.
   - Parámetros de consulta del listado: `pagina` (int, default 1), `limite` (int, default 10 o 20), `nombre` (string opcional), `distrito` (string opcional), `estado` (enum `ACTIVO` / `INACTIVO` opcional).
 - **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT). Usuarios sin este rol deben recibir `403 Forbidden`.
 - **Componentes de Frontend:**

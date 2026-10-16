@@ -64,11 +64,11 @@ La repetición de la misma operación devuelve el estado vigente sin cambio visi
 
 ## 5. Formularios y mensajes
 
-No es un formulario de campos; es una confirmación con un único parámetro (el estado solicitado), cuyo nombre definitivo proviene del contrato central y se registra en los pendientes del plan [cite: 3].
+No es un formulario de campos; es una confirmación con un único parámetro (el estado solicitado), cuyo nombre definitivo proviene del contrato de Gestión y se registra en los pendientes del plan [cite: 3].
 
 | Control | Obligatorio | Validación y momento | Mensaje visible | Fuente contractual |
 |---|---|---|---|---|
-| Confirmación de estado | Sí | El sistema revalida el estado y la versión al enviar | Efecto sobre cotizaciones y despachos | Contrato §9.1 |
+| Confirmación de estado | Sí | El sistema revalida el estado y la versión al enviar | Efecto sobre cotizaciones y despachos | Gestión §3.1 |
 
 | Resultado o error de API | Mensaje y comportamiento de UI | Recuperación |
 |---|---|---|
@@ -102,5 +102,5 @@ No es un formulario de campos; es una confirmación con un único parámetro (el
 
 1. [Especificación funcional](./spec.md), criterios CA-01 a CA-06.
 2. [Sistema de diseño](../../disenio/SYSTEM-DESIGN.md) y [guía F-01](../../disenio/funcionalidades/f-01.md); [componentes React](../../disenio/componentes-react.md).
-3. [Contrato de API](../../integraciones/api-contract.md), §§3.3, 9.1 y 14; [modelo de datos](../../arquitectura/modelo-datos.md).
+3. [Contrato de Gestión, §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas), [roles, §3.3](../../integraciones/api-contract.md#33-roles-humanos-y-tokens-de-servicio), e [idempotencia, §9](../../integraciones/api-contract.md#9-reglas-de-idempotencia-y-concurrencia); [modelo de datos](../../arquitectura/modelo-datos.md).
 4. [Plan](./plan.md), [tareas](./tasks.md) y [evidencia](./evidence.md).

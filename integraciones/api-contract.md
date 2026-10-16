@@ -1,8 +1,16 @@
-# Contrato de Comunicación del Módulo de Despacho
+# Contrato de API: integraciones externas y convenciones compartidas
 
 ## 1. Propósito
 
-Este documento define las comunicaciones del módulo de Despacho y Entrega con los canales, los demás módulos del Marketplace y sus dos microservicios internos. Se alinea con F-01 a F-05 y con los requisitos transversales de seguimiento, historial y eventos.
+Este documento define las comunicaciones de Despacho y Entrega con Marketplace, Chatbot, Ventas y Postventa, Productos y Ofertas y Seguridad y Usuarios. Los contratos se distribuyen en tres archivos, con una sola definición de cada operación:
+
+| Documento | Alcance y lectores |
+|---|---|
+| [Integraciones externas](./api-contract.md) | Equipos de otros módulos: operaciones, autenticación, eventos y acuerdos de integración. También conserva las convenciones comunes (§3) y la idempotencia compartida (§9). |
+| [Gestión de Despachos](./api-contract-gestion-despachos.md) | Frontend administrativo y backend de F-01, F-02 y F-04; catálogo común y API interna provista por Gestión. |
+| [Operación de Reparto y Flota](./api-contract-operacion-reparto.md) | Frontend del repartidor y administración de F-05/F-06; evidencias, jornadas, capacidad y API interna provista por Operación. |
+
+Cada contrato de microservicio enlaza las integraciones externas que implementa o consume. Las convenciones se referencian, sin mantener copias; los endpoints internos se documentan en el contrato de su proveedor. Esta organización cambia la ubicación de la documentación, no las rutas, payloads ni reglas acordadas.
 
 Este contrato establece:
 
@@ -672,377 +680,7 @@ Despacho prevé consumir los eventos `usuario.desactivado`, `usuario.bloqueado`,
 
 Seguridad ha previsto publicar estos cambios mediante RabbitMQ, pero el contrato asíncrono todavía debe definir disponibilidad, exchange, routing keys, payloads, credenciales, permisos de consumo y política de reentrega. Hasta que ese contrato esté disponible, Despacho no asume que los eventos puedan consumirse en producción.
 
-## 9. API administrativa de F-01 y F-02
-
-### 9.1. Zonas y tarifas
-
-| Método | Ruta | Roles | Propósito |
-|---|---|---|---|
-| `GET` | `/api/v1/zonas` | `GESTOR_DESPACHO` | Listar zonas |
-| `POST` | `/api/v1/zonas` | `GESTOR_DESPACHO` | Crear zona |
-| `GET` | `/api/v1/zonas/{idZona}` | `GESTOR_DESPACHO` | Consultar zona |
-| `PUT` | `/api/v1/zonas/{idZona}` | `GESTOR_DESPACHO` | Editar zona |
-| `PATCH` | `/api/v1/zonas/{idZona}/estado` | `GESTOR_DESPACHO` | Activar o desactivar |
-| `GET` | `/api/v1/zonas/{idZona}/tarifa` | `GESTOR_DESPACHO` | Consultar tarifa vigente |
-| `PUT` | `/api/v1/zonas/{idZona}/tarifa` | `GESTOR_DESPACHO` | Crear o reemplazar tarifa |
-
-Ejemplo de tarifa:
-
-```json
-{
-  "tarifaBase": 10,
-  "pesoIncluidoKg": 3,
-  "recargoKgAdicional": 2,
-  "factorVolumetrico": 1.25,
-  "moneda": "PEN",
-  "plazoEstimadoDiasHabiles": 2
-}
-```
-
-### 9.2. Programación y asignación
-
-| Método | Ruta | Roles | Propósito |
-|---|---|---|---|
-| `POST` | `/api/v1/despachos/simulaciones` | `GESTOR_DESPACHO` | Crear un despacho de prueba |
-| `GET` | `/api/v1/despachos/pendientes` | `GESTOR_DESPACHO` | Consultar cola paginada |
-| `GET` | `/api/v1/despachos/{idDespacho}` | `GESTOR_DESPACHO` | Consultar detalle e historial |
-| `POST` | `/api/v1/despachos/{idDespacho}/asignacion` | `GESTOR_DESPACHO` | Asignar a un repartidor |
-| `POST` | `/api/v1/despachos/{idDespacho}/reasignacion` | `GESTOR_DESPACHO` | Cambiar repartidor antes del traslado |
-| `PUT` | `/api/v1/jornadas/{idJornada}/secuencia` | `GESTOR_DESPACHO` | Reordenar despachos `ASIGNADO` |
-| `GET` | `/api/v1/jornadas/{idJornada}/ruta` | `GESTOR_DESPACHO` | Consultar seguimiento operativo completo |
-
-Asignación:
-
-```json
-{
-  "idRepartidor": "REP-0012",
-  "idJornada": "JOR-20260923-0012",
-  "observacion": "Entrega prioritaria"
-}
-```
-
-Reasignación:
-
-```json
-{
-  "idNuevoRepartidor": "REP-0018",
-  "idNuevaJornada": "JOR-20260923-0018",
-  "motivo": "Falla de la furgoneta"
-}
-```
-
-Secuencia:
-
-```json
-{
-  "despachos": [
-    {
-      "idDespacho": "DSP-100234",
-      "posicion": 1
-    },
-    {
-      "idDespacho": "DSP-100240",
-      "posicion": 2
-    }
-  ]
-}
-```
-
-## 10. API de F-03: operación del repartidor
-
-Todos los recursos requieren un JWT humano con `tipo=acceso`. El backend toma el `sub`, resuelve el perfil local de repartidor vinculado y comprueba que esté activo; el cliente no puede elegir otro `idRepartidor`. No se exige un rol global `REPARTIDOR` ni un claim `idRepartidor`.
-
-| Método | Ruta | Propósito |
-|---|---|---|
-| `GET` | `/api/v1/repartidor/mi-ruta` | Consultar la ruta de la jornada actual |
-| `GET` | `/api/v1/repartidor/despachos/{idDespacho}` | Consultar un despacho propio |
-| `POST` | `/api/v1/repartidor/despachos/{idDespacho}/inicio-traslado` | Cambiar `ASIGNADO` a `EN_CAMINO` |
-| `POST` | `/api/v1/repartidor/evidencias/autorizaciones` | Obtener URL firmada de carga |
-| `POST` | `/api/v1/repartidor/despachos/{idDespacho}/entrega` | Registrar `ENTREGADO` |
-| `POST` | `/api/v1/repartidor/despachos/{idDespacho}/fallo` | Registrar `FALLIDO` |
-| `POST` | `/api/v1/repartidor/jornada/cierre` | Cerrar la jornada |
-| `GET` | `/api/v1/repartidor/jornada/resumen` | Consultar el resumen propio |
-| `GET` | `/api/v1/catalogos/motivos-fallo` | Consultar motivos seleccionables |
-| `POST` | `/api/v1/evidencias/{idEvidencia}/acceso` | Obtener URL firmada de lectura |
-
-Los comandos de transición deben ser idempotentes. Se recomienda enviar `Idempotency-Key`; su obligatoriedad como encabezado común aún debe acordarse.
-
-### 10.1. Autorizar la carga de evidencia
-
-```json
-{
-  "idDespacho": "DSP-100234",
-  "tipo": "ENTREGA",
-  "contentType": "image/jpeg",
-  "tamanioBytes": 845120
-}
-```
-
-```json
-{
-  "idEvidencia": "EVI-92812",
-  "urlCarga": "https://storage.example/signed-upload",
-  "venceEn": "2026-09-23T19:25:00Z"
-}
-```
-
-La fotografía se carga directamente al bucket privado. La API recibe después solamente `idEvidencia`; no recibe imágenes Base64.
-
-### 10.2. Registrar entrega
-
-```json
-{
-  "idEvidencia": "EVI-92812",
-  "recibidoPor": "Ana Mendoza"
-}
-```
-
-No se captura firma ni geolocalización.
-
-### 10.3. Registrar fallo
-
-```json
-{
-  "motivo": "CLIENTE_AUSENTE",
-  "comentario": "No respondieron al teléfono",
-  "idEvidencia": "EVI-92813"
-}
-```
-
-Motivos permitidos para el repartidor:
-
-- `CLIENTE_AUSENTE`.
-- `DIRECCION_NO_UBICADA`.
-- `RECHAZO_DEL_PAQUETE`.
-- `DATOS_DE_CONTACTO_ERRONEOS`.
-- `ZONA_INACCESIBLE`.
-- `PAQUETE_DANADO`.
-
-`NO_INTENTADO` es exclusivo del cierre manual o automático de jornada.
-
-## 11. API de F-04: entregas fallidas
-
-Todos los recursos requieren JWT con rol `GESTOR_DESPACHO`.
-
-| Método | Ruta | Propósito |
-|---|---|---|
-| `GET` | `/api/v1/despachos/fallidos` | Listar fallidos con filtros y paginación |
-| `GET` | `/api/v1/despachos/{idDespacho}/incidencia` | Consultar detalle, intentos, recepción e historial |
-| `POST` | `/api/v1/despachos/{idDespacho}/recepcion-centro` | Confirmar el retorno físico |
-| `POST` | `/api/v1/despachos/{idDespacho}/reprogramacion` | Reprogramar un nuevo intento |
-| `POST` | `/api/v1/despachos/{idDespacho}/devolucion-origen` | Cerrar como `DEVUELTO_A_ORIGEN` |
-
-Confirmación de recepción:
-
-```json
-{
-  "selloIntacto": true,
-  "observacion": "Paquete recibido sin daño visible"
-}
-```
-
-La recepción no cambia el estado `FALLIDO`, pero libera la capacidad de la furgoneta y habilita la reprogramación o el cierre.
-
-Reprogramación:
-
-```json
-{
-  "nuevaFechaProgramada": "2026-09-26",
-  "observacion": "Cliente confirmó disponibilidad"
-}
-```
-
-Cierre:
-
-```json
-{
-  "motivo": "MAXIMO_INTENTOS_ALCANZADO",
-  "observacion": "Paquete queda a disposición de Ventas"
-}
-```
-
-## 12. API de F-05: flota y capacidad
-
-### 12.1. Repartidores y furgonetas
-
-| Método | Ruta | Roles | Propósito |
-|---|---|---|---|
-| `GET` | `/api/v1/repartidores` | `GESTOR_DESPACHO` | Listar repartidores |
-| `POST` | `/api/v1/repartidores` | `GESTOR_DESPACHO` | Registrar perfil local pendiente de vinculación |
-| `GET` | `/api/v1/repartidores/{idRepartidor}` | `GESTOR_DESPACHO` | Consultar detalle |
-| `PUT` | `/api/v1/repartidores/{idRepartidor}` | `GESTOR_DESPACHO` | Editar |
-| `PATCH` | `/api/v1/repartidores/{idRepartidor}/estado` | `GESTOR_DESPACHO` | Alta o baja lógica |
-| `PUT` | `/api/v1/repartidores/{idRepartidor}/vinculacion` | `GESTOR_DESPACHO` | Asociar el `usuario_id` creado previamente en Seguridad |
-| `GET` | `/api/v1/furgonetas` | `GESTOR_DESPACHO` | Listar furgonetas |
-| `POST` | `/api/v1/furgonetas` | `GESTOR_DESPACHO` | Registrar furgoneta |
-| `PUT` | `/api/v1/furgonetas/{idFurgoneta}` | `GESTOR_DESPACHO` | Editar límites |
-| `PATCH` | `/api/v1/furgonetas/{idFurgoneta}/estado` | `GESTOR_DESPACHO` | Cambiar disponibilidad o mantenimiento |
-
-La vinculación recibe el identificador de la cuenta global y no crea ni modifica credenciales:
-
-```json
-{
-  "usuarioId": "2f31c1b1-7568-41b8-bf91-342db68431df"
-}
-```
-
-Furgoneta:
-
-```json
-{
-  "placa": "ABC-123",
-  "capacidadPesoKg": 500,
-  "capacidadVolumenM3": 4,
-  "maximoPaquetes": 80
-}
-```
-
-### 12.2. Jornadas y monitoreo
-
-| Método | Ruta | Roles | Propósito |
-|---|---|---|---|
-| `POST` | `/api/v1/jornadas` | `GESTOR_DESPACHO` | Abrir jornada repartidor-furgoneta-zona |
-| `POST` | `/api/v1/jornadas/{idJornada}/cierre` | `GESTOR_DESPACHO` | Cerrar jornada sin despachos en curso |
-| `GET` | `/api/v1/flota/monitoreo` | `GESTOR_DESPACHO` | Consultar ocupación y estados |
-| `GET` | `/api/v1/repartidores/disponibles` | `GESTOR_DESPACHO` | Consultar capacidad remanente |
-
-Apertura de jornada:
-
-```json
-{
-  "idRepartidor": "REP-0012",
-  "idFurgoneta": "FUR-0045",
-  "idZona": "ZONA-LIMA-CENTRO",
-  "fecha": "2026-09-23"
-}
-```
-
-Disponibilidad:
-
-```json
-{
-  "repartidores": [
-    {
-      "idRepartidor": "REP-0012",
-      "idJornada": "JOR-20260923-0012",
-      "nombre": "Juan Pérez",
-      "idZona": "ZONA-LIMA-CENTRO",
-      "estadoOperativo": "DISPONIBLE",
-      "capacidadRemanente": {
-        "pesoKg": 320,
-        "volumenM3": 2.7,
-        "paquetes": 52
-      }
-    }
-  ]
-}
-```
-
-## 13. Comunicación entre los microservicios de Despacho
-
-Estas rutas son internas, requieren credencial de servicio y no se publican mediante el Gateway.
-
-### 13.1. Gestión consulta y reserva capacidad en Operación
-
-- **Método:** `POST`
-- **Ruta:** `/internal/v1/capacidad/reservas`
-- **Idempotencia:** `idDespacho`.
-
-```json
-{
-  "idDespacho": "DSP-100234",
-  "idRepartidor": "REP-0012",
-  "idJornada": "JOR-20260923-0012",
-  "requerido": {
-    "pesoKg": 2.65,
-    "volumenM3": 0.021,
-    "paquetes": 1
-  }
-}
-```
-
-```json
-{
-  "idReserva": "RES-28719",
-  "estado": "CONFIRMADA",
-  "capacidadRemanente": {
-    "pesoKg": 317.35,
-    "volumenM3": 2.679,
-    "paquetes": 51
-  }
-}
-```
-
-Una capacidad insuficiente responde `422` con `DESP_ERROR_CAPACIDAD_EXCEDIDA`. La cancelación, reasignación, entrega o recepción de un paquete fallido debe liberar o actualizar la reserva de manera idempotente.
-
-### 13.2. Gestión libera una reserva en Operación
-
-- **Método:** `POST`
-- **Ruta:** `/internal/v1/capacidad/reservas/{idReserva}/liberacion`
-- **Idempotencia:** `idReserva`; repetir la liberación devuelve el resultado vigente.
-
-```json
-{
-  "motivo": "RECEPCION_EN_CENTRO",
-  "idDespacho": "DSP-100234"
-}
-```
-
-Los motivos iniciales son `ENTREGA`, `CANCELACION`, `RECEPCION_EN_CENTRO`, `REASIGNACION` y `COMPENSACION`. Un despacho `FALLIDO` no libera capacidad hasta que F-04 confirma su recepción física.
-
-### 13.3. Operación solicita una transición a Gestión
-
-- **Método:** `POST`
-- **Ruta:** `/internal/v1/despachos/{idDespacho}/transiciones`
-- **Consumidor:** Operación de Reparto y Flota.
-- **Idempotencia:** clave de operación obligatoria; puede transportarse en `Idempotency-Key` cuando se apruebe la convención común.
-
-```json
-{
-  "estadoDestino": "ENTREGADO",
-  "idRepartidor": "REP-0012",
-  "idJornada": "JOR-20260923-0012",
-  "idEvidencia": "EVI-92812",
-  "recibidoPor": "Ana Mendoza"
-}
-```
-
-Gestión valida la máquina de estados, modifica el estado, incrementa el intento cuando corresponda, escribe el historial y registra el evento para Ventas. Operación nunca modifica directamente la base de datos de Gestión.
-
-### 13.4. Gestión comunica el estado confirmado a Operación
-
-- **Método:** `POST`
-- **Ruta:** `/internal/v1/proyecciones/despachos/{idDespacho}`
-- **Idempotencia:** versión del despacho.
-
-```json
-{
-  "idDespacho": "DSP-100234",
-  "idPedido": "PED-2026-00891",
-  "codigoRastreoInterno": "TRK-78901",
-  "estado": "ASIGNADO",
-  "idJornada": "JOR-20260923-0012",
-  "idReserva": "RES-28719",
-  "secuenciaRuta": 3,
-  "destinatario": {
-    "nombre": "Carlos Mendoza",
-    "telefono": "+51987654321"
-  },
-  "destino": {
-    "direccion": "Av. Javier Prado Este 2465",
-    "referencia": "Frente al parque",
-    "distrito": "San Borja"
-  },
-  "fechaProgramada": "2026-09-25",
-  "numeroIntentos": 0,
-  "version": 2,
-  "actualizadoEn": "2026-09-23T19:10:00Z"
-}
-```
-
-Al asignar o reasignar se envía la información completa necesaria para la ruta móvil. En cambios posteriores puede enviarse el mismo esquema actualizado. La proyección no es el estado canónico: una versión repetida se ignora y una versión anterior nunca reemplaza una posterior.
-
-## 14. Reglas de idempotencia y concurrencia
+## 9. Reglas de idempotencia y concurrencia
 
 - La idempotencia de negocio es obligatoria en todos los comandos que modifican estado.
 - Crear despacho es único por `idPedido`; reenviar el mismo pedido devuelve el despacho existente.
@@ -1053,9 +691,9 @@ Al asignar o reasignar se envía la información completa necesaria para la ruta
 - Los eventos conservan el mismo `idEvento` en cada reintento.
 - Ningún fallo al enviar eventos revierte una transición ya confirmada.
 
-## 15. Flujos de referencia
+## 10. Flujos de referencia
 
-### 15.1. Cotización
+### 10.1. Cotización
 
 ```text
 Marketplace/Chatbot -> Seguridad: client_credentials + scopes solicitados
@@ -1069,7 +707,7 @@ Despacho -> Despacho: calcula totales, cobertura, tarifa y plazo
 Despacho -> Marketplace/Chatbot: cotización
 ```
 
-### 15.2. Creación y entrega
+### 10.2. Creación y entrega
 
 ```text
 Ventas -> Despacho: pedido pagado y preparado + destinatario + destino + líneas (SKU, cantidad)
@@ -1084,7 +722,7 @@ Operación -> Despacho: solicitar transición
 Despacho -> Ventas: evento asíncrono de estado
 ```
 
-### 15.3. Seguimiento
+### 10.3. Seguimiento
 
 ```text
 Chatbot/Marketplace -> Seguridad: obtiene token de servicio
@@ -1092,7 +730,7 @@ Chatbot/Marketplace -> Despacho: GET seguimiento por idPedido
 Despacho -> Canal: estado, fecha, distrito e hitos sin coordenadas ni PII
 ```
 
-## 16. Acuerdos externos que aún deben confirmarse
+## 11. Acuerdos externos que aún deben confirmarse
 
 El contrato funcional con Ventas y Postventa está cerrado: se confirmaron el momento de creación, el payload sin `cantidadPaquetes`, la cancelación, los siete eventos, la ruta y el scope del webhook y la convención de `Idempotency-Key`. Solo quedan el aprovisionamiento o verificación de credenciales por ambiente y las pruebas de contrato.
 

@@ -31,7 +31,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 - Incremento del plan: habilita I-01.
 - Responsable: Valqui con Backend y Arquitectura.
 - Objetivo y alcance: resolver DT-01 en `integraciones/api-contract.md`: campos de la respuesta de cobertura, códigos de error y forma del mensaje fuera de cobertura; enlazarlo desde los documentos consumidores.
-- Entradas: contrato §5.1 y §15.1 y [spec.md](./spec.md).
+- Entradas: contrato externo §5.1 y §10.1 y [spec.md](./spec.md).
 - Dependencias: revisión posterior a DT-01.
 - Verificación: revisión de solicitudes/respuestas representativas para CA-01 a CA-05, sin crear un segundo contrato.
 - Condición de cierre: decisión y revisión enlazadas. Esta tarea no se ejecuta en la preparación documental actual.
@@ -101,7 +101,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 - Incremento del plan: I-03.
 - Responsable: Valqui con los responsables de Marketplace y Chatbot.
 - Objetivo y alcance: comprobar que los canales consumen la operación sin `lineas`, no inyectan peso/volumen y no esperan costo (DT-04).
-- Entradas: contrato §5.1 y §15.1.
+- Entradas: contrato externo §5.1 y §10.1.
 - Dependencias: T-04 y cierre de DT-04.
 - Verificación: recorrido de extremo a extremo por Gateway con un canal simulado.
 - Condición de cierre: consumo conforme al contrato; ventas y postventa no invoca la operación.

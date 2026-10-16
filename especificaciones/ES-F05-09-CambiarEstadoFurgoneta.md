@@ -56,7 +56,7 @@ Permitir que el Gestor de Despacho cambie el estado de una furgoneta entre `DISP
 
 - F-06 cierra la jornada activa y pone al repartidor en `FUERA_DE_TURNO` cuando se retira la furgoneta.
 - F-06 excluye furgonetas `EN_MANTENIMIENTO` y `FUERA_DE_SERVICIO` de nuevas asignaciones.
-- La ruta y códigos se rigen por `integraciones/api-contract.md` [cite: 2].
+- La ruta y códigos se rigen por `integraciones/api-contract-operacion-reparto.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -114,4 +114,4 @@ Permitir que el Gestor de Despacho cambie el estado de una furgoneta entre `DISP
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-05-GestionRepartidoresVehiculos.md`, RF-02, CA-11 y CA-12.
-- [cite: 2] `integraciones/api-contract.md`.
+- [cite: 2] `integraciones/api-contract-operacion-reparto.md`.

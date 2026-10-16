@@ -255,7 +255,7 @@ La interfaz debe deshabilitar acciones inválidas, pero todas las reglas se vali
 | Integración con F-06 | Consultar disponibilidad y capacidad remanente (kg, m³, paquetes) antes de confirmar asignaciones o reasignaciones. |
 | Persistencia y auditoría | Guardar despachos y auditoría en PostgreSQL; las transiciones se registran mediante la máquina de estados común. |
 
-Las rutas, cuerpos, respuestas y códigos se centralizan en `integraciones/api-contract.md`.
+Las rutas administrativas, cuerpos, respuestas y códigos se definen en el [contrato de Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación); la creación, cancelación y eventos con Ventas y Postventa, en el [contrato externo](../integraciones/api-contract.md#7-f-02-integración-con-ventas-y-postventa).
 
 ## 8. Requisitos no funcionales
 

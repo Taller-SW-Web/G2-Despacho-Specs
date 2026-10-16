@@ -67,7 +67,7 @@ Permitir que el Gestor de Despacho o el equipo técnico autogenere de forma aut�
 - **Zonas y Cotizador (F-01):** consulta las zonas activas disponibles para ubicar geográficamente el despacho generado.
 - **Cola de Pendientes (ES-F02-03):** recibe de inmediato el despacho creado para su visualización y filtrado.
 - **Trazabilidad (ES-F02-08):** registra la creación del despacho de prueba en el historial.
-- Las especificaciones técnicas de la ruta siguen `integraciones/api-contract.md` (Sección 9.2).
+- Las especificaciones técnicas de la ruta siguen `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 
 ## 6. Criterios de aceptación
 
@@ -106,5 +106,5 @@ Permitir que el Gestor de Despacho o el equipo técnico autogenere de forma aut�
 
 - Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-09, CA-20).
 - Historia de usuario: `historias-usuario/F-02-ProgramacionAsignacionDespachos/HU-F02-02-GeneracionPedidosPrueba.md`.
-- Contrato de API: `integraciones/api-contract.md` (Sección 9.2).
+- Contrato de API: `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 - Diseño de interfaz: `disenio/funcionalidades/f-02.md` (Pantalla 1).

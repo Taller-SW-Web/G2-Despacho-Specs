@@ -84,7 +84,7 @@ Atender y procesar de forma segura, idempotente y controlada las solicitudes de 
 - **Disponibilidad y Capacidad (F-06):** recibe la solicitud de liberación de capacidad reservada si el despacho estaba asignado.
 - **Entregas Fallidas (F-04):** lee la bandera `pedidoAnulado` para restringir la decisión a únicamente `DEVUELTO_A_ORIGEN`.
 - **Trazabilidad (ES-F02-08):** registra el motivo y la cancelación en el historial.
-- Contrato definido en `integraciones/api-contract.md` (Sección 8).
+- Contrato definido en `integraciones/api-contract.md` (Externo §7.2). Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#72-cancelar-por-anulación-del-pedido).
 
 ## 6. Criterios de aceptación
 
@@ -135,5 +135,5 @@ Atender y procesar de forma segura, idempotente y controlada las solicitudes de 
 ### Referencias
 
 - Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-08).
-- Contrato de API: `integraciones/api-contract.md` (Sección 8).
+- Contrato de API: `integraciones/api-contract.md` (Externo §7.2). Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#72-cancelar-por-anulación-del-pedido).
 - Máquina de estados: `arquitectura/diagrama-estados-despacho.md`.

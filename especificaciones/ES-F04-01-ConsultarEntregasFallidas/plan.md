@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Borrador; pendiente de revisión técnica e implementación.
+**Estado:** Plan documental actualizado con los acuerdos del 15/10/2026; implementación y verificación funcional pendientes.
 
 **UI:** Aplica; página administrativa `/entregas-fallidas`.
 
@@ -10,14 +10,14 @@
 
 | Documento | Referencia y secciones | Revisión utilizada |
 |---|---|---|
-| Comportamiento | [spec.md](./spec.md), CA-01 a CA-05 | Contenido previo en `8586a78`; migración y complementos en esta carpeta. |
+| Comportamiento | [spec.md](./spec.md), CA-01 a CA-11 | CA-01 a CA-05 conservados; revisión acordada en `1f556c0`. |
 | UI | [ui.md](./ui.md), UI-01 y CUI-01 a CUI-06 | Misma revisión documental que este plan. |
-| Contrato | [API](../../integraciones/api-contract.md), §§3.3, 3.5, 8, 11 y 13 | `8586a78`; parámetros y DTO del listado pendientes. |
-| Componentes y diseño | [Componentes React](../../disenio/componentes-react.md), §§4.5–4.6; [SYSTEM-DESIGN.md](../../disenio/SYSTEM-DESIGN.md), §23 | `8586a78`. |
-| Arquitectura y datos | [Contenedores](../../arquitectura/c4-contenedores.md), §3; [modelo de datos](../../arquitectura/modelo-datos.md), §§1, 3.3 y 3.4 | `8586a78`. |
+| Contrato | [API](../../integraciones/api-contract-gestion-despachos.md), Común §3.3, Común §3.5, Gestión §4, Gestión §5.1, Operación §5.4 | `4bad49d`; catálogo, parámetros, respuesta y lectura operativa documentados. Referencia: [Convenciones e integración externa](../../integraciones/api-contract.md#33-roles-humanos-y-tokens-de-servicio), [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias). |
+| Componentes y diseño | [Componentes React](../../disenio/componentes-react.md), §§4.5–4.6; [SYSTEM-DESIGN.md](../../disenio/SYSTEM-DESIGN.md), §23 | Contratos compartidos existentes; listado alineado en esta actualización. |
+| Arquitectura y datos | [Contenedores](../../arquitectura/c4-contenedores.md), §3; [modelo de datos](../../arquitectura/modelo-datos.md), §§1, 3.3 y 3.4 | `4bad49d`; referencia a última incidencia y fuente operativa definidas. |
 | Base de código | Backend `af13989`; frontend `d2bc27d` | Inicialización de aplicaciones; sin endpoint de consulta ni página funcional de F-04. |
 
-Este cambio prepara documentación. La modificación del contrato, el código y las pruebas de comportamiento se ejecutarán en tareas posteriores. No se duplican contratos ni se da por cerrada la revisión técnica [cite: 1, 2].
+La revisión concreta el comportamiento y el contrato correspondiente de esta consulta. La implementación de endpoints, componentes y pruebas funcionales sigue pendiente. La verificación documental no acredita criterios de comportamiento ni disponibilidad de dependencias [cite: 1, 2].
 
 ## 2. Estrategia y responsabilidades
 
@@ -27,10 +27,10 @@ La página consume una consulta autorizada a través del Gateway. Gestión obtie
 |---|---|---|
 | Frontend administrativo | Página, filtros, consulta y adaptación del resultado. | `apps/despacho-administrativo/src/features/entregas-fallidas/`; `PaginaEntregasFallidas.tsx` y adaptador de consulta. |
 | Componentes compartidos | Presentación e interacción sin HTTP ni acceso a tokens. | `packages/componentes-compartidos/src/`; CR-01/02/03/05/06/07/08/09/10. |
-| Cliente de API | Petición y tratamiento del formato de errores vigente. | Paquete existente `packages/cliente-api`; tipos de transporte tras DT-01. |
+| Cliente de API | Petición y tratamiento del formato de errores vigente. | Paquete existente `packages/cliente-api`; tipos de transporte conforme a Gestión §5.1. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 | Gateway | Enrutamiento de la consulta y propagación de identidad/correlación. | `api-gateway`; configuración base pendiente de habilitar y comprobar. |
 | Gestión de Despachos | Autorización, caso de uso y persistencia de consulta. | Funcionalidad propuesta `incidencias/`, bajo el paquete base existente, con `api`, `application`, `domain` e `infrastructure` según necesidad. |
-| Operación de Reparto y Flota | Datos propios de repartidor y jornada mediante contrato. | Adaptador de salida de Gestión; mecanismo de lectura pendiente en DT-02. |
+| Operación de Reparto y Flota | Datos propios de repartidor y jornada mediante lectura por lotes. | Adaptador de salida de Gestión para Operación §5.4; implementación pendiente en T-06. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias). |
 
 Los nombres de clases y subpaquetes son decisiones técnicas propuestas. No se crean módulos desplegables nuevos ni se comparten entidades JPA entre servicios.
 
@@ -40,29 +40,30 @@ Los nombres de clases y subpaquetes son decisiones técnicas propuestas. No se c
 - Gerardo implementará CR-08 EstadoVista como trabajo posterior y lo verificará contra CCR-08-01. Coordinar los demás CR con sus responsables documentados; la preparación de esta carpeta no los declara disponibles.
 - CR-12/15 corresponden a confirmaciones y sus resultados; CR-18/19 al detalle. No son prerrequisitos de la consulta aislada.
 - El contenedor mantiene filtros, página y estado de consulta, sincroniza la URL y descarta respuestas obsoletas. Los cambios de filtro reinician la página.
-- Antes del contrato completo pueden usarse fixtures de presentación para los seis estados de UI y las combinaciones de indicadores. No representan respuestas HTTP definitivas ni prueban filtros del backend.
-- Tras DT-01, implementar el adaptador de HTTP y reemplazar los fixtures por resultados reales. No calcular indicadores globales con las filas de una página.
+- Usar fixtures identificados para los estados de UI, indicadores 7/5/2, múltiples incidencias, `NO_INTENTADO` con cero/un fallo previo y jornada desconocida. Deben ser compatibles con el contrato documentado, sin presentarlos como servicios reales ni pruebas del filtrado del backend.
+- Implementar el adaptador de HTTP contra Gestión §5.1 y sustituir los fixtures en el recorrido real. Las tarjetas respetan motivo/fechas e ignoran grupo/página; un valor desconocido se muestra no disponible y la selección de atrasados requiere una consulta completa. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
 - La navegación al detalle y la apertura de recepción se enlazan con ES-F04-02/03 cuando existan; registrar esa disponibilidad por separado del alcance de consulta.
 
 ## 4. Backend, persistencia e integraciones
 
 - Entrada: `GET /api/v1/despachos/fallidos`. Autorizar el JWT humano y exigir `GESTOR_DESPACHO`; el cliente no sustituye esta comprobación.
-- Caso de uso: consultar solo despachos cuyo estado vigente sea `FALLIDO`, combinar filtros y producir una página de resúmenes sin datos del detalle. Elegir y verificar un orden estable conforme a DT-01.
-- Datos locales: despachos, intentos, motivos, recepción, anulación y política de intentos según el modelo. Resolver el intento/incidencia vigente antes de paginar para evitar filas duplicadas.
+- Caso de uso: seleccionar una incidencia por despacho `FALLIDO`, sin filtro implícito de fechas; aplicar motivo/fechas, calcular indicadores, filtrar grupo, ordenar y paginar según Gestión §5.1. Recibidos primero y, en cada grupo, incidencia más antigua primero; desempate por identificador. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
+- Datos locales: despachos, intentos, motivos, recepción, anulación y política de intentos. Usar `ultima_incidencia_id` para no mezclar jornadas, recepciones ni evidencia de distintas salidas. Contadores e identificador de incidencia son independientes.
 - Migración: revisar el esquema existente y su forma de gestión con Arquitectura; crear migraciones Flyway solo para cambios necesarios. No asumir que las tablas o migraciones ya están disponibles por aparecer en el modelo.
-- Integraciones: resolver nombre del repartidor y cierre de jornada según DT-02, mediante APIs o una proyección acordada. No consultar tablas de Operación ni inventar nuevos endpoints. Definir tratamiento de datos no disponibles antes de aceptar CA-05.
+- Integraciones: implementar la lectura por lotes de Operación §5.4. Consultar las jornadas deduplicadas de todas las incidencias pendientes de la base para que filtro/total de atrasados sean correctos antes de paginar; los nombres se consultan para la página. No acceder a tablas de Operación ni hacer una llamada por fila. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
+- Degradación: una jornada no confirmada es `DESCONOCIDA`, no activa. En consulta normal, conservar filas y métricas locales y devolver el total de atrasados desconocido; la selección de solo atrasados devuelve el error de dependencia cuando no puede calcularse completa. Un nombre ausente conserva su identificador y no bloquea filas.
 - Retorno atrasado: jornada cerrada confirmada y recepción pendiente. No inferirlo solo a partir de la fecha o del reloj del frontend.
-- Fechas: el modelo establece `America/Lima` para la jornada y UTC para instantes. DT-01 concreta los límites del rango de consulta y su representación HTTP.
+- Fechas: instantes UTC y días de filtro inclusivos en `America/Lima`, conforme a Gestión §5.1; se admiten límites abiertos o ausencia de rango. La consulta se basa en la jornada de la incidencia, no en la actual del repartidor. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
 - Efectos secundarios: la consulta no crea intentos, confirma recepciones, libera capacidad ni emite eventos de negocio. No requiere una clave de idempotencia de comando.
-- Errores: aplicar el formato central de §3.5; concretar los errores de filtros y de dependencias en el contrato antes de implementar el adaptador real.
+- Errores: aplicar Común §3.5 y los códigos de filtros/dependencia de Gestión §5.1. Separar `200` sin coincidencias, `200` con información operativa desconocida y `503` al solicitar un grupo de atrasados no calculable. Referencia: [Convenciones e integración externa](../../integraciones/api-contract.md#35-errores), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
 
 ## 5. Orden de implementación
 
 | Incremento | Resultado verificable | Dependencias | Criterios |
 |---|---|---|---|
 | I-01 | Componentes requeridos disponibles y página aislada con fixtures identificados. | Base frontend y CR de §3; no necesita una API real. | CUI-01 a CUI-06, solo presentación/interacción. |
-| I-02 | Contrato, fuentes y consulta backend implementados y probados. | DT-01/02/03; persistencia, JWT y Gateway disponibles para la prueba completa. | CA-01 a CA-05. |
-| I-03 | Página conectada y verificación del recorrido real. | I-01 e I-02. | CA-01 a CA-05 y CUI-01 a CUI-06. |
+| I-02 | Fuentes y consulta backend implementadas y probadas contra el contrato definido. | T-05 documental; implementación de DT-01/02 y bases de DT-03. | CA-01 a CA-11. |
+| I-03 | Página conectada y verificación del recorrido real. | I-01 e I-02. | CA-01 a CA-11 y CUI-01 a CUI-06. |
 
 La definición contractual y de fuentes puede prepararse mientras se desarrolla I-01. Solo el incremento afectado queda detenido por cada pendiente.
 
@@ -75,6 +76,12 @@ La definición contractual y de fuentes puede prepararse mientras se desarrolla 
 | CA-03 | Diferenciar vacío, ausencia de coincidencias y error. | Backend con cero fallidos/coincidencias; UI con fixtures y API real. |
 | CA-04 | Rechazar usuario con otro rol sin datos y retirar resultados previos en UI. | Pruebas de seguridad del endpoint y de interacción. |
 | CA-05 | Matriz de jornada activa/cerrada y recepción pendiente/confirmada. | Regla backend y adaptador; después fuente real de Operación. |
+| CA-06 | Dos fallos del mismo despacho sin duplicados ni recepción heredada. | Integración PostgreSQL con referencia de incidencia vigente. |
+| CA-07 | Orden fijo, empate de fechas y varias páginas. | Consulta backend y UI, sin mutaciones concurrentes en el caso de estabilidad. |
+| CA-08 | Totales de base 7/5/2, grupo seleccionado y página parcial. | Integración y UI; cambiar motivo/fechas y alternar tarjetas. |
+| CA-09 | `NO_INTENTADO` con contador cero y uno. | Consulta e interacción; máximo de dos en los datos de prueba. |
+| CA-10 | Jornada desconocida, lote fallido, nombre ausente y petición de solo atrasados. | Dobles identificados y prueba contra Operación; `200` degradado o `503` conforme al contrato. |
+| CA-11 | Filtros inválidos y combinaciones incompatibles. | Integración de parámetros y errores normalizados; límites de fechas de Lima. |
 | CUI-01 a CUI-06 | Contenido, controles, recuperaciones, foco, nombres accesibles y responsive. | Pruebas de interacción y recorrido manual reproducible. |
 
 Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; desde Gestión, `./mvnw.cmd test` en PowerShell. Las herramientas y el comando de pruebas frontend se definirán al habilitarlas; no existe actualmente un script de pruebas. Las pruebas con Testcontainers requieren Docker. Los resultados y la distinción entre dobles y servicios reales se anotarán en [evidence.md](./evidence.md).
@@ -83,8 +90,8 @@ Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; de
 
 | ID | Punto por resolver | Fuente y responsable de coordinación | Bloquea |
 |---|---|---|---|
-| DT-01 | Nombres/límites de filtros, página y tamaño; DTO de filas, totales e indicadores; orden estable y desempate; catálogo de motivos; límites del rango y filtros derivados de KPI. | Contrato §11 y DC-04 del documento compartido. Gerardo con Backend/Frontend y Arquitectura. La revisión del contrato se hará después de esta preparación documental. | Adaptadores HTTP de I-02/03; no los fixtures visuales de I-01. |
-| DT-02 | Fuente y frescura de los datos de repartidor y cierre de jornada; tratamiento de una dependencia no disponible. | Modelo de datos, F-03/F-05/F-06 y contrato §13. Gerardo con responsables de Operación y Arquitectura. | CA-01/05 e integración real de I-02/03. |
+| DT-01 | Definido documentalmente: filtros, límites, respuesta, catálogo, orden y métricas de Gestión §§4 y 5.1. Pendiente implementar y probar consumidores. | Gerardo con Backend/Frontend y Arquitectura; T-05 registra la comprobación documental. | T-07/08 verifican el contrato real; no se inventan DTO alternativos. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
+| DT-02 | Definido documentalmente: lectura por lotes Operación §5.4, referencia de incidencia vigente y degradación de Gestión §5.1. Pendiente implementar proveedor/adaptador. | Gerardo con Operación y Arquitectura; modelo de datos y T-06. | CA-01/05/06/08/10 e integración real de I-02/03. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 | DT-03 | Esquema/migraciones necesarios y base compartida de JWT, errores, conexión de datos y rutas del Gateway. | Inicialización actual del backend y modelo. Gerardo coordina con Arquitectura y DevOps. | Ejecución real de I-02/03. |
 | DT-04 | Disponibilidad y verificación de componentes, tema y herramientas de pruebas. | Componentes React §§4.5–4.6. Gerardo para CR-08; coordinación con los responsables del resto. | Composición y aceptación de I-01 según sus dependencias. |
 
@@ -93,11 +100,11 @@ Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; de
 - [ ] Las entradas del incremento están revisadas y sus pendientes bloqueantes resueltos.
 - [ ] Los componentes requeridos están verificados antes de componer la pantalla consumidora.
 - [ ] Las tareas cubren todos los criterios y tienen una comprobación concreta.
-- [ ] La consulta respeta el contrato único y la propiedad de datos de cada servicio.
+- [ ] La consulta respeta el contrato correspondiente y la propiedad de datos de cada servicio.
 - [ ] Todos los criterios del alcance cuentan con evidencia, distinguiendo fixtures, dobles y servicios reales.
 
 ## 9. Referencias
 
 1. [Especificación](./spec.md), [UI](./ui.md), [tareas](./tasks.md) y [evidencia](./evidence.md).
-2. [Contrato central](../../integraciones/api-contract.md#11-api-de-f-04-entregas-fallidas), [modelo de datos](../../arquitectura/modelo-datos.md) y [arquitectura de contenedores](../../arquitectura/c4-contenedores.md).
+2. [Contrato de Gestión](../../integraciones/api-contract-gestion-despachos.md#5-api-de-f-04-entregas-fallidas), [modelo de datos](../../arquitectura/modelo-datos.md) y [arquitectura de contenedores](../../arquitectura/c4-contenedores.md).
 3. [Componentes React](../../disenio/componentes-react.md), [sistema de diseño](../../disenio/SYSTEM-DESIGN.md) y [flujo SDD](../../plantillas/sdd/README.md).

@@ -24,8 +24,8 @@
 
 - **Especificación origen:** [F-05-MonitoreoFlotaCapacidad.md](../../funcionalidades/F-05-MonitoreoFlotaCapacidad.md) (Requisito `RF-04`, Criterios `CA-10`, `CA-11`).
 - **Endpoints asociados:**
-  - `GET /api/v1/flota/resumen-capacidad` — Panel resumen global de ocupación (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md) §7.2).
-  - `GET /api/v1/repartidores/disponibles` — Datos individuales por repartidor con porcentaje de ocupación (§7.1).
+  - `GET /api/v1/flota/resumen-capacidad` — Panel resumen global de ocupación (detallado en [integraciones/api-contract-operacion-reparto.md](../../integraciones/api-contract-operacion-reparto.md) Operación §4.2).
+  - `GET /api/v1/repartidores/disponibles` — Datos individuales por repartidor con porcentaje de ocupación (Operación §4.2).
 - **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
   - Dashboard de Monitoreo: tarjetas de resumen global (`DISPONIBLES`, `EN_RUTA`, `SATURADOS`, `INACTIVOS`) y tabla por repartidor con barra de progreso coloreada por nivel de ocupación.
@@ -57,7 +57,7 @@
 
 - [ ] Código implementado en Java 21 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
 - [ ] Motor de cálculo de ocupación implementado en backend: suma de despachos activos (`ASIGNADO` + `EN_CAMINO`) por repartidor frente a su límite diario configurado.
-- [ ] Endpoint `GET /api/v1/flota/resumen-capacidad` implementado y documentado en [integraciones/api-contract.md](../../integraciones/api-contract.md).
+- [ ] Endpoint `GET /api/v1/flota/resumen-capacidad` implementado y documentado en [integraciones/api-contract-operacion-reparto.md](../../integraciones/api-contract-operacion-reparto.md).
 - [ ] Tiempo de respuesta de `GET /api/v1/flota/resumen-capacidad` menor a 300 ms para 50 repartidores activos.
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) del motor de cálculo de ocupación y las reglas de coloreado por umbral.
 - [ ] Prueba de integración verificando los conteos correctos por estado con datos en base de datos.

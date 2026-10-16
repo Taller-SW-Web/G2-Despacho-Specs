@@ -61,11 +61,11 @@ El catálogo es el punto de entrada del panel de gestión de zonas. Permite al G
 
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|
-| `GET /api/v1/zonas` | Listar zonas, con filtros y paginación | [Contrato §9.1](../../integraciones/api-contract.md#91-zonas-y-tarifas) |
-| Seguridad y Usuarios | Emite el JWT que habilita el acceso administrativo | Contrato §§3.3 y 8 |
+| `GET /api/v1/zonas` | Listar zonas, con filtros y paginación | [Gestión §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) |
+| Seguridad y Usuarios | Emite el JWT que habilita el acceso administrativo | Contrato externo §§3.3 y 8 |
 | Tablas `zonas`, `zona_distritos` y `tarifas_zona` | Fuente de datos del catálogo | [Modelo de datos](../../arquitectura/modelo-datos.md), §3.1 |
 
-Los parámetros exactos de filtros, paginación y el DTO de respuesta se consultan en el contrato central y en los pendientes del plan; no se definen aquí [cite: 2].
+Los parámetros exactos de filtros, paginación y el DTO de respuesta se consultan en el contrato de Gestión y en los pendientes del plan; no se definen aquí [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -118,7 +118,7 @@ La descomposición está en [tasks.md](./tasks.md) y los resultados se registrar
 ## 9. Referencias
 
 1. [cite: 1] [Funcionalidad F-01](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md), RF-01, CA-04 y CA-15.
-2. [cite: 2] [Contrato de API](../../integraciones/api-contract.md), secciones 3.3, 3.5 y 9.1.
+2. [cite: 2] [Contrato de Gestión, sección 3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas); [convenciones compartidas](../../integraciones/api-contract.md#3-convenciones-comunes), secciones 3.3 y 3.5.
 3. [cite: 3] [Diseño de F-01](../../disenio/funcionalidades/f-01.md), Pantalla 1; [alta fidelidad F-01](../../disenio/SystemDesign/f-01-alta-fidelidad.md).
 4. [cite: 4] [Modelo de datos](../../arquitectura/modelo-datos.md), tablas `zonas`, `zona_distritos` y `tarifas_zona`.
 5. Archivos de esta especificación: [ui.md](./ui.md), [plan.md](./plan.md), [tasks.md](./tasks.md) y [evidence.md](./evidence.md).

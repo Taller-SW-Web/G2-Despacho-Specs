@@ -41,7 +41,9 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 |---|---|
 | [Visión general](./overview.md) | Problema, objetivos, alcance, actores y flujo general del módulo. |
 | [Índice de funcionalidades](./funcionalidades/funcionalidad.md) | Listado y estado de las especificaciones funcionales. |
-| [Contrato de API](./integraciones/api-contract.md) | Convenciones, autenticación, errores y organización de las APIs. |
+| [Integraciones externas](./integraciones/api-contract.md) | Comunicaciones con otros módulos y convenciones compartidas. |
+| [API de Gestión de Despachos](./integraciones/api-contract-gestion-despachos.md) | Zonas, programación, catálogo, incidencias y API interna provista por Gestión. |
+| [API de Operación de Reparto y Flota](./integraciones/api-contract-operacion-reparto.md) | Repartidor, flota, jornadas, evidencias, capacidad y API interna provista por Operación. |
 | [Modelo de datos](./arquitectura/modelo-datos.md) | Base evolutiva de entidades, relaciones y decisiones de persistencia. |
 | [C4 de contexto](./arquitectura/c4-contexto.md) | Actores, límites del sistema e integraciones externas. |
 | [C4 de contenedores](./arquitectura/c4-contenedores.md) | Aplicaciones, microservicios, persistencias y comunicaciones internas. |
@@ -110,7 +112,7 @@ Las dependencias específicas y sus versiones se documentarán en los repositori
 
 ## 📜 Contrato y documentación de API
 
-El archivo [Contrato de API](./integraciones/api-contract.md) reúne las convenciones de comunicación, autenticación, errores y organización de los endpoints del módulo.
+La documentación se distribuye en tres contratos: [integraciones externas y convenciones compartidas](./integraciones/api-contract.md), [Gestión de Despachos](./integraciones/api-contract-gestion-despachos.md) y [Operación de Reparto y Flota](./integraciones/api-contract-operacion-reparto.md). Cada operación tiene una sola definición; los consumidores enlazan el contrato de su proveedor y las convenciones comunes.
 
 Cuando el backend esté desplegado, publicará su documentación interactiva mediante Swagger UI. Esta documentación representará la API implementada y permitirá explorar sus operaciones disponibles. El enlace se incorporará cuando exista el entorno correspondiente.
 

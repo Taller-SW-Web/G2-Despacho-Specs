@@ -64,7 +64,7 @@ El despacho queda disponible para que F-04 lo resuelva, y el paquete regresa con
 - Gestión de Despachos: catálogo canónico de motivos de fallo.
 - Servicio de evidencia (por definir).
 - Máquina de estados, historial común y publicación de eventos (overview, sección 6 y RT-03).
-- Ver `integraciones/api-contract.md`.
+- Ver `integraciones/api-contract-operacion-reparto.md`.
 
 ## 6. Criterios de aceptación
 
@@ -84,7 +84,7 @@ El despacho queda disponible para que F-04 lo resuelva, y el paquete regresa con
 
 - **DADO** que el repartidor abre el formulario de incidencia.
 - **CUANDO** se cargan los motivos del catálogo.
-- **ENTONCES** el campo muestra los motivos seleccionables con código y etiqueta, sin los de uso exclusivo del sistema.
+- **ENTONCES** el campo ofrece solo los motivos con `activo=true` y `seleccionableEnCampo=true` del catálogo único definido en el contrato (Gestión §4), sin `NO_INTENTADO`. El backend aplica la misma restricción aunque se fuerce una solicitud manual; F-04 puede utilizar el catálogo completo para consultar, sin cambiar esta regla de registro. Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo).
 
 ### CA-04. Pérdida de conexión durante el envío (F-03 CA-21)
 
@@ -116,5 +116,5 @@ El despacho queda disponible para que F-04 lo resuelva, y el paquete regresa con
 ### Referencias
 
 - `funcionalidades/F-03-AppMovilRepartidor.md`, RF-06, RF-10, RF-11, Anexo A y Anexo B.
-- `integraciones/api-contract.md`.
+- `integraciones/api-contract-operacion-reparto.md`.
 - Wireframe del formulario de incidencia.

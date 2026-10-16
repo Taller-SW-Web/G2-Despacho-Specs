@@ -199,7 +199,7 @@ El sistema DEBE asociar cada repartidor con su usuario en Seguridad y Usuarios p
 | Gestión de furgonetas | CRUD con unicidad de placa, estado, límites de carga y auditoría. |
 | Persistencia y auditoría | Registrar cambios con usuario y marca temporal en UTC. |
 
-Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract.md`.
+Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract-operacion-reparto.md`.
 
 ## 8. Requisitos no funcionales
 

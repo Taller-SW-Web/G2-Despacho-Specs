@@ -24,11 +24,11 @@
 
 - **Especificación origen:** [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) (Requisito `RF-02`, Criterios `CA-05`, `CA-06`).
 - **Endpoints asociados:**
-  - `GET /api/v1/zonas/{idZona}/tarifa` (consultar la tarifa vigente) y `PUT /api/v1/zonas/{idZona}/tarifa` (crear o reemplazar la tarifa), definidos en [integraciones/api-contract.md](../../integraciones/api-contract.md), sección 9.1.
+  - `GET /api/v1/zonas/{idZona}/tarifa` (consultar la tarifa vigente) y `PUT /api/v1/zonas/{idZona}/tarifa` (crear o reemplazar la tarifa), definidos en el [contrato de Gestión, sección 3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas).
 - **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT).
 - **Componentes de Frontend:**
   - Formulario de Tarifas: configurar tarifa base, peso incluido, recargo por kilogramo, factor volumétrico y plazo estimado por zona.
-- **Cuerpo de la tarifa (sección 9.1 del contrato):**
+- **Cuerpo de la tarifa (sección 3.1 del contrato de Gestión):**
 
   ```json
   {

@@ -24,7 +24,7 @@
 
 - **Especificación origen:** [F-05-MonitoreoFlotaCapacidad.md](../../funcionalidades/F-05-MonitoreoFlotaCapacidad.md) (Requisito `RF-01`, Criterios `CA-01`, `CA-02`, `CA-03`, `CA-04`).
 - **Endpoints asociados:**
-  - `POST /api/v1/repartidores` — Alta de nuevo repartidor (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md) §7.3).
+  - `POST /api/v1/repartidores` — Alta de nuevo repartidor (detallado en [integraciones/api-contract-operacion-reparto.md](../../integraciones/api-contract-operacion-reparto.md) Operación §4.1).
   - `GET /api/v1/repartidores` — Listado paginado con filtros por estado y turno.
   - `PUT /api/v1/repartidores/{idRepartidor}` — Modificación de datos personales y estado operativo.
 - **Rol requerido:** `GESTOR_DESPACHO` (autenticación JWT). Usuarios sin este rol deben recibir `403 Forbidden`.
@@ -74,5 +74,5 @@
 - [ ] Pruebas de seguridad (`Spring Security Test`) verificando `403 Forbidden` para roles incorrectos o usuarios anónimos.
 - [ ] Panel de Repartidores implementado en React + Tailwind con tabla responsive, filtros, skeleton loaders y estado visual vacío.
 - [ ] Formulario de Repartidor con validación visual en tiempo real.
-- [ ] Respuestas HTTP alineadas al contrato en [integraciones/api-contract.md](../../integraciones/api-contract.md).
+- [ ] Respuestas HTTP alineadas al contrato en [integraciones/api-contract-operacion-reparto.md](../../integraciones/api-contract-operacion-reparto.md).
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.

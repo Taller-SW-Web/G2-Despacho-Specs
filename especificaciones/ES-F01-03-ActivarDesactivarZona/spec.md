@@ -64,9 +64,9 @@ El cambio de estado retira o devuelve una zona de la cobertura efectiva del mód
 
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|
-| `PATCH /api/v1/zonas/{idZona}/estado` | Cambiar el estado de la zona | [Contrato §9.1](../../integraciones/api-contract.md#91-zonas-y-tarifas) |
-| Seguridad y Usuarios | Emite el JWT que habilita el acceso administrativo | Contrato §§3.3 y 8 |
-| Transiciones de estado de zonas | Se rige por el flujo definido en el contrato | Contrato [§14](../../integraciones/api-contract.md#14-flujos-de-estado-y-trazabilidad) |
+| `PATCH /api/v1/zonas/{idZona}/estado` | Cambiar el estado de la zona | [Gestión §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) |
+| Seguridad y Usuarios | Emite el JWT que habilita el acceso administrativo | Contrato externo §§3.3 y 8 |
+| Transiciones de estado de zonas | Aplican las reglas comunes de idempotencia y concurrencia | [Convenciones comunes §9](../../integraciones/api-contract.md#9-reglas-de-idempotencia-y-concurrencia) |
 | Tablas `zonas` y relación con `despachos` | Estado de la zona y despachos asociados | [Modelo de datos](../../arquitectura/modelo-datos.md), §3.1 |
 
 La operación no publica eventos: F-02 y los canales observan el efecto a través de la resolución de zona y la cotización [cite: 2].
@@ -136,7 +136,7 @@ La descomposición está en [tasks.md](./tasks.md) y los resultados se registrar
 ## 9. Referencias
 
 1. [cite: 1] [Funcionalidad F-01](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md), RF-01, CA-04, CA-13 y CA-17.
-2. [cite: 2] [Contrato de API](../../integraciones/api-contract.md), secciones 3.3, 9.1 y 14.
+2. [cite: 2] [Contrato de Gestión, sección 3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas); [roles, sección 3.3](../../integraciones/api-contract.md#33-roles-humanos-y-tokens-de-servicio), e [idempotencia, sección 9](../../integraciones/api-contract.md#9-reglas-de-idempotencia-y-concurrencia), del contrato externo.
 3. [cite: 3] [Diseño de F-01](../../disenio/funcionalidades/f-01.md), Pantalla 4; [alta fidelidad F-01](../../disenio/SystemDesign/f-01-alta-fidelidad.md), modal de desactivación.
 4. [cite: 4] [Modelo de datos](../../arquitectura/modelo-datos.md), columna `estado` de `zonas` y relaciones con `despachos`.
 5. Archivos de esta especificación: [ui.md](./ui.md), [plan.md](./plan.md), [tasks.md](./tasks.md) y [evidence.md](./evidence.md).

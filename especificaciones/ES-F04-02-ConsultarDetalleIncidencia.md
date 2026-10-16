@@ -58,7 +58,7 @@ Permitir que el Gestor de Despacho examine la incidencia, la recepción y el his
 - F-03 origina la incidencia y proporciona el mecanismo autorizado de acceso a la evidencia.
 - F-05 proporciona los datos básicos del perfil local del repartidor asociado al intento.
 - F-02 proporciona el indicador de anulación registrado sobre un despacho fallido.
-- La consulta de incidencia y la autorización de evidencia respetan las rutas definidas en `integraciones/api-contract.md` [cite: 2].
+- La consulta de incidencia y la autorización de evidencia respetan las rutas definidas en `integraciones/api-contract-gestion-despachos.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -104,6 +104,6 @@ Permitir que el Gestor de Despacho examine la incidencia, la recepción y el his
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-04-GestionEntregasFallidas.md`, RF-02 y CA-04 a CA-05.
-- [cite: 2] `integraciones/api-contract.md`, secciones 10 y 11.
+- [cite: 2] `integraciones/api-contract-gestion-despachos.md`, Operación §3, Gestión §5. Referencia: [Operación](../integraciones/api-contract-operacion-reparto.md#3-api-de-f-03-operación-del-repartidor), [Gestión](../integraciones/api-contract-gestion-despachos.md#5-api-de-f-04-entregas-fallidas).
 - [cite: 3] `disenio/funcionalidades/f-04.md`, Pantalla 2: Detalle de la Incidencia.
 - [cite: 4] `overview.md`, RT-02 sobre historial auditable.

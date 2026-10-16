@@ -24,7 +24,7 @@
 
 - **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-01`).
 - **Endpoints asociados:**
-  - `POST /api/v1/despachos` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md), sección 7.1).
+  - `POST /api/v1/despachos` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md), Externo §7.1).
 - **Autenticación:** token de servicio de `modulo-ventas` con `tipo=servicio`, `aud=api-despacho` y scope `despachos:crear`; la solicitud exige además un `Idempotency-Key` (UUID v4).
 - **Reglas de negocio:**
   - El payload debe incluir obligatoriamente: `idPedido`, datos del destinatario (`nombre`, `telefono`), destino (`direccion`, `distrito`) y al menos una línea con `sku` y `cantidad` mayor que cero. Las coordenadas y el código postal son opcionales.

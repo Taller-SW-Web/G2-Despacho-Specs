@@ -63,13 +63,13 @@ El registro y la edición de zonas permiten delimitar la cobertura del centro de
 
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|
-| `POST /api/v1/zonas` | Crear una zona | [Contrato §9.1](../../integraciones/api-contract.md#91-zonas-y-tarifas) |
-| `GET /api/v1/zonas/{idZona}` | Recuperar una zona para edición | [Contrato §9.1](../../integraciones/api-contract.md#91-zonas-y-tarifas) |
-| `PUT /api/v1/zonas/{idZona}` | Editar nombre o delimitación | [Contrato §9.1](../../integraciones/api-contract.md#91-zonas-y-tarifas) |
-| Seguridad y Usuarios | Emite el JWT que habilita el acceso administrativo | Contrato §§3.3 y 8 |
+| `POST /api/v1/zonas` | Crear una zona | [Gestión §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) |
+| `GET /api/v1/zonas/{idZona}` | Recuperar una zona para edición | [Gestión §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) |
+| `PUT /api/v1/zonas/{idZona}` | Editar nombre o delimitación | [Gestión §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) |
+| Seguridad y Usuarios | Emite el JWT que habilita el acceso administrativo | Contrato externo §§3.3 y 8 |
 | Catálogo de distritos y códigos postales | Fuente de selección de la delimitación | [Modelo de datos](../../arquitectura/modelo-datos.md), tabla `distrito` |
 
-Los cuerpos, respuestas y códigos de error se consultan en el contrato central; no se definen aquí [cite: 2].
+Los cuerpos, respuestas y códigos de error se consultan en el contrato de Gestión y sus convenciones compartidas; no se definen aquí [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -136,7 +136,7 @@ La descomposición está en [tasks.md](./tasks.md) y los resultados se registrar
 ## 9. Referencias
 
 1. [cite: 1] [Funcionalidad F-01](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md), RF-01, CA-01, CA-03, CA-04 y CA-16.
-2. [cite: 2] [Contrato de API](../../integraciones/api-contract.md), secciones 3.3, 3.5 y 9.1.
+2. [cite: 2] [Contrato de Gestión, sección 3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas); [convenciones compartidas](../../integraciones/api-contract.md#3-convenciones-comunes), secciones 3.3 y 3.5.
 3. [cite: 3] [Diseño de F-01](../../disenio/funcionalidades/f-01.md), Pantalla 2; [alta fidelidad F-01](../../disenio/SystemDesign/f-01-alta-fidelidad.md), formulario de zona.
 4. [cite: 4] [Modelo de datos](../../arquitectura/modelo-datos.md), tablas `zonas`, `zona_distritos` y `distrito`.
 5. Archivos de esta especificación: [ui.md](./ui.md), [plan.md](./plan.md), [tasks.md](./tasks.md) y [evidence.md](./evidence.md).

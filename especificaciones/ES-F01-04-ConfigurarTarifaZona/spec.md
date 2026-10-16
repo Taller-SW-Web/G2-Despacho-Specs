@@ -62,12 +62,12 @@ La tarifa vigente es la regla de cobro que el motor de cotización aplica a los 
 
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|
-| `GET /api/v1/zonas/{idZona}/tarifa` | Consultar la tarifa vigente de la zona | [Contrato §9.1](../../integraciones/api-contract.md#91-zonas-y-tarifas) |
-| `PUT /api/v1/zonas/{idZona}/tarifa` | Guardar la tarifa vigente de la zona | [Contrato §9.1](../../integraciones/api-contract.md#91-zonas-y-tarifas) |
-| Seguridad y Usuarios | Emite el JWT que habilita el acceso administrativo | Contrato §§3.3 y 8 |
+| `GET /api/v1/zonas/{idZona}/tarifa` | Consultar la tarifa vigente de la zona | [Gestión §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) |
+| `PUT /api/v1/zonas/{idZona}/tarifa` | Guardar la tarifa vigente de la zona | [Gestión §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) |
+| Seguridad y Usuarios | Emite el JWT que habilita el acceso administrativo | Contrato externo §§3.3 y 8 |
 | Tabla `tarifas_zona` | Tabla propia de tarifas, con su índice único parcial | [Modelo de datos](../../arquitectura/modelo-datos.md), §3.1 |
 
-El motor de cotización de esta misma funcionalidad consume la tarifa vigente; esta especificación no calcula costos. Los cuerpos y códigos de error se rigen por el contrato central [cite: 2].
+El motor de cotización de esta misma funcionalidad consume la tarifa vigente; esta especificación no calcula costos. Los cuerpos y códigos de error se rigen por el contrato de Gestión y sus convenciones compartidas [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -127,7 +127,7 @@ La descomposición está en [tasks.md](./tasks.md) y los resultados se registrar
 ## 9. Referencias
 
 1. [cite: 1] [Funcionalidad F-01](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md), RF-02, CA-05, CA-06 y CA-18.
-2. [cite: 2] [Contrato de API](../../integraciones/api-contract.md), secciones 3.3, 3.5 y 9.1.
+2. [cite: 2] [Contrato de Gestión, sección 3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas); [convenciones compartidas](../../integraciones/api-contract.md#3-convenciones-comunes), secciones 3.3 y 3.5.
 3. [cite: 3] [Diseño de F-01](../../disenio/funcionalidades/f-01.md), Pantalla 3; [alta fidelidad F-01](../../disenio/SystemDesign/f-01-alta-fidelidad.md), panel de tarifas.
 4. [cite: 4] [Modelo de datos](../../arquitectura/modelo-datos.md), tabla `tarifas_zona` y su índice único parcial.
 5. Archivos de esta especificación: [ui.md](./ui.md), [plan.md](./plan.md), [tasks.md](./tasks.md) y [evidence.md](./evidence.md).

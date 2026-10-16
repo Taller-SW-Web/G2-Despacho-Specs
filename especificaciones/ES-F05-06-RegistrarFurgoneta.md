@@ -51,7 +51,7 @@ Permitir que el Gestor de Despacho registre una furgoneta en el módulo, definie
 ### Integraciones
 
 - F-06 consume las furgonetas `DISPONIBLE` para las asignaciones diarias.
-- La ruta, cuerpos y códigos se rigen por `integraciones/api-contract.md` [cite: 2].
+- La ruta, cuerpos y códigos se rigen por `integraciones/api-contract-operacion-reparto.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -96,4 +96,4 @@ Permitir que el Gestor de Despacho registre una furgoneta en el módulo, definie
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-05-GestionRepartidoresVehiculos.md`, RF-02 y CA-08 a CA-09.
-- [cite: 2] `integraciones/api-contract.md`.
+- [cite: 2] `integraciones/api-contract-operacion-reparto.md`.

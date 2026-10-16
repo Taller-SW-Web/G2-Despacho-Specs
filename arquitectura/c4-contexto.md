@@ -1,6 +1,6 @@
 # Arquitectura C4: Diagrama de Contexto
 
-> **Estado:** Contexto general alineado con `overview.md` e `integraciones/api-contract.md`. Los aspectos operativos aún abiertos se indican en la sección 5.
+> **Estado:** Contexto general alineado con `overview.md` y los tres contratos de `integraciones/`. Los aspectos operativos aún abiertos se indican en la sección 5.
 
 Este documento presenta el nivel 1 del modelo C4 del Sistema de Despacho y Entrega a Domicilio. Su objetivo es mostrar, sin detalles técnicos de implementación, quiénes utilizan el sistema, con qué sistemas externos se integra y qué información intercambia con cada uno. Los mecanismos de comunicación se alinean con `integraciones/api-contract.md`.
 

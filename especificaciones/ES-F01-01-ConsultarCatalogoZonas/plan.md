@@ -12,7 +12,7 @@
 |---|---|---|
 | Comportamiento | [spec.md](./spec.md), CA-01 a CA-04 | Contenido previo en `12d5041`; migración y complementos en esta carpeta. |
 | UI | [ui.md](./ui.md), UI-01 y CUI-01 a CUI-05 | Misma revisión documental que este plan. |
-| Contrato | [API](../../integraciones/api-contract.md), §§3.3, 3.5 y 9.1 | `12d5041`; filtros, paginación y DTO del listado pendientes de detalle. |
+| Contrato | [Gestión §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) y [convenciones compartidas §§3.3 y 3.5](../../integraciones/api-contract.md#3-convenciones-comunes) | `12d5041`; referencias adaptadas a la división de `0fbd89a`; filtros, paginación y DTO del listado pendientes de detalle. |
 | Componentes y diseño | [Componentes React](../../disenio/componentes-react.md), §4.5; [SYSTEM-DESIGN.md](../../disenio/SYSTEM-DESIGN.md); [alta fidelidad F-01](../../disenio/SystemDesign/f-01-alta-fidelidad.md) | `12d5041`. |
 | Arquitectura y datos | [C4 contenedores](../../arquitectura/c4-contenedores.md), §3.1; [modelo de datos](../../arquitectura/modelo-datos.md), §3.1 | `12d5041`. |
 
@@ -77,7 +77,7 @@ Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; de
 
 | ID | Decisión o pregunta | Justificación y fuente | Responsable | Bloquea qué incremento |
 |---|---|---|---|---|
-| DT-01 | Nombres y límites de filtros, paginación y orden; DTO de filas, tarifa vigente, estado y última modificación; catálogo de distritos y estados | Contrato §9.1 (tabla de rutas) y DC-04 del documento compartido | Valqui con Backend/Frontend y Arquitectura | Adaptadores HTTP de I-02/03; no los fixtures de I-01 |
+| DT-01 | Nombres y límites de filtros, paginación y orden; DTO de filas, tarifa vigente, estado y última modificación; catálogo de distritos y estados | Gestión §3.1 (tabla de rutas) y DC-04 del documento compartido | Valqui con Backend/Frontend y Arquitectura | Adaptadores HTTP de I-02/03; no los fixtures de I-01 |
 | DT-02 | Fuente exacta de la última modificación (`actualizado_en` de `zonas` y de la tarifa) y su presentación | Modelo de datos §3.1 | Valqui con Arquitectura | CA-01 e integración real |
 | DT-03 | Esquema/migraciones necesarios y base compartida de JWT, errores, conexión de datos y rutas del Gateway | Inicialización actual del backend y modelo | Valqui coordina con Arquitectura y DevOps | Ejecución real de I-02/03 |
 | DT-04 | Disponibilidad y verificación de componentes, tema y herramientas de pruebas | Componentes React §§4.5–4.6 | Valqui para los CR consumidos; coordinación con los responsables del resto | Composición y aceptación de I-01 según sus dependencias |
@@ -88,11 +88,11 @@ Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; de
 - [ ] Las entradas del incremento están revisadas y los pendientes bloqueantes resueltos.
 - [ ] Los componentes requeridos están verificados antes de componer la pantalla consumidora.
 - [ ] Las tareas cubren todos los criterios y tienen una comprobación concreta.
-- [ ] La consulta respeta el contrato único y la propiedad de datos.
+- [ ] La consulta respeta el contrato de Gestión, las convenciones compartidas y la propiedad de datos.
 - [ ] Todos los criterios del alcance cuentan con evidencia, distinguiendo fixtures, dobles y servicios reales.
 
 ## 9. Referencias
 
 1. [Especificación](./spec.md), [UI](./ui.md), [tareas](./tasks.md) y [evidencia](./evidence.md).
-2. [Contrato central](../../integraciones/api-contract.md#91-zonas-y-tarifas), [modelo de datos](../../arquitectura/modelo-datos.md) y [arquitectura de contenedores](../../arquitectura/c4-contenedores.md).
+2. [Contrato de Gestión](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas), [convenciones compartidas](../../integraciones/api-contract.md#3-convenciones-comunes), [modelo de datos](../../arquitectura/modelo-datos.md) y [arquitectura de contenedores](../../arquitectura/c4-contenedores.md).
 3. [Componentes React](../../disenio/componentes-react.md), [sistema de diseño](../../disenio/SYSTEM-DESIGN.md) y [flujo SDD](../../plantillas/sdd/README.md).

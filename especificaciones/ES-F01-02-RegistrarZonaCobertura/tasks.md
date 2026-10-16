@@ -66,14 +66,14 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 - Evidencia: pendiente; completar enlace a EV-03.
 - Bloqueo, si existe: disponibilidad de componentes.
 
-### T-04. Concretar el contrato central de alta y edición
+### T-04. Concretar el contrato de Gestión de alta y edición
 
 - [ ] Implementada y verificada.
 
 - Incremento del plan: habilita I-02/03.
 - Responsable: Valqui con Backend/Frontend y Arquitectura.
-- Objetivo y alcance: resolver DT-01 en `integraciones/api-contract.md`: cuerpo de creación y edición, validaciones y formato de conflicto `409`; enlazarlo desde los documentos consumidores.
-- Entradas: contrato §9.1 y [spec.md](./spec.md).
+- Objetivo y alcance: resolver DT-01 en `integraciones/api-contract-gestion-despachos.md`: cuerpo de creación y edición, validaciones y formato de conflicto `409`; enlazarlo desde los documentos consumidores.
+- Entradas: Gestión §3.1 y [spec.md](./spec.md).
 - Dependencias: revisión posterior a DT-01.
 - Verificación: revisión de solicitudes/respuestas representativas para CA-01 a CA-06, sin crear un segundo contrato.
 - Condición de cierre: decisión y revisión enlazadas. Esta tarea no se ejecuta en la preparación documental actual.

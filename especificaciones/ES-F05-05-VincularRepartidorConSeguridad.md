@@ -53,7 +53,7 @@ Gestionar el ciclo de vinculación entre un repartidor del módulo y su cuenta d
 - Seguridad y Usuarios: creación de cuenta, confirmación de activación y devolución del identificador de usuario.
 - F-03 identifica al repartidor mediante el identificador de usuario vinculado.
 - F-06 requiere vinculación `VINCULADO` para las asignaciones diarias.
-- La comunicación se rige por `integraciones/api-contract.md` [cite: 2].
+- La comunicación se rige por `integraciones/api-contract-operacion-reparto.md` [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -110,5 +110,5 @@ Gestionar el ciclo de vinculación entre un repartidor del módulo y su cuenta d
 ### Referencias
 
 - [cite: 1] `funcionalidades/F-05-GestionRepartidoresVehiculos.md`, RF-03 y CA-14 a CA-16.
-- [cite: 2] `integraciones/api-contract.md`.
+- [cite: 2] `integraciones/api-contract-operacion-reparto.md`.
 - [cite: 3] `overview.md`, integración con Seguridad y Usuarios.

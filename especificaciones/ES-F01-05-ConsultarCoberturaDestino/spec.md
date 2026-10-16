@@ -62,12 +62,12 @@ La consulta de cobertura permite que los canales de venta sepan si un destino es
 
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|
-| `POST /api/v1/cotizaciones` (sin `lineas`) | Evaluar cobertura y devolver disponibilidad | [Contrato §5.1](../../integraciones/api-contract.md#51-cotizaciones) |
+| `POST /api/v1/cotizaciones` (sin `lineas`) | Evaluar cobertura y devolver disponibilidad | [Contrato externo §5.1](../../integraciones/api-contract.md#51-solicitar-cotización) |
 | Seguridad y Usuarios | Emite los tokens de servicio con los scopes concedidos | Contrato §§3.4 y 8 |
 | Tablas `zonas` y `zona_distritos` | Fuente de la cobertura | [Modelo de datos](../../arquitectura/modelo-datos.md), §3.1 |
 | Límite `LIMITE_COTIZACIONES_POR_MINUTO` | Control de tasa por `sub` e IP | [Modelo de datos](../../arquitectura/modelo-datos.md), parámetros globales |
 
-Los errores `DESP_ERROR_*` y el formato de respuesta se rigen por el contrato central [cite: 2].
+Los errores `DESP_ERROR_*` y el formato de respuesta se rigen por el contrato externo [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -127,6 +127,6 @@ La descomposición está en [tasks.md](./tasks.md) y los resultados se registrar
 ## 9. Referencias
 
 1. [cite: 1] [Funcionalidad F-01](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md), RF-03 y RF-04, CA-02, CA-10, CA-19 y CA-20.
-2. [cite: 2] [Contrato de API](../../integraciones/api-contract.md), secciones 3.4, 3.5, 5.1 y 15.1.
+2. [cite: 2] [Contrato externo](../../integraciones/api-contract.md), secciones 3.4, 3.5, 5.1 y 10.1.
 3. [cite: 3] [Modelo de datos](../../arquitectura/modelo-datos.md), tablas `zonas` y `zona_distritos`; parámetro `LIMITE_COTIZACIONES_POR_MINUTO`.
 4. Archivos de esta especificación: [plan.md](./plan.md), [tasks.md](./tasks.md) y [evidence.md](./evidence.md).

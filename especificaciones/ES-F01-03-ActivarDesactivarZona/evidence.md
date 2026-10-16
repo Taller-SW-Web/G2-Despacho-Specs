@@ -114,10 +114,10 @@ Sin hallazgos de implementación porque no se ha ejecutado aún ninguna tarea.
 - Revisor y fecha: pendientes.
 - Resultado de revisión: pendiente.
 - Estado del alcance: Pendiente.
-- Integraciones reales pendientes: contrato §9.1 y §14, Gateway y componentes compartidos.
+- Integraciones reales pendientes: contrato de Gestión §3.1 y contrato externo §9, Gateway y componentes compartidos.
 
 ## 7. Referencias
 
 1. [Especificación funcional](./spec.md): comportamiento esperado y criterios CA-01 a CA-06.
 2. [Plan](./plan.md) y [tareas](./tasks.md): incrementos y pendientes.
-3. [Flujo SDD](../../plantillas/sdd/README.md), [componentes React](../../disenio/componentes-react.md) y [contrato de API](../../integraciones/api-contract.md).
+3. [Flujo SDD](../../plantillas/sdd/README.md), [componentes React](../../disenio/componentes-react.md), [contrato de Gestión](../../integraciones/api-contract-gestion-despachos.md) y [convenciones compartidas](../../integraciones/api-contract.md#3-convenciones-comunes).

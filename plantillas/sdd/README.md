@@ -14,7 +14,9 @@ Las seis funcionalidades conservan su alcance general en `funcionalidades/`. Cad
 G2-Despacho-Specs/
 ├── funcionalidades/                         # Funcionalidades padre e índice
 ├── integraciones/
-│   └── api-contract.md                      # Contrato vigente
+│   ├── api-contract.md                      # Integraciones externas y convenciones comunes
+│   ├── api-contract-gestion-despachos.md      # API de Gestión de Despachos
+│   └── api-contract-operacion-reparto.md      # API de Operación de Reparto y Flota
 ├── arquitectura/                            # C4, estados y modelo de datos
 ├── disenio/
 │   ├── SYSTEM-DESIGN.md                     # Referencia visual transversal
@@ -59,11 +61,11 @@ El documento de componentes React complementa [SYSTEM-DESIGN.md](../../disenio/S
 
 ## 3. Contrato de API como referencia
 
-El contrato vigente continúa siendo [integraciones/api-contract.md](../../integraciones/api-contract.md), conforme a la sección 5.3 de las reglas del repositorio [cite: 1, 3]. Este flujo no agrega un `api.md` ni otro contrato en cada carpeta.
+Los contratos vigentes son [integraciones externas](../../integraciones/api-contract.md), [Gestión de Despachos](../../integraciones/api-contract-gestion-despachos.md) y [Operación de Reparto y Flota](../../integraciones/api-contract-operacion-reparto.md), conforme a la sección 5.3 de las reglas del repositorio [cite: 1, 3]. Cada operación tiene una sola definición; este flujo no agrega un `api.md` ni otro contrato en cada carpeta.
 
-En `spec.md` y `plan.md`, identificar las operaciones que se consumen o implementan y enlazar la sección exacta del contrato. Los campos, encabezados, scopes, respuestas y errores se definen allí. Antes de implementar una operación nueva o modificar una existente, actualizar y revisar el contrato central; luego ajustar las especificaciones que lo referencian.
+En `spec.md` y `plan.md`, identificar las operaciones que se consumen o implementan y enlazar la sección exacta del contrato. Los campos, encabezados, scopes, respuestas y errores se definen allí. Antes de implementar una operación nueva o modificar una existente, actualizar y revisar el contrato correspondiente; luego ajustar las especificaciones que lo referencian.
 
-Si posteriormente se aprueba separar los contratos por microservicio, habrá que actualizar esa regla y sustituir las referencias. La separación no forma parte de estas plantillas.
+La separación por microservicio está aprobada. Los endpoints internos se documentan en el contrato de su proveedor; las integraciones con otros módulos, en el contrato externo. Los otros documentos enlazan esas definiciones y las convenciones comunes, sin copiarlas.
 
 ## 4. Flujo de trabajo
 
@@ -103,7 +105,7 @@ La trazabilidad debe poder recorrerse en ambos sentidos: `CA-NN` → decisión d
 
 ## 7. Referencias
 
-1. [AGENTS.md](../../AGENTS.md), secciones 3.7, 4 y 5: organización, trazabilidad y contrato único.
+1. [AGENTS.md](../../AGENTS.md), secciones 3.7, 4 y 5: organización, trazabilidad y contratos por ámbito.
 2. [SYSTEM-DESIGN.md](../../disenio/SYSTEM-DESIGN.md): referencia visual compartida.
-3. [Contrato de API](../../integraciones/api-contract.md): operaciones y convenciones vigentes.
+3. [Integraciones externas](../../integraciones/api-contract.md), [API de Gestión](../../integraciones/api-contract-gestion-despachos.md) y [API de Operación](../../integraciones/api-contract-operacion-reparto.md): operaciones por proveedor y convenciones compartidas.
 4. Diapositivas del curso compartidas en la conversación: «SDD y los componentes React» y «SDD: el contrato primero». Pendiente incorporar un enlace estable al material del curso si está disponible.

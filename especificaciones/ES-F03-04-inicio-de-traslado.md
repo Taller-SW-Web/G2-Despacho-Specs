@@ -56,7 +56,7 @@ La transición confirma que el paquete está físicamente en poder del repartido
 - Máquina de estados y historial común del módulo (overview, sección 6).
 - Publicación del evento a Ventas y Postventa según RT-03 del overview.
 - F-02: estado de asignación y cancelación del despacho.
-- Ver `integraciones/api-contract.md`.
+- Ver `integraciones/api-contract-operacion-reparto.md`.
 
 ## 6. Criterios de aceptación
 
@@ -96,4 +96,4 @@ La transición confirma que el paquete está físicamente en poder del repartido
 
 - `funcionalidades/F-03-AppMovilRepartidor.md`, RF-04, RF-11 y Anexo A.
 - `arquitectura/diagrama-estados-despacho.md`.
-- `integraciones/api-contract.md`.
+- `integraciones/api-contract-operacion-reparto.md`.

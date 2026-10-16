@@ -55,7 +55,7 @@ Asignar un despacho pendiente, cuya fecha programada sea igual o anterior a la f
 ### Entradas
 
 - Ruta: `POST /api/v1/despachos/{idDespacho}/asignacion`.
-- Payload JSON conforme a `integraciones/api-contract.md`:
+- Payload JSON conforme a `integraciones/api-contract-gestion-despachos.md`:
   - `idRepartidor` (string, ej. `REP-0012`).
   - `idJornada` (string, ej. `JOR-20260923-0012`).
   - `observacion` (opcional, string).
@@ -78,7 +78,7 @@ Asignar un despacho pendiente, cuya fecha programada sea igual o anterior a la f
 - **Disponibilidad y Capacidad Diaria (F-06):** provee los repartidores en jornada y procesa la reserva de capacidad en kg, m³ y paquetes.
 - **Web del Repartidor (F-03):** expone el despacho en "Mi Ruta" una vez que adquiere el estado `ASIGNADO`.
 - **Trazabilidad (ES-F02-08):** registra la auditoría con los datos del gestor y la ocupación resultante.
-- El contrato del endpoint sigue estrictamente `integraciones/api-contract.md` (Sección 9.2).
+- El contrato del endpoint sigue estrictamente `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 
 ## 6. Criterios de aceptación
 
@@ -129,6 +129,6 @@ Asignar un despacho pendiente, cuya fecha programada sea igual o anterior a la f
 ### Referencias
 
 - Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-03).
-- Contrato de API: `integraciones/api-contract.md` (Sección 9.2).
+- Contrato de API: `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 - Disponibilidad y capacidad de flota: `funcionalidades/F-06-DisponibilidadCapacidadDiaria.md`.
 - Diseño de interfaz: `disenio/funcionalidades/f-02.md` (Pantalla 2).

@@ -12,7 +12,7 @@
 |---|---|---|
 | Comportamiento | [spec.md](./spec.md), CA-01 a CA-05 | Contenido previo en `12d5041`; migración en esta carpeta. |
 | UI | No aplica; justificado en [spec.md](./spec.md), sección 7 | — |
-| Contrato | [API](../../integraciones/api-contract.md), §§3.4, 3.5, 5.1 y 15.1 | `12d5041`; DTO de respuesta pendiente de detalle. |
+| Contrato | [Contrato externo](../../integraciones/api-contract.md), §§3.4, 3.5, 5.1 y 10.1 | `12d5041`; referencias adaptadas a la división de `0fbd89a`; DTO de respuesta pendiente de detalle. |
 | Arquitectura y datos | [C4 contenedores](../../arquitectura/c4-contenedores.md), §3.1; [modelo de datos](../../arquitectura/modelo-datos.md), §3.1 | `12d5041`. |
 
 Este cambio prepara documentación. La modificación del contrato, el código y las pruebas se ejecutan en tareas posteriores. No se duplican contratos ni se da por cerrada la revisión técnica [cite: 1, 2].
@@ -76,22 +76,22 @@ Comandos previstos: desde Gestión, `./mvnw.cmd test`; las pruebas con Testconta
 
 | ID | Decisión o pregunta | Justificación y fuente | Responsable | Bloquea qué incremento |
 |---|---|---|---|---|
-| DT-01 | DTO de la respuesta de cobertura, códigos de error y forma del mensaje fuera de cobertura | Contrato §5.1 y §15.1 | Valqui con Backend y Arquitectura | Adaptadores de I-01/02 |
+| DT-01 | DTO de la respuesta de cobertura, códigos de error y forma del mensaje fuera de cobertura | Contrato externo §5.1 y §10.1 | Valqui con Backend y Arquitectura | Adaptadores de I-01/02 |
 | DT-02 | Conciliación entre `zona_distritos` (modelo §6) y `zonas_distritos` (modelo §3.1) y su efecto en la evaluación de cobertura | Modelo de datos §3.1 y §6 | Arquitectura | CA-01/02 e integración real |
 | DT-03 | Esquema/migraciones necesarios, base compartida de errores, conexión de datos y rutas del Gateway, y emisión de tokens de servicio con scope | Inicialización actual del backend y modelo | Valqui coordina con Arquitectura, DevOps y Seguridad | Ejecución real de I-02 |
-| DT-04 | Verificación del contrato de consumo de Marketplace y Chatbot (que no inyecten peso/volumen ni esperen costo) | Contrato §5.1 y §15.1 | Valqui con los responsables de los canales | Aceptación de I-02 |
+| DT-04 | Verificación del contrato de consumo de Marketplace y Chatbot (que no inyecten peso/volumen ni esperen costo) | Contrato externo §5.1 y §10.1 | Valqui con los responsables de los canales | Aceptación de I-02 |
 | DT-05 | Mecanismo del límite de tasa por `sub` e IP y valor de `LIMITE_COTIZACIONES_POR_MINUTO` | Modelo de datos, parámetros globales; F-01 CA-14 | Valqui con Arquitectura y DevOps | CA-05 e I-03 |
 
 ## 8. Condiciones para iniciar y cerrar
 
 - [ ] Las entradas del incremento están revisadas y los pendientes bloqueantes resueltos.
 - [ ] Las tareas cubren todos los criterios y tienen una comprobación concreta.
-- [ ] La operación respeta el contrato único, la autorización por scope y la propiedad de datos.
+- [ ] La operación respeta el contrato externo, la autorización por scope y la propiedad de datos.
 - [ ] El límite de tasa se verifica de extremo a extremo.
 - [ ] Todos los criterios del alcance cuentan con evidencia, distinguiendo dobles y servicios reales.
 
 ## 9. Referencias
 
 1. [Especificación](./spec.md), [tareas](./tasks.md) y [evidencia](./evidence.md).
-2. [Contrato central](../../integraciones/api-contract.md#51-cotizaciones), [modelo de datos](../../arquitectura/modelo-datos.md) y [arquitectura de contenedores](../../arquitectura/c4-contenedores.md).
+2. [Contrato externo](../../integraciones/api-contract.md#51-solicitar-cotización), [modelo de datos](../../arquitectura/modelo-datos.md) y [arquitectura de contenedores](../../arquitectura/c4-contenedores.md).
 3. [Flujo SDD](../../plantillas/sdd/README.md).

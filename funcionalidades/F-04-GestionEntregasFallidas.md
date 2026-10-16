@@ -45,7 +45,7 @@ Esta funcionalidad incluye:
 | Dependencia | Responsabilidad |
 |---|---|
 | Seguridad y Usuarios | Proporcionar la identidad y el rol `GESTOR_DESPACHO`. |
-| Web del Repartidor (F-03) | Registrar el fallo, su motivo, la evidencia, el contador y la referencia del repartidor; proveer el catálogo de motivos y el acceso autorizado a la evidencia. |
+| Web del Repartidor (F-03) | Originar el registro del fallo, su motivo, evidencia y referencias de repartidor/jornada; Gestión conserva la incidencia canónica y el contador. F-03 provee el acceso autorizado a la evidencia y consume el catálogo único de Gestión. |
 | Programación y Asignación (F-02) | Recibir los despachos reprogramados en la cola y registrar la anulación de pedidos sobre despachos fallidos. |
 | Gestión de Repartidores y Vehículos (F-05) | Proveer los datos básicos del perfil local del repartidor asociado al intento para las consultas operativas. |
 | Disponibilidad y Capacidad Diaria (F-06) | Dejar de contar el paquete en la ocupación del repartidor y la furgoneta cuando se confirma su recepción. |
@@ -69,7 +69,11 @@ El sistema DEBE permitir al Gestor consultar los despachos en `FALLIDO`.
 
 - **DADO** que existen despachos en `FALLIDO`.
 - **CUANDO** el Gestor abre la pantalla de Entregas Fallidas.
-- **ENTONCES** el sistema muestra código operativo interno, fecha del incidente, motivo, número de intento sobre el máximo, repartidor, indicador de recepción ("Pendiente de retorno" o "Recibido en centro"), indicador de evidencia e indicador de pedido anulado, con paginación y filtros por motivo, fecha y recepción.
+- **ENTONCES** muestra una fila por despacho con código operativo interno, fecha y motivo de su incidencia vigente, `Intentos consumidos` sobre el máximo, repartidor, recepción, indicador de evidencia y pedido anulado, con paginación y filtros por motivo, fecha y recepción.
+
+La consulta inicial no restringe fechas y mantiene visibles los fallidos de días anteriores sin resolver. Se muestran primero los recibidos y luego los pendientes, con la incidencia más antigua primero en cada grupo. El listado utiliza siempre motivo, repartidor, jornada, recepción y evidencia de la misma incidencia vigente; un nuevo fallo después de reprogramar no hereda la recepción anterior.
+
+Los indicadores `Pendientes de retorno`, `Recibidos en centro` y `Retornos atrasados` respetan motivo y fechas, pero no la página ni el grupo seleccionado. Los atrasados son un subconjunto de pendientes. Los detalles verificables de selección, orden, indicadores y degradación se desarrollan en [ES-F04-01](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md), sin duplicar el contrato de API.
 
 #### CA-02. Listado sin incidencias
 
@@ -167,7 +171,7 @@ El sistema DEBE tratar de forma diferenciada los despachos no intentados y los p
 
 - **DADO** un despacho en `FALLIDO` con motivo `NO_INTENTADO`, recibido en el centro.
 - **CUANDO** el Gestor lo reprograma con una fecha futura.
-- **ENTONCES** el despacho vuelve a `PENDIENTE_ASIGNACION` sin cambiar el contador de intentos, y el listado lo identifica como "No intentado" para distinguirlo de los fallos con intento real.
+- **ENTONCES** el despacho vuelve a `PENDIENTE_ASIGNACION` sin cambiar el contador y deja el listado de fallidos. Antes de decidir, el listado identifica la incidencia como `No intentado en esta salida`; el historial conserva ese motivo aunque existan intentos fallidos previos.
 
 #### CA-15. Despacho fallido con pedido anulado
 
@@ -193,9 +197,11 @@ El sistema DEBE registrar el retorno físico del paquete antes de cualquier deci
 
 #### CA-18. Paquete no retornado al cierre de la jornada
 
-- **DADO** un despacho en `FALLIDO` cuyo repartidor ya cerró su jornada.
+- **DADO** un despacho en `FALLIDO` cuya jornada asociada a la incidencia tiene cierre manual o automático confirmado.
 - **CUANDO** el paquete sigue sin recepción confirmada.
 - **ENTONCES** el listado lo resalta como "Retorno atrasado" junto al nombre del repartidor responsable.
+
+Si no puede confirmarse la jornada, el listado informa `No se pudo confirmar el cierre de jornada`, sin inventar un atraso ni descartarlo. La tarjeta de atrasados muestra `No disponible` si no puede calcularse su cifra exacta; las filas y los indicadores de recepción siguen disponibles según ES-F04-01 y el contrato. La consulta no altera las reglas de cierre de turno ni de capacidad de F-06.
 
 ## 6. Frontend
 
@@ -220,7 +226,7 @@ El sistema DEBE registrar el retorno físico del paquete antes de cualquier deci
 | Política de intentos | Leer y aplicar el máximo configurable. |
 | Persistencia y auditoría | Guardar recepciones y decisiones de manera consistente. |
 
-Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `integraciones/api-contract.md`.
+Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `integraciones/api-contract-gestion-despachos.md`.
 
 ## 8. Requisitos no funcionales
 
@@ -256,7 +262,7 @@ La posible logística inversa posterior a una entrega está centralizada en [Pen
 
 Además, se ejecutarán tres recorridos funcionales completos:
 
-1. `FALLIDO` → recepción en centro → reprogramación → `PENDIENTE_ASIGNACION` → visible en la cola de F-02 en la fecha programada.
+1. `FALLIDO` → recepción en centro → reprogramación → `PENDIENTE_ASIGNACION` → visible inmediatamente en la cola de F-02, con asignación habilitada desde la fecha programada.
 2. `FALLIDO` → recepción en centro → cierre → `DEVUELTO_A_ORIGEN` → evento registrado hacia Ventas y Postventa.
 3. Segundo fallo con intento real → recepción → límite alcanzado → solo cierre disponible.
 

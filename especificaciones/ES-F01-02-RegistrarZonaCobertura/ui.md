@@ -66,10 +66,10 @@ Composición: estructura administrativa CR-03 → encabezado CR-05 → campos de
 
 | Control | Obligatorio | Validación y momento | Mensaje visible | Fuente contractual |
 |---|---|---|---|---|
-| Nombre | Sí | No vacío; 1 a 80 caracteres; en línea y al enviar | «El nombre es obligatorio» / «Máximo 80 caracteres» | Contrato §9.1 |
-| Distritos | Sí (con códigos postales) | Al menos un distrito o un código postal | «Selecciona al menos un distrito o código postal» | Contrato §9.1 |
-| Códigos postales | No | Formato de código postal; opcional | «Código postal inválido» | Contrato §9.1 |
-| Estado inicial | Sí | Activo / Inactivo; solo en alta | Valor por defecto Activo | Contrato §9.1 |
+| Nombre | Sí | No vacío; 1 a 80 caracteres; en línea y al enviar | «El nombre es obligatorio» / «Máximo 80 caracteres» | Gestión §3.1 |
+| Distritos | Sí (con códigos postales) | Al menos un distrito o un código postal | «Selecciona al menos un distrito o código postal» | Gestión §3.1 |
+| Códigos postales | No | Formato de código postal; opcional | «Código postal inválido» | Gestión §3.1 |
+| Estado inicial | Sí | Activo / Inactivo; solo en alta | Valor por defecto Activo | Gestión §3.1 |
 
 | Resultado o error de API | Mensaje y comportamiento de UI | Recuperación |
 |---|---|---|
@@ -78,7 +78,7 @@ Composición: estructura administrativa CR-03 → encabezado CR-05 → campos de
 | `401` / `403` | Acceso denegado sin datos | Navegación permitida |
 | Error de red o `5xx` | Mensaje comprensible con reintento | «Reintentar» conservando los datos |
 
-La presentación usa fechas de la zona operativa `America/Lima`; los nombres definitivos de los campos provienen del contrato central y se registran en los pendientes del plan [cite: 3].
+La presentación usa fechas de la zona operativa `America/Lima`; los nombres definitivos de los campos provienen del contrato de Gestión y se registran en los pendientes del plan [cite: 3].
 
 ## 6. Accesibilidad y adaptación
 
@@ -106,5 +106,5 @@ La presentación usa fechas de la zona operativa `America/Lima`; los nombres def
 
 1. [Especificación funcional](./spec.md), criterios CA-01 a CA-06.
 2. [Sistema de diseño](../../disenio/SYSTEM-DESIGN.md) y [guía F-01](../../disenio/funcionalidades/f-01.md); [componentes React](../../disenio/componentes-react.md).
-3. [Contrato de API](../../integraciones/api-contract.md), §§3.3, 3.5 y 9.1; [modelo de datos](../../arquitectura/modelo-datos.md), §3.1.
+3. [Contrato de Gestión, §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) y [convenciones compartidas, §§3.3 y 3.5](../../integraciones/api-contract.md#3-convenciones-comunes); [modelo de datos](../../arquitectura/modelo-datos.md), §3.1.
 4. [Plan](./plan.md), [tareas](./tasks.md) y [evidencia](./evidence.md).

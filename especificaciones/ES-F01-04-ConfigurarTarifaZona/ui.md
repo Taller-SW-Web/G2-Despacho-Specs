@@ -68,12 +68,12 @@ Composición: estructura administrativa CR-03 → encabezado CR-05 con el nombre
 
 | Control | Obligatorio | Validación y momento | Mensaje visible | Fuente contractual |
 |---|---|---|---|---|
-| Tarifa base | Sí | Número ≥ 0; en línea y al enviar | «La tarifa base no puede ser negativa» | Contrato §9.1 |
-| Peso incluido | Sí | Número > 0 | «El peso incluido debe ser mayor que cero» | Contrato §9.1 |
-| Recargo por kg adicional | Sí | Número ≥ 0 | «El recargo no puede ser negativo» | Contrato §9.1 |
-| Factor volumétrico | No | Número > 0 si se informa | «El factor debe ser mayor que cero» | Contrato §9.1 |
-| Plazo estimado | Sí | Entero de días hábiles | «Informa un plazo en días hábiles» | Contrato §9.1 |
-| Moneda | Sí (fija) | `PEN` | Sin edición | Contrato §9.1 |
+| Tarifa base | Sí | Número ≥ 0; en línea y al enviar | «La tarifa base no puede ser negativa» | Gestión §3.1 |
+| Peso incluido | Sí | Número > 0 | «El peso incluido debe ser mayor que cero» | Gestión §3.1 |
+| Recargo por kg adicional | Sí | Número ≥ 0 | «El recargo no puede ser negativo» | Gestión §3.1 |
+| Factor volumétrico | No | Número > 0 si se informa | «El factor debe ser mayor que cero» | Gestión §3.1 |
+| Plazo estimado | Sí | Entero de días hábiles | «Informa un plazo en días hábiles» | Gestión §3.1 |
+| Moneda | Sí (fija) | `PEN` | Sin edición | Gestión §3.1 |
 
 | Resultado o error de API | Mensaje y comportamiento de UI | Recuperación |
 |---|---|---|
@@ -110,5 +110,5 @@ La equivalencia entre los nombres del contrato y los campos del modelo (`pesoBas
 
 1. [Especificación funcional](./spec.md), criterios CA-01 a CA-05.
 2. [Sistema de diseño](../../disenio/SYSTEM-DESIGN.md) y [guía F-01](../../disenio/funcionalidades/f-01.md); [componentes React](../../disenio/componentes-react.md).
-3. [Contrato de API](../../integraciones/api-contract.md), §§3.3, 3.5 y 9.1; [modelo de datos](../../arquitectura/modelo-datos.md), tabla `tarifas_zona`.
+3. [Contrato de Gestión, §3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas) y [convenciones compartidas, §§3.3 y 3.5](../../integraciones/api-contract.md#3-convenciones-comunes); [modelo de datos](../../arquitectura/modelo-datos.md), tabla `tarifas_zona`.
 4. [Plan](./plan.md), [tareas](./tasks.md) y [evidencia](./evidence.md).
