@@ -31,7 +31,7 @@ Este documento centraliza las posibles ampliaciones y los acuerdos que todavía 
 - Definir si se aplicará compresión básica en el navegador.
 - Definir si se eliminarán metadatos EXIF y en qué componente se realizará.
 - Acordar formatos permitidos y tamaño máximo de archivo.
-- Elegir el mecanismo de almacenamiento y acceso autorizado a las evidencias.
+- Configurar y verificar el almacenamiento privado y la lectura con URL firmada definidos en [Operación §3.4](../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia). El mecanismo de lectura está definido documentalmente; su implementación permanece pendiente.
 
 ### Trabajo futuro sujeto a la decisión anterior
 

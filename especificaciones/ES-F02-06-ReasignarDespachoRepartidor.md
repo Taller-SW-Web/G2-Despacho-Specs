@@ -76,6 +76,7 @@ Permitir que el Gestor de Despacho transfiera un despacho que aún permanece fí
 ### Integraciones
 
 - **Disponibilidad y Capacidad Diaria (F-06):** gestiona la transferencia transaccional de reservas de capacidad entre ambas furgonetas.
+- Los comandos internos conservan la clave técnica por operación y las identidades de reservas según [Operación §§5.1/5.2](../integraciones/api-contract-operacion-reparto.md#51-gestión-consulta-y-reserva-capacidad-en-operación). Reintentar una reserva no crea otra; una operación nueva no reutiliza como éxito la reserva activa de otra salida ni reactiva una liberada.
 - **Web del Repartidor (F-03):** actualiza las rutas de ambos repartidores; en el repartidor emisor el despacho desaparece y en el receptor aparece al final.
 - **Trazabilidad (ES-F02-08):** registra la auditoría con el motivo y los dos repartidores involucrados.
 - Contrato especificado en `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).

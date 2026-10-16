@@ -742,7 +742,7 @@ Reglas adicionales:
 | Estado, turno, tipo de vehículo, zona, motivo (filtro) | `Select` | `clearable` en filtros; `searchable` si tiene más de 8 opciones. |
 | Estado inicial de la zona, sello intacto (Sí / No) | `SegmentedControl` (escritorio) / `Radio.Group` | En F-04 el sello usa `Radio.Group` obligatorio sin valor por defecto. |
 | Motivo de entrega fallida (F-03) | `Radio.Group` con tarjetas (`Radio.Card`) | Cada opción ocupa el ancho completo y mide al menos 56 px de alto. |
-| Fecha programada, rango del incidente, fecha de reprogramación | `DatePickerInput` (`@mantine/dates`) | `locale="es"`, `valueFormat="DD/MM/YYYY"`; en reprogramación `minDate` = mañana. Rango con `type="range"`. |
+| Fecha programada, rango del incidente, fecha de reprogramación | `DatePickerInput` (`@mantine/dates`) | `locale="es"`, `valueFormat="DD/MM/YYYY"`; en reprogramación `minDate` = mañana en `America/Lima`, a partir de `consultadoEn` del detalle; fecha civil sin conversión a UTC. Rango con `type="range"`. |
 | Comentario, observaciones, motivo de cierre o reasignación | `Textarea` | `autosize`, `minRows={3}`, contador "0/250" en `Typography/Auxiliary`. |
 | Repartidor, vehículo y zona en Asignación diaria | `Select` con `renderOption` | La opción muestra datos clave: placa y límites del vehículo; zona activa. |
 
@@ -1996,35 +1996,41 @@ La especificación de comportamiento vigente es [ES-F04-01](../especificaciones/
 
 #### P2 Detalle de la incidencia
 
-**Layout:** `Breadcrumbs` → encabezado con código (H1), `BadgeEstado` "Fallido" y etiquetas → `Grid` con `Grid.Col span={{ base: 12, lg: 7 }}` (información) y `span={{ base: 12, lg: 5 }}` (evidencia y decisión).
+**Layout:** `Breadcrumbs` → encabezado con código operativo interno (H1), `BadgeEstado` con el estado actual y etiquetas → `Grid` con `Grid.Col span={{ base: 12, lg: 7 }}` (información) y `span={{ base: 12, lg: 5 }}` (evidencia y decisión). Fuera de `FALLIDO` se conserva la consulta histórica sin panel de resolución.
 
 | Elemento | Componente y props | Texto |
 |---|---|---|
 | Incidencia | `Card` con pares etiqueta/valor | Motivo, comentario, fecha y hora, repartidor, "Intentos consumidos: 1 de 2" |
-| Recepción en centro | `Card`; si está pendiente, `BadgeEstado` "Pendiente de retorno"; si no, fecha, usuario, "Sello intacto: Sí/No" y observaciones | — |
-| Historial de estados | `Card` + `Timeline bulletSize={20}` | Estado, fecha, ejecutor, observación |
+| Recepción en centro | `Card`; pendiente o fecha, usuario, sello Sí/No y observaciones; tras recibir, estado de sincronización separado | "Liberación de capacidad pendiente", pendiente de revisión o "Capacidad liberada", según contrato |
+| Historial de estados | `Card` + `Timeline bulletSize={20}` | Operación, estados, fecha del servidor, ejecutor, origen y datos relevantes; incluye recepción sin transición |
+| Comunicación con Ventas | `Card` con estado local por evento | Pendiente, enviado o envío fallido; sin reenvío desde esta lectura |
 | Evidencia | `Card` + `Image radius="md"` 4:3 clicable → `Modal size="xl"` | `alt="Evidencia de la incidencia del despacho DSP-000123"` |
 | Panel de decisión | `Card` *sticky* con tres `Button fullWidth` según §23.D.1 | — |
 
 | Estado | Presentación |
 |---|---|
 | Evidencia cargando | `Skeleton` 4:3 |
-| Sin evidencia | `EstadoVacio` compacto: "No intentado — sin foto" |
+| Sin evidencia | `EstadoVacio` compacto: "No intentado — sin foto" solo para ese caso; en fallo real sin referencia: "Falta la referencia de evidencia" |
 | Enlace expirado | `Alert` amarillo + `Button variant="subtle"` "Volver a cargar" |
 | No intentado | `Alert` azul: "Esta salida no consumió intento; se conserva el contador acumulado" |
-| `409` | `Alert` amarillo: "El despacho cambió de estado. Se actualizó la información." |
-| `404` | `EstadoVacio` "No encontramos este despacho" + "Volver al listado" |
+| `409` | Bloquear acciones mientras se consulta; después: "El despacho cambió. Revisa la información antes de confirmar" |
+| `404` | `EstadoVacio` diferencia despacho inexistente de despacho sin incidencia según el código contractual; "Volver al listado" |
+| Fallo de actualización | Aviso de datos desactualizados, reintento y acciones bloqueadas hasta renovar |
+| Fallo del visor o de datos operativos | Recuperación en el bloque afectado; conservar los datos canónicos autorizados |
 
 ##### 23.D.1. Panel de decisión
 
 | Situación | Confirmar recepción | Reprogramar | Cerrar como devuelto a origen |
 |---|---|---|---|
-| Pendiente de retorno | `primary` | Deshabilitado + "Primero confirma la recepción del paquete" | Deshabilitado + mismo motivo |
+| `FALLIDO`, pendiente de retorno, incluso con anulación/límite | `primary` | Deshabilitado + todos los motivos aplicables | Deshabilitado + "Primero confirma la recepción del paquete" |
 | Recibido y reprogramable | Oculto | `primary` | `variant="outline" color="red"` |
-| Máximo de intentos | Oculto | Deshabilitado + "Se alcanzó el máximo de intentos (2 de 2)" | `color="red"` (`filled`, pasa a ser la acción principal) |
-| Pedido anulado | Oculto | Deshabilitado + "El pedido fue anulado por Ventas y Postventa" | `color="red"` (`filled`) |
+| Recibido, máximo de intentos alcanzado | Oculto | Deshabilitado + contador/máximo dinámicos | `color="red"` (`filled`, pasa a ser la acción principal) |
+| Recibido, pedido anulado | Oculto | Deshabilitado + "El pedido fue anulado por Ventas y Postventa" y límite si aplica | `color="red"` (`filled`) |
+| Estado distinto de `FALLIDO` | Oculto | Oculto | Oculto |
 
 El motivo de cada botón deshabilitado se muestra como texto visible debajo del botón y se asocia con `aria-describedby`.
+
+El comportamiento vigente corresponde a [ES-F04-02](../especificaciones/ES-F04-02-ConsultarDetalleIncidencia/spec.md), incluida la actualización de 30 segundos, acciones bloqueadas durante actualización, cambio de incidencia, degradación y regreso con filtros. Consumir [Gestión §5.3](../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) y [Operación §3.4](../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia); no construir contratos HTTP desde componentes visuales.
 
 #### P3 Confirmación de recepción
 
@@ -2032,26 +2038,31 @@ El motivo de cada botón deshabilitado se muestra como texto visible debajo del 
 |---|---|---|
 | Resumen | Franja `cloud-subtle` | Código, repartidor, motivo, fecha del incidente |
 | Sello | `Radio.Group required` con "Sí" y "No", sin valor por defecto | "¿El sello del paquete está intacto?" |
-| Observaciones | `Textarea autosize`; si sello = "No", `description` "Describe el estado del paquete" y `withAsterisk` | "Observaciones" |
+| Observaciones | `Textarea autosize`, opcional, sin `withAsterisk`; hasta 500 caracteres conforme al contrato. Si sello = "No", ayuda destacada | "Observaciones (opcional)"; "Puedes describir el estado del paquete" |
 | Nota | `Alert color="blue" variant="light"` | "El despacho seguirá en Fallido; después podrás reprogramarlo o cerrarlo." |
 | Acciones | "Cancelar" (`outline`) + "Confirmar recepción" (`primary`, deshabilitado sin sello) | — |
 
-Estados: ya registrada ("La recepción ya fue confirmada", `Alert` azul), error con "Reintentar" y éxito con notificación y fila actualizada a "Recibido en centro".
+Estados: envío en curso sin doble confirmación, rechazo recuperable conservando campos, `409` con actualización/revisión y resultado desconocido que primero consulta el detalle. `202` significa retorno persistido: "Paquete recibido. Liberación de capacidad pendiente", cierre del modal y origen actualizado. La recepción permanece aunque falle Operación; el detalle distingue pendiente, pendiente de revisión y liberada. Repetición exacta devuelve el resultado original y la UI consulta el actual. Reglas: [ES-F04-03](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/spec.md) y [Gestión §5.2.1](../integraciones/api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03).
 
 #### P4 Reprogramación
 
 | Elemento | Componente y props | Texto |
 |---|---|---|
 | Resumen | Franja `cloud-subtle` | Código, motivo, "Intentos consumidos: 1 de 2" |
-| Fecha | `DatePickerInput required minDate={mañana} locale="es" valueFormat="DD/MM/YYYY"` | "Nueva fecha de entrega" |
-| Información | `Alert color="blue" variant="light"` | "El despacho volverá a la cola de programación para la fecha elegida. El contador de intentos se mantiene en 1." |
+| Fecha | `DatePickerInput required minDate={mañana} locale="es" valueFormat="DD/MM/YYYY"`, sin valor inicial; mañana según regla local de §12 | "Nueva fecha de entrega" |
+| Observación | `Textarea autosize`, opcional, hasta 500 caracteres normalizados según Gestión §5.2.2 | "Observación (opcional)" |
+| Información | `Alert color="blue" variant="light"`; contador y fecha dinámicos | "El despacho aparecerá inmediatamente en la cola. Podrás asignarlo desde [fecha] si su capacidad anterior está liberada. Los intentos consumidos se mantienen en [contador]." |
 | Acciones | "Cancelar" + "Confirmar reprogramación" | — |
 
 Estados: fecha inválida `400` bajo el selector ("Elige una fecha posterior a hoy"); `422` o `409` como `Alert` en el modal con "Volver al detalle"; éxito con notificación "Despacho reprogramado para 08/10/2026" y regreso a P1.
 
+Conservar incidencia/versión al abrir y durante la recuperación; no trasladar automáticamente el comando a otros datos tras `409`. Un error recuperable conserva las entradas; si se pierde la respuesta, consultar antes de repetir exactamente la solicitud original. Tras éxito conservar filtros/página de origen y recargar indicadores; si falla esa lectura, informar que la reprogramación está registrada y ofrecer actualizar sin repetir el guardado. Liberación pendiente/de revisión no añade bloqueo a reprogramar. Comportamiento: [ES-F04-04](../especificaciones/ES-F04-04-ReprogramarDespachoFallido/spec.md), contrato canónico: [Gestión §5.2.2](../integraciones/api-contract-gestion-despachos.md#522-reprogramar-un-despacho-fallido--es-f04-04).
+
 #### P5 Cierre como devuelto a origen
 
-Patrón §13.7 destructivo: `Alert` amarillo con "El despacho no tendrá más intentos de entrega. El paquete quedará en el centro de despacho y se notificará a Ventas y Postventa.", resumen, `Textarea required` "Motivo del cierre", "Cancelar" y "Cerrar despacho" (`color="red"`). Si la notificación a Ventas queda pendiente: notificación amarilla sin cierre automático "Cierre registrado. La notificación a Ventas y Postventa se reintentará automáticamente."
+Patrón §13.7 destructivo: `Alert` amarillo con "El despacho no tendrá más intentos de entrega. El paquete quedará en el centro de despacho y se notificará a Ventas y Postventa.", resumen con código operativo interno e intentos consumidos dinámicos, `Textarea required` "Motivo del cierre" en texto libre y `Textarea` "Observación (opcional)"; ambos hasta 500 caracteres normalizados según Gestión §5.2.3. Acciones "Cancelar" y "Cerrar despacho" (`color="red"`); sin motivo válido o durante envío no permite confirmar.
+
+Mantener incidencia/versión seleccionadas; error recuperable conserva entradas, respuesta desconocida requiere consultar antes de recuperar el comando original y `409` exige revisión. Tras `200`, informar "Despacho cerrado como devuelto a origen" y volver a P1 con filtros/página e indicadores actualizados; lectura fallida muestra "Cierre registrado. No se pudo actualizar el listado" sin repetir el guardado. Comunicación consultada pendiente se presenta como pendiente; `ENVIO_FALLIDO` indica revisión/reenvío manual según RT-03. Liberación pendiente/de revisión no bloquea cerrar. Teclado, foco visible, errores asociados y retorno de foco al cancelar. Comportamiento: [ES-F04-05](../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen/spec.md); contrato: [Gestión §5.2.3](../integraciones/api-contract-gestion-despachos.md#523-cerrar-como-devuelto-a-origen--es-f04-05).
 
 ### 23.E. Componentes de dominio
 

@@ -53,10 +53,10 @@ stateDiagram-v2
 | `EN_CAMINO` | `ENTREGADO` | F-03 | Evidencia cargada y asociable; despacho propio; transición vigente. | Registra intento entregado, historial y evento; libera capacidad. |
 | `EN_CAMINO` | `FALLIDO` | F-03 | Motivo seleccionable y evidencia cargada; comentario opcional. | Incrementa el contador de intentos, conserva la capacidad hasta el retorno y registra el evento. |
 | `ASIGNADO` o `EN_CAMINO` | `FALLIDO` | F-03 | Cierre manual o automático de jornada con despacho pendiente. | Registra motivo `NO_INTENTADO`, no incrementa intentos y conserva capacidad hasta el retorno. |
-| `FALLIDO` | `PENDIENTE_ASIGNACION` | F-04 | Recepción en centro confirmada; pedido no anulado; máximo de intentos no alcanzado; nueva fecha válida. | Conserva el contador, fija nueva fecha y devuelve el despacho a la cola. |
+| `FALLIDO` | `PENDIENTE_ASIGNACION` | F-04 | Incidencia/versión vigentes; recepción de esa incidencia confirmada; pedido no anulado; contador menor al máximo vigente; fecha civil posterior a hoy en `America/Lima`. | Conserva contador e incidencia histórica, fija fecha/entrada a cola, retira asignación vigente y registra historial/resultado/evento cuando corresponde. Visible inmediatamente en F-02; asignar espera fecha y liberación de reserva anterior. |
 | `FALLIDO` | `DEVUELTO_A_ORIGEN` | F-04 | Recepción en centro confirmada y motivo de cierre informado. Es obligatorio si el pedido fue anulado o se alcanzó el máximo de intentos. | Cierra el despacho y comunica el resultado a Ventas. |
 
-Toda transición aceptada utiliza control de versión, registra historial y genera el evento correspondiente. Una repetición idempotente devuelve el resultado original sin duplicar efectos.
+Toda transición aceptada utiliza control de versión, registra historial y genera el evento correspondiente si el despacho no es simulado. Una repetición idempotente devuelve el resultado original sin duplicar efectos. Reprogramación y su contrato canónico: [ES-F04-04](../especificaciones/ES-F04-04-ReprogramarDespachoFallido/spec.md), [Gestión §5.2.2](../integraciones/api-contract-gestion-despachos.md#522-reprogramar-un-despacho-fallido--es-f04-04).
 
 ## 4. Operaciones que no cambian el estado
 
@@ -64,8 +64,8 @@ Toda transición aceptada utiliza control de versión, registra historial y gene
 |---|---|---|
 | Reasignación | `ASIGNADO` | Cambia repartidor, jornada, reserva y secuencia. |
 | Reordenamiento de ruta | `ASIGNADO` | Cambia solamente la secuencia dentro de la jornada. |
-| Recepción en centro | `FALLIDO` | Registra el retorno físico, libera capacidad y habilita la decisión de F-04. |
-| Anulación durante `FALLIDO` | `FALLIDO` | Impide reprogramar y obliga a cerrar como `DEVUELTO_A_ORIGEN` cuando el paquete regrese. |
+| Recepción en centro | `FALLIDO` | Registra retorno y solicitud durable de liberación; habilita decisión de F-04. Operación confirma la capacidad después, sin bloquear por sí sola reprogramación/cierre. |
+| Anulación durante `FALLIDO` | `FALLIDO` | Registra la anulación e incrementa versión para competir con las decisiones; impide reprogramar y obliga a cerrar como `DEVUELTO_A_ORIGEN` cuando el paquete regrese. |
 
 ## 5. Transiciones no permitidas relevantes
 

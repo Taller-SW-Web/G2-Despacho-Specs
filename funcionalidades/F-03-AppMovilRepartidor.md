@@ -28,7 +28,7 @@ Esta funcionalidad incluye:
 - Registro de entrega exitosa (`ENTREGADO`) con fotografía obligatoria y nombre opcional de quien recibe.
 - Registro de entrega fallida (`FALLIDO`) con motivo del catálogo, fotografía obligatoria y comentario opcional.
 - Incremento del contador de intentos solo cuando existió un intento real de entrega.
-- Registro y consulta autorizada de la evidencia fotográfica; la estrategia de compresión, metadatos, límites y almacenamiento está pendiente de decisión del equipo.
+- Registro y consulta autorizada de evidencia: almacenamiento privado y lectura mediante URL firmada según [Operación §3.4](../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia). Compresión, metadatos y límites de carga conservan sus decisiones pendientes; la integración real debe verificarse.
 - Cierre de jornada con resolución obligatoria de pendientes y corte automático de respaldo.
 - Resumen de jornada del propio repartidor.
 - Catálogo único de motivos de fallo para el módulo.
@@ -55,7 +55,7 @@ Esta funcionalidad incluye:
 | Programación y Asignación (F-02) | Asignar los despachos con jornada, secuencia, destinatario, dirección y teléfono; reasignarlos o cancelarlos antes del traslado. |
 | Entregas Fallidas (F-04) | Consumir los despachos `FALLIDO` con su motivo, contador de intentos y evidencia. |
 | Requisitos transversales (overview, sección 6) | Validar cada transición, registrar el historial y publicar el evento hacia Ventas y Postventa. |
-| Servicio de evidencia por definir | Almacenar y permitir la consulta autorizada de las fotografías según la decisión técnica pendiente. |
+| Evidencia de Operación de Reparto y Flota | Conservar fotografías en almacenamiento privado y autorizar su lectura temporal según el contrato, §3.4. |
 
 ### 4.3. Resultados
 
@@ -264,11 +264,11 @@ El sistema DEBE permitir ver la evidencia únicamente a usuarios autorizados, si
 
 - **DADO** un despacho con evidencia.
 - **CUANDO** el repartidor propietario o un usuario con rol `GESTOR_DESPACHO` solicita verla.
-- **ENTONCES** el sistema permite visualizar la evidencia mediante el mecanismo de acceso autorizado que defina el equipo.
+- **ENTONCES** Operación entrega una URL firmada y su vencimiento conforme a §3.4 de su contrato; admite renovar el acceso validando nuevamente permisos, incluido el detalle histórico del Gestor.
 
 #### CA-28. Acceso sin autorización válida
 
-- **DADO** un acceso directo o con una autorización ausente o vencida.
+- **DADO** un acceso al objeto sin firma válida o con un enlace vencido.
 - **CUANDO** se solicita la evidencia.
 - **ENTONCES** el acceso es denegado.
 
@@ -327,7 +327,7 @@ La interfaz debe impedir acciones conocidas como inválidas, pero las reglas sie
 | Caso de uso de incidencia | Validar el motivo, persistir evidencia y comentario, incrementar el contador y solicitar la transición a `FALLIDO`. |
 | Cierre de jornada | Resolver pendientes como `NO_INTENTADO` y solicitar a F-05 el cierre del turno. |
 | Proceso programado de corte | Ejecutar el cierre automático a la hora configurada. |
-| Gestión de evidencia | Aplicar las validaciones acordadas, delegar el almacenamiento y controlar el acceso según la decisión técnica pendiente. |
+| Gestión de evidencia | Aplicar las validaciones de carga acordadas y controlar la lectura de objetos privados mediante el contrato de Operación, §3.4. |
 | Control de idempotencia | Registrar la clave de operación y devolver el resultado original ante reintentos. |
 | Catálogo de motivos | Exponer los motivos tipificados. |
 
@@ -337,7 +337,7 @@ Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se 
 
 - **Seguridad:** toda petición requiere JWT con rol `REPARTIDOR`; el backend resuelve el repartidor desde el token y no confía en identificadores enviados por el cliente.
 - **Protección de datos del destinatario:** teléfono y dirección se muestran solo al repartidor propietario y solo mientras el despacho está en `ASIGNADO` o `EN_CAMINO`. No se ofrece exportación ni copia masiva.
-- **Evidencia fotográfica:** la fotografía es obligatoria, pero la compresión, el tratamiento de metadatos, los límites de archivo y el mecanismo de almacenamiento están pendientes de decisión.
+- **Evidencia fotográfica:** la fotografía es obligatoria en entrega e intento fallido real; compresión, metadatos y límites de carga mantienen sus decisiones pendientes. El almacenamiento privado y la lectura temporal siguen el contrato de Operación; su verificación real está pendiente.
 - **Usabilidad móvil:** operable con una mano, áreas táctiles de al menos 44 × 44 px y contraste suficiente bajo luz solar.
 - **Rendimiento:** toda transición responde en menos de 2 segundos en red 4G, sin fijar todavía un algoritmo ni tamaño final para la fotografía.
 - **Conectividad:** se asume conexión activa; ante falta de red se falla de forma explícita, sin cola de sincronización.
@@ -390,7 +390,7 @@ La funcionalidad se considera completa cuando:
 - Ninguna transición fuera del Anexo A es aceptada.
 - El contador de intentos aumenta solo ante intentos reales y nunca por reintentos.
 - Ningún despacho queda en `ASIGNADO` ni `EN_CAMINO` tras el cierre o el corte automático.
-- La evidencia es inaccesible sin autorización vigente y está disponible para F-04 mediante el mecanismo que defina el equipo.
+- La autorización de evidencia exige identidad y permisos válidos; el objeto solo admite una URL firmada vigente y su acceso desde F-04 cumple Operación §3.4.
 - No se han incorporado capacidades declaradas fuera de alcance.
 - La evidencia de pruebas puede relacionarse con cada criterio de aceptación.
 

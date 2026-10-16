@@ -520,6 +520,8 @@ Comportamiento:
 | `FALLIDO` | `202 Accepted`; registra la anulación y obliga al cierre en F-04 |
 | `ENTREGADO`, `DEVUELTO_A_ORIGEN` o `CANCELADO` | `409 Conflict` o respuesta idempotente si ya estaba cancelado |
 
+Registrar la anulación en `FALLIDO` incrementa la versión del despacho y compite con reprogramación/cierre, aunque conserve el estado. Si otra operación ganó al confirmar, responde `409` sin registrar parcialmente la marca; una nueva ejecución debe evaluar el estado canónico vigente. Si ganó una reprogramación, la cancelación posterior se evalúa sobre `PENDIENTE_ASIGNACION`; no se descarta por conservar una lectura anterior de `FALLIDO`. Una repetición ya aceptada sigue las reglas de idempotencia de §9.
+
 ```json
 {
   "idPedido": "PED-2026-00891",

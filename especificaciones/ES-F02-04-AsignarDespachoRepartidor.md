@@ -76,6 +76,7 @@ Asignar un despacho pendiente, cuya fecha programada sea igual o anterior a la f
 ### Integraciones
 
 - **Disponibilidad y Capacidad Diaria (F-06):** provee los repartidores en jornada y procesa la reserva de capacidad en kg, m³ y paquetes.
+- Gestión conserva la clave técnica de cada reserva conforme a [Operación §5.1](../integraciones/api-contract-operacion-reparto.md#51-gestión-consulta-y-reserva-capacidad-en-operación); una asignación nueva usa otra clave y no reutiliza una reserva liberada. Si la reserva de una salida anterior aún está activa, la asignación responde `409` sin cambiar despacho/ruta; puede volver a intentarse cuando se confirme su liberación. No añade campos al formulario público.
 - **Web del Repartidor (F-03):** expone el despacho en "Mi Ruta" una vez que adquiere el estado `ASIGNADO`.
 - **Trazabilidad (ES-F02-08):** registra la auditoría con los datos del gestor y la ocupación resultante.
 - El contrato del endpoint sigue estrictamente `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).

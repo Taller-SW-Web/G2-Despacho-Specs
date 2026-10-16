@@ -37,7 +37,7 @@ Permitir que el Gestor de Despacho consulte, filtre y priorice de forma paginada
 - **Filtros combinables:**
   - `fecha`: selector de fecha exacta o rango de fechas programadas.
   - `idZona`: selector de zona de cobertura activa.
-  - `intento`: selector por categorías (Todos / Primer intento [intento = 0 o 1] / Reintentos [intento > 1]).
+  - `tipoIntento`: selector Todos / Primer intento / Reintentos. La condición canónica está en [Gestión §3.2](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación): Primer intento sin reprogramaciones aceptadas; Reintentos con alguna reprogramación aceptada. No se deduce del contador de fallos: un reprogramado puede conservar cero o un intento consumido.
 - **Paginación y rendimiento:** páginas configurables de 10 a 100 registros (20 por omisión); el tiempo de respuesta del backend no debe exceder 250 ms.
 - **Seguridad:** el acceso no autorizado o sin rol `GESTOR_DESPACHO` se rechaza con `403 Forbidden` sin exponer registros.
 
@@ -65,7 +65,7 @@ Permitir que el Gestor de Despacho consulte, filtre y priorice de forma paginada
 ### Integraciones
 
 - **Zonas de Cobertura (F-01):** provee los identificadores y nombres de zonas activas para el filtro.
-- **Entregas Fallidas (F-04):** provee los despachos que reingresaron a la cola tras una reprogramación con su nuevo intento.
+- **Entregas Fallidas (F-04):** la reprogramación aceptada incorpora inmediatamente el mismo despacho a la cola con nueva fecha y entrada en espera. Conserva el contador; otra salida todavía no es un intento realizado. Las etiquetas y el KPI de reintentos usan la condición de Gestión §3.2, incluidos los reprogramados por `NO_INTENTADO`.
 - **Modal de Asignación (ES-F02-04):** recibe el despacho seleccionado mediante el botón "Asignar".
 - Las rutas y parámetros se detallan en `integraciones/api-contract-gestion-despachos.md` (Gestión §3.2). Referencia: [Gestión](../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación).
 
@@ -79,9 +79,9 @@ Permitir que el Gestor de Despacho consulte, filtre y priorice de forma paginada
 
 ### CA-02. Filtro combinado por zona y tipo de intento
 
-- **DADO** una lista de despachos pendientes con diversas zonas e intentos.
+- **DADO** una lista de despachos pendientes con diversas zonas y reprogramaciones aceptadas, incluidos contador uno tras un fallo y contador cero tras `NO_INTENTADO`.
 - **CUANDO** el Gestor filtra por la zona "Lima Norte" y selecciona "Reintentos".
-- **ENTONCES** el sistema devuelve únicamente los despachos de esa zona cuyo contador de intentos sea mayor a 1, conservando el estado `PENDIENTE_ASIGNACION`.
+- **ENTONCES** devuelve únicamente los despachos de esa zona con al menos una reprogramación aceptada, conservando estado `PENDIENTE_ASIGNACION` y contador sin incremento. Primer intento excluye esos mismos despachos y Todos no aplica la restricción.
 
 ### CA-03. Restricción de asignación en despachos programados a futuro
 

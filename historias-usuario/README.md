@@ -89,11 +89,11 @@ Los identificadores HU y ES no expresan una secuencia de ejecución. En F-04, HU
 | Historia | Alcance principal | Requisitos y criterios de F-04 | Especificación atómica |
 |---|---|---|---|
 | HU-F04-01 | Listado, filtros e indicadores | RF-01; CA-01 a CA-03 y CA-18; indicadores de RF-06/07 | [ES-F04-01](../especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md) |
-| HU-F04-02 | Incidencia, recepción, historial y evidencia | RF-02; CA-04 y CA-05 | [ES-F04-02](../especificaciones/ES-F04-02-ConsultarDetalleIncidencia.md) |
-| HU-F04-03 | Reprogramación y restricciones | RF-03 y RF-06; CA-06 a CA-09, CA-14, CA-15 y CA-17 | [ES-F04-04](../especificaciones/ES-F04-04-ReprogramarDespachoFallido.md) |
-| HU-F04-04 | Cierre como devuelto a origen | RF-04; CA-10 a CA-12 y CA-17; restricción de CA-15 | [ES-F04-05](../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen.md) |
-| HU-F04-05 | Trazabilidad automática | RF-05; CA-13 | [ES-F04-06](../especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones.md) |
-| HU-F04-06 | Recepción física antes de decidir | RF-07; CA-16 y CA-17; relación con CA-18 | [ES-F04-03](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete.md) |
+| HU-F04-02 | Incidencia, recepción, historial y evidencia | RF-02; CA-04 y CA-05 | [ES-F04-02](../especificaciones/ES-F04-02-ConsultarDetalleIncidencia/spec.md) |
+| HU-F04-03 | Reprogramación y restricciones | RF-03 y RF-06; CA-06 a CA-09, CA-14, CA-15 y CA-17 | [ES-F04-04](../especificaciones/ES-F04-04-ReprogramarDespachoFallido/spec.md) |
+| HU-F04-04 | Cierre como devuelto a origen | RF-04; CA-10 a CA-12 y CA-17; restricción de CA-15 | [ES-F04-05](../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen/spec.md) |
+| HU-F04-05 | Trazabilidad automática | RF-05; CA-13 | [ES-F04-06](../especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones/spec.md) |
+| HU-F04-06 | Recepción física antes de decidir | RF-07; CA-16 y CA-17; relación con CA-18 | [ES-F04-03](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/spec.md) |
 
 - [cite: 1] [Funcionalidad F-04 vigente](../funcionalidades/F-04-GestionEntregasFallidas.md).
 
