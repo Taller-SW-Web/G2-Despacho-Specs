@@ -1,59 +1,77 @@
-# [HU-F02-01] Recepción de Solicitudes de Despacho
+# [HU-F02-01] Recepción de Solicitudes de Despacho e Integridad
 
 | Campo Jira | Valor |
 |---|---|
 | **Tipo de Issue** | Historia (Story) |
 | **Épica / Feature** | F-02: Programación y Asignación de Despachos |
 | **Prioridad** | Alta |
-| **Estimación (Story Points)** | 3 |
-| **Componentes** | Backend, Base de Datos |
-| **Etiquetas (Labels)** | `despacho`, `modulo`, `f-02`, `sdd`, `recepcion`, `api` |
+| **Estimación (Story Points)** | 5 |
+| **Componentes** | Backend, Integración, Base de Datos |
+| **Etiquetas (Labels)** | `despacho`, `f-02`, `sdd`, `recepcion`, `idempotencia`, `productos`, `cobertura` |
 | **Responsable sugerido** | Tarqui |
 
 ---
 
 ## 1. Declaración de la Historia (User Story)
 
-**COMO** Sistema Comercial (Ventas / Checkout)  
-**QUIERO** enviar una solicitud de despacho formal con los datos del pedido, destinatario, destino y las líneas del pedido (`sku` y `cantidad`)  
-**PARA** que el módulo de despacho registre el paquete en cola y genere un código de rastreo único para su entrega.  
+**COMO** Sistema Comercial (Ventas y Postventa)  
+**QUIERO** enviar una solicitud de despacho formal con los datos del pedido, destinatario, destino y las líneas (`sku` y `cantidad`)  
+**PARA** que el módulo de despacho registre el paquete en cola con zona activa resuelta, datos físicos vigentes y código de rastreo único, de forma segura e idempotente.
 
 ---
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-01`).
-- **Endpoints asociados:**
-  - `POST /api/v1/despachos` (detallado en [integraciones/api-contract.md](../../integraciones/api-contract.md), Externo §7.1).
-- **Autenticación:** token de servicio de `modulo-ventas` con `tipo=servicio`, `aud=api-despacho` y scope `despachos:crear`; la solicitud exige además un `Idempotency-Key` (UUID v4).
-- **Reglas de negocio:**
-  - El payload debe incluir obligatoriamente: `idPedido`, datos del destinatario (`nombre`, `telefono`), destino (`direccion`, `distrito`) y al menos una línea con `sku` y `cantidad` mayor que cero. Las coordenadas y el código postal son opcionales.
-  - Ventas y Postventa no envía peso, volumen, cantidad de paquetes ni fecha comprometida. Antes de persistir el despacho, el módulo consulta en lote a Productos y Ofertas los datos físicos vigentes de cada SKU, calcula el peso y el volumen totales, registra internamente `cantidadPaquetes = 1` y calcula la fecha programada a partir de la zona y el calendario operativo.
-  - Si un SKU no existe o no tiene datos físicos válidos, se responde `422 Unprocessable Entity`; si Productos y Ofertas no está disponible, se responde `503 Service Unavailable`; en ningún caso se crea el despacho.
-  - Si la validación es exitosa, se genera automáticamente un código de rastreo único (`TRK-XXXXX`), se asigna el estado inicial `PENDIENTE_ASIGNACION` y se retorna HTTP `201 Created`. Un reintento con el mismo `idPedido` responde `200 OK` con el despacho existente sin duplicarlo.
-  - Si faltan datos obligatorios o los valores son inválidos (por ejemplo, `cantidad <= 0`), la petición se rechaza con HTTP `400 Bad Request` sin persistencia parcial.
-- **Entidades de datos involucradas:** `despachos`, `historial_estados_despacho`.
+- **Especificación SDD origen:** [ES-F02-01: Recepción de solicitudes de despacho](../../especificaciones/ES-F02-01-RecepcionSolicitudDespacho/spec.md).
+- **Especificación funcional padre:** [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisitos `RF-01` y `RF-05`; Criterios `CA-01`, `CA-02`, `CA-11`, `CA-12`, `CA-21`).
+- **Endpoints asociados:** `POST /api/v1/despachos` (detallado en [integraciones/api-contract.md §7.1](../../integraciones/api-contract.md#71-crear-un-despacho-para-un-pedido-listo-para-entrega)).
+- **Autenticación:** token de servicio JWT emitido por Seguridad y Usuarios con `sub=modulo-ventas`, `aud=api-despacho` y scope `despachos:crear`.
+- **Encabezados obligatorios:** `Authorization: Bearer <token>`, `Idempotency-Key: <UUID v4>`.
+- **Reglas de negocio y cálculo:**
+  - El payload debe incluir: `idPedido`, destinatario (`nombre`, `telefono`), destino (`direccion`, `distrito`) y arreglo `lineas` con al menos un elemento (`sku` obligatorio, `cantidad > 0`).
+  - Ventas no envía peso, volumen, cantidad de paquetes ni fecha comprometida.
+  - El sistema resuelve la zona con F-01 y valida que esté `ACTIVO`. Si no tiene cobertura activa, responde `422 Unprocessable Entity` (`DESP_ERROR_SIN_COBERTURA`).
+  - Consulta en lote a Productos y Ofertas los datos físicos vigentes: calcula `pesoTotalKg` y `volumenTotalM3`. Si un SKU no existe o faltan datos físicos, responde `422` (`DESP_ERROR_PRODUCTO_NO_ENCONTRADO` / `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`). Si Productos no está disponible, responde `503` (`DESP_ERROR_PRODUCTOS_NO_DISPONIBLE`).
+  - Fija `cantidadPaquetes = 1` y calcula `fechaProgramada` a partir del plazo de la zona y el calendario de operaciones.
+  - Genera código operativo único (`DSP-XXXXXX`) y código de rastreo público (`TRK-XXXXX`).
+  - Idempotencia: una solicitud repetida para el mismo `idPedido` o con la misma clave devuelve el despacho existente con HTTP `200 OK` sin duplicarlo.
 
 ---
 
 ## 3. Criterios de Aceptación (Gherkin)
 
-- [ ] **CA-01: Recepción exitosa desde sistema comercial**
-  - **DADO** que un sistema externo envía una solicitud con identificador de pedido, datos del destinatario, destino y líneas (`sku` y `cantidad`) válidos, el destino está cubierto por una zona activa y Productos y Ofertas devuelve los datos físicos vigentes de cada SKU.
-  - **CUANDO** la petición es procesada con un token de servicio válido con scope `despachos:crear` y un `Idempotency-Key` válido en `POST /api/v1/despachos`.
-  - **ENTONCES** el sistema calcula el peso y el volumen totales, registra internamente `cantidadPaquetes = 1`, calcula la fecha programada, guarda el despacho con estado `PENDIENTE_ASIGNACION`, genera un código de rastreo único y responde con código `201 Created` y el cuerpo del despacho registrado.
+- [ ] **CA-01: Recepción exitosa desde Ventas y Postventa**
+  - **DADO** que Ventas y Postventa envía una solicitud con identificador de pedido no registrado previamente, destinatario, dirección, distrito y líneas con `sku` y `cantidad` válidos, el destino está cubierto por una zona activa de F-01 y Productos y Ofertas devuelve los datos físicos vigentes de cada SKU.
+  - **CUANDO** la solicitud se procesa con un token de servicio válido con scope `despachos:crear` y un `Idempotency-Key` válido en `POST /api/v1/despachos`.
+  - **ENTONCES** el sistema consulta los datos físicos en lote, calcula el peso y el volumen totales, registra la cantidad de paquetes en `1`, calcula la fecha programada, crea el despacho en `PENDIENTE_ASIGNACION`, genera el código operativo interno y de rastreo, registra la auditoría y responde `201 Created` con el recurso persistido.
 
-- [ ] **CA-03: Rechazo de solicitud con datos incompletos o inconsistentes**
-  - **DADO** que una solicitud carece de distrito, no incluye líneas o presenta una línea sin `sku` o con `cantidad` menor o igual a cero.
-  - **CUANDO** la solicitud es evaluada por la capa de validación en `POST /api/v1/despachos`.
-  - **ENTONCES** el sistema rechaza la operación con código `400 Bad Request`, detalla los campos inválidos en la estructura estándar de error y no persiste registros parciales en la base de datos.
+- [ ] **CA-02: Rechazo de solicitud con datos incompletos o inconsistentes**
+  - **DADO** una solicitud sin distrito, sin líneas, con una línea sin `sku` o con una `cantidad` menor o igual a cero.
+  - **CUANDO** es evaluada por la capa de validación.
+  - **ENTONCES** el sistema responde `400 Bad Request`, detalla los campos inválidos en la estructura estándar de error y no persiste registros parciales.
+
+- [ ] **CA-11: Solicitud repetida para el mismo pedido (idempotencia)**
+  - **DADO** que ya existe un despacho registrado para el pedido `PED-2026-00891`.
+  - **CUANDO** Ventas y Postventa vuelve a enviar una solicitud con ese identificador de pedido.
+  - **ENTONCES** el sistema no crea un nuevo despacho, no duplica registros y responde `200 OK` con el despacho existente, su código interno y su estado actual.
+
+- [ ] **CA-12: Destino sin cobertura activa**
+  - **DADO** una solicitud cuyo destino no pertenece a ninguna zona de cobertura activa de F-01.
+  - **CUANDO** es evaluada por el backend.
+  - **ENTONCES** el sistema responde `422 Unprocessable Entity` con el código `DESP_ERROR_SIN_COBERTURA` y no persiste el despacho.
+
+- [ ] **CA-21: Rechazo por datos físicos no disponibles en Productos y Ofertas**
+  - **DADO** una solicitud con un `sku` que Productos y Ofertas no reconoce, o sin peso o dimensiones válidos, o con el servicio de Productos temporalmente no disponible.
+  - **CUANDO** el sistema intenta obtener los datos físicos de las líneas antes de persistir el despacho.
+  - **ENTONCES** el sistema responde `422 Unprocessable Entity` con `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` o `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`, o `503 Service Unavailable` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE`, respectivamente, y no crea el despacho.
 
 ---
 
 ## 4. Definición de Terminado (Definition of Done - DoD)
 
-- [ ] Código implementado en Java 21 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
-- [ ] DTOs de entrada validados con anotaciones `@NotNull`, `@NotBlank`, `@Positive` (`jakarta.validation`).
-- [ ] Pruebas unitarias de validación y de servicio con `JUnit 5 + Mockito` aprobadas con cobertura >= 80%.
-- [ ] Prueba de integración del endpoint `POST /api/v1/despachos` validada contra [integraciones/api-contract.md](../../integraciones/api-contract.md).
-- [ ] Documentación y trazabilidad actualizadas en el repositorio.
+- [ ] DTOs de entrada y salida implementados y validados con `jakarta.validation`.
+- [ ] Seguridad implementada exigiendo token de servicio y scope `despachos:crear`.
+- [ ] Cliente REST hacia Productos y Ofertas integrado con manejo de errores y timeouts.
+- [ ] Mecanismo de idempotencia verificado ante reintentos simultáneos con el mismo `idPedido`.
+- [ ] Pruebas unitarias y de integración con `JUnit 5 + Mockito` y `Testcontainers` cubriendo los 5 criterios de aceptación (`CA-01`, `CA-02`, `CA-11`, `CA-12`, `CA-21`).
+- [ ] Documentación y trazabilidad sincronizadas con [ES-F02-01](../../especificaciones/ES-F02-01-RecepcionSolicitudDespacho/spec.md).

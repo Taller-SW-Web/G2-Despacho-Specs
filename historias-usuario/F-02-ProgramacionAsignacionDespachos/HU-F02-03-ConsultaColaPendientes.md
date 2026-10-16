@@ -7,7 +7,7 @@
 | **Prioridad** | Alta |
 | **Estimación (Story Points)** | 5 |
 | **Componentes** | Backend, Frontend |
-| **Etiquetas (Labels)** | `despacho`, `modulo`, `f-02`, `sdd`, `cola-pendientes`, `dashboard` |
+| **Etiquetas (Labels)** | `despacho`, `f-02`, `sdd`, `cola-pendientes`, `dashboard`, `kpi` |
 | **Responsable sugerido** | Tarqui |
 
 ---
@@ -15,52 +15,57 @@
 ## 1. Declaración de la Historia (User Story)
 
 **COMO** Gestor de Despacho  
-**QUIERO** consultar la cola de pedidos pendientes de entrega mediante una tabla paginada y filtrable en el dashboard administrativo  
-**PARA** evaluar el volumen de envíos por asignar, priorizar los pedidos críticos y balancear la carga operativa diaria.  
+**QUIERO** consultar la cola de despachos pendientes mediante una tabla paginada y filtrable con tarjetas de resumen KPI en el panel administrativo  
+**PARA** evaluar la carga operativa diaria, priorizar los pedidos críticos y distinguir los despachos listos para asignar hoy de aquellos programados para fechas futuras.
 
 ---
 
 ## 2. Descripción y Contexto Técnico
 
-- **Especificación origen:** [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisito `RF-02`, Criterios `CA-04`, `CA-05`, `CA-06`).
-- **Endpoints asociados:**
-  - `GET /api/v1/despachos/pendientes` (detallado en [integraciones/api-contract-gestion-despachos.md](../../integraciones/api-contract-gestion-despachos.md)).
-  - Parámetros de consulta: `pagina` (int, default 1), `limite` (int, default 10 o 20), `zona` (string opcional), `ordenarPor` (enum: `FECHA_LIMITE`, `FECHA_CREACION`, `PESO`).
-- **Roles requeridos:** `GESTOR_DESPACHO` (autenticación JWT). Usuarios sin este rol deben recibir `403 Forbidden`.
-- **Reglas de negocio y visuales:**
-  - Solo se listan registros cuyo estado actual sea exactamente `PENDIENTE_ASIGNACION`.
-  - La respuesta debe incluir paginación estándar: `paginaActual`, `totalPaginas`, `totalElementos` y la lista de despachos.
-  - Cada fila debe mostrar: código de rastreo, ID de pedido, dirección de destino, peso (kg), volumen (m³), fecha límite estimada y tiempo transcurrido en espera.
-  - Si no existen pedidos pendientes (o el filtro no arroja resultados), se debe mostrar un estado visual vacío amigable: *"No hay despachos pendientes de asignación"*.
-  - Tiempo de respuesta del endpoint: menor a 250 ms para lotes de hasta 100 registros.
-- **Entidades de datos involucradas:** `despachos`.
+- **Especificación SDD origen:** [ES-F02-03: Consultar la cola de despachos pendientes](../../especificaciones/ES-F02-03-ConsultarColaPendientes/spec.md).
+- **Especificación funcional padre:** [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md) (Requisitos `RF-02` y `RF-06`; Criterios `CA-03`, `CA-04`, `CA-05`, `CA-13`).
+- **Endpoints asociados:** `GET /api/v1/despachos/pendientes` (detallado en [integraciones/api-contract-gestion-despachos.md §3.2](../../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación)).
+- **Parámetros de consulta:** `pagina` (int), `tamanoPagina` (int), `idZona` (string), `fechaDesde` / `fechaHasta` (date), `tipoIntento` (enum: `TODOS`, `PRIMER_INTENTO`, `REINTENTOS`).
+- **Roles requeridos:** `GESTOR_DESPACHO` (autenticación JWT). Usuarios sin este rol reciben `403 Forbidden`.
+- **Componentes de Frontend:**
+  - Pestañas Mantine: "Cola de pendientes" y "Rutas por repartidor".
+  - Fila de 3 tarjetas KPI interactivas: "Pendientes para hoy", "Programados a futuro" y "Reintentos".
+  - Barra de filtros: selector de fecha, selector de zona y chips de intento.
+  - Tabla de datos con columnas completas (peso en kg, volumen en m³, cantidad física de paquetes).
+  - Estado vacío amigable ("No hay despachos pendientes de asignación") y botón de generar pedido de prueba.
+  - Restricción visual en fecha futura: badge "Programado para [fecha]" y botón "Asignar" deshabilitado.
 
 ---
 
 ## 3. Criterios de Aceptación (Gherkin)
 
-- [ ] **CA-04: Listado con despachos pendientes**
+- [ ] **CA-03: Listado con despachos pendientes**
   - **DADO** que existen despachos registrados en estado `PENDIENTE_ASIGNACION`.
-  - **CUANDO** el Gestor accede a la vista de Programación y Asignación en el frontend o invoca `GET /api/v1/despachos/pendientes`.
-  - **ENTONCES** el sistema despliega la lista paginada mostrando código de rastreo, pedido, dirección, peso, volumen, fecha límite y tiempo en espera con código de respuesta `200 OK`.
+  - **CUANDO** el Gestor abre la vista de Programación y Asignación o invoca `GET /api/v1/despachos/pendientes`.
+  - **ENTONCES** el sistema muestra código interno/rastreo, pedido, zona, dirección, peso, volumen, cantidad de paquetes, fecha programada, número de intento y tiempo en espera, ordenados por fecha programada ascendente con paginación estándar.
 
-- [ ] **CA-05: Listado sin despachos pendientes**
-  - **DADO** que no existen pedidos pendientes de asignación en el sistema o para el filtro seleccionado.
-  - **CUANDO** el Gestor consulta la vista en el dashboard.
-  - **ENTONCES** el sistema muestra un estado visual vacío indicando "No hay despachos pendientes de asignación" con código `200 OK` y lista vacía.
+- [ ] **CA-04: Listado sin despachos pendientes**
+  - **DADO** que no existen despachos pendientes en el sistema o para los filtros aplicados.
+  - **CUANDO** el Gestor consulta la vista en el panel.
+  - **ENTONCES** el sistema muestra el estado vacío "No hay despachos pendientes de asignación" con acceso directo a generar pedidos de prueba.
 
-- [ ] **CA-06: Acceso sin permisos requeridos**
-  - **DADO** que un usuario sin el rol `GESTOR_DESPACHO` intenta acceder al listado de pendientes.
-  - **CUANDO** realiza la petición HTTP al endpoint `GET /api/v1/despachos/pendientes`.
-  - **ENTONCES** el sistema rechaza la solicitud con código `403 Forbidden`, cuerpo de error estandarizado y no expone información operativa alguna.
+- [ ] **CA-05: Acceso sin permisos requeridos**
+  - **DADO** un usuario sin rol `GESTOR_DESPACHO` o una petición anónima.
+  - **CUANDO** intenta acceder a la cola de pendientes.
+  - **ENTONCES** el sistema responde `403 Forbidden` y no expone información operativa.
+
+- [ ] **CA-13: Despacho programado para una fecha futura**
+  - **DADO** un despacho reprogramado por F-04 con fecha programada posterior al día actual.
+  - **CUANDO** el Gestor consulta la cola en el frontend o intenta asignarlo.
+  - **ENTONCES** la fila muestra el identificador "Programado para [fecha]", el botón "Asignar" se encuentra deshabilitado y el backend rechaza su asignación con `409 Conflict` hasta que llegue esa fecha.
 
 ---
 
 ## 4. Definición de Terminado (Definition of Done - DoD)
 
-- [ ] Repositorio Spring Data JPA con consulta paginada (`Pageable`) indexada por estado `PENDIENTE_ASIGNACION`.
-- [ ] Pruebas unitarias en backend (`JUnit 5 + Mockito`) verificando paginación, filtros y ordenamiento.
-- [ ] Pruebas de seguridad (`Spring Security Test`) verificando acceso con rol `GESTOR_DESPACHO` y rechazo `403` para otros roles o usuarios anónimos.
-- [ ] Componente React de Dashboard con tabla responsive, controles de paginación y skeleton loaders durante la carga.
-- [ ] Estado visual amigable cuando la lista está vacía implementado con Tailwind CSS.
-- [ ] Documentación y trazabilidad actualizadas en el repositorio.
+- [ ] Endpoint `GET /api/v1/despachos/pendientes` implementado con Spring Data JPA Specifications.
+- [ ] Tiempo de respuesta inferior a 250 ms validado para lotes de hasta 100 registros.
+- [ ] Pruebas unitarias y de integración con `JUnit 5 + MockMvc` cubriendo `CA-03`, `CA-04`, `CA-05` y `CA-13`.
+- [ ] Componente React implementado con Mantine (tarjetas KPI, filtros, tabla responsive y estado vacío).
+- [ ] Sincronización de filtros y paginación en la URL del navegador.
+- [ ] Documentación y trazabilidad sincronizadas con [ES-F02-03](../../especificaciones/ES-F02-03-ConsultarColaPendientes/spec.md).

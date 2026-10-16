@@ -57,7 +57,8 @@ F-05 no figura como lineamiento propio; existe para que la asignación se haga s
 | **F-02** | [Programación y asignación de despachos](funcionalidades/F-02-ProgramacionAsignacionDespachos.md) | Tarqui | Gestor de Despacho | Recepción, simulación, cola, asignación, secuencia, reasignación, cancelación y vista de ruta por repartidor. |
 | **F-03** | [Web responsive del repartidor y evidencia de entrega](funcionalidades/F-03-AppMovilRepartidor.md) | Max Rojas | Repartidor | Ruta de la jornada, transiciones en campo, evidencia, cierre de jornada y catálogo de motivos. |
 | **F-04** | [Entregas fallidas y reprogramaciones](funcionalidades/F-04-GestionEntregasFallidas.md) | Gerardo | Gestor de Despacho | Recepción de paquetes no entregados en el centro, reprogramación y cierre como devuelto a origen. |
-| **F-05** | [Monitoreo de flota, operadores y capacidad diaria](funcionalidades/F-05-MonitoreoFlotaCapacidad.md) | Rhamses | Gestor de Despacho | Repartidores, furgonetas, jornadas, ocupación y disponibilidad. |
+| **F-05** | [Gestión de repartidores y vehículos](funcionalidades/F-05-GestionRepartidoresVehiculos.md) | Rhamses | Gestor de Despacho | CRUD de repartidores con baja lógica y vinculación con Seguridad, y gestión de furgonetas con capacidades de carga. |
+| **F-06** | [Disponibilidad y capacidad diaria de la flota](funcionalidades/F-06-DisponibilidadCapacidadDiaria.md) | Luis | Gestor de Despacho | Asignación diaria repartidor – furgoneta – zona, cálculo de ocupación, disponibilidad y saturación para F-02. |
 
 Los requisitos transversales de la sección 6 no constituyen una funcionalidad aparte: son un componente común del backend que F-02, F-03 y F-04 utilizan, y cada una verifica en sus pruebas las transiciones que ejecuta.
 
