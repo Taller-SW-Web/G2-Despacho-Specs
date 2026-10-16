@@ -46,7 +46,7 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 | **ES-F04-03** | Confirmar la recepción del paquete | [Especificación](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/spec.md) · [UI](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/ui.md) · [Plan](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/plan.md) · [Tareas](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/tasks.md) · [Evidencia](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/evidence.md) | Borrador SDD; implementación y verificación pendientes |
 | **ES-F04-04** | Reprogramar un despacho fallido | [Ver especificación](../especificaciones/ES-F04-04-ReprogramarDespachoFallido.md) | Borrador revisado; pendiente migración SDD e implementación |
 | **ES-F04-05** | Cerrar un despacho como devuelto a origen | [Ver especificación](../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen.md) | Revisión funcional completada; pendiente migración SDD, implementación y pruebas |
-| **ES-F04-06** | Registrar la trazabilidad de las operaciones | [Ver especificación](../especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones.md) | Borrador |
+| **ES-F04-06** | Registrar la trazabilidad de las operaciones | [Ver especificación](../especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones.md) | Revisión funcional completada; pendiente migración SDD, implementación y pruebas |
 
 ## Especificaciones atómicas de F-05
 

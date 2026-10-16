@@ -155,13 +155,13 @@ El sistema DEBE permitir cerrar un despacho fallido cuyo paquete permanecerá en
 
 ### RF-05. Mantener trazabilidad
 
-El sistema DEBE conservar el historial de recepciones y decisiones.
+El sistema DEBE conservar el historial de recepciones y decisiones. [ES-F04-06](../especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones.md) concreta las garantías de esos mismos registros de ES-F04-03/04/05 en el historial único de RT-02: captura en la transacción de origen, datos por incidencia, inmutabilidad y ausencia de duplicados; no agrega otra auditoría, tabla o pantalla.
 
 #### CA-13. Registro de auditoría
 
 - **DADO** una recepción, reprogramación o cierre aceptado.
 - **CUANDO** se persiste.
-- **ENTONCES** se registran usuario, fecha, estado anterior, estado nuevo y datos de la operación (observación de recepción, nueva fecha o motivo de cierre).
+- **ENTONCES** se guarda exactamente una entrada del historial común en la misma transacción de origen, con ejecutor del JWT, instante UTC, origen manual, incidencia, estados y datos propios de recepción, nueva fecha o motivo de cierre. Rechazos, repeticiones y reintentos técnicos no agregan otra decisión aceptada; el detalle presenta solo los campos previstos por su contrato.
 
 ### RF-06. Casos especiales de resolución
 
