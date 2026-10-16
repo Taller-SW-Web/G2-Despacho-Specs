@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Listado HTTP y catálogo del Gestor implementados y verificados con dependencias de prueba. Cierre backend pendiente de fuentes compartidas; frontend pendiente.
+**Estado:** Backend del Gestor completado y verificado en entorno local con servicios G2 y migraciones reales. Frontend y despliegue con G7 pendientes.
 
 **UI:** Aplica; página administrativa `/entregas-fallidas`.
 
@@ -81,6 +81,10 @@ La definición contractual y de fuentes puede prepararse mientras se desarrolla 
 
 ## 6. Estrategia de verificación
 
+Cierre backend del 16/10/2026, `27c65a0`: Gerardo solicita continuar hasta completar backend. Se amplía I-02 para incorporar las migraciones canónicas (Gestión V2, Operación V1), implementar el proveedor de Operación §5.4 y la obtención/renovación con Seguridad §8.2. El contrato de Operación concreta el permiso interno `operacion:incidencias:leer`, sujeto a su concesión/configuración en G7. El emisor temporal solo lo concede para la demo aislada de G2; no se atribuye esa concesión a G7.
+
+EV-11 verifica 18 pruebas seleccionadas (solo tres nuevas) y el recorrido Gateway → Gestión → Operación, con dos PostgreSQL, tablas Flyway reales y JWT RS256 del emisor temporal. Comprueba 7/5/2, catálogo, filtros/permisos y caída/recuperación de Operación. `compose.f04.yaml` y el script documentado permiten reproducirlo sin usar Supabase ni el `.env` personal. T-06/T-07 se cierran para el actor Gestor en ese entorno; el acceso de repartidores al catálogo y los comandos de F-02/F-03 quedan como integraciones de sus funcionalidades. No se inicia frontend.
+
 Actualización del 16/10/2026, backend `536a0f3`: se completa la API de catálogo para el Gestor, leyendo la tabla canónica, y su ruta del Gateway se mueve a Gestión. EV-10 añade dos pruebas HTTP prioritarias y amplía una del Gateway; ejecuta una selección de 15 pruebas, sin repetir toda la suite, por la prioridad de tiempo indicada por Gerardo. El acceso de repartidores al catálogo conserva su requisito de perfil activo y queda pendiente de su integración de F-03/Operación; no se inventan roles ni consultas a bases ajenas.
 
 Al finalizar el código se consultan los remotos: `origin/develop` continúa en `bad76eb` y no contiene migraciones de despachos/incidencias ni Operación §5.4. Specs `origin/main` `10d6b83` se integra en `83c0b4b`, sin conflictos. La lectura conjunta sobre fuentes reales no puede verificarse todavía; responsables de dependencias: F-02/F-03 y Arquitectura para las migraciones/escritores, Operación para su proveedor y credencial. No se añaden esquemas de producción alternativos a sus cambios en curso.
@@ -106,9 +110,9 @@ Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; de
 
 | ID | Punto por resolver | Fuente y responsable de coordinación | Bloquea |
 |---|---|---|---|
-| DT-01 | Listado, validación de códigos y catálogo del Gestor implementados; ruta Gateway a Gestión corregida. Pendiente perfil activo para el consumidor repartidor y migraciones compartidas. | Gerardo con F-03/Operación y Arquitectura. | Verificación real de fuentes y filtros en T-06/07/08; el consumidor de campo se completa con F-03. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
-| DT-02 | Consumidor, ensamblaje y degradación verificados con HTTP simulado en EV-06/09. Pendientes proveedor real y obtención/renovación de la credencial técnica. | Gerardo con Operación y Arquitectura; modelo de datos y T-06. | CA-01/05/06/08/10 e integración real de I-02/03. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
-| DT-03 | Esquema/migraciones necesarios y base compartida de JWT, errores, conexión de datos y rutas del Gateway. | Inicialización actual del backend y modelo. Gerardo coordina con Arquitectura y DevOps. | Ejecución real de I-02/03. |
+| DT-01 | Resuelto para Gestor: listado y catálogo sobre tablas canónicas, con ruta Gateway comprobada en EV-11. Perfil activo del consumidor repartidor pendiente en F-03. | Gerardo con F-03/Operación y Arquitectura. | Consumo frontend T-08; el acceso de campo se verifica con F-03. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
+| DT-02 | Proveedor y consumidor reales implementados; emisión/renovación y recorrido local verificados en EV-11. | Gerardo con Operación y Arquitectura. Configurar credenciales/concesión al desplegar con G7. | No bloquea I-02 local; G7 se verifica en su entorno. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias). |
+| DT-03 | Flyway, JWT firmado, conexión y rutas verificados localmente en EV-11. Tablas compartidas listas para reutilización por escritores de otras funcionalidades. | Gerardo coordina integración de escritores y despliegue con Arquitectura/DevOps. | I-03 depende ahora de la página y componentes; entorno G7/despliegue sigue pendiente. |
 | DT-04 | Disponibilidad y verificación de componentes, tema y herramientas de pruebas. | Componentes React §§4.5–4.6. Gerardo para CR-08; coordinación con los responsables del resto. | Composición y aceptación de I-01 según sus dependencias. |
 
 ## 8. Condiciones para iniciar y cerrar

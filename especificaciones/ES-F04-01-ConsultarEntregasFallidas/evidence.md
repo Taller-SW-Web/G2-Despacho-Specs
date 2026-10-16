@@ -1,10 +1,10 @@
 # Evidencia de ES-F04-01: Consultar entregas fallidas
 
-**Estado:** Listado y catálogo del Gestor implementados; comprobaciones backend con dependencias de prueba aprobadas. Cierre T-06/T-07 pendiente de fuentes compartidas e integración real; frontend pendiente.
+**Estado:** Backend del Gestor completado y verificado localmente; T-06/T-07 cerradas en ese entorno. Servicios G2 y tablas Flyway reales, Seguridad temporal y datos sintéticos identificados. Frontend y aceptación completa pendientes.
 
 **Responsable de verificación:** Gerardo.
 
-**Última verificación funcional completa:** No ejecutada. Última comprobación backend: 16/10/2026, EV-10.
+**Última verificación funcional completa con UI:** No ejecutada. Backend: 16/10/2026, EV-11 aprobado en entorno local.
 
 ## 1. Versión y entorno verificados
 
@@ -13,8 +13,9 @@
 - Base de código consultada: backend `af13989` y frontend `d2bc27d`; no constituyen una implementación de ES-F04-01.
 - Implementación parcial: backend `49d40ff` (consumidor), `df4590a` (lector local), `a65ed9f` (caso de uso) y `6ffa58cf4729470573f6c8b78c06235cb0efad15` (entrada HTTP, ensamblaje y pruebas de Gateway), rama `feature/f04-consultar-entregas-fallidas` desde `origin/develop` `bad76eb`, activa en el checkout habitual `G2-Despacho-Backend`. Specs: `docs/f04-evidencia-consulta-fallidas`, desde `main`.
 - Incremento EV-10: backend `536a0f3` añade catálogo del Gestor y corrige su ruta. Integración final consultada: backend `origin/develop` sin novedades; Specs `origin/main` `10d6b83` integrado mediante `83c0b4b`. Sin frontend ni publicación remota.
+- Cierre backend EV-11: `27c65a0`, misma rama y checkout. Migraciones canónicas, proveedor de Operación, credencial automática y demo reproducible. Se ejecutan servicios G2 y dos PostgreSQL reales, con emisor temporal de JWT firmado; no se usa Seguridad G7 ni Supabase.
 - Dependencias de EV-06: HTTP simulado con `MockRestServiceServer`; sin PostgreSQL ni Operación real. Windows, Java Temurin 21.0.12.1, Maven 3.9.11 y Spring Boot 4.1.1 del proyecto.
-- Alcance verificado: preparación documental y partes backend de T-06/T-07. EV-07/09 usan PostgreSQL real con esquema exclusivamente de pruebas; EV-08 compone puertos simulados. EV-09 integra entrada HTTP, seguridad, caso de uso, JDBC y cliente HTTP; simula el decodificador JWT y el proveedor de Operación. La prueba Gateway usa un destino HTTP simulado. No se acredita el recorrido conjunto ni UI.
+- Alcance verificado: preparación documental y backend T-06/T-07. EV-07/09 usan esquema de prueba y EV-08 puertos simulados; EV-09/10 identifican dobles de JWT/HTTP. EV-11 sustituye el esquema de la prueba HTTP por Flyway de producción y comprueba el recorrido conjunto entre servicios G2 ejecutándose, con bases reales y Seguridad temporal. No se acredita UI ni G7.
 - Revisión del 15/10/2026: seis decisiones de comportamiento confirmadas por Gerardo; contrato y modelo en `4bad49d`, reglas de consulta en `1f556c0`. EV-09 concreta en Gestión §5.1 los errores locales reutilizando los códigos de §5.3. Las fuentes compartidas y componentes siguen pendientes.
 
 ## 2. Cobertura de criterios
@@ -41,7 +42,7 @@
 
 Resultados permitidos: `Pendiente`, `Aprobado`, `Fallido`, `No ejecutado`. Una comprobación con fixtures o dobles debe identificar su límite y no acredita integración real [cite: 1, 2].
 
-EV-06 aporta comprobaciones del consumidor para CA-05/10 y T-06; EV-07 del lector para CA-01/02/06/09; EV-08 de la lógica para CA-02/03/05/07/08/09/10/11. EV-09 añade respuestas HTTP y seguridad para CA-01/03/04/05/07/08/09/10/11, más enrutamiento aislado del Gateway. Los resultados de aceptación completa anteriores conservan `No ejecutado`: falta el recorrido con fuentes compartidas y frontend. Las comprobaciones parciales aprobadas se detallan en cada registro.
+EV-06 aporta comprobaciones del consumidor para CA-05/10; EV-07 del lector para CA-01/02/06/09; EV-08 de la lógica para CA-02/03/05/07/08/09/10/11. EV-09/10 añaden HTTP, seguridad, catálogo y enrutamiento. EV-11 acredita el cierre backend local con migraciones y servicios G2 reales y Seguridad temporal. Los criterios de aceptación completa anteriores conservan `No ejecutado` porque incluyen la pantalla y la interacción, aún no implementadas; no niega las comprobaciones backend aprobadas en estos registros.
 
 ## 3. Registros de verificación previstos
 
@@ -233,6 +234,41 @@ Integración al terminar nuestro código: `git fetch origin` del backend confirm
 
 Pendientes que impiden declarar el backend integrado: migraciones/escritores de `despachos`, `intentos_entrega`, `motivos_fallo` y su referencia vigente, proveedor de Operación §5.4 y credencial técnica vigente, más recorrido conjunto con Seguridad y Gateway. Responsables: F-02/F-03 y Arquitectura para datos; Operación y Arquitectura para proveedor/credencial; Gerardo para verificar la integración cuando se publiquen. No se reemplazan sus cambios en curso por tablas paralelas ni se ejecuta el esquema de prueba sobre la base del proyecto. Frontend no iniciado.
 
+### EV-11. Cierre backend local con migraciones y servicios G2 reales
+
+- Fecha: 16/10/2026, America/Lima. Código backend `27c65a0`, sobre `536a0f3`; trabajo asistido por Codex, revisión humana pendiente. Gerardo solicita continuar implementando hasta completar backend; este incremento implementa las dependencias necesarias de lectura y persistencia en el propio repositorio.
+- Gestión: `V2__base_despachos_incidencias.sql` crea las tablas canónicas y los siete motivos del Anexo B de F-03; la FK compuesta garantiza que la referencia vigente pertenece al mismo despacho. La prueba HTTP deja de crear el esquema mínimo y utiliza V1/V2 de Flyway. Los comandos escritores de F-02/F-03 se mantienen fuera de esta consulta y deberán reutilizar la base compartida.
+- Operación: V1 crea perfiles, furgonetas y jornadas conforme al modelo; `ControladorConsultaIncidencias` y `IncidenciasOperativasJdbc` implementan §5.4. Dos lecturas por lote sobre una transacción local de solo lectura, orden de solicitud conservado, nombre histórico disponible y ausencia explícita. No consulta tablas de Gestión ni altera jornadas.
+- Seguridad: Operación exige JWT técnico del cliente `modulo-despacho`, audiencia `api-despacho` y `operacion:incidencias:leer`, concretado en su contrato canónico. `ProveedorTokenOperacion` usa Seguridad §8.2, conserva la credencial vigente y la renueva antes del vencimiento; ante emisión fallida descarta la vencida. El token humano no se propaga. La concesión en G7 sigue siendo configuración pendiente de ese entorno.
+- Entorno de pruebas seleccionadas: Windows, Java 21.0.12.1, Maven 3.9.11, Spring Boot 4.1.1, Docker 29.4.0, Testcontainers 2.0.5 y PostgreSQL 18.6. El emisor/HTTP se simulan en pruebas de errores controlados; esos dobles no se usan para los servicios G2 del recorrido Compose.
+- Comandos, con `$mavenF04` de EV-06:
+
+```powershell
+# Desde servicio-gestion-despachos
+& $mavenF04 -B -ntp -o '-Dtest=ConsultaFallidosHttpTests,ProveedorTokenOperacionTests,FlujoF01Tests' test
+# Desde servicio-operacion-reparto
+& $mavenF04 -B -ntp -o '-Dtest=ConsultaIncidenciasOperativasHttpTests,ValidadorTokenDespachoTests' test
+# Desde la raíz del backend
+docker compose --env-file .env.f04-demo.example -p g2-f04-demo -f compose.yaml -f compose.seguridad-local.yaml -f compose.f04.yaml up --build --wait --wait-timeout 240
+./herramientas/f04/Verificar-DemoF04.ps1 -ComprobarCaida
+```
+
+- Resultado de pruebas: **12 en Gestión y 6 en Operación, 18 aprobadas sin fallos, errores ni omitidas**. Solo **tres nuevas**: dos HTTP del proveedor y una de credencial (obtención/caché/renovación/fallo). Las otras quince son comprobaciones existentes de áreas afectadas. No se repite la suite completa. Compilan 87 fuentes/12 fuentes de prueba de Gestión y 10/5 de Operación.
+- Reportes: [consulta sobre Flyway](./evidencia/EV-11-consulta-flyway.txt), [credencial](./evidencia/EV-11-credencial-tecnica.txt), [regresión F-01](./evidencia/EV-11-regresion-f01.txt), [proveedor](./evidencia/EV-11-proveedor-operacion.txt) y [JWT de Operación](./evidencia/EV-11-regresion-jwt-operacion.txt).
+- Resultado del recorrido: **Aprobado**, registrado en [EV-11-recorrido-servicios.json](./evidencia/EV-11-recorrido-servicios.json). Cuatro imágenes construidas y seis contenedores sanos: Gateway, Gestión, Operación, Seguridad temporal y dos PostgreSQL 17. El emisor temporal firma JWT RS256 y los servicios validan descubrimiento/JWKS; es un doble explícito de G7, no un emisor real externo.
+- Verificación documental: siete documentos con H1 único fuera de código, 226 enlaces locales existentes, 14 ejemplos JSON válidos, reportes 7/1/4/2/4 coherentes con 18 pruebas y reporte JSON del recorrido aprobado. `git diff --check` sin errores.
+
+| Comprobación prioritaria | Resultado observado |
+|---|---|
+| Flyway de Gestión y Operación desde bases vacías. | Aplicación y consulta arrancan con las tablas canónicas y siete motivos; regresión F-01 aprobada. La prueba del listado ya no depende del SQL mínimo. |
+| Proveedor con perfil inactivo, jornadas activa/cerrada e identificadores opacos inexistentes. | Preserva nombre histórico, orden e identificadores; devuelve `null`/`DESCONOCIDA` donde corresponde y omite contacto. |
+| Cliente técnico, scope, actor humano, lotes inválidos e indisponibilidad. | Permisos `401/403` anteriores a lectura; `400` por campos desconocidos, duplicados, tipos incorrectos, vacíos y límites; `503` normalizado sin SQL. |
+| Recorrido por Gateway sobre datos sintéticos de ambas bases. | Doce fallidos de trece despachos, página de dos filas, indicadores 7/5/2, nombre obtenido de Operación, siete motivos y dos retornos atrasados al filtrar. Gestión obtiene su propio JWT técnico del emisor temporal. |
+| JWT ausente/otro rol, página inválida y ruta interna por Gateway. | `401`, `403`, `400` y `403`, respectivamente. |
+| Detención y reinicio exclusivos de Operación de la demo. | Consulta normal conserva doce filas y atrasados `null`; solo atrasados responde `503`. Operación vuelve a estado sano tras reiniciar. |
+
+Límites de entrega: T-06/T-07 se cierran para la consulta del Gestor en entorno local. Quedan frontend, aceptación completa con UI, revisión humana y despliegue/configuración con G7. El script usa datos sintéticos en bases con nombres guardados, no prueba la generación de esos datos por comandos de F-02/F-03 ni implementa sus flujos. El acceso del repartidor al catálogo sigue pendiente de F-03/Operación y no se acredita como parte del actor Gestor. El entorno de demo queda disponible en Gateway `18080`, Gestión `18081`, Operación `18082` y emisor temporal `18090`; no se modifican Supabase ni el `.env` personal.
+
 ## 4. Uso de IA
 
 | Trabajo | Herramienta y fecha | Entradas | Instrucción y revisión |
@@ -245,25 +281,24 @@ Pendientes que impiden declarar el backend integrado: migraciones/escritores de 
 | Entrada HTTP y ensamblaje de T-06/T-07 | Codex, 16/10/2026 | Carpeta SDD, contratos y backend `a65ed9f`; seguridad y rutas existentes. | Gerardo prioriza terminar backend de la primera especificación, pide aviso antes del frontend y acuerda integrar cambios compartidos al final. Se implementa el listado HTTP, se añaden cinco pruebas HTTP y una de Gateway y se conserva evidencia de 61 pruebas aprobadas; fuentes compartidas e integración real pendientes. Revisión humana pendiente. |
 | Catálogo del Gestor y comprobación final de dependencias | Codex, 16/10/2026 | Carpeta SDD, contratos, backend `6ffa58c` y remotos del equipo. | Gerardo pide continuar hasta preparar backend, con pruebas mínimas prioritarias por falta de tiempo. Se añade catálogo del Gestor, se corrige su ruta y se ejecutan 15 pruebas seleccionadas, solo dos nuevas; se integra main de Specs. Cierre con fuentes compartidas aún no publicadas en develop: pendiente. Revisión humana pendiente. |
 
-Este registro describe asistencia documental, cierre documental de T-05 y avances técnicos de T-06/T-07 acreditados por EV-06 a EV-10. Incluye pruebas del listado y catálogo del Gestor con dependencias simuladas; no acredita cierre de esas tareas ni aceptación completa con integración real.
+Se añade el cierre backend EV-11 por solicitud de Gerardo: migraciones, proveedor, obtención/renovación técnica y recorrido entre servicios G2 ejecutándose. Se añaden solo tres pruebas prioritarias y se registra el uso explícito del emisor temporal y datos sintéticos. La revisión humana y la aceptación completa con UI permanecen pendientes.
 
 ## 5. Diferencias y pendientes
 
 | Hallazgo | Criterios afectados | Efecto y siguiente acción |
 |---|---|---|
-| DT-01: listado y catálogo del Gestor implementados; ruta Gateway a Gestión corregida. | CA-02/11 y CUI-02; filtro real por motivos. | Verificar sobre migraciones reales y consumir en T-08. Completar el acceso del repartidor con F-03/Operación sin duplicar catálogos. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
-| DT-02: consumidor y ensamblaje verificados con HTTP simulado en EV-06/09; proveedor y credenciales reales pendientes. | CA-01/05/06/08/10 y CUI-01/05. | Coordinar proveedor y emisión/renovación de credenciales; comprobar integración real en T-06/07. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
-| DT-03/04: bases de ejecución y componentes aún por verificar/implementar. | Todos. | Coordinar preparación y componentes, ejecutar tareas y registrar resultados. |
-| Migraciones de despachos/incidencias ausentes en `bad76eb`; lector preparado con esquema de prueba en EV-07. | CA-01/02/05/06/08/09/10. | Coordinar migraciones/escritores con F-02/F-03 y Arquitectura, y verificar el lector sobre la base compartida real. |
-| Entrada HTTP, autorización y ensamblaje verificados en EV-09 con dependencias de prueba. | CA-01 a CA-11 e integración real. | Verificar el recorrido conjunto con Seguridad, Gateway y servicios/migraciones reales tras la integración final; no dar por completadas T-06/T-07. |
+| DT-01: catálogo del Gestor y ruta comprobados sobre Flyway en EV-11. | CA-02/11 y CUI-02. | Consumir en T-08. Completar acceso del repartidor con F-03/Operación. |
+| DT-02/03: proveedor, migraciones y credencial automática implementados; recorrido G2 local aprobado en EV-11. | Backend CA-01 a CA-11; consumo UI pendiente. | Configurar credenciales/concesión y verificar con G7 en su despliegue. |
+| DT-04: frontend y componentes pendientes. | CUI-01 a CUI-06 y aceptación completa. | Avisar a Gerardo antes de iniciar frontend; coordinar componentes y ejecutar T-01 a T-04 y T-08/T-09. |
+| Nuevas migraciones compartidas en `27c65a0`. | Integración con comandos de F-02/F-03/F-05/F-06. | Reutilizar las tablas canónicas y revisar los escritores cuando se incorporen; no crear esquemas paralelos. |
 
 ## 6. Entrega y revisión
 
-- Entrega actual: consumidor backend (EV-06), lector local JDBC (EV-07), caso de uso/filtros (EV-08), listado HTTP autorizado y ensamblaje/ruta Gateway (EV-09), catálogo del Gestor y ruta corregida (EV-10), con pruebas y guía de ejecución.
-- Commits backend: `49d40ff`, `df4590a`, `a65ed9f`, `6ffa58c` y `536a0f3`; PR hacia `develop` pendiente. Se comprueba la base compartida de backend sin novedades y se integra `origin/main` de Specs en `83c0b4b`; sin publicación remota en estos incrementos.
+- Entrega actual: backend del Gestor completo para ejecución local (EV-06 a EV-11), con migraciones, consumidor/proveedor, credencial automática, listado, catálogo y demo reproducible por Gateway. Frontend no iniciado.
+- Commits backend: `49d40ff`, `df4590a`, `a65ed9f`, `6ffa58c`, `536a0f3` y `27c65a0`; PR hacia `develop` pendiente. Specs incorpora `origin/main` mediante `83c0b4b`; sin publicación remota en estos incrementos.
 - Reglas de consulta: confirmadas por Gerardo el 15/10/2026. Revisión técnica y funcional de la implementación: pendientes.
-- Estado del alcance funcional: Pendiente.
-- Integración real y destinos de otras especificaciones: pendientes según el plan.
+- Estado del alcance funcional completo: pendiente de frontend; backend local completado.
+- Despliegue con G7, revisión humana y flujos consumidores/escritores de otras especificaciones: pendientes según el plan.
 
 ## 7. Referencias
 
