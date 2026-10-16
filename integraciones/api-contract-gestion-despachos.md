@@ -98,6 +98,7 @@ El filtro `tipoIntento` de la cola admite `TODOS`, `PRIMER_INTENTO` y `REINTENTO
 - Devuelve el catálogo completo, incluidos motivos inactivos conservados para consultas históricas. F-03 ofrece para registrar únicamente los que tengan `activo=true` y `seleccionableEnCampo=true`; F-04 admite todos los códigos como filtro. La validación del backend aplica la misma restricción al registrar un fallo.
 - `NO_INTENTADO` tiene `seleccionableEnCampo=false` y `consumeIntento=false`; lo genera exclusivamente el cierre de jornada. No se mantiene un segundo catálogo para F-04.
 - Token no aceptado: `401`; usuario sin autorización: `403`, conforme a Común §3.5. Una caída al consultar el catálogo muestra un error y permite reintentar; el frontend no fabrica motivos. Referencia: [Convenciones e integración externa](./api-contract.md#35-errores).
+- Si la lectura local no está disponible, responde `503` con `DESP_ERROR_CONSULTA_NO_DISPONIBLE` y el formato compartido, sin motivos parciales ni detalles de infraestructura.
 
 Ejemplo de un elemento de `motivos`:
 
@@ -225,6 +226,8 @@ Gestión consulta los datos operativos mediante Operación §5.4. No interpreta 
 - La consulta normal conserva `200`, las filas y los indicadores locales exactos aunque Operación falle. Si existe alguna jornada pendiente desconocida en la base, `indicadores.retornosAtrasados=null`: se muestra `No disponible`, nunca cero ni una cifra parcial. La tarjeta de atrasados permanece visible y deshabilitada; las otras dos siguen disponibles. Se informa `retornosSinJornadaConfirmada` y se ofrece reintentar la consulta.
 - Si se pidió `soloRetornosAtrasados=true` y falta confirmar alguna jornada pendiente de la base, se responde `503` con `code=DESP_ERROR_JORNADAS_NO_DISPONIBLES`; no se devuelve una página parcial ni un total inventado. Si la base no tiene pendientes, el filtro devuelve cero coincidencias sin necesitar esa dependencia.
 - `401` y `403` se aplican antes de consultar y nunca devuelven filas ni indicadores. Los filtros válidos sin coincidencias responden `200` con contenido vacío; los fallos no se presentan como un estado vacío.
+
+Si no puede ejecutarse la lectura canónica de Gestión, responde `503` con `DESP_ERROR_CONSULTA_NO_DISPONIBLE`, sin filas ni detalles de infraestructura. Un despacho fallido con referencia vigente ausente, ajena o incompatible, o una política de intentos inválida, responde `500` con `DESP_ERROR_DATOS_INCONSISTENTES`, sin resultados parciales. Se reutilizan los códigos de la consulta de incidencia de §5.3 y el formato de errores compartido; no se exponen SQL, credenciales ni mensajes internos.
 
 ### 5.2. Comandos de recepción, reprogramación y cierre
 

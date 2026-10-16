@@ -276,6 +276,7 @@ Al asignar o reasignar se envía la información completa necesaria para la ruta
 - **Método y ruta:** `POST /internal/v1/operacion/consulta-incidencias`.
 - **Proveedor:** Operación de Reparto y Flota; consumidor autorizado: Gestión de Despachos, con credencial de servicio conforme a Gestión §6, Operación §5. No se expone en el Gateway. Referencia: [Gestión](./api-contract-gestion-despachos.md#6-api-interna-provista-por-gestión), [Operación](./api-contract-operacion-reparto.md#5-api-interna-provista-por-operación).
 - Es una lectura por lotes; no modifica datos ni requiere clave de idempotencia.
+- Autorización interna: JWT válido con `tipo=servicio`, `sub=modulo-despacho`, audiencia `api-despacho` y scope `operacion:incidencias:leer`. Es un permiso de la comunicación interna de G2; su concesión en Seguridad real debe configurarse en ese entorno. No acredita una concesión ya confirmada por G7 ni habilita otros scopes.
 - Cuerpo obligatorio: `idsRepartidor` e `idsJornada`, arreglos de identificadores opacos únicos, de `0` a `100` elementos cada uno; al menos uno debe contener elementos. Elementos vacíos, duplicados, límites excedidos o campos desconocidos responden `400` con el formato de Común §3.5. Referencia: [Convenciones e integración externa](./api-contract.md#35-errores).
 
 ```json

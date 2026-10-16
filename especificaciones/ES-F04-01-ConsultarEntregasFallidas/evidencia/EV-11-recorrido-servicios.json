@@ -1,0 +1,14 @@
+{
+  "resultado": "Aprobado",
+  "entorno": "Demo local aislada; Seguridad simulada con JWT firmado",
+  "servicios": "Gateway, Gestión y Operación reales",
+  "total": 12,
+  "pendientes": 7,
+  "recibidos": 5,
+  "atrasados": 2,
+  "catalogo": 7,
+  "permisos": "401/403",
+  "filtrosInvalidos": 400,
+  "rutasInternas": "No expuestas",
+  "caidaOperacionComprobada": true
+}

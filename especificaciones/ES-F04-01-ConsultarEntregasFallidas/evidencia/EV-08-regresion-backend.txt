@@ -1,0 +1,28 @@
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.gestiondespachos.servicio_gestion_despachos.incidencias.infrastructure.IncidenciasLocalesJdbcTests
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 10.28 s -- in com.modulodespacho.gestiondespachos.servicio_gestion_despachos.incidencias.infrastructure.IncidenciasLocalesJdbcTests
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.gestiondespachos.servicio_gestion_despachos.incidencias.infrastructure.OperacionIncidenciasHttpTests
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.125 s -- in com.modulodespacho.gestiondespachos.servicio_gestion_despachos.incidencias.infrastructure.OperacionIncidenciasHttpTests
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.gestiondespachos.servicio_gestion_despachos.FlujoF01Tests
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.36 s -- in com.modulodespacho.gestiondespachos.servicio_gestion_despachos.FlujoF01Tests
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.gestiondespachos.servicio_gestion_despachos.ServicioGestionDespachosApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.955 s -- in com.modulodespacho.gestiondespachos.servicio_gestion_despachos.ServicioGestionDespachosApplicationTests
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.gestiondespachos.servicio_gestion_despachos.cotizacion.domain.CalculadoraCotizacionTests
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.144 s -- in com.modulodespacho.gestiondespachos.servicio_gestion_despachos.cotizacion.domain.CalculadoraCotizacionTests
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.gestiondespachos.servicio_gestion_despachos.cotizacion.api.ControladorCotizacionTests
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 10.04 s -- in com.modulodespacho.gestiondespachos.servicio_gestion_despachos.cotizacion.api.ControladorCotizacionTests
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.gestiondespachos.servicio_gestion_despachos.shared.seguridad.ValidadorTokenDespachoTests
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.modulodespacho.gestiondespachos.servicio_gestion_despachos.shared.seguridad.ValidadorTokenDespachoTests

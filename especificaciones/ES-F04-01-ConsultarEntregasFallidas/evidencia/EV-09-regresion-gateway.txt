@@ -1,0 +1,24 @@
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.api_gateway.ApiGatewayApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.962 s -- in com.modulodespacho.api_gateway.ApiGatewayApplicationTests
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.api_gateway.ArranqueSeguridadGatewayTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.788 s -- in com.modulodespacho.api_gateway.ArranqueSeguridadGatewayTests
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.api_gateway.seguridad.DescubrimientoJwtTests
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.461 s -- in com.modulodespacho.api_gateway.seguridad.DescubrimientoJwtTests
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.api_gateway.seguridad.ValidadorTokenDespachoTests
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.modulodespacho.api_gateway.seguridad.ValidadorTokenDespachoTests
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.api_gateway.transversal.FiltroTamanoSolicitudTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.modulodespacho.api_gateway.transversal.FiltroTamanoSolicitudTests
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.api_gateway.transversal.ManejadorErroresGatewayTests
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.modulodespacho.api_gateway.transversal.ManejadorErroresGatewayTests

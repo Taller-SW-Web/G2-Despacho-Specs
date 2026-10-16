@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.modulodespacho.gestiondespachos.servicio_gestion_despachos.shared.seguridad.ValidadorTokenDespachoTests
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.092 s -- in com.modulodespacho.gestiondespachos.servicio_gestion_despachos.shared.seguridad.ValidadorTokenDespachoTests

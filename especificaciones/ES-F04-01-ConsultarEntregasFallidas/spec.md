@@ -4,7 +4,7 @@
 
 **Responsable:** Gerardo
 
-**Estado:** Reglas de consulta acordadas el 15/10/2026; implementación y verificación funcional pendientes.
+**Estado:** Backend del Gestor completado y verificado localmente en T-06/T-07, con servicios G2 y migraciones reales y Seguridad temporal explícita. Frontend y aceptación completa pendientes.
 
 **Actor principal:** Gestor de Despacho
 
@@ -195,7 +195,7 @@ Las tres tarjetas respetan motivo y fechas, pero no el filtro de grupo ni la pá
 | CA-10 | Degradación y error al filtrar atrasados | Lote fallido, jornada desconocida, nombre ausente y recibido con jornada desconocida. |
 | CA-11 | Rechazo de filtros inválidos | Casos y límites de Gestión §5.1 del contrato. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 
-La descomposición está en [tasks.md](./tasks.md). Los resultados se registrarán en [evidence.md](./evidence.md); todas las comprobaciones de comportamiento están pendientes.
+La descomposición está en [tasks.md](./tasks.md). [evidence.md](./evidence.md), EV-06 a EV-11, conserva las comprobaciones por partes y el recorrido backend local con Gateway, Gestión y Operación reales, tablas Flyway y Seguridad temporal explícita. La aceptación completa con frontend y el despliegue con G7 siguen pendientes.
 
 - [ ] Los criterios CA-01 a CA-11 y los criterios de UI tienen evidencia real.
 - [ ] El contrato y las fuentes de datos necesarios están definidos y verificados.
