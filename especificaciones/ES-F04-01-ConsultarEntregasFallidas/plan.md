@@ -63,6 +63,8 @@ El 16/10/2026 Gerardo prioriza backend y mantiene frontend pendiente cuando depe
 
 La revisión del esquema encuentra únicamente V1 de F-01. La base de despachos/intentos y sus escritores deben coordinarse con F-02/F-03 y Arquitectura antes de añadir migraciones; este incremento no crea tablas paralelas ni implementa el servicio proveedor de otros integrantes. No cambia contratos ni requisitos de la consulta.
 
+Segundo avance de T-06 del 16/10/2026: backend `df4590a` incorpora `LectorIncidenciasLocales`, `IncidenciaListadoLocal` e `IncidenciasLocalesJdbc`. El lector usa una sola sentencia parametrizada sobre las tablas canónicas de Gestión y lee la política de intentos en esa misma instantánea; conserva toda la base sin aplicar recepción ni paginación. Los límites de día se convierten desde `America/Lima` a instantes; motivo inactivo no se excluye. Se verifica con PostgreSQL 17 y un esquema mínimo únicamente en `src/test/resources/incidencias/`, no como migración de producción. La referencia vigente debe pertenecer al mismo despacho y a un resultado fallido; las incoherencias encontradas o una política inválida fallan explícitamente. Las migraciones/escritores compartidos, el caso de uso y el endpoint siguen pendientes. EV-07 conserva resultados y límites [cite: 1, 2].
+
 | Incremento | Resultado verificable | Dependencias | Criterios |
 |---|---|---|---|
 | I-01 | Componentes requeridos disponibles y página aislada con fixtures identificados. | Base frontend y CR de §3; no necesita una API real. | CUI-01 a CUI-06, solo presentación/interacción. |

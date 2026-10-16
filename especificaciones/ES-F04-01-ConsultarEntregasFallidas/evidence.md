@@ -1,6 +1,6 @@
 # Evidencia de ES-F04-01: Consultar entregas fallidas
 
-**Estado:** Implementación backend parcial en T-06; consumidor verificado con HTTP simulado. Verificación funcional pendiente.
+**Estado:** Implementación backend parcial en T-06; consumidor HTTP simulado y lector local con esquema PostgreSQL de prueba verificados. Verificación funcional pendiente.
 
 **Responsable de verificación:** Gerardo.
 
@@ -11,9 +11,9 @@
 - Documentación preparada: [spec.md](./spec.md), [ui.md](./ui.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), incorporados en la misma revisión de esta carpeta.
 - Origen de la especificación y fuentes generales: revisión `8586a78` del repositorio de especificaciones.
 - Base de código consultada: backend `af13989` y frontend `d2bc27d`; no constituyen una implementación de ES-F04-01.
-- Implementación parcial: backend `49d40ff1507e05e909d859c2792ff5eed8203293`, rama `feature/f04-consultar-entregas-fallidas` desde `origin/develop` `bad76eb`, activa en el checkout habitual `G2-Despacho-Backend`. Specs: `docs/f04-evidencia-consulta-fallidas`, desde `main`.
+- Implementación parcial: backend `49d40ff` (consumidor) y `df4590ae2ef9676f99ac69457ed567086080d344` (lector local), rama `feature/f04-consultar-entregas-fallidas` desde `origin/develop` `bad76eb`, activa en el checkout habitual `G2-Despacho-Backend`. Specs: `docs/f04-evidencia-consulta-fallidas`, desde `main`.
 - Dependencias de EV-06: HTTP simulado con `MockRestServiceServer`; sin PostgreSQL ni Operación real. Windows, Java Temurin 21.0.12.1, Maven 3.9.11 y Spring Boot 4.1.1 del proyecto.
-- Alcance verificado: preparación documental y consumidor por lotes de T-06. Ningún criterio de aceptación completo del listado o de UI se declara aprobado.
+- Alcance verificado: preparación documental, consumidor por lotes y lectura local JDBC de T-06. EV-07 usa PostgreSQL real con esquema exclusivamente de pruebas. Ningún criterio de aceptación completo del endpoint o de UI se declara aprobado.
 - Revisión del 15/10/2026: seis decisiones de comportamiento confirmadas por Gerardo; contrato y modelo en `4bad49d`, reglas de consulta en `1f556c0`. Implementación de fuentes, endpoints y componentes pendiente.
 
 ## 2. Cobertura de criterios
@@ -40,7 +40,7 @@
 
 Resultados permitidos: `Pendiente`, `Aprobado`, `Fallido`, `No ejecutado`. Una comprobación con fixtures o dobles debe identificar su límite y no acredita integración real [cite: 1, 2].
 
-EV-06 aporta comprobaciones del consumidor para CA-05/10 y T-06. Los resultados de aceptación anteriores conservan `No ejecutado`: todavía no existe el listado backend ni su conexión frontend.
+EV-06 aporta comprobaciones del consumidor para CA-05/10 y T-06; EV-07 del lector para CA-01/02/06/09. Los resultados de aceptación anteriores conservan `No ejecutado`: todavía no existe el endpoint del listado ni su conexión frontend. Las pruebas de cada parte no cierran el recorrido funcional completo.
 
 ## 3. Registros de verificación previstos
 
@@ -114,6 +114,31 @@ Corrección de ubicación del 16/10/2026: las pruebas anteriores se ejecutaron i
 
 Límites: no se acredita llamada a Operación real, PostgreSQL, cálculo de indicadores, autorización de un endpoint de F-04 ni pantalla. El adaptador aún no está registrado como bean: falta suministrar URL interna, tiempos de espera acotados y proveedor de credencial vigente al ensamblarlo. La lectura local y `ultima_incidencia_id` requieren la base compartida de F-02/F-03 y Arquitectura. La decisión de `200` degradado o `503` por solo atrasados corresponde al caso de uso pendiente de T-07. T-06 permanece `En curso`.
 
+### EV-07. Lectura local de la incidencia vigente con PostgreSQL
+
+- Fecha: 16/10/2026, America/Lima. Código backend `df4590a`, sobre el incremento `49d40ff`. Implementación y verificación por Codex; revisión humana pendiente.
+- Alcance: parte local de T-06, siguiendo modelo §§3.3/3.4 y contrato Gestión §5.1 [cite: 1, 2]. Puerto `LectorIncidenciasLocales`, proyección `IncidenciaListadoLocal`, adaptador `IncidenciasLocalesJdbc` en `incidencias/`.
+- Preparación: Docker Desktop iniciado para las pruebas; Docker 29.4.0, Testcontainers 2.0.5, imagen `postgres:17`, Java 21.0.12.1 y Maven 3.9.11. Base temporal sin conexión a los datos del proyecto; esquema mínimo de prueba en `src/test/resources/incidencias/esquema-lectura-fallidos.sql`.
+- La selección utiliza una sentencia sobre tablas locales: despacho `FALLIDO`, registro apuntado por `ultima_incidencia_id` del mismo despacho con resultado fallido, catálogo y máximo configurado. No consulta tablas de Operación ni escribe estados, recepciones o eventos. No pagina la base antes de que el caso de uso calcule indicadores.
+- Comandos desde `G2-Despacho-Backend/servicio-gestion-despachos`, con `$mavenF04` definido en EV-06:
+
+```powershell
+& $mavenF04 -B -ntp '-Dtest=IncidenciasLocalesJdbcTests' test
+& $mavenF04 -B -ntp -o '-Dtest=ServicioGestionDespachosApplicationTests,FlujoF01Tests' test
+```
+
+- Resultado observado: compilación de 75 fuentes y 9 fuentes de prueba; **4 pruebas nuevas aprobadas**, sin fallos, errores ni omitidas. Regresión: **5 pruebas existentes aprobadas**, cuatro de F-01 y una de arranque, con el lector registrado en Spring. Ambas ejecuciones terminan con `BUILD SUCCESS`; no se añaden pruebas unitarias adicionales.
+- Reportes conservados: [lector PostgreSQL](./evidencia/EV-07-lectura-local-postgresql.txt), [regresión F-01](./evidencia/EV-07-regresion-f01.txt) y [arranque](./evidencia/EV-07-arranque-servicio.txt). La regresión conserva la configuración existente `postgres:latest`, que resolvió PostgreSQL 18.6; no modifica esa configuración.
+
+| Prueba prioritaria | Resultado observado |
+|---|---|
+| Dos incidencias del mismo despacho, última `NO_INTENTADO`, una recepción/evidencia histórica y otros seis estados. | Una sola fila vigente por despacho fallido, sin heredar recepción/evidencia; conserva contador acumulado, versión y referencias de la incidencia. Incluye el motivo histórico inactivo y la anulación. |
+| Instantes a ambos lados de medianoche de Lima; rango abierto/cerrado y motivo histórico. | Incluye desde las 05:00 UTC del día y excluye las 05:00 del siguiente, con límites independientes; sin rango no aplica fecha implícita. Rango invertido se rechaza en el lector; validación HTTP aún pendiente. |
+| Referencia vigente ausente, de otro despacho o con resultado entregado. | La lectura sin filtros detecta las inconsistencias, sin presentarlas como un listado vacío ni seleccionar otra incidencia por fecha o contador. |
+| Política ausente, no numérica, cero o valor válido distinto del inicial. | No inventa un máximo ante configuración inválida; lee el valor vigente cuando es válido. |
+
+Límites: el esquema de prueba no sustituye ni verifica las migraciones de despachos/intentos de F-02/F-03; no se agregan migraciones de producción. No prueba la transacción que escribe `ultima_incidencia_id`, PostgreSQL del proyecto, Operación real, totales, paginación, validación HTTP ni permisos del endpoint. Falta coordinar las migraciones compartidas y ejecutar el lector sobre ellas. T-06 sigue `En curso`; T-07 conserva su estado pendiente.
+
 ## 4. Uso de IA
 
 | Trabajo | Herramienta y fecha | Entradas | Instrucción y revisión |
@@ -121,8 +146,9 @@ Límites: no se acredita llamada a Operación real, PostgreSQL, cálculo de indi
 | Preparación documental de la carpeta SDD | Codex, 15/10/2026 | Especificación previa, plantillas aprobadas en `8586a78`, F-04, contrato, modelo, diseño y componentes; bases de código de §1. | Solicitud de Gerardo: alinear reglas y después preparar únicamente la primera especificación, conservando el contenido existente y completando los documentos. Revisión humana de los nuevos documentos: pendiente. |
 | Revisión de reglas de ES-F04-01 | Codex, 15/10/2026 | Seis recomendaciones confirmadas por Gerardo, carpeta SDD, contrato, modelo y diseños relacionados. | Aplicar los acuerdos y alinear documentos; guardar el trabajo en rama y commits separados según CONTRIBUTING. Revisión de comportamiento por Gerardo: confirmada en la conversación. Verificación contra implementación: pendiente. |
 | Consumidor backend por lotes de T-06 | Codex, 16/10/2026 | Carpeta SDD, contratos Gestión §5.1 y Operación §5.4, modelo y backend `bad76eb`. | Gerardo autoriza backend por partes, pruebas prioritarias, ramas desde `develop` y Specs desde `main`, sin desarrollar componentes React de compañeros. Solo consumidor, seis pruebas y seguimiento parcial. Revisión humana pendiente. |
+| Lectura local JDBC de T-06 | Codex, 16/10/2026 | Mismos documentos y backend `49d40ff`; esquema canónico de Gestión. | Gerardo pide el siguiente incremento dentro del repositorio backend y su rama. Se implementa el lector con cuatro pruebas PostgreSQL y se ejecutan cinco pruebas existentes; migraciones de otros integrantes y endpoint permanecen pendientes. Revisión humana pendiente. |
 
-Este registro describe asistencia documental, cierre documental de T-05 y avance técnico de T-06 acreditado por EV-06. No acredita el cierre de T-06 ni pruebas de aceptación del listado o integración real.
+Este registro describe asistencia documental, cierre documental de T-05 y avances técnicos de T-06 acreditados por EV-06/07. No acredita el cierre de T-06 ni pruebas de aceptación del endpoint del listado o integración real.
 
 ## 5. Diferencias y pendientes
 
@@ -131,12 +157,12 @@ Este registro describe asistencia documental, cierre documental de T-05 y avance
 | DT-01: contrato definido en Gestión §4, Gestión §5.1; implementación pendiente. | CA-01 a CA-11 y CUI-02. | Implementar y comprobar consumidores conforme a T-07/08; T-05 solo acredita documentación. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
 | DT-02: consumidor por lotes verificado con HTTP simulado en EV-06; proveedor real y ensamblaje pendientes. | CA-01/05/06/08/10 y CUI-01/05. | Coordinar proveedor y credenciales; conectar jornadas/nombres a la consulta y comprobar integración en T-06/07. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 | DT-03/04: bases de ejecución y componentes aún por verificar/implementar. | Todos. | Coordinar preparación y componentes, ejecutar tareas y registrar resultados. |
-| Persistencia de despachos/incidencias ausente en `bad76eb`. | CA-01/02/05/06/08/09/10. | Coordinar migraciones y escritores con F-02/F-03 y Arquitectura, sin crear tablas paralelas. |
+| Migraciones de despachos/incidencias ausentes en `bad76eb`; lector preparado con esquema de prueba en EV-07. | CA-01/02/05/06/08/09/10. | Coordinar migraciones/escritores con F-02/F-03 y Arquitectura, y verificar el lector sobre la base compartida real. |
 
 ## 6. Entrega y revisión
 
-- Entrega actual: consumidor backend de T-06 y seis pruebas, EV-06. Listado funcional pendiente.
-- Commit backend: `49d40ff`; PR e integración en `develop` pendientes. Documentación en rama desde `main`; sin publicación remota en este incremento.
+- Entrega actual: consumidor backend (EV-06) y lector local JDBC (EV-07), con sus pruebas. Endpoint del listado pendiente.
+- Commits backend: `49d40ff` y `df4590a`; PR e integración en `develop` pendientes. Documentación en rama desde `main`; sin publicación remota en estos incrementos.
 - Reglas de consulta: confirmadas por Gerardo el 15/10/2026. Revisión técnica y funcional de la implementación: pendientes.
 - Estado del alcance funcional: Pendiente.
 - Integración real y destinos de otras especificaciones: pendientes según el plan.
