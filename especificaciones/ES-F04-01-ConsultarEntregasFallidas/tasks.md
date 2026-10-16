@@ -2,11 +2,13 @@
 
 **Responsable de coordinación:** Gerardo.
 
-**Estado:** Pendiente de implementación.
+**Estado:** Implementación backend iniciada; T-06 en curso.
 
 **Plan de origen:** [plan.md](./plan.md), misma revisión documental que esta carpeta.
 
 La revisión del 15/10/2026 concreta el contrato y actualiza las tareas de implementación. Solo T-05 se completa documentalmente; los componentes, endpoints y criterios funcionales siguen pendientes. Los responsables compartidos son los de [componentes React](../../disenio/componentes-react.md), §4.5; esta lista no crea issues ni acredita implementación.
+
+El 16/10/2026 se inicia backend por indicación de Gerardo, mientras se preparan los componentes de otros integrantes. El primer avance de T-06 implementa y prueba únicamente el consumidor de Operación; no completa persistencia, proveedor, ensamblaje de ejecución ni endpoint. Ver EV-06 de [evidence.md](./evidence.md).
 
 ## 1. Orden y dependencias
 
@@ -17,7 +19,7 @@ La revisión del 15/10/2026 concreta el contrato y actualiza las tareas de imple
 | T-03 | Resto de componentes del listado disponibles y verificados. | Componentes compartidos | T-01 y dependencias de cada CR; CR-07 depende de T-02. | CUI-01/02/05/06. | Pendiente |
 | T-04 | Página de consulta verificable con fixtures de presentación. | Frontend, I-01 | T-02 y T-03. | CUI-01 a CUI-06, sin acreditar backend real. | Pendiente |
 | T-05 | Contrato documentado y comprobado, sin acreditar implementación. | Contrato | DT-01/02 definidos en API Gestión §4, Gestión §5.1, Operación §5.4. | CA-01 a CA-11; soporte de CUI-02/05. | Completada. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo), [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias). |
-| T-06 | Persistencia y lectura operativa por lotes implementadas. | Datos e integración | T-05 y bases de DT-03. | CA-01/02/05/06/08/10. | Pendiente |
+| T-06 | Persistencia y lectura operativa por lotes implementadas. | Datos e integración | T-05 y bases de DT-03. | CA-01/02/05/06/08/10. | En curso; consumidor verificado con HTTP simulado en EV-06. |
 | T-07 | Endpoint de consulta autorizado y probado. | Backend, I-02 | T-05, T-06 y base JWT/errores/rutas de DT-03. | CA-01 a CA-11. | Pendiente |
 | T-08 | Página conectada a la consulta real. | Integración, I-03 | T-04, T-07 y Gateway accesible. | CA-01 a CA-11; CUI-01 a CUI-06. | Pendiente |
 | T-09 | Cobertura, evidencia y revisión del alcance completadas. | Calidad | T-08 y dependencias reales disponibles. | Todos los criterios del alcance. | Pendiente |
@@ -77,10 +79,19 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 
 - [ ] Implementada y verificada.
 
+Avance parcial del 16/10/2026, backend `49d40ff`:
+
+- [x] Revisar el esquema de `origin/develop` (`bad76eb`): existe V1 de F-01, aún no hay tablas de despachos/incidencias ni proveedor de Operación §5.4.
+- [x] Implementar puerto y consumidor HTTP de Operación §5.4 con deduplicación, lotes de hasta 100 por arreglo y credencial técnica suministrada por el ensamblaje.
+- [x] Verificar el consumidor con seis pruebas prioritarias: sin llamadas vacías/anónimas, lotes, respuesta válida, omisiones/incoherencias, fallos de comunicación y aislamiento entre lotes. Evidencia EV-06.
+- [ ] Coordinar con F-02/F-03 y Arquitectura la base de despachos, motivos, incidencias y `ultima_incidencia_id`; después implementar y verificar su lectura consistente con PostgreSQL.
+- [ ] Ensamblar el cliente con URL interna, tiempos de espera acotados y proveedor de credenciales vigentes; comprobar el proveedor real de Operación con sus responsables.
+- [ ] Conectar la lectura operativa al caso de uso: jornadas de toda la base pendiente antes de paginar y nombres para la página. Verificar indicadores y el error de solo atrasados en T-07.
+
 - Alcance: revisar esquema/migraciones y crear la referencia `ultima_incidencia_id`; implementar la lectura por lotes de Operación (Operación §5.4) y su adaptador en Gestión, con jornadas históricas y nombres de repartidor, conforme a DT-02/03. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 - Responsable: Gerardo con Arquitectura y responsables de Operación; coordinar la base compartida con DevOps.
 - Comprobación: varios estados y varias incidencias por despacho; jornadas activas/cerradas/desconocidas y nombres ausentes; lotes de más de 100 jornadas divididos sin llamadas por fila, totales antes de paginar y ninguna consulta cruzada de bases. Comprobar migraciones en una base aislada.
-- Cierre y evidencia: registrar revisiones y decisiones de integración, disponibilidad de las dependencias y cualquier doble de prueba utilizado.
+- Cierre y evidencia: registrar revisiones y decisiones de integración, disponibilidad de las dependencias y cualquier doble de prueba utilizado. EV-06 acredita solo el consumidor; T-06 conserva su casilla general pendiente.
 
 ### T-07. Implementar y probar la consulta backend
 

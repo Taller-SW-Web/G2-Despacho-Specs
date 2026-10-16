@@ -59,6 +59,10 @@ Los nombres de clases y subpaquetes son decisiones técnicas propuestas. No se c
 
 ## 5. Orden de implementación
 
+El 16/10/2026 Gerardo prioriza backend y mantiene frontend pendiente cuando dependa de componentes de otros integrantes. Se inicia una parte independiente de I-02/T-06: puerto `LectorDatosOperativos`, modelo de lectura y adaptador `OperacionIncidenciasHttp`, bajo `incidencias/` de Gestión. Base `origin/develop` `bad76eb`; implementación `49d40ff`. El adaptador se verifica con HTTP simulado en EV-06; no se registra todavía como bean de producción ni incorpora credenciales o configuración de red supuestas. Su ensamblaje, persistencia y proveedor real siguen pendientes [cite: 1, 2].
+
+La revisión del esquema encuentra únicamente V1 de F-01. La base de despachos/intentos y sus escritores deben coordinarse con F-02/F-03 y Arquitectura antes de añadir migraciones; este incremento no crea tablas paralelas ni implementa el servicio proveedor de otros integrantes. No cambia contratos ni requisitos de la consulta.
+
 | Incremento | Resultado verificable | Dependencias | Criterios |
 |---|---|---|---|
 | I-01 | Componentes requeridos disponibles y página aislada con fixtures identificados. | Base frontend y CR de §3; no necesita una API real. | CUI-01 a CUI-06, solo presentación/interacción. |
@@ -91,7 +95,7 @@ Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; de
 | ID | Punto por resolver | Fuente y responsable de coordinación | Bloquea |
 |---|---|---|---|
 | DT-01 | Definido documentalmente: filtros, límites, respuesta, catálogo, orden y métricas de Gestión §§4 y 5.1. Pendiente implementar y probar consumidores. | Gerardo con Backend/Frontend y Arquitectura; T-05 registra la comprobación documental. | T-07/08 verifican el contrato real; no se inventan DTO alternativos. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
-| DT-02 | Definido documentalmente: lectura por lotes Operación §5.4, referencia de incidencia vigente y degradación de Gestión §5.1. Pendiente implementar proveedor/adaptador. | Gerardo con Operación y Arquitectura; modelo de datos y T-06. | CA-01/05/06/08/10 e integración real de I-02/03. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
+| DT-02 | Consumidor por lotes implementado y verificado con HTTP simulado en EV-06. Pendientes proveedor real, ensamblaje y conexión con referencia de incidencia vigente y degradación del listado. | Gerardo con Operación y Arquitectura; modelo de datos y T-06. | CA-01/05/06/08/10 e integración real de I-02/03. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 | DT-03 | Esquema/migraciones necesarios y base compartida de JWT, errores, conexión de datos y rutas del Gateway. | Inicialización actual del backend y modelo. Gerardo coordina con Arquitectura y DevOps. | Ejecución real de I-02/03. |
 | DT-04 | Disponibilidad y verificación de componentes, tema y herramientas de pruebas. | Componentes React §§4.5–4.6. Gerardo para CR-08; coordinación con los responsables del resto. | Composición y aceptación de I-01 según sus dependencias. |
 

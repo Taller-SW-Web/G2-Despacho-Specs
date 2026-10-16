@@ -1,7 +1,7 @@
 # Especificación F-04: Entregas Fallidas y Reprogramaciones
 
 **Responsable:** Gerardo
-**Estado:** En especificación
+**Estado:** Implementación parcial iniciada en ES-F04-01; verificación funcional pendiente.
 **Actor principal:** Gestor de Despacho
 **Lineamiento del curso:** Gestión de entregas fallidas/reprogramaciones
 
