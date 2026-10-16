@@ -56,7 +56,7 @@ stateDiagram-v2
 | `FALLIDO` | `PENDIENTE_ASIGNACION` | F-04 | Incidencia/versión vigentes; recepción de esa incidencia confirmada; pedido no anulado; contador menor al máximo vigente; fecha civil posterior a hoy en `America/Lima`. | Conserva contador e incidencia histórica, fija fecha/entrada a cola, retira asignación vigente y registra historial/resultado/evento cuando corresponde. Visible inmediatamente en F-02; asignar espera fecha y liberación de reserva anterior. |
 | `FALLIDO` | `DEVUELTO_A_ORIGEN` | F-04 | Recepción en centro confirmada y motivo de cierre informado. Es obligatorio si el pedido fue anulado o se alcanzó el máximo de intentos. | Cierra el despacho y comunica el resultado a Ventas. |
 
-Toda transición aceptada utiliza control de versión, registra historial y genera el evento correspondiente si el despacho no es simulado. Una repetición idempotente devuelve el resultado original sin duplicar efectos. Reprogramación y su contrato canónico: [ES-F04-04](../especificaciones/ES-F04-04-ReprogramarDespachoFallido.md), [Gestión §5.2.2](../integraciones/api-contract-gestion-despachos.md#522-reprogramar-un-despacho-fallido--es-f04-04).
+Toda transición aceptada utiliza control de versión, registra historial y genera el evento correspondiente si el despacho no es simulado. Una repetición idempotente devuelve el resultado original sin duplicar efectos. Reprogramación y su contrato canónico: [ES-F04-04](../especificaciones/ES-F04-04-ReprogramarDespachoFallido/spec.md), [Gestión §5.2.2](../integraciones/api-contract-gestion-despachos.md#522-reprogramar-un-despacho-fallido--es-f04-04).
 
 ## 4. Operaciones que no cambian el estado
 

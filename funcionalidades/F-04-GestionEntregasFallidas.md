@@ -105,7 +105,7 @@ El sistema DEBE mostrar la información necesaria para decidir y conservar su co
 
 ### RF-03. Reprogramar un despacho
 
-El sistema DEBE permitir fijar una nueva fecha mientras no se haya alcanzado el máximo de intentos. [ES-F04-04](../especificaciones/ES-F04-04-ReprogramarDespachoFallido.md) concreta recepción por incidencia, fecha civil futura en `America/Lima`, observación opcional, conflictos, idempotencia y retorno inmediato a F-02; [Gestión §5.2.2](../integraciones/api-contract-gestion-despachos.md#522-reprogramar-un-despacho-fallido--es-f04-04) es la definición canónica de la operación.
+El sistema DEBE permitir fijar una nueva fecha mientras no se haya alcanzado el máximo de intentos. [ES-F04-04](../especificaciones/ES-F04-04-ReprogramarDespachoFallido/spec.md) concreta recepción por incidencia, fecha civil futura en `America/Lima`, observación opcional, conflictos, idempotencia y retorno inmediato a F-02; [Gestión §5.2.2](../integraciones/api-contract-gestion-despachos.md#522-reprogramar-un-despacho-fallido--es-f04-04) es la definición canónica de la operación.
 
 #### CA-06. Reprogramación válida
 
@@ -133,7 +133,7 @@ El sistema DEBE permitir fijar una nueva fecha mientras no se haya alcanzado el 
 
 ### RF-04. Cerrar el despacho como devuelto a origen
 
-El sistema DEBE permitir cerrar un despacho fallido cuyo paquete permanecerá en el centro de despacho y comunicar el resultado a Ventas y Postventa. [ES-F04-05](../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen.md) concreta el cierre individual con motivo en texto libre, recepción por incidencia, concurrencia y recuperación; [Gestión §5.2.3](../integraciones/api-contract-gestion-despachos.md#523-cerrar-como-devuelto-a-origen--es-f04-05) define la operación. El caso habitual es límite alcanzado o pedido anulado; se conserva la decisión operativa explícita aunque queden intentos, sin cierre automático.
+El sistema DEBE permitir cerrar un despacho fallido cuyo paquete permanecerá en el centro de despacho y comunicar el resultado a Ventas y Postventa. [ES-F04-05](../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen/spec.md) concreta el cierre individual con motivo en texto libre, recepción por incidencia, concurrencia y recuperación; [Gestión §5.2.3](../integraciones/api-contract-gestion-despachos.md#523-cerrar-como-devuelto-a-origen--es-f04-05) define la operación. El caso habitual es límite alcanzado o pedido anulado; se conserva la decisión operativa explícita aunque queden intentos, sin cierre automático.
 
 #### CA-10. Cierre exitoso
 
@@ -155,7 +155,7 @@ El sistema DEBE permitir cerrar un despacho fallido cuyo paquete permanecerá en
 
 ### RF-05. Mantener trazabilidad
 
-El sistema DEBE conservar el historial de recepciones y decisiones. [ES-F04-06](../especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones.md) concreta las garantías de esos mismos registros de ES-F04-03/04/05 en el historial único de RT-02: captura en la transacción de origen, datos por incidencia, inmutabilidad y ausencia de duplicados; no agrega otra auditoría, tabla o pantalla.
+El sistema DEBE conservar el historial de recepciones y decisiones. [ES-F04-06](../especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones/spec.md) concreta las garantías de esos mismos registros de ES-F04-03/04/05 en el historial único de RT-02: captura en la transacción de origen, datos por incidencia, inmutabilidad y ausencia de duplicados; no agrega otra auditoría, tabla o pantalla.
 
 #### CA-13. Registro de auditoría
 

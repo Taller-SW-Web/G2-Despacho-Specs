@@ -25,7 +25,7 @@
 ## 2. Descripción y Contexto Técnico
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-03`, `RF-06` y precondición de `RF-07`; `CA-06` a `CA-09`, `CA-14`, `CA-15` y `CA-17` [cite: 1].
-- **Especificación atómica:** [ES-F04-04](../../especificaciones/ES-F04-04-ReprogramarDespachoFallido.md).
+- **Especificación atómica:** [ES-F04-04](../../especificaciones/ES-F04-04-ReprogramarDespachoFallido/spec.md).
 - **Contrato asociado:** [Gestión §5.2.2](../../integraciones/api-contract-gestion-despachos.md#522-reprogramar-un-despacho-fallido--es-f04-04), definición canónica de la reprogramación, y [Común §7.3](../../integraciones/api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa), evento a Ventas [cite: 2]. La atómica conserva los criterios detallados; esta historia no define otro contrato.
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada.
 - **Componentes de Frontend:**

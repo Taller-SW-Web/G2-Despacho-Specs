@@ -164,5 +164,5 @@ La recepción conserva `FALLIDO` y habilita las decisiones de F-04 según intent
 - [cite: 1] [F-04](../../funcionalidades/F-04-GestionEntregasFallidas.md), RF-07; [ES-F04-01](../ES-F04-01-ConsultarEntregasFallidas/spec.md) y [ES-F04-02](../ES-F04-02-ConsultarDetalleIncidencia/spec.md).
 - [cite: 2] [Gestión](../../integraciones/api-contract-gestion-despachos.md), §5.2.1; [Operación](../../integraciones/api-contract-operacion-reparto.md), §5.2; [convenciones comunes](../../integraciones/api-contract.md), §§3/9.
 - [cite: 3] [Modelo de datos](../../arquitectura/modelo-datos.md), §3.4; [F-06](../../funcionalidades/F-06-DisponibilidadCapacidadDiaria.md), §4.5/CA-15; [diseño](../../disenio/funcionalidades/f-04.md), Pantalla 3; [sistema de diseño](../../disenio/SYSTEM-DESIGN.md), P3.
-- [cite: 4] [Visión general](../../overview.md), RT-02; [trazabilidad F-04](../ES-F04-06-RegistrarTrazabilidadOperaciones.md).
+- [cite: 4] [Visión general](../../overview.md), RT-02; [trazabilidad F-04](../ES-F04-06-RegistrarTrazabilidadOperaciones/spec.md).
 - Documentos SDD: [UI](./ui.md), [plan](./plan.md), [tareas](./tasks.md) y [evidencia](./evidence.md).

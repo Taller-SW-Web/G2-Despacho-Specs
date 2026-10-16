@@ -1,55 +1,64 @@
 # ES-F04-06: Registrar la trazabilidad de las operaciones
 
-**Funcionalidad padre:** [F-04 — Entregas fallidas y reprogramaciones](../funcionalidades/F-04-GestionEntregasFallidas.md), RF-05 y CA-13.
+**Funcionalidad padre:** [F-04 — Entregas fallidas y reprogramaciones](../../funcionalidades/F-04-GestionEntregasFallidas.md), RF-05 y CA-13.
 
 **Responsable:** Gerardo.
 
-**Estado:** Revisión funcional completada; implementación y verificación pendientes.
+**Estado:** Preparación SDD completada; implementación y verificación pendientes.
 
 **Actor principal:** Gestor de Despacho, mediante la operación de negocio que confirma. **Servicio propietario:** Gestión de Despachos.
 
-**UI:** No crea ni modifica una interfaz propia; el historial se consulta mediante el detalle de ES-F04-02. La migración SDD y sus documentos complementarios se preparan después de esta revisión; al preparar el plan se mantiene esta justificación de ausencia de UI propia [cite: 4].
+**UI:** No aplica una interfaz nueva ni un cambio visual propio. La captura es interna y el historial ya se presenta en ES-F04-02; la ausencia de `ui.md` se justifica también en [plan.md](./plan.md).
 
-## 1. Contexto
+Documentos SDD: [plan](./plan.md), [tareas](./tasks.md), [evidencia](./evidence.md). Preparación del 16/10/2026 sobre la revisión funcional `c8e6e29`; conservar los criterios no acredita su implementación.
+
+## 1. Contexto y objetivo
 
 Las recepciones, reprogramaciones y cierres de F-04 ya incluyen su historial dentro de la operación de negocio. Esta especificación concreta las garantías comunes de esos mismos registros y aplica el historial único de RT-02; no registra una segunda auditoría ni ejecuta un proceso posterior al éxito de la operación [cite: 1].
 
-## 2. Propósito
-
 Permitir reconstruir qué operación se aceptó, sobre qué despacho/incidencia, quién la confirmó, cuándo y con qué resultado. La captura es automática dentro de la transacción que origina la decisión y la consulta se integra en el detalle del despacho.
 
-## 3. Alcance
+## 2. Alcance
 
 - Incluye un registro inmutable por recepción, reprogramación o cierre nuevo aceptado, sus datos históricos, vínculo con incidencia y garantías de atomicidad, idempotencia y consulta.
 - Reutiliza el componente transversal y `historial_estados_despacho`, compartidos por las funcionalidades del mismo servicio Gestión, sin duplicar registros ni tablas de auditoría.
 - ES-F04-01/02 consultan información; sus lecturas no generan decisiones ni entradas de historial.
 - Reintentos técnicos de liberación y comunicación con Ventas mantienen sus solicitudes/eventos existentes, sin crear otra operación de negocio.
-- Tipos, campos, nulabilidad, orden y datos expuestos se rigen por [Gestión §5.3](../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02); esta especificación no crea otro contrato HTTP [cite: 2].
+- Tipos, campos, nulabilidad, orden y datos expuestos se rigen por [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02); esta especificación no crea otro contrato HTTP [cite: 2].
 
-## 4. Precondiciones, dependencias y resultados
+### 2.1. Fuera de alcance
 
-### 4.1. Precondiciones
+- Crear pantalla, endpoint o tabla exclusivos para auditar F-04.
+- Editar/eliminar historiales, registrar rechazos como decisiones aceptadas o sustituir logs, métricas y trazas técnicas.
+- Cambiar precondiciones, transiciones, respuestas o eventos de ES-F04-03/04/05.
+- Definir auditoría interna de Ventas, alterar su contrato o gestionar reembolsos/stock.
+
+## 3. Actor, precondiciones y resultados
+
+### 3.1. Precondiciones
 
 - La operación de origen tiene un Gestor autenticado y autorizado con `GESTOR_DESPACHO`, e identifica despacho, incidencia y versión según Gestión §5.2.
 - Para una operación nueva, ES-F04-03/04/05 valida sus precondiciones dentro de la transacción local antes de confirmar efectos.
 - Usuario y marca temporal se obtienen del JWT y del servidor; no se aceptan como datos de autoría enviados en campos libres.
 
-### 4.2. Dependencias y resultados
+### 3.2. Dependencias y resultados
 
 - ES-F04-03/04/05 son los únicos productores de estas entradas F-04; llaman al componente común dentro de su transacción y reciben las garantías de RT-01/02.
 - ES-F04-02 presenta el historial completo del despacho, incluidas entradas de F-02/F-03/F-04 y ciclos anteriores, desde los datos históricos persistidos; la sexta no agrega una consulta paralela.
 - Resultado: una entrada original por operación nueva confirmada, vinculada al despacho/incidencia, inmutable y consultable sin volver a ejecutar la decisión.
 - Un rechazo, transacción revertida o repetición exacta no agrega un registro de negocio aceptado. Los logs técnicos de esos casos pueden existir por separado.
 
-## 5. Requisitos y criterios de aceptación
-
-### 5.1. Captura, datos y origen
+## 4. Flujo principal y alternativas
 
 1. El Gestor confirma una recepción, reprogramación o cierre mediante su caso de uso.
 2. Gestión autentica, valida formato e identidad y reconoce una repetición ya aceptada conforme a la operación de origen.
 3. Para una operación nueva válida prepara la entrada de historial, con datos del cambio y de la incidencia afectada; no deriva esos datos de una salida posterior.
 4. Persiste el cambio y el conjunto de escrituras de origen en la misma transacción local. El historial no se confirma por separado ni se añade después de responder éxito.
 5. Tras confirmar, queda disponible para el detalle autorizado. Mostrarlo o volver a consultarlo no lo modifica.
+
+## 5. Reglas, datos e integraciones
+
+### 5.1. Datos y origen
 
 Los campos comunes y sus representaciones se definen en Gestión §5.3 y el modelo [cite: 2, 3]. Para las tres operaciones humanas de F-04 se conserva `funcionalidadOrigen=F-04`, `ejecutorTipo=USUARIO`, `ejecutorId=sub` y `origen=MANUAL`. La captura automática del historial no convierte la decisión del Gestor en una decisión de origen `AUTOMATICO`.
 
@@ -86,6 +95,8 @@ El motivo de cierre se conserva en `datos.motivoCierre`; no se inserta en `motiv
 - Se proyectan únicamente los campos públicos del contrato. `datos.controlCierre`, huellas, respuestas originales almacenadas y demás metadatos internos de recuperación no se exponen como datos del historial.
 - Datos de negocio visibles y estado de comunicación/liberación son información distinta. La lectura no reenvía eventos, libera reservas ni crea entradas adicionales.
 - Autorización, errores, actualización y presentación pertenecen a ES-F04-02; no se agrega otro endpoint, permiso o pantalla de auditoría.
+
+## 6. Criterios de aceptación
 
 ### CA-01. Registro de recepción
 
@@ -159,49 +170,43 @@ El motivo de cierre se conserva en `datos.motivoCierre`; no se inserta en `motiv
 - **CUANDO** se acepta.
 - **ENTONCES** conserva la misma trazabilidad de negocio aplicable, una entrada por operación y sin eventos externos; no interpreta esa ausencia de eventos como ausencia de historial.
 
-## 6. Frontend
+## 7. UI, backend y requisitos no funcionales
+
+### 7.1. UI
 
 No crea ni modifica UI propia. El historial y sus estados de consulta ya pertenecen a ES-F04-02 y a los componentes de detalle definidos allí; esta especificación solo garantiza los registros que consumen. Su verificación de lectura utiliza ese detalle, sin otra pantalla o formulario.
 
-## 7. Backend
+### 7.2. Backend
 
 - El caso de uso de origen invoca la captura del componente RT-02 dentro de su misma transacción de Gestión; no responde éxito antes de asegurar el historial.
 - Reutiliza `historial_estados_despacho`, tipos y referencias locales del modelo. Los registros de soporte de idempotencia y las solicitudes/eventos existentes mantienen sus responsabilidades.
 - La consulta proyecta el esquema público de Gestión §5.3; no devuelve directamente el JSON interno almacenado.
 - ES-F04-06 no incorpora controlador, endpoint, tabla ni procesador independiente de auditoría.
 
-## 8. Requisitos no funcionales
+### 7.3. Requisitos no funcionales
 
 - Atomicidad local, unicidad por operación aceptada, historial inmutable e idempotencia conforme a las operaciones productoras.
 - Autoría del contexto autenticado y marcas temporales del servidor; fechas de operación conservadas aunque otra salida cambie datos del despacho.
 - Autorización de consulta y separación entre información pública y metadatos internos; sin acceso directo a tablas de otros servicios.
 - Trazabilidad consistente con RT-02 y la API de detalle, sin duplicar el registro de la operación ni los intentos técnicos de comunicación.
 
-## 9. Fuera de alcance
-
-- Crear pantalla, endpoint o tabla exclusivos para auditar F-04.
-- Editar/eliminar historiales, registrar rechazos como decisiones aceptadas o sustituir logs, métricas y trazas técnicas.
-- Cambiar precondiciones, transiciones, respuestas o eventos de ES-F04-03/04/05.
-- Definir auditoría interna de Ventas, alterar su contrato o gestionar reembolsos/stock.
-- Implementar el código o generar ahora los documentos complementarios SDD.
-
-## 10. Estrategia de verificación
+## 8. Verificación y completitud
 
 - Integración con persistencia: CA-01 a CA-05 y CA-07/08/09/12; comprobar filas, datos, autoría, unicidad y transacción. Para fallos/concurrencia usar transacciones reales y fallos controlados, no solo mocks del método de auditoría.
 - Integración de consulta/seguridad: CA-06/09/11; varios ciclos, marcas temporales iguales, consulta histórica y exclusión de metadatos internos.
 - Procesadores de liberación y eventos: CA-10; reintento, respuesta perdida, reinicio y confirmación sin otra entrada ni cambio de historial.
 - La evidencia debe distinguir componentes aislados, dobles y servicios reales. Revisar enlaces o Markdown no demuestra cumplimiento funcional.
 
-## 11. Criterio de completitud y referencias
-
-La definición funcional queda lista para preparar los documentos SDD. La implementación se considera completa cuando:
+La definición funcional y los documentos SDD están preparados. La implementación se considera completa cuando:
 
 - [ ] CA-01 a CA-12 tienen resultados reales verificables.
 - [ ] Las tres operaciones productoras y el detalle consumen el mismo historial, con transacciones y concurrencia comprobadas.
 - [ ] La evidencia demuestra inmutabilidad, privacidad de metadatos y ausencia de duplicados por procesos técnicos.
-- [ ] La migración SDD conserva el identificador y los criterios, mantiene una sola versión activa y actualiza índice/enlaces.
+- [ ] Plan y tareas ejecutados; documentación, código y evidencia revisados conservando criterios e identificadores.
 
-- [cite: 1] [F-04](../funcionalidades/F-04-GestionEntregasFallidas.md), RF-05/CA-13; [overview](../overview.md#rt-02-historial-del-despacho), RT-02/RT-CA-04.
-- [cite: 2] [Gestión](../integraciones/api-contract-gestion-despachos.md), §§5.2.1/5.2.2/5.2.3 y [§5.3](../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02); [convenciones](../integraciones/api-contract.md#9-reglas-de-idempotencia-y-concurrencia), idempotencia.
-- [cite: 3] [Modelo](../arquitectura/modelo-datos.md), historial y soporte de operaciones; [ES-F04-02](./ES-F04-02-ConsultarDetalleIncidencia/spec.md), [ES-F04-03](./ES-F04-03-ConfirmarRecepcionPaquete/spec.md), [ES-F04-04](./ES-F04-04-ReprogramarDespachoFallido.md) y [ES-F04-05](./ES-F04-05-CerrarDespachoComoDevueltoAOrigen.md).
-- [cite: 4] [Diseño F-04](../disenio/funcionalidades/f-04.md), Pantalla 2; [guía SDD](../plantillas/sdd/README.md), aplicabilidad de UI y migración progresiva.
+## 9. Referencias
+
+- [cite: 1] [F-04](../../funcionalidades/F-04-GestionEntregasFallidas.md), RF-05/CA-13; [overview](../../overview.md#rt-02-historial-del-despacho), RT-02/RT-CA-04.
+- [cite: 2] [Gestión](../../integraciones/api-contract-gestion-despachos.md), §§5.2.1/5.2.2/5.2.3 y [§5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02); [convenciones](../../integraciones/api-contract.md#9-reglas-de-idempotencia-y-concurrencia), idempotencia.
+- [cite: 3] [Modelo](../../arquitectura/modelo-datos.md), historial y soporte de operaciones; [ES-F04-02](../ES-F04-02-ConsultarDetalleIncidencia/spec.md), [ES-F04-03](../ES-F04-03-ConfirmarRecepcionPaquete/spec.md), [ES-F04-04](../ES-F04-04-ReprogramarDespachoFallido/spec.md) y [ES-F04-05](../ES-F04-05-CerrarDespachoComoDevueltoAOrigen/spec.md).
+- [cite: 4] [Diseño F-04](../../disenio/funcionalidades/f-04.md), Pantalla 2; [guía SDD](../../plantillas/sdd/README.md), aplicabilidad de UI y migración progresiva.

@@ -25,7 +25,7 @@
 ## 2. Descripción y Contexto Técnico
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-05` y `CA-13`, en relación con `RF-07` [cite: 1].
-- **Especificación atómica:** [ES-F04-06](../../especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones.md); historial transversal RT-02 del [overview](../../overview.md) [cite: 2].
+- **Especificación atómica:** [ES-F04-06](../../especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones/spec.md); historial transversal RT-02 del [overview](../../overview.md) [cite: 2].
 - **Contrato de consulta:** [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02), campos, nulabilidad, orden estable y datos expuestos; los comandos de origen se definen en §§5.2.1/5.2.2/5.2.3. La historia no crea otro contrato.
 - **Mecanismo de captura:**
   - Se ejecuta automáticamente cuando una recepción, reprogramación o cierre es aceptado; no requiere una pantalla ni un comando independiente del Gestor.

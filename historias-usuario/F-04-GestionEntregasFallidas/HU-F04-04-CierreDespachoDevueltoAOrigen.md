@@ -25,7 +25,7 @@
 ## 2. Descripción y Contexto Técnico
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-04`, restricciones de `RF-06` y `RF-07`; `CA-10`, `CA-11`, `CA-12`, `CA-15` y `CA-17` [cite: 1].
-- **Especificación atómica:** [ES-F04-05](../../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen.md).
+- **Especificación atómica:** [ES-F04-05](../../especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen/spec.md).
 - **Contrato asociado:** [Gestión §5.2.3](../../integraciones/api-contract-gestion-despachos.md#523-cerrar-como-devuelto-a-origen--es-f04-05), definición canónica del cierre; [Común §7.3](../../integraciones/api-contract.md#73-eventos-salientes-hacia-ventas-y-postventa), evento existente a Ventas [cite: 2]. Los criterios completos de identidad/versión, recuperación e integraciones están en la atómica; esta historia no mantiene otro contrato.
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada.
 - **Dependencia externa:** RT-03 entrega el evento a Ventas y Postventa de forma asíncrona mediante webhook HTTPS y bandeja de salida. El cierre local no espera la disponibilidad de Ventas; el contrato correspondiente define autenticación y reintentos.
