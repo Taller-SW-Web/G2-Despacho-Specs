@@ -1,20 +1,20 @@
 # Evidencia de ES-F04-01: Consultar entregas fallidas
 
-**Estado:** Implementación backend parcial en T-06/T-07; lectores y caso de uso con indicadores/paginación verificados por partes. Endpoint y verificación funcional pendientes.
+**Estado:** Implementación backend parcial en T-06/T-07; lectores, caso de uso, entrada HTTP y ruta Gateway verificados con dependencias de prueba. Fuentes compartidas, integración real y frontend pendientes.
 
 **Responsable de verificación:** Gerardo.
 
-**Última verificación funcional:** No ejecutada.
+**Última verificación funcional completa:** No ejecutada. Última comprobación backend: 16/10/2026, EV-09.
 
 ## 1. Versión y entorno verificados
 
 - Documentación preparada: [spec.md](./spec.md), [ui.md](./ui.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), incorporados en la misma revisión de esta carpeta.
 - Origen de la especificación y fuentes generales: revisión `8586a78` del repositorio de especificaciones.
 - Base de código consultada: backend `af13989` y frontend `d2bc27d`; no constituyen una implementación de ES-F04-01.
-- Implementación parcial: backend `49d40ff` (consumidor), `df4590a` (lector local) y `a65ed9f67900cec63bd489e8d72098877b24f94d` (caso de uso), rama `feature/f04-consultar-entregas-fallidas` desde `origin/develop` `bad76eb`, activa en el checkout habitual `G2-Despacho-Backend`. Specs: `docs/f04-evidencia-consulta-fallidas`, desde `main`.
+- Implementación parcial: backend `49d40ff` (consumidor), `df4590a` (lector local), `a65ed9f` (caso de uso) y `6ffa58cf4729470573f6c8b78c06235cb0efad15` (entrada HTTP, ensamblaje y pruebas de Gateway), rama `feature/f04-consultar-entregas-fallidas` desde `origin/develop` `bad76eb`, activa en el checkout habitual `G2-Despacho-Backend`. Specs: `docs/f04-evidencia-consulta-fallidas`, desde `main`.
 - Dependencias de EV-06: HTTP simulado con `MockRestServiceServer`; sin PostgreSQL ni Operación real. Windows, Java Temurin 21.0.12.1, Maven 3.9.11 y Spring Boot 4.1.1 del proyecto.
-- Alcance verificado: preparación documental, lectores de T-06 y lógica del caso de uso de T-07. EV-07/08 usan PostgreSQL real con esquema exclusivamente de pruebas; EV-08 comprueba la composición con puertos simulados. Ningún criterio de aceptación completo del endpoint o de UI se declara aprobado.
-- Revisión del 15/10/2026: seis decisiones de comportamiento confirmadas por Gerardo; contrato y modelo en `4bad49d`, reglas de consulta en `1f556c0`. Implementación de fuentes, endpoints y componentes pendiente.
+- Alcance verificado: preparación documental y partes backend de T-06/T-07. EV-07/09 usan PostgreSQL real con esquema exclusivamente de pruebas; EV-08 compone puertos simulados. EV-09 integra entrada HTTP, seguridad, caso de uso, JDBC y cliente HTTP; simula el decodificador JWT y el proveedor de Operación. La prueba Gateway usa un destino HTTP simulado. No se acredita el recorrido conjunto ni UI.
+- Revisión del 15/10/2026: seis decisiones de comportamiento confirmadas por Gerardo; contrato y modelo en `4bad49d`, reglas de consulta en `1f556c0`. EV-09 concreta en Gestión §5.1 los errores locales reutilizando los códigos de §5.3. Las fuentes compartidas y componentes siguen pendientes.
 
 ## 2. Cobertura de criterios
 
@@ -40,7 +40,7 @@
 
 Resultados permitidos: `Pendiente`, `Aprobado`, `Fallido`, `No ejecutado`. Una comprobación con fixtures o dobles debe identificar su límite y no acredita integración real [cite: 1, 2].
 
-EV-06 aporta comprobaciones del consumidor para CA-05/10 y T-06; EV-07 del lector para CA-01/02/06/09; EV-08 de la lógica para CA-02/03/05/07/08/09/10/11. Los resultados de aceptación anteriores conservan `No ejecutado`: todavía no existe el endpoint del listado ni su conexión frontend. Las pruebas de cada parte no cierran el recorrido funcional completo.
+EV-06 aporta comprobaciones del consumidor para CA-05/10 y T-06; EV-07 del lector para CA-01/02/06/09; EV-08 de la lógica para CA-02/03/05/07/08/09/10/11. EV-09 añade respuestas HTTP y seguridad para CA-01/03/04/05/07/08/09/10/11, más enrutamiento aislado del Gateway. Los resultados de aceptación completa anteriores conservan `No ejecutado`: falta el recorrido con fuentes compartidas y frontend. Las comprobaciones parciales aprobadas se detallan en cada registro.
 
 ## 3. Registros de verificación previstos
 
@@ -166,6 +166,42 @@ Límites: el esquema de prueba no sustituye ni verifica las migraciones de despa
 
 Límites: el caso de uso aún no está registrado como bean de ejecución ni expuesto por controlador. Los estados `400/503` son errores de negocio probados en Java, no respuestas HTTP verificadas de F-04. Siguen pendientes parámetros crudos repetidos/desconocidos o mal formados, JWT/roles antes de cualquier lectura, serialización de respuesta, ensamblaje del cliente técnico, migraciones/escritores compartidos y recorrido real por Gateway. La composición con puertos simulados no acredita la integración conjunta de JDBC y HTTP de Operación. T-06 y T-07 permanecen `En curso`.
 
+### EV-09. Listado HTTP autorizado, ensamblaje y ruta Gateway
+
+- Fecha: 16/10/2026, America/Lima. Backend `6ffa58cf4729470573f6c8b78c06235cb0efad15`, sobre `a65ed9f`. Implementación y verificación asistidas por Codex; revisión humana pendiente.
+- Alcance: avance de T-06/T-07. `ControladorEntregasFallidas`, `ParametrosConsultaFallidos` y `ConfiguracionConsultaFallidos`; prueba `ConsultaFallidosHttpTests` en Gestión y `RutaFallidosGatewayTests` en Gateway. Guía de ejecución en `docs/f04-consulta-entregas-fallidas.md` del backend.
+- Entorno: Windows, Java 21.0.12.1, Maven 3.9.11, Spring Boot 4.1.1, Docker 29.4.0 y Testcontainers 2.0.5. Gestión conserva PostgreSQL 17 para el lector y `postgres:latest` (18.6 en esta ejecución) para arranque/F-01/HTTP.
+- Preparación HTTP: perfil normal de Gestión, controlador y seguridad de Spring, caso de uso, JDBC y cliente HTTP reales; V1 de F-01 más esquema mínimo exclusivo de prueba. Base sintética de 12 fallidos: 5 recibidos y 7 pendientes, con 2 jornadas cerradas; `NO_INTENTADO` con contador acumulado uno. Decodificador JWT simulado y servidor HTTP local que representa Operación, con credencial técnica ficticia y nombres de prueba.
+- Preparación Gateway: servidor Gateway real en puerto aleatorio, decodificador JWT simulado y destino HTTP local que representa Gestión. Esta prueba acredita enrutamiento y propagación; no ejecuta el caso de uso de Gestión a través del Gateway.
+- Configuración comprobada: origen de Operación configurable, conexión de un segundo y lectura de dos segundos, sin redirecciones; Bearer técnico independiente del humano. El listado y su ensamblaje se activan fuera de `integracion-local`; el Compose temporal actual no ofrece este endpoint. La emisión/renovación y permisos del JWT técnico real no se acreditan.
+- Contrato: Gestión §5.1 explicita errores de lectura local y datos incoherentes, reutilizando códigos de §5.3 y el formato compartido; no se crean estados ni payloads alternativos.
+- Comandos desde cada aplicación, con `$mavenF04` definido en EV-06:
+
+```powershell
+# Desde G2-Despacho-Backend/servicio-gestion-despachos
+& $mavenF04 -B -ntp -o test
+
+# Desde G2-Despacho-Backend/api-gateway
+& $mavenF04 -B -ntp test
+```
+
+- Resultado observado: Gestión compila **83 fuentes y 11 fuentes de prueba**; **39 pruebas aprobadas**, de las cuales cinco HTTP nuevas. Gateway compila **7 fuentes y 7 fuentes de prueba**; **22 pruebas aprobadas**, una nueva de ruta. Total: **61 pruebas, sin fallos, errores ni omitidas**. Ambas aplicaciones terminan con `BUILD SUCCESS`. No se añaden nuevas pruebas unitarias en este incremento.
+- Reportes Surefire conservados: [cinco pruebas HTTP](./evidencia/EV-09-consulta-http.txt), [34 pruebas de regresión de Gestión](./evidencia/EV-09-regresion-gestion.txt), [ruta del Gateway](./evidencia/EV-09-ruta-gateway.txt) y [21 pruebas de regresión del Gateway](./evidencia/EV-09-regresion-gateway.txt).
+- Comprobación documental adicional: siete documentos con un único H1 fuera de bloques de código, 197 enlaces locales con destinos existentes, diez ejemplos JSON válidos en el contrato de Gestión y recuentos de los reportes 5/34/1/21 coherentes con las 61 pruebas. Verificación con PowerShell; el alias local `python.exe` no era ejecutable y no se utiliza.
+
+| Comprobación prioritaria | Resultado observado |
+|---|---|
+| Página parcial con base 7/5/2, recibidos más recientes que pendientes y `NO_INTENTADO`. | Respuesta `200`, indicadores globales 7/5/2, total 12, orden por grupo y contador uno sin consumo adicional. Se consulta Operación en dos solicitudes por lotes, con Bearer técnico. |
+| Parámetros repetidos, desconocidos, vacíos, número desbordado, fecha inexistente/formato incorrecto, motivo inexistente, enum/booleano inválidos y combinaciones incompatibles. | `400` con código y errores por campo, sin solicitudes a Operación. |
+| JWT ausente o inválido, otro rol y token de servicio con un rol humano declarado. | `401` o `403` antes de validar filtros o ejecutar el caso de uso; ninguna llamada operativa. El decodificador es un doble, no se verifica emisión real. |
+| Operación no disponible durante la consulta normal y al seleccionar solo atrasados. | Conserva filas y cifras locales; total de atrasados/nombres desconocidos se serializan como `null`, recibido con atraso `false` y pendiente desconocido con atraso `null`. Solo atrasados responde `503` sin contenido parcial. |
+| Política inválida, base vacía y tabla de despachos temporalmente no disponible. | `500` con `DESP_ERROR_DATOS_INCONSISTENTES`, `200` vacío con cero páginas y `503` con `DESP_ERROR_CONSULTA_NO_DISPONIBLE`, respectivamente. Sin SQL en la respuesta. |
+| Listado autorizado y consulta anónima por Gateway; acceso a ruta interna. | Envía ruta/parámetros/Bearer a Gestión simulada; rechaza anónimo con `401` y ruta interna con `403`. |
+
+Incidencias encontradas y resueltas: la primera ejecución de Gestión detectó que la traducción de excepciones de `@Repository` convertía `IllegalStateException` en error de acceso a datos, produciendo `503` donde correspondía `500`. Se introduce `DatosIncidenciaInconsistentesException`, se ajustan las aserciones JDBC existentes y se repite la suite completa con éxito. Gateway necesitó descargar dependencias ausentes antes de ejecutar sus pruebas. Git se verifica con `-c core.longpaths=true` por las rutas largas de Windows; `git diff --check` sin errores.
+
+Límites y siguientes pasos: integrar al final los cambios compartidos de `develop` del backend y `main` de Specs por indicación de Gerardo; no se han fusionado en este avance. Faltan migraciones/escritores de despachos/incidencias, proveedor real de Operación, suministro/renovación del JWT técnico y recorrido conjunto con Seguridad. La API compartida del catálogo de Gestión §4 sigue pendiente y su ruta actual del Gateway apunta a Operación; coordinar proveedor, autorización de repartidores y ruta sin duplicar catálogos. El SQL de pruebas no se aplica a la base del proyecto. T-06/T-07 continúan `En curso`; frontend y ES-F04-02 no iniciados.
+
 ## 4. Uso de IA
 
 | Trabajo | Herramienta y fecha | Entradas | Instrucción y revisión |
@@ -175,23 +211,24 @@ Límites: el caso de uso aún no está registrado como bean de ejecución ni exp
 | Consumidor backend por lotes de T-06 | Codex, 16/10/2026 | Carpeta SDD, contratos Gestión §5.1 y Operación §5.4, modelo y backend `bad76eb`. | Gerardo autoriza backend por partes, pruebas prioritarias, ramas desde `develop` y Specs desde `main`, sin desarrollar componentes React de compañeros. Solo consumidor, seis pruebas y seguimiento parcial. Revisión humana pendiente. |
 | Lectura local JDBC de T-06 | Codex, 16/10/2026 | Mismos documentos y backend `49d40ff`; esquema canónico de Gestión. | Gerardo pide el siguiente incremento dentro del repositorio backend y su rama. Se implementa el lector con cuatro pruebas PostgreSQL y se ejecutan cinco pruebas existentes; migraciones de otros integrantes y endpoint permanecen pendientes. Revisión humana pendiente. |
 | Caso de uso y filtros de T-07 | Codex, 16/10/2026 | Carpeta SDD, contratos y backend `df4590a`; lectores ya preparados. | Gerardo pide continuar y guardar los commits correspondientes, manteniendo avances por partes y pruebas prioritarias. Se componen los puertos, se añaden seis pruebas y se ejecuta la regresión; HTTP e integración real permanecen pendientes. Revisión humana pendiente. |
+| Entrada HTTP y ensamblaje de T-06/T-07 | Codex, 16/10/2026 | Carpeta SDD, contratos y backend `a65ed9f`; seguridad y rutas existentes. | Gerardo prioriza terminar backend de la primera especificación, pide aviso antes del frontend y acuerda integrar cambios compartidos al final. Se implementa el listado HTTP, se añaden cinco pruebas HTTP y una de Gateway y se conserva evidencia de 61 pruebas aprobadas; fuentes compartidas e integración real pendientes. Revisión humana pendiente. |
 
-Este registro describe asistencia documental, cierre documental de T-05 y avances técnicos de T-06/T-07 acreditados por EV-06/07/08. No acredita el cierre de esas tareas ni pruebas de aceptación del endpoint del listado o integración real.
+Este registro describe asistencia documental, cierre documental de T-05 y avances técnicos de T-06/T-07 acreditados por EV-06 a EV-09. Incluye pruebas del endpoint con dependencias simuladas; no acredita cierre de esas tareas ni aceptación completa con integración real.
 
 ## 5. Diferencias y pendientes
 
 | Hallazgo | Criterios afectados | Efecto y siguiente acción |
 |---|---|---|
-| DT-01: contrato definido en Gestión §4, Gestión §5.1; implementación pendiente. | CA-01 a CA-11 y CUI-02. | Implementar y comprobar consumidores conforme a T-07/08; T-05 solo acredita documentación. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
-| DT-02: consumidor por lotes verificado con HTTP simulado en EV-06; proveedor real y ensamblaje pendientes. | CA-01/05/06/08/10 y CUI-01/05. | Coordinar proveedor y credenciales; conectar jornadas/nombres a la consulta y comprobar integración en T-06/07. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
+| DT-01: listado HTTP implementado; API compartida del catálogo pendiente y ruta Gateway dirigida actualmente a Operación. | CA-02/11 y CUI-02; filtro real por motivos. | Coordinar proveedor de Gestión §4, autorización de repartidores y ruta, manteniendo un solo catálogo; comprobar su consumo en T-08. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
+| DT-02: consumidor y ensamblaje verificados con HTTP simulado en EV-06/09; proveedor y credenciales reales pendientes. | CA-01/05/06/08/10 y CUI-01/05. | Coordinar proveedor y emisión/renovación de credenciales; comprobar integración real en T-06/07. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 | DT-03/04: bases de ejecución y componentes aún por verificar/implementar. | Todos. | Coordinar preparación y componentes, ejecutar tareas y registrar resultados. |
 | Migraciones de despachos/incidencias ausentes en `bad76eb`; lector preparado con esquema de prueba en EV-07. | CA-01/02/05/06/08/09/10. | Coordinar migraciones/escritores con F-02/F-03 y Arquitectura, y verificar el lector sobre la base compartida real. |
-| Caso de uso preparado en EV-08; entrada HTTP, autorización y ensamblaje pendientes. | CA-01 a CA-11 e integración real. | Continuar T-07 con controlador, validación cruda, seguridad y adaptación de los puertos reales, sin dar por completada T-06. |
+| Entrada HTTP, autorización y ensamblaje verificados en EV-09 con dependencias de prueba. | CA-01 a CA-11 e integración real. | Verificar el recorrido conjunto con Seguridad, Gateway y servicios/migraciones reales tras la integración final; no dar por completadas T-06/T-07. |
 
 ## 6. Entrega y revisión
 
-- Entrega actual: consumidor backend (EV-06), lector local JDBC (EV-07) y caso de uso/filtros del listado (EV-08), con sus pruebas. Endpoint del listado pendiente.
-- Commits backend: `49d40ff`, `df4590a` y `a65ed9f`; PR e integración en `develop` pendientes. Documentación en rama desde `main`; sin publicación remota en estos incrementos.
+- Entrega actual: consumidor backend (EV-06), lector local JDBC (EV-07), caso de uso/filtros (EV-08), listado HTTP autorizado y ensamblaje/ruta Gateway (EV-09), con pruebas y guía de ejecución.
+- Commits backend: `49d40ff`, `df4590a`, `a65ed9f` y `6ffa58c`; PR e integración en `develop` pendientes. Documentación en rama desde `main`; sin publicación remota en estos incrementos.
 - Reglas de consulta: confirmadas por Gerardo el 15/10/2026. Revisión técnica y funcional de la implementación: pendientes.
 - Estado del alcance funcional: Pendiente.
 - Integración real y destinos de otras especificaciones: pendientes según el plan.

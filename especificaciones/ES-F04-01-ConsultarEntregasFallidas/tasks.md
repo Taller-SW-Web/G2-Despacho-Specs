@@ -14,6 +14,8 @@ El segundo avance de T-06 implementa la lectura local JDBC y la comprueba con cu
 
 El tercer avance inicia la parte independiente de T-07: caso de uso, filtros tipados, indicadores, orden y paginación, con lectores simulados y catálogo JDBC. No requiere componentes React. Las dependencias reales de T-06 y la entrada HTTP permanecen pendientes; EV-08 de [evidence.md](./evidence.md) distingue sus límites.
 
+El cuarto avance, backend `6ffa58c`, expone el listado HTTP con autorización y validación estricta, registra los adaptadores en Spring y verifica cinco pruebas HTTP y una del Gateway. EV-09 distingue PostgreSQL temporal, esquema de prueba, decodificador JWT simulado y proveedor HTTP simulado. Gerardo acuerda completar primero el código de nuestra rama y traer después los cambios compartidos de `develop` del backend y `main` de Specs; este avance no integra esas ramas ni inicia frontend.
+
 ## 1. Orden y dependencias
 
 | ID | Resultado | Área | Depende de | Criterios | Estado |
@@ -23,8 +25,8 @@ El tercer avance inicia la parte independiente de T-07: caso de uso, filtros tip
 | T-03 | Resto de componentes del listado disponibles y verificados. | Componentes compartidos | T-01 y dependencias de cada CR; CR-07 depende de T-02. | CUI-01/02/05/06. | Pendiente |
 | T-04 | Página de consulta verificable con fixtures de presentación. | Frontend, I-01 | T-02 y T-03. | CUI-01 a CUI-06, sin acreditar backend real. | Pendiente |
 | T-05 | Contrato documentado y comprobado, sin acreditar implementación. | Contrato | DT-01/02 definidos en API Gestión §4, Gestión §5.1, Operación §5.4. | CA-01 a CA-11; soporte de CUI-02/05. | Completada. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo), [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias). |
-| T-06 | Persistencia y lectura operativa por lotes implementadas. | Datos e integración | T-05 y bases de DT-03. | CA-01/02/05/06/08/10. | En curso; consumidor HTTP en EV-06 y lector local con esquema PostgreSQL de prueba en EV-07. |
-| T-07 | Endpoint de consulta autorizado y probado. | Backend, I-02 | T-05, T-06 y base JWT/errores/rutas de DT-03. | CA-01 a CA-11. | En curso; caso de uso y filtros tipados verificados en EV-08; entrada HTTP e integración pendientes. |
+| T-06 | Persistencia y lectura operativa por lotes implementadas. | Datos e integración | T-05 y bases de DT-03. | CA-01/02/05/06/08/10. | En curso; lectores y ensamblaje verificados en EV-06 a EV-09; migraciones, catálogo y proveedor reales pendientes. |
+| T-07 | Endpoint de consulta autorizado y probado. | Backend, I-02 | T-05, T-06 y base JWT/errores/rutas de DT-03. | CA-01 a CA-11. | En curso; caso de uso en EV-08 y entrada HTTP/ruta Gateway en EV-09; recorrido con dependencias reales pendiente. |
 | T-08 | Página conectada a la consulta real. | Integración, I-03 | T-04, T-07 y Gateway accesible. | CA-01 a CA-11; CUI-01 a CUI-06. | Pendiente |
 | T-09 | Cobertura, evidencia y revisión del alcance completadas. | Calidad | T-08 y dependencias reales disponibles. | Todos los criterios del alcance. | Pendiente |
 
@@ -91,14 +93,16 @@ Avance parcial del 16/10/2026, backend `49d40ff`:
 - [x] Implementar el puerto `LectorIncidenciasLocales`, la proyección `IncidenciaListadoLocal` y `IncidenciasLocalesJdbc`: una lectura de la base completa `FALLIDO`, incidencia por referencia/propiedad, motivo y límites inclusivos de fecha en Lima; backend `df4590a`.
 - [x] Verificar el lector con cuatro pruebas PostgreSQL de prioridad: incidencia vigente sin herencia de recepción/evidencia, límites de Lima y motivos históricos, referencias inconsistentes y política configurable. Evidencia EV-07, con esquema exclusivo de pruebas.
 - [ ] Coordinar con F-02/F-03 y Arquitectura las migraciones de despachos, motivos, incidencias y `ultima_incidencia_id`; verificar el lector sobre esas migraciones reales y sus escritores.
-- [ ] Ensamblar el cliente con URL interna, tiempos de espera acotados y proveedor de credenciales vigentes; comprobar el proveedor real de Operación con sus responsables.
+- [x] Ensamblar el cliente con URL interna configurable, conexión de un segundo, lectura de dos segundos y credencial técnica suministrada al proceso; verificar su uso con HTTP simulado en EV-09, backend `6ffa58c`.
+- [ ] Comprobar el proveedor real de Operación y el suministro/renovación de credenciales vigentes con sus responsables. La variable de entorno no implementa esa obtención ni acredita permisos reales.
+- [ ] Coordinar la API compartida del catálogo de Gestión §4 y su ruta: el Gateway actual aún dirige esa consulta a Operación. El lector de códigos no sustituye esa API ni su autorización de repartidores.
 - [x] Componer los puertos en el caso de uso y verificar con dobles las jornadas de toda la base pendiente, nombres por página, indicadores y error de solo atrasados. EV-08; backend `a65ed9f`.
 - [ ] Ensamblar esa composición con la persistencia compartida y Operación real, y verificar el recorrido por el Gateway en T-07/T-08.
 
 - Alcance: revisar esquema/migraciones y crear la referencia `ultima_incidencia_id`; implementar la lectura por lotes de Operación (Operación §5.4) y su adaptador en Gestión, con jornadas históricas y nombres de repartidor, conforme a DT-02/03. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias).
 - Responsable: Gerardo con Arquitectura y responsables de Operación; coordinar la base compartida con DevOps.
 - Comprobación: varios estados y varias incidencias por despacho; jornadas activas/cerradas/desconocidas y nombres ausentes; lotes de más de 100 jornadas divididos sin llamadas por fila, totales antes de paginar y ninguna consulta cruzada de bases. Comprobar migraciones en una base aislada.
-- Cierre y evidencia: registrar revisiones y decisiones de integración, disponibilidad de las dependencias y cualquier doble de prueba utilizado. EV-06 acredita el consumidor y EV-07 el lector con esquema de prueba; T-06 conserva su casilla general pendiente.
+- Cierre y evidencia: registrar revisiones y decisiones de integración, disponibilidad de las dependencias y cualquier doble de prueba utilizado. EV-06 acredita el consumidor, EV-07 el lector con esquema de prueba y EV-09 su ensamblaje conjunto con HTTP simulado; T-06 conserva su casilla general pendiente.
 
 ### T-07. Implementar y probar la consulta backend
 
@@ -109,9 +113,11 @@ Avance parcial del 16/10/2026, backend `a65ed9f`, evidencia EV-08:
 - [x] Implementar `ConsultarEntregasFallidas` y `PaginaEntregasFallidas`: indicadores anteriores a grupo/página, recibidos primero, fecha e identificador como desempate, y páginas fuera de rango sin perder totales.
 - [x] Implementar `FiltrosConsultaFallidos` y validar existencia de motivo en el catálogo canónico, incluidos inactivos. Sin modificar los contratos.
 - [x] Verificar seis pruebas prioritarias del caso de uso con puertos simulados y ampliar la comprobación PostgreSQL del catálogo; regresión existente aprobada.
-- [ ] Implementar entrada HTTP, validación estricta de parámetros crudos, rechazo de parámetros repetidos/desconocidos y autorización humana previa a cualquier lectura.
-- [ ] Registrar el caso de uso y el cliente interno en el ensamblaje de ejecución con credencial técnica vigente y tiempos de espera acotados.
-- [ ] Verificar consulta integrada, errores `400/401/403/503`, privacidad de la respuesta y ruta por Gateway con los adaptadores/migraciones acordados. Los dobles no completan este punto.
+- [x] Implementar entrada HTTP, validación estricta de parámetros crudos, rechazo de parámetros repetidos/desconocidos y autorización humana previa a cualquier lectura. Cinco pruebas HTTP prioritarias en EV-09, backend `6ffa58c`.
+- [x] Registrar el caso de uso y el cliente interno en Spring fuera de `integracion-local`, con URL y credencial técnica externas y tiempos de espera acotados. EV-09 verifica el Bearer técnico de prueba; su emisión/renovación real sigue en T-06.
+- [x] Verificar el ensamblaje HTTP/JDBC, respuestas `200/400/401/403/500/503`, privacidad, nulabilidad y degradación con PostgreSQL temporal y proveedor HTTP simulado. EV-09; el esquema exclusivo de pruebas no acredita migraciones reales.
+- [x] Comprobar la ruta existente del listado en Gateway, propagación de parámetros/Bearer, rechazo anónimo y bloqueo de rutas internas, contra un destino HTTP simulado. EV-09.
+- [ ] Verificar el recorrido conjunto con Seguridad, Gateway, Gestión, Operación y migraciones/escritores acordados. Los dobles no completan este punto.
 
 - Alcance: controlador, caso de uso, puertos y adaptadores mínimos dentro de la funcionalidad de incidencias de Gestión; ruta pública a través del Gateway.
 - Entradas: contrato cerrado, datos de T-06, base de seguridad y errores disponible; reglas y verificaciones de [spec.md](./spec.md).

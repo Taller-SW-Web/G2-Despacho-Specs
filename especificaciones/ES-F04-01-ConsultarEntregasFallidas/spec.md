@@ -4,7 +4,7 @@
 
 **Responsable:** Gerardo
 
-**Estado:** Reglas de consulta acordadas el 15/10/2026; implementación backend parcial en T-06/T-07; endpoint y verificación funcional pendientes.
+**Estado:** Reglas de consulta acordadas el 15/10/2026; listado HTTP backend implementado y verificado con dependencias de prueba en T-06/T-07. Fuentes compartidas, integración real y frontend pendientes.
 
 **Actor principal:** Gestor de Despacho
 
@@ -195,7 +195,7 @@ Las tres tarjetas respetan motivo y fechas, pero no el filtro de grupo ni la pá
 | CA-10 | Degradación y error al filtrar atrasados | Lote fallido, jornada desconocida, nombre ausente y recibido con jornada desconocida. |
 | CA-11 | Rechazo de filtros inválidos | Casos y límites de Gestión §5.1 del contrato. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 
-La descomposición está en [tasks.md](./tasks.md). Los resultados se registrarán en [evidence.md](./evidence.md); todas las comprobaciones de comportamiento están pendientes.
+La descomposición está en [tasks.md](./tasks.md). [evidence.md](./evidence.md), EV-06 a EV-09, conserva las comprobaciones parciales de lectores, caso de uso, entrada HTTP y ruta del Gateway con sus dobles identificados. La aceptación completa con fuentes compartidas y frontend sigue pendiente.
 
 - [ ] Los criterios CA-01 a CA-11 y los criterios de UI tienen evidencia real.
 - [ ] El contrato y las fuentes de datos necesarios están definidos y verificados.

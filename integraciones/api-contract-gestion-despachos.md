@@ -226,6 +226,8 @@ Gestión consulta los datos operativos mediante Operación §5.4. No interpreta 
 - Si se pidió `soloRetornosAtrasados=true` y falta confirmar alguna jornada pendiente de la base, se responde `503` con `code=DESP_ERROR_JORNADAS_NO_DISPONIBLES`; no se devuelve una página parcial ni un total inventado. Si la base no tiene pendientes, el filtro devuelve cero coincidencias sin necesitar esa dependencia.
 - `401` y `403` se aplican antes de consultar y nunca devuelven filas ni indicadores. Los filtros válidos sin coincidencias responden `200` con contenido vacío; los fallos no se presentan como un estado vacío.
 
+Si no puede ejecutarse la lectura canónica de Gestión, responde `503` con `DESP_ERROR_CONSULTA_NO_DISPONIBLE`, sin filas ni detalles de infraestructura. Un despacho fallido con referencia vigente ausente, ajena o incompatible, o una política de intentos inválida, responde `500` con `DESP_ERROR_DATOS_INCONSISTENTES`, sin resultados parciales. Se reutilizan los códigos de la consulta de incidencia de §5.3 y el formato de errores compartido; no se exponen SQL, credenciales ni mensajes internos.
+
 ### 5.2. Comandos de recepción, reprogramación y cierre
 
 Los tres comandos requieren `idIncidencia` (cadena opaca) y `versionDespacho` (entero positivo) obtenidos del detalle o listado. Tras autenticar y reconocer una repetición exacta ya aceptada, Gestión compara ambos con la incidencia vigente y la versión actual; una diferencia responde `409` con `code=DESP_ERROR_DESPACHO_DESACTUALIZADO`, sin mutación. La UI vuelve a consultar y solicita una nueva confirmación; nunca reenvía automáticamente la decisión sobre otra incidencia. Campo ausente o formato inválido responde `400` normalizado por campo.

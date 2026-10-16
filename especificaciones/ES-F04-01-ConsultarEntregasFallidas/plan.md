@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Plan documental actualizado con los acuerdos del 15/10/2026; implementación y verificación funcional pendientes.
+**Estado:** Plan actualizado con los acuerdos del 15/10/2026 y avances backend del 16/10/2026; listado HTTP verificado con dependencias de prueba. Integración real y frontend pendientes.
 
 **UI:** Aplica; página administrativa `/entregas-fallidas`.
 
@@ -17,7 +17,7 @@
 | Arquitectura y datos | [Contenedores](../../arquitectura/c4-contenedores.md), §3; [modelo de datos](../../arquitectura/modelo-datos.md), §§1, 3.3 y 3.4 | `4bad49d`; referencia a última incidencia y fuente operativa definidas. |
 | Base de código | Backend `af13989`; frontend `d2bc27d` | Inicialización de aplicaciones; sin endpoint de consulta ni página funcional de F-04. |
 
-La revisión concreta el comportamiento y el contrato correspondiente de esta consulta. La implementación de endpoints, componentes y pruebas funcionales sigue pendiente. La verificación documental no acredita criterios de comportamiento ni disponibilidad de dependencias [cite: 1, 2].
+La revisión concreta el comportamiento y el contrato correspondiente de esta consulta. Los avances de implementación se registran en §5 y en la evidencia; las dependencias compartidas y los componentes siguen pendientes. La verificación documental no acredita criterios de comportamiento ni disponibilidad de dependencias [cite: 1, 2].
 
 ## 2. Estrategia y responsabilidades
 
@@ -55,7 +55,7 @@ Los nombres de clases y subpaquetes son decisiones técnicas propuestas. No se c
 - Retorno atrasado: jornada cerrada confirmada y recepción pendiente. No inferirlo solo a partir de la fecha o del reloj del frontend.
 - Fechas: instantes UTC y días de filtro inclusivos en `America/Lima`, conforme a Gestión §5.1; se admiten límites abiertos o ausencia de rango. La consulta se basa en la jornada de la incidencia, no en la actual del repartidor. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
 - Efectos secundarios: la consulta no crea intentos, confirma recepciones, libera capacidad ni emite eventos de negocio. No requiere una clave de idempotencia de comando.
-- Errores: aplicar Común §3.5 y los códigos de filtros/dependencia de Gestión §5.1. Separar `200` sin coincidencias, `200` con información operativa desconocida y `503` al solicitar un grupo de atrasados no calculable. Referencia: [Convenciones e integración externa](../../integraciones/api-contract.md#35-errores), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
+- Errores: aplicar Común §3.5 y los códigos de Gestión §5.1. Separar `200` sin coincidencias, `200` con información operativa desconocida, `503` por lectura local no disponible o atrasados no calculables y `500` por datos canónicos incoherentes. El contrato reutiliza los códigos de §5.3 para la indisponibilidad e inconsistencia, sin exponer SQL ni detalles internos. Referencia: [Convenciones e integración externa](../../integraciones/api-contract.md#35-errores), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
 
 ## 5. Orden de implementación
 
@@ -66,6 +66,10 @@ La revisión del esquema encuentra únicamente V1 de F-01. La base de despachos/
 Segundo avance de T-06 del 16/10/2026: backend `df4590a` incorpora `LectorIncidenciasLocales`, `IncidenciaListadoLocal` e `IncidenciasLocalesJdbc`. El lector usa una sola sentencia parametrizada sobre las tablas canónicas de Gestión y lee la política de intentos en esa misma instantánea; conserva toda la base sin aplicar recepción ni paginación. Los límites de día se convierten desde `America/Lima` a instantes; motivo inactivo no se excluye. Se verifica con PostgreSQL 17 y un esquema mínimo únicamente en `src/test/resources/incidencias/`, no como migración de producción. La referencia vigente debe pertenecer al mismo despacho y a un resultado fallido; las incoherencias encontradas o una política inválida fallan explícitamente. Las migraciones/escritores compartidos, el caso de uso y el endpoint siguen pendientes. EV-07 conserva resultados y límites [cite: 1, 2].
 
 Tercer avance del 16/10/2026, backend `a65ed9f`: se inicia la parte de T-07 que puede verificarse independientemente de las fuentes reales pendientes. `ConsultarEntregasFallidas` compone los puertos locales y de Operación con un reloj inyectado. `FiltrosConsultaFallidos` representa filtros ya tipados; `CatalogoMotivosFallo`, implementado sobre el catálogo canónico por el adaptador JDBC existente, valida el código exacto sin excluir inactivos. `PaginaEntregasFallidas` conserva los campos del listado. Se calculan indicadores antes del grupo/página, se deduplican jornadas de toda la base pendiente y se piden nombres solo para la página. La lectura de jornadas pendiente no se sustituye al enriquecer esa página; una ausencia mantiene desconocido el total de atrasados y bloquea solo su selección explícita con el error acordado. EV-08 verifica seis pruebas del caso de uso con dobles y la ampliación del catálogo con PostgreSQL. Siguen pendientes controlador, parámetros HTTP crudos, permisos, ensamblaje de ejecución y fuentes/migraciones reales; el caso de uso no se registra todavía como bean de producción [cite: 1, 2].
+
+Cuarto avance del 16/10/2026, backend `6ffa58c`: `ControladorEntregasFallidas` y `ParametrosConsultaFallidos` exponen la consulta con validación estricta y seguridad previa a cualquier lectura. `ConfiguracionConsultaFallidos` registra los adaptadores y el caso de uso fuera de `integracion-local`, con origen de Operación y JWT técnico suministrados al proceso, conexión de un segundo y lectura de dos segundos, sin redirecciones. La obtención y renovación reales del JWT siguen pendientes. Una excepción específica de datos incoherentes evita que la traducción de excepciones JDBC los confunda con indisponibilidad. EV-09 comprueba cinco pruebas HTTP con PostgreSQL y Operación simulada y una prueba del Gateway con destino simulado; la regresión suma 61 pruebas aprobadas. No se añaden migraciones ni se implementan proveedores de otros integrantes [cite: 1, 2].
+
+Por indicación de Gerardo se completa primero el código de nuestra rama; la integración de los cambios de `develop` del backend y `main` de Specs se deja para el final. La revisión del catálogo detecta además que su ruta actual del Gateway apunta a Operación aunque Gestión §4 lo define como proveedor: coordinar API, autorización de repartidores y ruta antes de la demo, sin crear otro catálogo. El frontend permanece pendiente y se avisará antes de iniciarlo.
 
 | Incremento | Resultado verificable | Dependencias | Criterios |
 |---|---|---|---|
@@ -98,8 +102,8 @@ Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; de
 
 | ID | Punto por resolver | Fuente y responsable de coordinación | Bloquea |
 |---|---|---|---|
-| DT-01 | Definido documentalmente: filtros, límites, respuesta, catálogo, orden y métricas de Gestión §§4 y 5.1. Pendiente implementar y probar consumidores. | Gerardo con Backend/Frontend y Arquitectura; T-05 registra la comprobación documental. | T-07/08 verifican el contrato real; no se inventan DTO alternativos. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
-| DT-02 | Consumidor por lotes implementado y verificado con HTTP simulado en EV-06. Pendientes proveedor real, ensamblaje y conexión con referencia de incidencia vigente y degradación del listado. | Gerardo con Operación y Arquitectura; modelo de datos y T-06. | CA-01/05/06/08/10 e integración real de I-02/03. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
+| DT-01 | Listado HTTP y validación de códigos implementados; API compartida del catálogo y su ruta Gateway pendientes. El contrato de Gestión §§4 y 5.1 sigue siendo la fuente única. | Gerardo con Backend/Frontend y Arquitectura; coordinar autorización de repartidores y propietario de la ruta. | Filtros reales de T-08 y cierre de T-06/07. Referencia: [Gestión](../../integraciones/api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo). |
+| DT-02 | Consumidor, ensamblaje y degradación verificados con HTTP simulado en EV-06/09. Pendientes proveedor real y obtención/renovación de la credencial técnica. | Gerardo con Operación y Arquitectura; modelo de datos y T-06. | CA-01/05/06/08/10 e integración real de I-02/03. Referencia: [Operación](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias), [Gestión](../../integraciones/api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01). |
 | DT-03 | Esquema/migraciones necesarios y base compartida de JWT, errores, conexión de datos y rutas del Gateway. | Inicialización actual del backend y modelo. Gerardo coordina con Arquitectura y DevOps. | Ejecución real de I-02/03. |
 | DT-04 | Disponibilidad y verificación de componentes, tema y herramientas de pruebas. | Componentes React §§4.5–4.6. Gerardo para CR-08; coordinación con los responsables del resto. | Composición y aceptación de I-01 según sus dependencias. |
 
