@@ -89,7 +89,7 @@ Los mensajes y los controles se revisan contra los criterios conservados; no se 
 | CUI-05 | Completar la operación o consulta | Mostrar el resultado confirmado y actualizar la información visible | CA-01 |
 | CUI-06 | Recorrer con teclado y en pantalla reducida | Mantener foco, etiquetas y acceso a todas las acciones disponibles | CA-01; requisitos de accesibilidad §6 |
 
-- Pendiente: La fuente conserva PENDIENTE_ACTIVACION y ERROR, mientras el contrato y el modelo vigentes usan el vínculo local pendiente/vinculado. Confirmar los estados del filtro antes de cerrar CA-01/02. La exigencia de menos de 200 ms necesita una medición con entorno y carga identificados.
+- Pendiente: Alineado con Operación §4.1: registro local, asociación manual de UUID y estados `PENDIENTE`/`VINCULADO`; sin creación automática de cuentas ni rol global de repartidor. Los efectos integrados en F-03/F-06 siguen pendientes.
 - Evidencia prevista: pruebas de interacción, revisión con teclado y capturas de estados identificadas en [evidence.md](./evidence.md).
 
 ## 8. Referencias
