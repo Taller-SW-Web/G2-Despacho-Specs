@@ -58,6 +58,8 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Reglas del repositorio](./AGENTS.md) | Convenciones para crear y mantener la documentación. |
 | [Guía de contribución](./CONTRIBUTING.md) | Flujo de ramas, commits y revisión de cambios. |
 
+F-01 cuenta con sus ocho carpetas SDD preparadas. Las últimas migraciones son [cotización con productos (ES-F01-06)](./especificaciones/ES-F01-06-CotizarEnvioConProductos/spec.md), [resolución de zona (ES-F01-07)](./especificaciones/ES-F01-07-ResolverZonaParaModulo/spec.md) y [trazabilidad de configuración (ES-F01-08)](./especificaciones/ES-F01-08-RegistrarTrazabilidadConfiguracion/spec.md), cada una con especificación, plan, tareas y evidencia. La UI no aplica en esas tres; su implementación y verificación funcional están pendientes. El [índice funcional](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-01) enlaza todos sus documentos.
+
 ## 🗂️ Repositorios del módulo
 
 El módulo se divide en repositorios independientes que comparten las especificaciones de este proyecto.

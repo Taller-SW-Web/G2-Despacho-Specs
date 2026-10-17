@@ -1,31 +1,58 @@
 # ES-F01-06: Cotizar el envío con datos físicos de productos
 
-**Funcionalidad padre:** F-01 — Gestor de zonas geográficas y cotizador de envíos  
-**Responsable:** Valqui  
-**Estado:** Borrador  
+**Funcionalidad padre:** [F-01 — Gestor de zonas geográficas y cotizador de envíos](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md)
+
+**Responsable:** Valqui
+
+**Estado:** Borrador
+
 **Actor principal:** Canal de venta
 
-## 1. Objetivo
+**UI:** No aplica. Es una API consumida por Marketplace y Chatbot, responsables de sus propias interfaces; no crea ni modifica pantallas del módulo.
+
+**Servicio propietario:** Gestión de Despachos.
+
+**Origen:** Especificación de la revisión `91db8f8`, migrada al flujo SDD el 16/10/2026; conserva los criterios CA-01 a CA-10.
+
+## 1. Contexto y objetivo
 
 Calcular el costo de envío y el plazo estimado de un pedido a partir del destino, de los SKU y cantidades indicados por el canal y de la tarifa vigente de la zona que cubre ese destino. El módulo obtiene los datos físicos de cada producto ante Productos y Ofertas, calcula el peso y el volumen cotizables y devuelve una cotización exacta que los canales comunican al cliente antes de confirmar el pedido.
 
-## 2. Actor y precondiciones
+## 2. Alcance
+
+- Incluye: cotizar con líneas de productos, consultar sus datos físicos en lote, aplicar la tarifa vigente y calcular costo y estimación de entrega; controlar el acceso técnico y el límite de solicitudes.
+- Fuera de alcance: crear el pedido o el despacho y comunicarse con Ventas y Postventa al cotizar; aplicar promociones, descuentos o envío gratuito; definir o modificar tarifas; resolver zona para F-02 o F-05; persistir cotizaciones como registros de negocio. Solo se conserva la auditoría de configuración en ES-F01-08.
+
+## 3. Actor, precondiciones y resultados
 
 - El actor es un canal de venta que obtuvo un token de servicio con `tipo=servicio` y scope `cotizaciones:calcular`.
 - La solicitud identifica el destino con `distrito` y contiene `lineas` con `sku` y `cantidad` mayor que cero.
 - El módulo puede obtener de Productos y Ofertas el peso y las dimensiones vigentes de cada SKU.
 - La zona que cubre el destino está en estado `ACTIVO` y, para devolver costo, tiene una tarifa vigente.
+- Disparador: el canal solicita el costo de envío antes de confirmar el pedido.
+- Resultado exitoso: cotización exacta con cobertura, zona, totales físicos, costo, moneda, plazo, fecha estimada y marca temporal; sin cobertura se informa esa condición sin costo ni plazo.
+- Resultado ante rechazo: error normalizado de autenticación, destino, líneas, productos o límite, sin costo ni creación de recursos [cite: 2].
 
-## 3. Flujo principal
+## 4. Flujo principal y alternativas
 
 1. El canal envía el destino y las líneas del pedido con su token de servicio.
-2. El backend valida el token, el destino y la estructura de las líneas.
+2. El backend valida el token y el destino, y aplica el límite de solicitudes.
 3. El sistema evalúa la cobertura del destino y, si existe zona activa, la identifica.
-4. El sistema agrupa los SKU repetidos y consulta a Productos y Ofertas en lote con su propio token de servicio.
+4. Con cobertura, valida las líneas, agrupa los SKU repetidos y consulta a Productos y Ofertas en lote con su propio token de servicio.
 5. El sistema calcula el peso y el volumen totales, el peso cotizable con el factor volumétrico y el costo con la tarifa vigente de la zona.
 6. El sistema responde con `tipoCotizacion=EXACTA`, el desglose calculado, el costo, la moneda, el plazo y la fecha estimada de entrega.
 
-## 4. Reglas y validaciones
+| Alternativa | Condición | Comportamiento esperado | Criterio |
+|---|---|---|---|
+| Sin cobertura | No existe zona activa | Responde sin costo, plazo ni consulta a Productos | CA-02 |
+| Líneas inválidas | Lista vacía o cantidad no positiva, con cobertura | Rechaza sin calcular costo | CA-03 |
+| Productos inválidos o no disponibles | SKU inexistente, datos incompletos o fallo de consulta | Error normalizado sin estimar costo | CA-04 a CA-06 |
+| Sin tarifa | Zona activa sin regla vigente | Confirma cobertura sin costo ni plazo; detalle contractual pendiente | CA-07 |
+| Exceso de solicitudes | Se supera el límite por `sub` e IP | Rechaza sin procesar el cálculo | CA-09 |
+
+## 5. Reglas, datos e integraciones
+
+### Reglas y validaciones
 
 - La cobertura se evalúa antes que los productos: si no hay zona activa para el destino, el sistema responde sin consultar a Productos y Ofertas ni validar las líneas.
 - El canal envía `sku` y `cantidad`; nunca envía peso, volumen, dimensiones ni costo. El sistema no los acepta como entrada autoritativa.
@@ -53,8 +80,6 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 - El límite de solicitudes se aplica por `sub` del token de servicio e IP; al excederlo, la respuesta es `429 Too Many Requests` con `DESP_ERROR_LIMITE_COTIZACION`.
 - La cotización no expone la configuración interna de zonas ni de tarifas.
 
-## 5. Entradas, salidas e integraciones
-
 ### Entradas
 
 - Token de servicio con scope `cotizaciones:calcular`.
@@ -73,7 +98,7 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 - Productos y Ofertas provee el peso y las dimensiones vigentes de cada SKU mediante la consulta en lote acordada; los datos siguen siendo de su propiedad.
 - Seguridad y Usuarios emite el token del canal y el token propio que el módulo utiliza contra la API de productos.
 - Ventas y Postventa incorpora el costo al total del pedido y no envía la fecha estimada al crear el despacho.
-- La ruta, los cuerpos, las respuestas, los códigos de error y las unidades se rigen exclusivamente por `integraciones/api-contract.md` [cite: 2].
+- La operación de cotización se define en el [contrato externo §5.1](../../integraciones/api-contract.md#51-solicitar-cotización); la consulta de datos físicos, en [§5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas). Las rutas, cuerpos, respuestas, códigos de error y unidades se rigen exclusivamente por ese contrato [cite: 2].
 
 ## 6. Criterios de aceptación
 
@@ -137,20 +162,40 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 - **CUANDO** el canal envía la cotización.
 - **ENTONCES** el sistema los ignora y los calcula a partir de los datos de Productos y Ofertas.
 
-## 7. Fuera de alcance y referencias
+## 7. UI, backend y requisitos no funcionales
 
-### Fuera de alcance
+- UI: no aplica; la presentación del resultado pertenece al canal consumidor. No se incluye `ui.md`.
+- Backend: Gestión evalúa cobertura y tarifa, consulta los datos físicos mediante API y calcula la cotización sin modificar recursos.
+- Requisitos no funcionales: token técnico y scopes acordados; datos de Productos obtenidos sin compartir persistencia; sin exposición de configuración interna; indisponibilidad explícita sin costo estimado. F-01 §8 exige respuesta en menos de 100 ms; el entorno, carga y medición con la dependencia externa se concretarán en el plan [cite: 1].
+- Pendientes: tratamiento contractual de zona sin tarifa, precisión y redondeo, calendario operativo, configuración de tasa/caché y preparación de la integración real; responsables e impacto en [plan.md §7](./plan.md#7-decisiones-y-pendientes).
 
-- Crear el pedido o el despacho, y cualquier comunicación con Ventas y Postventa al cotizar.
-- Aplicar promociones, descuentos o envío gratuito.
-- Definir o modificar la tarifa de la zona.
-- Resolver la zona para F-02 o F-05.
-- Persistir la cotización como registro; solo se conserva la auditoría de la configuración.
+## 8. Verificación y completitud
 
-### Referencias
+| Criterio | Tipo de comprobación | Datos o escenario necesarios |
+|---|---|---|
+| CA-01 | Unitaria e integración | Productos del ejemplo, tarifa vigente y calendario controlado |
+| CA-02 | Integración | Destino sin cobertura, incluso con líneas inválidas; verificar cero llamadas a Productos |
+| CA-03 | Integración | Destino cubierto con lista vacía y cantidades cero/negativas |
+| CA-04 | Contrato e integración | SKU no reconocido por Productos |
+| CA-05 | Contrato e integración | Peso o dimensiones ausentes/no positivos |
+| CA-06 | Integración de fallos | Indisponibilidad y timeout del proveedor |
+| CA-07 | Integración | Zona activa sin regla vigente; respuesta según acuerdo pendiente |
+| CA-08 | Seguridad e integración | Token técnico válido y ausencia de escrituras de pedido/despacho |
+| CA-09 | Integración de tasa | Mismo `sub` e IP por encima del límite |
+| CA-10 | Integración | Peso y volumen del cliente distintos de los del proveedor |
 
-- [cite: 1] `funcionalidades/F-01-Gestor_ZonasGeograficas.md`, RF-02 y RF-03, CA-07 a CA-11, CA-14 y CA-19 a CA-23.
-- [cite: 2] `integraciones/api-contract.md`, Común §3.4, Común §3.5, Externo §5.1, Externo §5.2, Externo §10.1. Referencia: [Convenciones e integración externa](../integraciones/api-contract.md#34-scopes-de-servicio-de-despacho).
-- [cite: 3] `arquitectura/modelo-datos.md`, tabla `tarifas_zona`.
-- [cite: 4] `overview.md`, sección 7 sobre integración con Productos y Ofertas.
-- [cite: 5] `funcionalidades/pendiente.md`, sección F-01 sobre trabajo futuro.
+- [ ] CA-01 a CA-10 cuentan con resultados reproducibles en [evidence.md](./evidence.md).
+- [ ] El contrato y los pendientes bloqueantes están resueltos para el alcance implementado.
+- [ ] Se verifican agrupación de SKU, ausencia de efectos de negocio, seguridad y rendimiento.
+- [ ] Los commits y la revisión funcional y técnica están enlazados.
+
+La ejecución se descompone en [tasks.md](./tasks.md). La migración documental no acredita implementación.
+
+## 9. Referencias
+
+- [cite: 1] [Funcionalidad F-01](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md), RF-02 y RF-03, CA-07 a CA-11, CA-14 y CA-19 a CA-23; §8.
+- [cite: 2] [Contrato externo](../../integraciones/api-contract.md), §§3.4, 3.5, 5.1, 5.2 y 10.1.
+- [cite: 3] [Modelo de datos](../../arquitectura/modelo-datos.md), tabla `tarifas_zona`.
+- [cite: 4] [Visión general](../../overview.md), sección 7 sobre integración con Productos y Ofertas.
+- [cite: 5] [Pendientes](../../funcionalidades/pendiente.md), sección F-01 sobre trabajo futuro.
+- Documentos SDD: [plan](./plan.md), [tareas](./tasks.md) y [evidencia](./evidence.md).
