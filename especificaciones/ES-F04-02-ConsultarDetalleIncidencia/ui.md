@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Borrador SDD; implementación y verificación pendientes.
+**Estado:** Página implementada y cubierta por nueve pruebas con fixtures; revisión visual y recorrido contra servicios reales pendientes.
 
 **Aplicabilidad:** Página de detalle en la aplicación administrativa.
 
@@ -100,7 +100,7 @@ La página no tiene formulario de modificación propio. Los botones abren los fl
 | CUI-07 | Simular nombre/jornada y fotografía no disponibles; recepción con liberación pendiente/confirmada o revisión requerida. | Mensajes por bloque sin inventar datos; retorno físico y capacidad diferenciados, sin nuevos bloqueos de decisión. | CA-09 |
 | CUI-08 | Recorrer con teclado y viewport móvil, incluido visor e historial. | Foco, avisos, textos y acciones utilizables sin desbordar la página. | CA-01/02/07/08/10 |
 
-La implementación visual y sus comprobaciones están pendientes; resultados reales en [evidence.md](./evidence.md). Una prueba con fixtures acredita solo presentación/interacción.
+La página está implementada; las comprobaciones locales y sus límites se registran en [evidence.md](./evidence.md). La revisión visual móvil, el foco del visor en navegador y el recorrido con servicios reales siguen pendientes. Una prueba con fixtures acredita solo presentación/interacción.
 
 ## 8. Referencias
 

@@ -2,34 +2,46 @@
 
 **Responsable de coordinación:** Gerardo.
 
-**Estado:** Pendiente de implementación.
+**Estado:** Código de consulta implementado; verificación local registrada y validación integral pendiente.
 
 **Plan de origen:** [plan.md](./plan.md), misma revisión documental de esta carpeta.
 
-Todas las tareas comienzan pendientes. La preparación de estos documentos no acredita componentes, endpoints ni criterios implementados. Los responsables compartidos son referencias de coordinación según el reparto existente; no se crean issues ni se envían asignaciones externas [cite: 2].
+El código de las tareas T-01 a T-08 está preparado con los límites registrados en `evidence.md`; las tareas que exigen PostgreSQL, Storage real o revisión visual continúan en curso. Gerardo solicitó aplazar Docker y despliegue, y limitar las pruebas nuevas a las esenciales: nueve por frontend y backend. T-09 depende de las siguientes especificaciones. Los responsables compartidos son referencias de coordinación; no se crean issues ni se envían asignaciones externas [cite: 2].
 
 ## 1. Orden y dependencias
 
 | ID | Resultado | Área/incremento | Depende de | Criterios | Estado |
 |---|---|---|---|---|---|
-| T-01 | Base y herramientas de verificación disponibles. | Preparación, I-01 | DT-01. | Soporte de CUI-01 a CUI-08. | Pendiente |
-| T-02 | Componentes del detalle verificados. | Compartidos, I-01 | T-01 y dependencias de cada CR. | CCR-08-01, CCR-18-01/02, CCR-19-01; soporte de CUI. | Pendiente |
-| T-03 | Página aislada con fixtures de todos los estados. | Frontend, I-02 | T-02. | CUI-01 a CUI-08. | Pendiente |
-| T-04 | Fuentes locales e historia por incidencia disponibles. | Datos, I-03 | DT-02; coordinación con ES-F04-01 y RT-02/03. | CA-01/04/06/08/11. | Pendiente |
-| T-05 | GET canónico autorizado y reglas probadas. | Backend, I-03 | T-04; seguridad/errores existentes verificados. | CA-01/03/04/05/06/07/08/11. | Pendiente |
-| T-06 | Enriquecimiento operativo con degradación comprobado. | Integración, I-04 | T-05 y proveedor/credenciales DT-03. | CA-01/06/09/11. | Pendiente |
-| T-07 | Lectura temporal de evidencia integrada. | Operación/F-03, I-04 | Contrato de lectura, asociación, almacenamiento y DT-03. | CA-02/03/05/09/11. | Pendiente |
-| T-08 | Página conectada, actualizada y protegida ante respuestas obsoletas. | Integración, I-05 | T-03/05/06/07 y Gateway. | CA-01 a CA-11, excepto recorridos de comandos de T-09; CUI-01 a CUI-08. | Pendiente |
-| T-09 | Formularios y regreso al listado integrados con sus propietarios. | Integración, I-06 | T-08, ES-F04-01/03/04/05 y DT-04. | CA-07/10/11; CUI-02/06. | Pendiente |
-| T-10 | Cobertura, evidencia y revisión final completas. | Calidad, I-07 | T-01 a T-09 verificadas. | Todos los CA y CUI del alcance. | Pendiente |
+| T-01 | Base y herramientas de verificación disponibles. | Preparación, I-01 | DT-01. | Soporte de CUI-01 a CUI-08. | Completada |
+| T-02 | Componentes del detalle verificados. | Compartidos, I-01 | T-01 y dependencias de cada CR. | CCR-08-01, CCR-18-01/02, CCR-19-01; soporte de CUI. | En curso |
+| T-03 | Página aislada con fixtures de todos los estados. | Frontend, I-02 | T-02. | CUI-01 a CUI-08. | En curso |
+| T-04 | Fuentes locales e historia por incidencia disponibles. | Datos, I-03 | DT-02; coordinación con ES-F04-01 y RT-02/03. | CA-01/04/06/08/11. | En curso |
+| T-05 | GET canónico autorizado y reglas probadas. | Backend, I-03 | T-04; seguridad/errores existentes verificados. | CA-01/03/04/05/06/07/08/11. | En curso |
+| T-06 | Enriquecimiento operativo con degradación comprobado. | Integración, I-04 | T-05 y proveedor/credenciales DT-03. | CA-01/06/09/11. | En curso |
+| T-07 | Lectura temporal de evidencia integrada. | Operación/F-03, I-04 | Contrato de lectura, asociación, almacenamiento y DT-03. | CA-02/03/05/09/11. | En curso |
+| T-08 | Página conectada, actualizada y protegida ante respuestas obsoletas. | Integración, I-05 | T-03/05/06/07 y Gateway. | CA-01 a CA-11, excepto recorridos de comandos de T-09; CUI-01 a CUI-08. | En curso |
+| T-09 | Formularios y regreso al listado integrados con sus propietarios. | Integración, I-06 | T-08, ES-F04-01/03/04/05 y DT-04. | CA-07/10/11; CUI-02/06. | Bloqueada |
+| T-10 | Cobertura, evidencia y revisión final completas. | Calidad, I-07 | T-01 a T-09 verificadas. | Todos los CA y CUI del alcance. | En curso |
 
 Estados: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al iniciar una tarea sin dependencia disponible se registra bloqueo, responsable de coordinación y siguiente acción. Los dobles permiten comprobar incrementos aislados, sin cerrar integración real.
+
+### Avance de código y verificación pendiente
+
+| Tareas | Código disponible | Comprobación restante |
+|---|---|---|
+| T-01/02 | Herramientas existentes y CR-08/18/19 reutilizados sin duplicación. | Terminar comprobación visual, foco del visor y entorno real. |
+| T-03/08 | Página conectada a los clientes, fixtures, actualización, cancelación y retirada de datos protegidos. | Navegador móvil y APIs reales por Gateway. |
+| T-04 | Lectura consistente, historial filtrado y migraciones aditivas. | Resolver colisión heredada de V3 según historial Flyway y ejecutar PostgreSQL, según plan §7. |
+| T-05/06 | Endpoint protegido, política combinada, lote reutilizado y límite total de cinco segundos. | Datos reales con varios ciclos y proveedores operativos reales. |
+| T-07 | Autorización, firma privada y configuración opcional de Supabase. | Aprovisionar bucket privado y probar objetos asociados por F-03; Gerardo coordina con Operación. |
+| T-09 | Destinos tipados con identidad, versión y callbacks; regreso al listado implementado. | Implementar ES-F04-03/04/05 y conectar sus formularios. Coordinación: Gerardo. |
+| T-10 | Nueve pruebas nuevas por frontend/backend y registro de resultados locales. | Aceptación integral y revisión humana. |
 
 ## 2. Detalle de tareas
 
 ### T-01. Verificar la base de ejecución y pruebas
 
-- [ ] Implementada y verificada.
+- [x] Implementada y verificada localmente: tipos, build de ambas aplicaciones y pruebas reproducibles sin Docker; EV-02/04.
 - Incremento y responsable: I-01; Gerardo coordina con Max/Rhamses la base existente.
 - Alcance y entradas: revisar proveedores, tema, cliente y herramientas en frontend `d2bc27d`; backend `1e7834b`, seguridad y prefijos del Gateway; plan §§1–4 y DT-01.
 - Dependencias: disponibilidad del entorno, no reinicializar repositorios ni modificar versiones por rutina.
@@ -141,7 +153,7 @@ Estados: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al iniciar una tare
 | CUI-07 | T-03/06/07/08 | T-10; EV-03/04. |
 | CUI-08 | T-02/03/08 | T-10; EV-02/04. |
 
-Todas las comprobaciones de esta matriz están pendientes; resultados en `evidence.md`. La misma numeración se conserva al implementar [cite: 1, 3].
+La matriz conserva los criterios de aceptación integral pendientes; `evidence.md` distingue las comprobaciones locales aprobadas de los recorridos reales aún no ejecutados. La misma numeración se conserva [cite: 1, 3].
 
 ## 4. Cierre de la especificación
 

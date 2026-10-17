@@ -1,123 +1,114 @@
 # Evidencia de ES-F04-02: Consultar el detalle de una incidencia
 
-**Estado:** Pendiente de implementación y verificación funcional.
+**Estado:** Código implementado y verificación local aprobada; aceptación integral pendiente.
 
-**Responsable de verificación:** Gerardo.
+**Responsable:** Gerardo. Implementación asistida por Codex el 16/10/2026 (America/Lima); revisión humana pendiente.
 
-**Última verificación funcional:** No ejecutada.
+## 1. Versiones y alcance
 
-## 1. Versión y entorno verificados
+- Rama común: `feature/f04-detalle-incidencia`. Frontend parte de `develop` en `314537b`; backend de `develop` en `5a5c57b`; specs de `main` en `0f8f1f1`.
+- Frontend: `e8a4f25` implementa la página y `7006761` añade las nueve pruebas esenciales y protege las respuestas de una sesión anterior.
+- Backend: `96a0c95` implementa Gestión; `d8116ad`, evidencia de Operación; `cc1421a`, normalización de errores y configuración documentada.
+- Código local confirmado mediante commits; no se publicaron ramas ni PR y no se ejecutaron Docker, despliegues, PostgreSQL ni Supabase reales.
+- Java 21, Maven local 3.9.16, npm/Vitest existentes y React/Mantine del repositorio. No se cambiaron versiones de dependencias.
+- El usuario autorizó código y commits y pidió aplazar Docker/despliegue. Las tareas que requieren integración real no se declaran completadas [cite: 1].
 
-- Documentación preparada: [spec.md](./spec.md), [ui.md](./ui.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), en la misma revisión que crea esta carpeta.
-- Origen: archivo suelto de ES-F04-02 en `0b32afc`, con la revisión funcional y contractual realizada en esta conversación. Se conservan CA-01 a CA-11.
-- Base de código consultada: frontend `d2bc27d` y backend `1e7834b`; lectura estática del código, no pruebas funcionales ni acreditación de ES-F04-02 implementada.
-- Commits de implementación, despliegue/entorno funcional, datos ejecutados y dependencias utilizadas: pendientes.
-- Alcance acreditable en esta entrega: organización y coherencia documental; ningún CA/CUI se aprueba por ella [cite: 1, 2].
+## 2. Resultados locales
 
-## 2. Cobertura de criterios
+| Comprobación | Resultado observado | Alcance real |
+|---|---|---|
+| Pruebas nuevas de Gestión | 4 aprobadas; 0 fallos/errores | Reglas, composición, filtrado de historial y HTTP con MockMvc; persistencia y proveedor simulados. |
+| Pruebas nuevas de Operación | 5 aprobadas; 0 fallos/errores | Permisos, asociación, renovación, firma y objeto eliminado; repositorio y Storage simulados. |
+| Pruebas nuevas de frontend | 9 aprobadas; 0 fallos | Página, panel, hooks, URL de origen, permisos y respuestas obsoletas con fixtures. |
+| Regresión `npm run test:f04` | 17 aprobadas: 9 de detalle, 7 de listado y 1 de sesión | JSDOM y APIs simuladas; no layout real. |
+| `npm run typecheck` | Aprobado | Paquete compartido y ambas aplicaciones, incluidas sus pruebas. |
+| `npm run build` | Aprobado | Construcción de ambas aplicaciones; Vite advierte sobre el tamaño del bundle administrativo. |
+| Repetición final del detalle y tipos administrativos | 9 aprobadas y typecheck aprobado | Incluye la retirada de datos y el descarte de respuestas de una sesión anterior. |
 
-| Criterio | Tareas | Comprobación prevista | Registro previsto | Resultado |
-|---|---|---|---|---|
-| CA-01 | T-03/04/05/06/08/10 | Detalle actual, datos completos e identificación coherente. | EV-01/03/04 | No ejecutado |
-| CA-02 | T-02/03/07/08/10 | Firma temporal, renovación, ampliación y permisos. | EV-02/03/04 | No ejecutado |
-| CA-03 | T-03/05/07/08/10 | `NO_INTENTADO` sin foto frente a referencia faltante. | EV-01/03/04 | No ejecutado |
-| CA-04 | T-03/04/05/08/10 | Inexistencia, ausencia de incidencia y datos inconsistentes. | EV-01/04 | No ejecutado |
-| CA-05 | T-02/03/05/07/08/10 | Autorización y retirada de contenido protegido. | EV-01/02/03/04 | No ejecutado |
-| CA-06 | T-03/04/05/06/08/10 | Dos ciclos sin recepción/fotografía heredadas. | EV-01/04 | No ejecutado |
-| CA-07 | T-03/05/08/09/10 | Restricciones combinadas y máximo configurable. | EV-01/04 | No ejecutado |
-| CA-08 | T-02/03/04/05/08/10 | Historia completa, orden estable y estado resuelto. | EV-01/02/04 | No ejecutado |
-| CA-09 | T-03/06/07/08/10 | Fallos de dependencias y recuperación por bloque. | EV-03/04 | No ejecutado |
-| CA-10 | T-03/08/09/10 | Actualización, conflicto, formularios y URL de regreso. | EV-04/05 | No ejecutado |
-| CA-11 | T-04/05/06/07/08/09/10 | Lectura y renovación sin efectos de negocio. | EV-01/03/05 | No ejecutado |
-| CUI-01 | T-03/08/10 | Bloques, contador, recepción, fechas y etiquetas. | EV-04 | No ejecutado |
-| CUI-02 | T-03/08/09/10 | Matriz completa de decisiones y consulta histórica. | EV-04 | No ejecutado |
-| CUI-03 | T-02/03/08/10 | Estados diferenciados y retirada tras `401/403`. | EV-02/04 | No ejecutado |
-| CUI-04 | T-02/03/07/08/10 | Visor, respuesta anterior, renovación y cierre. | EV-02/03/04 | No ejecutado |
-| CUI-05 | T-02/03/08/10 | Operaciones sin transición y comunicaciones separadas. | EV-02/04 | No ejecutado |
-| CUI-06 | T-03/08/09/10 | Temporizador, actualización fallida y restauración. | EV-04/05 | No ejecutado |
-| CUI-07 | T-03/06/07/08/10 | Datos desconocidos sin valores inventados. | EV-03/04 | No ejecutado |
-| CUI-08 | T-02/03/08/10 | Teclado, foco, ampliación y viewport móvil. | EV-02/04 | No ejecutado |
+Los reportes backend se generan en `target/surefire-reports/` de cada servicio. [EV-07: resumen de comandos y reportes](./evidencia/EV-07-pruebas-locales.txt) conserva los resultados mínimos sin tokens ni URLs firmadas reales. La construcción general precede al ajuste final de generación de consultas; ese ajuste quedó cubierto por la repetición de las nueve pruebas y el typecheck administrativo. La distinción final entre ausencia histórica e inconsistencia de la referencia vigente se compiló con Maven; su comprobación PostgreSQL sigue pendiente.
 
-Resultados permitidos: `Pendiente`, `Aprobado`, `Fallido`, `No ejecutado`. Fixtures y dobles identificados comprueban solo su alcance; no demuestran permisos efectivos, objetos privados ni integración real.
-
-## 3. Registros de verificación
+## 3. Registros y trazabilidad
 
 ### EV-01. Consulta canónica, datos y seguridad
 
-- Tareas/criterios: T-04/05/10; CA-01/03/04/05/06/07/08/11.
-- Preparación prevista: PostgreSQL aislado con dos ciclos del mismo despacho, varios estados, recepción, historial y outbox; JWT de prueba con identidades/roles distintos.
-- Comando previsto: `./mvnw.cmd test` desde Gestión; Docker para Testcontainers.
-- Esperado: selección consistente, contrato completo, acciones correctas, histórico consultable y errores sin datos parciales; ninguna escritura por consultar.
-- Fecha, persona, commit/entorno, salida observada y reporte: pendientes. **Resultado: No ejecutado.**
+- T-04/05: implementados `DetalleIncidenciaJdbc`, DTO, política `AccionesIncidencia`, caso de uso y controlador, sin escrituras por leer.
+- La selección usa la última incidencia, admite consulta histórica, lee recepción/liberación de la misma salida y ordena historial/comunicaciones en SQL. `REPEATABLE_READ` termina antes de enriquecer por HTTP.
+- Pruebas locales aprobadas: restricciones combinadas con máximo tres, contador superior al máximo, consulta histórica, datos operativos desconocidos, whitelist de historial con `false`/`null`, autorización previa y errores 400/404/500.
+- **Resultado local: Aprobado.** PostgreSQL con dos ciclos, ausencia de escrituras y migraciones reales: **No ejecutado**.
 
-### EV-02. Componentes compartidos y accesibilidad
+### EV-02. Base y componentes
 
-- Tareas/criterios: T-01/02/10; CCR-08-01, CCR-18-01/02 y CCR-19-01; soporte de CUI-03/04/05/08.
-- Preparación prevista: fixtures de estados, enlace expirado, cambio de recurso e historial con recepción sin transición; herramientas habilitadas en T-01.
-- Esperado: estados diferenciados, renovación mediante contenedor, retirada de URL/imagen, orden estable y foco/teclado utilizables.
-- Fecha, persona, commit, comando/recorrido y artefactos: pendientes. **Resultado: No ejecutado.**
+- T-01: herramientas existentes, tipos, build y pruebas reproducibles comprobados. Se reutilizan CR-08 `EstadoVista`, CR-18 `VisorEvidencia` y CR-19 `HistorialEstados`, además de encabezado y badges.
+- No se duplicaron componentes ni se reimplementaron HTTP/permisos dentro de la biblioteca visual.
+- **Resultado local: Aprobado para reutilización y presentación cubierta.** Foco del modal, ampliación y revisión visual con teclado/móvil en navegador: **No ejecutado**; T-02 sigue en curso.
 
-### EV-03. Operación y lectura de evidencia
+### EV-03. Datos operativos y evidencia
 
-- Tareas/criterios: T-06/07/10; CA-01/02/03/05/09/11 y CUI-04/07.
-- Preparación prevista: proveedor de lotes y credencial interna; objeto privado de prueba asociado, Gestor sin perfil de repartidor, repartidor propietario/ajeno y fallos controlados.
-- Comando previsto: `./mvnw.cmd test` desde Operación y pruebas del adaptador de Gestión; registrar aparte el recorrido contra almacenamiento real.
-- Esperado: degradación por dato, permisos y firma/vencimiento correctos, renovación explícita y ausencia de mutaciones de negocio.
-- Fecha, persona, commits, dependencias reales/dobles, salida y reportes: pendientes. **Resultado: No ejecutado.**
+- T-06: se reutiliza el lote existente de Operación con límite total de cinco segundos, incluida la credencial técnica, fuera de la transacción local. Su degradación conserva nombres/jornadas desconocidos.
+- T-07: el Gestor consulta evidencia histórica sin perfil local. Un repartidor requiere perfil activo y propiedad local; se valida asociación antes de firmar. La vigencia proviene del parámetro de Operación.
+- La firma usa el adaptador de Supabase privado propuesto en arquitectura; la respuesta se comprueba por ruta, HTTPS y vencimiento. Sin configuración devuelve indisponibilidad. No se implementó carga/asociación de F-03 ni se almacenaron URLs temporales.
+- Cinco pruebas aprobadas: Gestor y renovación; perfil inactivo/propiedad ajena; referencia ausente/no asociada/política inválida; HTTP humano/no-store/cuerpo inválido; firma privada y objeto eliminado.
+- **Resultado con dobles: Aprobado.** Storage, identidades reales y proveedor operativo real del detalle: **No ejecutado**.
 
 ### EV-04. Página, actualización y navegación
 
-- Tareas/criterios: T-03/08/09/10; CA-01 a CA-10 y CUI-01 a CUI-08.
-- Preparación prevista: primero fixtures identificados y después Gateway/servicios reales; listado y formularios disponibles para los recorridos que los requieren.
-- Comandos previstos: `npm run typecheck`, `npm run build` y comando de pruebas configurado en T-01. Verificar reloj controlado, respuestas fuera de orden, teclado y móvil.
-- Esperado: contenido y mensajes coherentes, actualización de 30 segundos, retirada de datos protegidos, formularios con identidad/versión y regreso a la consulta restaurada.
-- Fecha, persona, commits, escenarios efectivos, salidas y capturas/reportes: pendientes. **Resultado: No ejecutado.**
+- T-03/08: ruta desde el listado y acceso directo; resumen, recepción, historial y comunicaciones; consulta histórica; autorización de foto separada y acciones basadas en códigos del backend.
+- Se preserva `selloIntacto=false`, se distingue liberación pendiente de retorno confirmado y no se heredan recepción ni foto de otra salida.
+- Actualización de 30 segundos en vista activa, sin superponer lecturas; decisiones bloqueadas mientras actualiza o falla. Cancelación y generación de consultas impiden que respuestas anteriores de otro recurso o sesión reemplacen la vigente.
+- El visor retira URL al vencer, cerrar, cambiar de incidencia o perder autorización; renueva de forma explícita. Un rechazo de foto permanece en su bloque; un 401 revoca el detalle.
+- Nueve pruebas con fixtures aprobadas. Incluyen teclado para regresar y preservación de filtros/página/tamaño en URL, además de descartes y recuperación.
+- **Resultado con fixtures: Aprobado.** Recorrido real y revisión responsive en navegador: **No ejecutado**.
 
-### EV-05. Recorrido real y ausencia de efectos de lectura
+### EV-05. Comandos y ausencia de efectos
 
-- Tareas/criterios: T-09/10; CA-10/11 y CUI-06.
-- Preparación prevista: servicios reales identificados, datos sintéticos y snapshots de contador, recepción, historial, reservas y eventos antes de leer/renovar evidencia.
-- Esperado: lecturas repetidas sin mutaciones; recibir/decidir solo desde sus comandos, `409` ante una decisión desactualizada y reintento exacto sin duplicados; listado actualizado después de resolver.
-- Fecha, persona, commits, pasos/comandos, resultado observado y artefactos: pendientes. **Resultado: No ejecutado.**
+- `DestinosDetalleIncidencia` transporta identidad de despacho/incidencia y versión a formularios propietarios. Su callback refresca tras recepción/conflicto y regresa al listado tras resolución.
+- ES-F04-03/04/05 siguen pendientes; las acciones sin destino integrado se deshabilitan con explicación visible. No se enviaron comandos ficticios.
+- Las pruebas de lectura no llaman a mutaciones de negocio; esto no sustituye la comparación de snapshots reales de contador, recepción, reservas, historial y outbox.
+- **Resultado integral: No ejecutado.** T-09 bloqueada por los formularios propietarios; Gerardo coordina su implementación posterior.
 
-### EV-06. Preparación y validación documental
+### EV-06. Preparación documental anterior
 
-- Alcance: migración de una sola versión activa a carpeta SDD, enlaces, índices, criterios y trazabilidad; no acredita T-01 a T-10 ejecutadas.
-- Fecha y herramienta: 15/10/2026, Codex mediante Git y PowerShell; revisión documental del mismo commit que introduce esta carpeta.
-- Comprobaciones ejecutadas: `git diff --check`; enlaces/anclas locales y ejemplos JSON; existencia de cinco archivos, ausencia de la ruta anterior, IDs únicos y cobertura CA/CUI en tareas/evidencia; sin marcadores de plantilla ni casillas de implementación completadas.
-- Resultado observado: formato correcto, 380 enlaces/anclas locales válidos y 24 ejemplos JSON válidos en 22 archivos nuevos/modificados; 11 CA, 8 CUI, 10 tareas y 6 registros de evidencia. `spec.md` conserva 172 líneas sin bloques de código.
-- **Resultado: Aprobado exclusivamente para preparación documental.** EV-01 a EV-05 siguen sin ejecutar; T-01 a T-10 permanecen pendientes y la revisión humana queda pendiente.
+- Registro previo del 15/10/2026: carpeta SDD migrada desde `0b32afc`, once CA, ocho CUI, diez tareas y seis registros de evidencia.
+- La revisión documental previa registró 380 enlaces/anclas válidos y 24 ejemplos JSON; esos resultados históricos no se atribuyen a esta ejecución ni acreditan comportamiento funcional.
+- **Resultado histórico: Aprobado exclusivamente para preparación documental.** Esta actualización conserva criterios y contratos [cite: 1, 2].
 
-Al ejecutar una comprobación, conservar commit/entorno exactos, preparación reproducible, resultado observado y artefactos. No registrar tokens, credenciales, datos personales reales ni URLs firmadas.
+### EV-07. Comandos locales de esta implementación
 
-## 4. Uso de IA
+- Gestión: Maven local con `-q -o -Dtest=ConsultarDetalleIncidenciaTests,DetalleIncidenciaJdbcTests,ControladorDetalleIncidenciaTests test`.
+- Operación: Maven local con `-q -o -Dtest=AutorizarLecturaEvidenciaTests,FirmadorSupabaseTests,ControladorLecturaEvidenciaTests test`.
+- Frontend: `npm run test -w @despacho/administrativo -- src/features/entregas-fallidas/PaginaDetalleIncidencia.test.tsx`, `npm run test:f04`, `npm run typecheck`, `npm run build` y repetición del typecheck administrativo.
+- El wrapper de Gestión apuntaba a Maven 3.10.0 sin instalación local; se utilizó la distribución 3.9.16 ya instalada. Se descargó la dependencia de dotenv incorporada en `develop`, sin cambiar el POM. Mockito necesitó ejecutar las pruebas fuera del aislamiento para instrumentar la JVM local.
+- Un primer pase detectó un desempaquetado nulo al representar atraso desconocido y un restubbing incorrecto del test HTTP; ambos se corrigieron. La revisión final cubrió también respuestas anteriores a un cambio de sesión. Los resultados finales se registran en §2.
 
-| Trabajo | Herramienta y fecha | Entradas y revisión | Instrucción y revisión humana |
-|---|---|---|---|
-| Revisión funcional y preparación de carpeta SDD | Codex, 15/10/2026 | Archivo ES-F04-02 revisado en esta conversación, plantillas SDD, contratos, modelo, diseño/componentes y bases de código de §1. | Gerardo solicitó alinear la especificación, generar los cinco Markdown y guardar un commit con título breve. Documentos preparados con asistencia de IA; revisión humana de esta entrega pendiente. |
+## 4. Cobertura integral pendiente
 
-La conversación registra el proceso, no demuestra el cumplimiento de criterios funcionales.
-
-## 5. Diferencias, fallos y pendientes
-
-| Hallazgo | Criterios afectados | Siguiente acción y coordinación |
+| Criterios | Código y comprobación local disponibles | Para aceptación integral |
 |---|---|---|
-| DT-01: herramientas y componentes por verificar/implementar. | Todos los CUI; CA-02/05/08. | T-01/02; Gerardo con responsables de componentes. |
-| DT-02: fuentes y productores históricos por implementar/verificar. | CA-01/04/06/08/11. | T-04/05; Gerardo con Arquitectura y F-02/F-03. |
-| DT-03: lotes, credenciales y evidencia privada sin comprobación real. | CA-02/03/05/09/11. | T-06/07; coordinación con Operación/F-03 y DevOps. |
-| DT-04: listado y formularios propietarios pendientes para recorrido completo. | CA-07/10/11; CUI-02/06. | T-09; no acreditar decisiones simuladas como reales. |
-| DT-05: parámetros y zona operativa definidos documentalmente, sin verificar ejecución. | CA-02/07 y fechas. | Probar configuración y presentación conforme al plan. |
+| CA-01/04/06/08/11 | GET, snapshot, historial y whitelist; reglas/HTTP con dobles. | PostgreSQL con múltiples ciclos, historial producido por comandos y snapshots sin efectos. |
+| CA-02/03/05/09 | Autorización y firma; estados del visor y retirada de datos; degradación operativa. | Identidad, bucket privado y objetos reales; renovación/descarga autorizada real. |
+| CA-07/10 | Política combinada, panel, temporizador y regreso con URL; callbacks preparados. | Formularios ES-F04-03/04/05, concurrencia 409 e integración real. |
+| CUI-01 a CUI-07 | Nueve pruebas de página/hooks/panel y regresión del listado/sesión. | Recorridos conectados y comandos propietarios. |
+| CUI-08 | Controles semánticos, razones asociadas y regreso mediante teclado; layout responsive en código. | Inspección en navegador móvil, foco del modal y ampliación real. |
 
-## 6. Entrega y revisión
+Todos los criterios integrales permanecen **Pendiente** hasta reunir esas comprobaciones. No se marca una tarea como completada por escribir su código cuando su cierre exige integración real.
 
-- Entrega actual: documentos SDD y alineamiento de contratos/referencias.
-- Commit documental: el que introduce esta carpeta; no es un commit de implementación.
-- Commits/PR de implementación, revisor, fecha y resultado de revisión: pendientes.
-- Estado del alcance funcional: Pendiente; EV-01 a EV-05 no ejecutados.
-- Integraciones reales pendientes: Gestión, Operación, almacenamiento privado, identidad y recorridos con ES-F04-01/03/04/05.
+## 5. Pendientes concretos
+
+| Hallazgo | Próxima acción |
+|---|---|
+| Colisión heredada de Gestión: `V3__programacion_despachos.sql` y `V3__zonas_codigos_postales.sql`. | Consultar historial Flyway de cada entorno antes de decidir numeración; no alterar checksums aplicados por conjetura. |
+| Migraciones nuevas preparadas: Gestión V5 y Operación V3. | Ejecutar y validar con PostgreSQL después de resolver la colisión; verificar datos por salida y productores de historial. |
+| Storage privado sin configuración/objeto real comprobados. | Configurar `EVIDENCIAS_STORAGE_URL`, `EVIDENCIAS_BUCKET` privado y `EVIDENCIAS_CLAVE_SERVICIO` solo en Operación; coordinar asociación de F-03. |
+| T-09 sin formularios ES-F04-03/04/05. | Implementar sus comandos y formularios y conectarlos a los destinos preparados; no cambiar reglas dentro de la consulta. |
+| Revisión visual y humana pendiente. | Recorrer móvil, foco, ampliación y teclado con Gerardo; luego registrar aceptación de CA/CUI. |
+
+Se comprobaron 224 enlaces locales en los Markdown modificados y `git diff --check` finalizó sin errores. Esta comprobación es documental y no acredita los CA funcionales.
+
+## 6. Uso de IA y entrega
+
+Gerardo pidió implementar ES-F04-02 siguiendo plan/tareas y las reglas de AGENTS/CONTRIBUTING, desde `develop` en código y `main` en specs, con commits Conventional Commits en español y pruebas esenciales. Codex preparó código, pruebas y esta evidencia. La revisión técnica/humana y la publicación de ramas quedan pendientes; no se solicitó desplegar ni publicar.
 
 ## 7. Referencias
 
-- [cite: 1] [Especificación](./spec.md) y [UI](./ui.md): criterios y comportamiento esperado.
-- [cite: 2] [Plan](./plan.md), [tareas](./tasks.md) y [flujo SDD](../../plantillas/sdd/README.md): preparación, incrementos y evidencia.
-- [cite: 3] [Gestión](../../integraciones/api-contract-gestion-despachos.md), §§5.2/5.3; [Operación](../../integraciones/api-contract-operacion-reparto.md), §§3.4/5.4; [componentes React](../../disenio/componentes-react.md), §4.2.
+- [cite: 1] [Especificación](./spec.md), [UI](./ui.md), [plan](./plan.md) y [tareas](./tasks.md).
+- [cite: 2] [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02), [Operación §3.4](../../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia) y [modelo de datos](../../arquitectura/modelo-datos.md).
