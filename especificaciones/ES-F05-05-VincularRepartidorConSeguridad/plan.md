@@ -4,24 +4,24 @@
 
 **Estado:** Borrador de mantenimiento y aceptación de código existente; pendiente de revisión técnica.
 
-**UI:** Aplica; vincular cuenta / reintentar según acuerdo pendiente en `/repartidores`.
+**UI:** Aplica; vincular cuenta mediante UUID en `/repartidores`.
 
 ## 1. Entradas y revisiones
 
 | Documento | Referencia | Revisión utilizada |
 |---|---|---|
-| Especificación | [spec.md](./spec.md), CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07 | Fuente `f3849d9`; criterios conservados en esta migración |
+| Especificación | [spec.md](./spec.md), CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07 | Fuente `f3849d9`; IDs conservados; redacción vigente en spec.md y revisión en EV-04 |
 | UI | [ui.md](./ui.md), CUI-01 a CUI-06 | Borrador preparado con esta migración |
 | Contrato | [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas), [roles §3.3](../../integraciones/api-contract.md#33-roles-humanos-y-tokens-de-servicio) y [Seguridad §8.4](../../integraciones/api-contract.md#84-creación-y-vinculación-de-un-usuario-repartidor) | `f3849d9`; pendientes registrados en §7 |
 | Componentes y diseño | [Componentes React](../../disenio/componentes-react.md) y [SYSTEM-DESIGN.md](../../disenio/SYSTEM-DESIGN.md) | `f3849d9` |
 | Datos | [Modelo de datos](../../arquitectura/modelo-datos.md), §3.2 | `f3849d9`; contrastar con el esquema desplegado |
 | Código existente | [Frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/blob/9c7a99d/apps/despacho-administrativo/src/features/flota/VinculacionRepartidor.tsx) y [backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend/blob/8f8282a/servicio-operacion-reparto/src/main/java/com/modulodespacho/operacionreparto/servicio_operacion_reparto/flota/application/GestorFlota.java) | Frontend `9c7a99d`; backend `8f8282a` |
 
-Este plan documenta cómo revisar y aceptar un comportamiento que ya tiene código de referencia; no se presenta como un plan aprobado antes de esa implementación. La migración conserva los criterios y señala los acuerdos que deben conciliarse antes de cerrar la aceptación [cite: 1, 2].
+Este plan documenta cómo revisar y aceptar un comportamiento que ya tiene código de referencia; no se presenta como un plan aprobado antes de esa implementación. Esta revisión conserva los IDs y alinea su redacción con el contrato; EV-01 conserva el resultado histórico de la migración [cite: 1, 2].
 
 ## 2. Estrategia y responsabilidades
 
-Documentar el vínculo entre perfil local y cuenta de Seguridad, pendiente de conciliar el flujo heredado. El frontend consume el Gateway; Operación es propietaria de la autorización, reglas y persistencia.
+Asociar el perfil local activo a una cuenta previamente creada por Seguridad mediante su UUID. El frontend consume el Gateway; Operación es propietaria de la autorización, reglas y persistencia.
 
 | Área | Responsabilidad | Código de referencia |
 |---|---|---|
@@ -36,9 +36,9 @@ Documentar el vínculo entre perfil local y cuenta de Seguridad, pendiente de co
 
 - Verificar primero los CR consumidos; sus cambios compartidos se coordinan con sus responsables.
 - Componentes propios: `VinculacionRepartidor.tsx`, composición del catálogo y hooks `useCatalogoFlota`/`useOperacionFlota` cuando correspondan.
-- Interacción: Presentar el vínculo del perfil y la acción contractual vigente; el formulario manual existente se identifica expresamente como distinto del reintento automático de la fuente.
+- Interacción: Solicitar el UUID de Seguridad y permitir vincular solo perfiles activos y pendientes; no ofrecer reintentos automáticos de provisión.
 - Estado y datos: mantener separados carga, error, vacío y resultado confirmado; bloquear acciones sobre una consulta desfasada.
-- Transporte: verificar la adaptación frente a [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas); no usar la implementación provisional como sustituto del contrato.
+- Transporte: verificar la adaptación frente a [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas); usar los DTO, estados y límites definidos en el contrato canónico.
 - Simulación: los fixtures y las respuestas HTTP de prueba solo acreditan los escenarios identificados; una aceptación integrada requiere servicios y cuentas reales.
 
 ## 4. Backend, persistencia e integraciones
@@ -48,7 +48,7 @@ Documentar el vínculo entre perfil local y cuenta de Seguridad, pendiente de co
 - Propietario: Operación de Reparto y Flota, datos `repartidores`; no consultar la base de Gestión.
 - Persistencia: revisar V1/V2 y la adaptación del esquema heredado descritas en la [guía backend de flota](https://github.com/Taller-SW-Web/G2-Despacho-Backend/blob/8f8282a/docs/gestion-flota.md). No activar Flyway sobre el esquema heredado sin revisión.
 - Efectos: la auditoría debe confirmarse con la mutación y revertirse si falla.
-- Integraciones: conciliar primero las reglas locales de vinculación con Seguridad §8.4; no transportar contraseñas.
+- Integraciones: aplicar la asociación manual de Seguridad §8.4; no transportar contraseñas.
 - Seguridad: JWT y rol `GESTOR_DESPACHO`; la identidad de auditoría proviene del token, no del formulario.
 - Concurrencia e idempotencia: verificar repetición y operaciones concurrentes sin pérdida de datos ni auditorías duplicadas; no introducir encabezados nuevos no acordados.
 
@@ -66,13 +66,13 @@ Los ajustes de código que surjan de la revisión se tramitan en sus repositorio
 
 | Criterio | Comprobación | Nivel y entorno |
 |---|---|---|
-| CA-01 | Conciliar el flujo antes de comprobar creación, activación y transición esperadas por el criterio original. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-02 | Definir la simulación de indisponibilidad y el estado contractual esperado. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-03 | Definir el rechazo de Seguridad y verificar el resultado después de conciliarlo. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-04 | Confirmar si el estado de activación pertenece al vínculo local o exclusivamente a Seguridad. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-05 | Conciliar el reintento y comprobar el identificador y estado finales. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-06 | Comprobar fallo del reintento sin pérdida del vínculo ni duplicación una vez acordado el flujo. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-07 | Verificar repetición sobre un vínculo existente y ausencia de duplicados. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
+| CA-01 | Vinculación manual exitosa; contrastar el escenario de spec.md y sus efectos persistidos. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
+| CA-02 | Identificador de usuario inválido; contrastar el escenario de spec.md y sus efectos persistidos. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
+| CA-03 | Cuenta asociada a otro repartidor; contrastar el escenario de spec.md y sus efectos persistidos. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
+| CA-04 | Perfil inactivo; contrastar el escenario de spec.md y sus efectos persistidos. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
+| CA-05 | Repetición idempotente; contrastar el escenario de spec.md y sus efectos persistidos. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
+| CA-06 | Cambio de cuenta no permitido; contrastar el escenario de spec.md y sus efectos persistidos. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
+| CA-07 | Acceso sin permisos; contrastar el escenario de spec.md y sus efectos persistidos. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
 
 Comandos previstos, desde el repositorio correspondiente:
 
@@ -90,8 +90,8 @@ Complementar con las comprobaciones CUI, teclado y recorrido integrado. Registra
 
 | ID | Decisión o pregunta | Fuente y efecto | Responsable | Bloquea |
 |---|---|---|---|---|
-| DT-01 | Los siete criterios heredados describen creación automática, activación y reintento; Seguridad §8.4 y Operación §4.1 acuerdan asociar el usuario creado previamente por ADMIN_SISTEMA. No se reemplazan esos criterios durante una migración de estructura: requieren revisión de Rhamses con Seguridad y Arquitectura antes de aceptar el comportamiento. | P-01 de spec.md; contrato y modelo vigentes | Rhamses con Arquitectura y Seguridad | Aceptación de los criterios afectados e I-03 |
-| DT-02 | Ratificar los DTO, límites, filtros y errores utilizados por la adaptación frontend | Operación §4.1 y DC-04 de componentes React; no duplicar esquemas aquí | Rhamses con responsables del contrato | Aceptación de transporte en I-02/03 |
+| DT-01 | Alineado con Operación §4.1: registro local, asociación manual de UUID y estados `PENDIENTE`/`VINCULADO`; sin creación automática de cuentas ni rol global de repartidor. Los efectos integrados en F-03/F-06 siguen pendientes. | Operación §4.1; contrato y modelo vigentes | Rhamses con Arquitectura y Seguridad | Aceptación de los criterios afectados e I-03 |
+| DT-02 | DTO, precisión, filtros, paginación, errores y traducción `FUERA_DE_SERVICIO`/`INACTIVA` definidos en Operación §4.1; la aceptación con servicios y cuentas reales sigue pendiente | Operación §4.1 y DC-04 de componentes React; no duplicar esquemas aquí | Rhamses con responsables del contrato | Aceptación de transporte en I-02/03 |
 | DT-03 | Disponibilidad de Seguridad y recursos para el recorrido real | Separar pruebas con doble JWT de cuentas reales; validar configuración de Render/Vercel/Supabase | Responsables de Seguridad y DevOps | I-03 |
 | DT-04 | Revisión de accesibilidad, componentes y diseño | UI §6/7; los resultados de pruebas no sustituyen la revisión visual acordada | Rhamses con Max y Calidad | Cierre de CUI e I-03 |
 

@@ -4,7 +4,7 @@
 
 **Estado:** Borrador; revisión visual y aceptación por criterio pendientes.
 
-**Aplicabilidad:** Interfaz administrativa `/repartidores`, acción «Vincular cuenta / reintentar según acuerdo pendiente».
+**Aplicabilidad:** Interfaz administrativa `/repartidores`, acción «Vincular cuenta».
 
 **Especificación funcional:** [spec.md](./spec.md).
 
@@ -12,7 +12,7 @@
 
 - Usuario: Gestor de Despacho autenticado, con autorización según [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas).
 - Contexto: aplicación administrativa; uso con teclado, puntero y pantalla reducida.
-- Objetivo visible: Documentar el vínculo entre perfil local y cuenta de Seguridad, pendiente de conciliar el flujo heredado.
+- Objetivo visible: Asociar el perfil local activo a una cuenta previamente creada por Seguridad mediante su UUID.
 - Navegación: desde el menú administrativo a `/repartidores`; regresar al catálogo al terminar o cancelar una operación modal.
 
 ## 2. Referencias visuales y componentes
@@ -27,18 +27,18 @@ Componer solo los componentes que necesita este flujo. Las definiciones y varian
 
 ## 3. Pantallas e interacción
 
-### UI-01. Vincular cuenta / reintentar según acuerdo pendiente
+### UI-01. Vincular cuenta
 
 - Composición: encabezado y contexto del catálogo; acción por fila o de alta, formulario o confirmación, y retorno al catálogo.
 - Datos visibles: los necesarios para identificar al recurso y revisar los valores o el efecto de la operación.
-- Acción principal: «Vincular cuenta / reintentar según acuerdo pendiente»; habilitarla solo con contexto válido y sin otro envío en curso.
+- Acción principal: «Vincular cuenta»; habilitarla solo con contexto válido y sin otro envío en curso.
 - Acción secundaria: cancelar y volver al catálogo; la cancelación no envía una mutación.
 - Confirmación: revisar los datos antes de enviar; no agregar un segundo diálogo de confirmación sin necesidad funcional.
 
 | Paso | Acción de la persona | Respuesta de la interfaz | Criterios |
 |---|---|---|---|
-| 1 | Iniciar «Vincular cuenta / reintentar según acuerdo pendiente» | Presentar el contexto y controles del comportamiento | CA-01 |
-| 2 | Completar, revisar o confirmar los datos | Presentar el vínculo del perfil y la acción contractual vigente; el formulario manual existente se identifica expresamente como distinto del reintento automático de la fuente. | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07 |
+| 1 | Iniciar «Vincular cuenta» | Presentar el contexto y controles del comportamiento | CA-01 |
+| 2 | Completar, revisar o confirmar los datos | Solicitar el UUID de Seguridad y permitir vincular solo perfiles activos y pendientes; no ofrecer reintentos automáticos de provisión. | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07 |
 | 3 | Recibir el resultado | Mostrar el resultado confirmado y mantener diferenciados rechazo e incertidumbre | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07 |
 
 ## 4. Estados de la interfaz
@@ -59,7 +59,7 @@ Componer solo los componentes que necesita este flujo. Las definiciones y varian
 |---|---|---|---|
 | Repartidor y estado del vínculo | Solo lectura | Conservar el contexto de la cuenta asociada. | [spec.md §5](./spec.md#5-reglas-datos-e-integraciones) y [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas) |
 | Identificador comunicado por Seguridad | Según contrato vigente | La UI existente usa un UUID; no solicitar contraseña ni tokens. | [spec.md §5](./spec.md#5-reglas-datos-e-integraciones) y [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas) |
-| Acción de reintento | Pendiente de conciliación | No habilitar un flujo automático no acordado. | [spec.md §5](./spec.md#5-reglas-datos-e-integraciones) y [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas) |
+| Acción de vinculación | Perfil activo y pendiente | Validar UUID; bloquear durante envío y ante estados heredados desconocidos. | [spec.md §5](./spec.md#5-reglas-datos-e-integraciones) y [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas) |
 
 | Resultado | Mensaje y comportamiento | Recuperación |
 |---|---|---|
@@ -69,7 +69,7 @@ Componer solo los componentes que necesita este flujo. Las definiciones y varian
 | Sin autenticación o permiso | Retirar contenido protegido y mostrar estado autorizado | Reautenticación o regreso |
 | Respuesta incierta | Informar que no puede confirmarse la operación | Consultar el estado actual antes de una nueva mutación |
 
-El formulario manual existente recibe el identificador comunicado por Seguridad. No demuestra el flujo automático, los estados de activación ni los reintentos de los criterios heredados; P-01 debe resolverse antes de aceptar ese recorrido.
+El formulario recibe el UUID comunicado por Seguridad. No solicita contraseñas ni tokens. Un conflicto conserva los datos corregibles; una respuesta incierta exige consultar el catálogo antes de volver a enviar.
 
 ## 6. Accesibilidad y adaptación
 
@@ -90,7 +90,7 @@ El formulario manual existente recibe el identificador comunicado por Seguridad.
 | CUI-05 | Completar la operación o consulta | Mostrar el resultado confirmado y actualizar la información visible | CA-01 |
 | CUI-06 | Recorrer con teclado y en pantalla reducida | Mantener foco, etiquetas y acceso a todas las acciones disponibles | CA-01; requisitos de accesibilidad §6 |
 
-- Pendiente: Los siete criterios heredados describen creación automática, activación y reintento; Seguridad §8.4 y Operación §4.1 acuerdan asociar el usuario creado previamente por ADMIN_SISTEMA. No se reemplazan esos criterios durante una migración de estructura: requieren revisión de Rhamses con Seguridad y Arquitectura antes de aceptar el comportamiento.
+- Pendiente: Alineado con Operación §4.1: registro local, asociación manual de UUID y estados `PENDIENTE`/`VINCULADO`; sin creación automática de cuentas ni rol global de repartidor. Los efectos integrados en F-03/F-06 siguen pendientes.
 - Evidencia prevista: pruebas de interacción, revisión con teclado y capturas de estados identificadas en [evidence.md](./evidence.md).
 
 ## 8. Referencias
