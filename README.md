@@ -139,3 +139,5 @@ El equipo está conformado por 6 integrantes:
 La documentación evolucionará junto con el desarrollo. Se actualizarán progresivamente las especificaciones, las decisiones de integración y los enlaces a los entornos desplegados.
 
 Ante cualquier diferencia entre este README y una especificación detallada, deberá revisarse y corregirse la documentación para mantener una única definición coherente del módulo.
+
+La preparación e implementación de F-06 se desglosa en [ocho especificaciones SDD](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-06), con contrato canónico, UI cuando aplica, plan, tareas y evidencia sin aceptación anticipada.

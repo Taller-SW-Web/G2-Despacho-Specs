@@ -1,7 +1,8 @@
 # Especificación F-06: Disponibilidad y Capacidad Diaria de la Flota
 
-**Responsable:** Luis
-**Estado:** En especificación
+**Responsable funcional original:** Luis Alfonso
+**Implementación asumida:** Kevin Rhamses Bohorquez, por solicitud del usuario
+**Estado:** Preparación SDD e implementación iniciada; aceptación pendiente
 **Actor principal:** Gestor de Despacho
 **Lineamiento del curso:** Soporte a la asignación de despacho a operador/repartidor
 
@@ -245,3 +246,5 @@ La funcionalidad se considera completa cuando:
 - El cierre de turno libera la furgoneta correctamente.
 - No se han incorporado capacidades declaradas fuera de alcance.
 - La evidencia de pruebas puede trazarse hacia cada criterio de aceptación.
+
+Las [ocho especificaciones atómicas](./funcionalidad.md#especificaciones-atómicas-de-f-06) concretan jornadas, monitoreo, disponibilidad, ocupación, cierre y soporte interno de reservas/liberación/proyecciones. Las precisiones contractuales de fecha, bloqueo entre jornadas y retornos pendientes están centralizadas en [Operación §4.2](../integraciones/api-contract-operacion-reparto.md#42-jornadas-y-monitoreo).

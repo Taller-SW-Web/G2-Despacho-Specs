@@ -213,50 +213,53 @@ El frontend confirma el resultado con la respuesta válida y la consulta posteri
 
 ### 4.2. Jornadas y monitoreo
 
-| Método | Ruta | Roles | Propósito |
-|---|---|---|---|
-| `POST` | `/api/v1/jornadas` | `GESTOR_DESPACHO` | Abrir jornada repartidor-furgoneta-zona |
-| `POST` | `/api/v1/jornadas/{idJornada}/cierre` | `GESTOR_DESPACHO` | Cerrar jornada sin despachos en curso |
-| `GET` | `/api/v1/flota/monitoreo` | `GESTOR_DESPACHO` | Consultar ocupación y estados |
-| `GET` | `/api/v1/repartidores/disponibles` | `GESTOR_DESPACHO` | Consultar capacidad remanente |
+Proveedor F-06: Operación. Las rutas administrativas requieren JWT `tipo=acceso`, rol `GESTOR_DESPACHO` y `sub` UUID para mutaciones. Los identificadores del proveedor son UUID. El Gateway enruta `/api/v1/jornadas/**`, `/api/v1/flota/**` y `/api/v1/repartidores/disponibles` a Operación.
 
-Apertura de jornada:
+| Método | Ruta | Resultado |
+|---|---|---|
+| `POST` | `/api/v1/jornadas` | `201` con jornada creada y `Location` |
+| `GET` | `/api/v1/jornadas/{idJornada}` | `200` con jornada, ocupación y despachos proyectados |
+| `POST` | `/api/v1/jornadas/{idJornada}/cierre` | `200` con cierre confirmado, idempotente |
+| `GET` | `/api/v1/flota/monitoreo` | `200` con página, resumen global e instante de consulta |
+| `GET` | `/api/v1/repartidores/disponibles` | `200`, objeto `repartidores` con candidatos |
+| `GET` | `/api/v1/repartidor/jornada` | `200`, contexto propio; requiere perfil activo/vinculado, sin rol global ficticio |
+| `POST` | `/api/v1/repartidor/jornada/cierre` | `200`, cierre propio sin pendientes; F-03 resuelve antes los pendientes |
 
-```json
-{
-  "idRepartidor": "REP-0012",
-  "idFurgoneta": "FUR-0045",
-  "idZona": "ZONA-LIMA-CENTRO",
-  "fecha": "2026-09-23"
-}
-```
+#### 4.2.1. Apertura y cierre
 
-Disponibilidad:
+La apertura recibe exclusivamente `idRepartidor`, `idFurgoneta`, `idZona` (UUID) y `fecha` ISO. La fecha debe ser hoy en `America/Bogota`, obtenida del servidor. La zona se comprueba por `GET /api/v1/zonas/{idZona}` de Gestión, propagando el JWT humano por HTTPS fuera de la transacción; solo una respuesta válida con ese identificador y `id` coincidente y `estado=ACTIVO` habilita la apertura. Una caída no demuestra zona activa.
 
-```json
-{
-  "repartidores": [
-    {
-      "idRepartidor": "REP-0012",
-      "idJornada": "JOR-20260923-0012",
-      "nombre": "Juan Pérez",
-      "idZona": "ZONA-LIMA-CENTRO",
-      "estadoOperativo": "DISPONIBLE",
-      "capacidadRemanente": {
-        "pesoKg": 320,
-        "volumenM3": 2.7,
-        "paquetes": 52
-      }
-    }
-  ]
-}
-```
+Se exige perfil activo/vinculado, vehículo disponible y ausencia de otra jornada activa del mismo recurso, incluso de fecha anterior; también se rechaza carga histórica reservada pendiente de liberar. Se guardan las capacidades del vehículo como instantánea. Creación y auditoría son atómicas. La UI no reenvía automáticamente una apertura incierta: consulta antes el estado.
+
+El cierre no recibe cuerpo. Rechaza despachos `ASIGNADO`/`EN_CAMINO` con `409`; F-03 es responsable de resolver sus pendientes como `NO_INTENTADO` antes del cierre. Conserva reservas de retornos y proyecciones, no reabre turnos ni inventa liberaciones. Repetir un cierre devuelve el primer resultado sin cambiar instante ni duplicar auditoría. La existencia de una reserva histórica activa impide reutilizar el recurso hasta su liberación confirmada.
+
+Jornada: `idJornada`, `idRepartidor`, `idFurgoneta`, `placa`, `idZona`, `fecha`, `estado` (`ACTIVA`/`CERRADA`), `cerradaEn` (UTC o null), `limites`, `ocupacion`, `capacidadRemanente`, `porcentajeOcupacion`. Las tres capacidades usan `{pesoKg, volumenM3, paquetes}`. Los porcentajes usan `{peso, volumen, paquetes}` y no se recortan silenciosamente a 100. El detalle agrega `despachos` con `idDespacho`, `estado` y `secuenciaRuta`, sin exponer teléfonos o direcciones en el monitoreo.
+
+#### 4.2.2. Consultas y estado derivado
+
+Monitoreo acepta `fecha` ISO (hoy por defecto), `pagina` desde 1, `tamanoPagina` de 1 a 100 (50 por defecto), `estadoOperativo` opcional y `idZona` UUID opcional. Devuelve `contenido`, `pagina`, `tamanoPagina`, `totalElementos`, `totalPaginas`, `resumen` y `consultadoEn` UTC. Cada fila tiene `idRepartidor`, `nombre`, `estadoOperativo` y `jornada` (objeto anterior o null). Incluye los perfiles locales activos; el resumen `{disponible,enRuta,saturado,fueraDeTurno}` cuenta el conjunto completo de fecha/zona antes de filtrar por estado y paginar. No se agrega un total a partir de una sola página. Una jornada activa de fecha anterior debe cerrarse antes de reutilizar el recurso.
+
+Ocupación suma exclusivamente reservas `ACTIVA`, incluidas las de paquetes fallidos pendientes de retorno o sincronización. Remanente = límite menos ocupación, sin fabricar capacidad cuando faltan datos. Prioridad del estado: sin jornada activa `FUERA_DE_TURNO`; cualquier límite alcanzado `SATURADO`; si no, algún despacho `EN_CAMINO` implica `EN_RUTA`; en otro caso `DISPONIBLE`.
+
+Disponibilidad acepta `fecha` e `idZona`; devuelve únicamente jornadas de esa fecha que estén activas con perfil activo/vinculado, vehículo disponible y remanente positivo en las tres dimensiones. Cada candidato tiene `idRepartidor`, `idJornada`, `nombre`, `idZona`, `idFurgoneta`, `placa`, `estadoOperativo`, `limites`, `ocupacion`, `capacidadRemanente` y `porcentajeOcupacion`. Sin candidatos devuelve `{"repartidores":[]}`. Esta lectura no reserva capacidad; F-02 debe confirmar mediante §5.1. Objetivo de respuesta menor de 200 ms, pendiente de medición identificada.
+
+El contexto propio devuelve `idRepartidor`, `estadoOperativo` y `jornada` activa de hoy o null. El cierre propio resuelve el perfil por `sub`; nunca recibe un identificador de otro usuario.
+
+#### 4.2.3. Errores y actualización de UI
+
+Usar Problem Details común: `400 DESP_ERROR_CAMPOS_INVALIDOS`; `401/403` de Seguridad; `404 DESP_ERROR_JORNADA_NO_ENCONTRADA`; `409 DESP_ERROR_CONFLICTO_JORNADA` por recursos ocupados/carga/pendientes; `422 DESP_ERROR_RECURSO_NO_APTO` por perfil, zona o fecha no aptos; `503 DESP_ERROR_OPERACION_NO_DISPONIBLE` por dependencia o datos no disponibles. No retornar SQL ni mensajes remotos sin filtrar.
+
+El tablero actualiza cada 30 segundos mientras sea visible, cancela/descarta solicitudes obsoletas y permite actualización manual. Un fallo de refresco conserva los datos previos identificados como desactualizados y bloquea mutaciones; una pérdida de autorización los retira. Tras mutar, confirma respuesta y consulta nuevamente; una salida incierta exige reconciliar antes de repetir.
 
 ## 5. API interna provista por Operación
 
 Estas rutas las implementa Operación y las consume Gestión con credencial de servicio. No se exponen mediante el Gateway.
 
 ### 5.1. Gestión consulta y reserva capacidad en Operación
+
+Autorización: JWT de servicio con `sub=modulo-despacho`, audiencia `api-despacho` y scope `operacion:capacidad:reservar`. Su concesión real depende de Seguridad. Los identificadores reales son UUID y las cargas positivas respetan precisión de tres decimales para peso, cuatro para volumen y paquetes enteros hasta 32767. Solo se reserva en jornada de hoy activa y perfil habilitado/vehículo disponible. La operación se serializa con F-05, aperturas, cierres y liberaciones.
+
+La repetición con la misma clave y contenido devuelve el resultado original persistido, aun si luego se liberó la reserva. Cambiar despacho, repartidor, jornada o carga con esa clave responde `409 DESP_ERROR_CLAVE_REUTILIZADA`. El resultado es durable; no se recalcula un remanente diferente para una repetición. Un perfil/jornada no habilitados responde `409 DESP_ERROR_REPARTIDOR_NO_HABILITADO`.
 
 - **Método:** `POST`
 - **Ruta:** `/internal/v1/capacidad/reservas`
@@ -291,6 +294,8 @@ Una capacidad insuficiente responde `422` con `DESP_ERROR_CAPACIDAD_EXCEDIDA`. S
 
 ### 5.2. Gestión libera una reserva en Operación
 
+Autorización: JWT de servicio con `sub=modulo-despacho`, audiencia `api-despacho` y scope `operacion:capacidad:liberar`; su concesión real sigue pendiente. La operación usa el mismo orden de bloqueo que las reservas y F-05.
+
 - **Método:** `POST`
 - **Ruta:** `/internal/v1/capacidad/reservas/{idReserva}/liberacion`
 - **Idempotencia:** `idReserva`; repetir la liberación devuelve el resultado vigente.
@@ -311,6 +316,8 @@ Los motivos iniciales son `ENTREGA`, `CANCELACION`, `RECEPCION_EN_CENTRO`, `REAS
 - F-06 calcula ocupación con reservas `ACTIVA`: no anticipa una liberación por recibir `FALLIDO`, cerrar jornada o consultar el detalle. Tras la liberación confirmada refleja el resultado en la siguiente consulta, sin reabrir ni modificar jornadas.
 
 ### 5.3. Gestión comunica el estado confirmado a Operación
+
+Autorización: JWT de servicio con `sub=modulo-despacho`, audiencia `api-despacho` y scope `operacion:proyecciones:escribir`. Respuesta `204` para versión nueva, repetida o anterior; las dos últimas no sobrescriben datos. `409 DESP_ERROR_PROYECCION_INCOMPATIBLE` si reserva, jornada o despacho no coinciden. `400` por formato inválido y `503` por indisponibilidad. Una proyección terminal no libera una reserva por sí sola: se confirma §5.2.
 
 - **Método:** `POST`
 - **Ruta:** `/internal/v1/proyecciones/despachos/{idDespacho}`
