@@ -4,7 +4,7 @@
 
 **Responsable funcional original:** Luis Alfonso. **Implementación asumida:** Kevin Rhamses Bohorquez, por solicitud del equipo usuario.
 
-**Estado:** En implementación; aceptación pendiente.
+**Estado:** Implementado y verificado localmente; aceptación integrada pendiente.
 
 **UI:** Aplica; interfaz administrativa de jornadas y monitoreo.
 

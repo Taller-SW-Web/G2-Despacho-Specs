@@ -4,7 +4,7 @@
 
 **Responsable funcional original:** Luis Alfonso. **Implementación asumida:** Kevin Rhamses Bohorquez, por solicitud del equipo usuario.
 
-**Estado:** En implementación; aceptación pendiente.
+**Estado:** Implementado y verificado localmente; aceptación integrada pendiente.
 
 **UI:** Aplica; interfaz administrativa de jornadas y monitoreo.
 
@@ -14,7 +14,7 @@ Consultar repartidores disponibles en Operación de Reparto, como parte de CA-09
 
 ## 2. Alcance
 
-Exponer exclusivamente jornadas activas de hoy con perfiles habilitados, vehículo disponible, estado DISPONIBLE o EN_RUTA y remanente positivo en las tres dimensiones. La consulta no reserva ni garantiza disponibilidad futura: F-02 confirma mediante la reserva transaccional.
+Exponer exclusivamente jornadas activas de la fecha consultada (hoy por omisión) con perfiles habilitados, vehículo disponible, estado DISPONIBLE o EN_RUTA y remanente positivo en las tres dimensiones. La consulta no reserva ni garantiza disponibilidad futura: F-02 confirma mediante la reserva transaccional.
 
 Fuera de alcance: login, CRUD F-05, decisiones comerciales, asignación canónica F-02 y resolución de entregas F-03.
 
@@ -33,7 +33,7 @@ Fuera de alcance: login, CRUD F-05, decisiones comerciales, asignación canónic
 
 ## 5. Reglas, datos e integraciones
 
-Exponer exclusivamente jornadas activas de hoy con perfiles habilitados, vehículo disponible, estado DISPONIBLE o EN_RUTA y remanente positivo en las tres dimensiones. La consulta no reserva ni garantiza disponibilidad futura: F-02 confirma mediante la reserva transaccional.
+Exponer exclusivamente jornadas activas de la fecha consultada (hoy por omisión) con perfiles habilitados, vehículo disponible, estado DISPONIBLE o EN_RUTA y remanente positivo en las tres dimensiones. La consulta no reserva ni garantiza disponibilidad futura: F-02 confirma mediante la reserva transaccional.
 
 Los DTO, encabezados, scopes, rutas y errores se definen una sola vez en Operación §4.2 [cite: 2]. Los identificadores reales son UUID. Las credenciales no pertenecen a los documentos ni a las capturas.
 

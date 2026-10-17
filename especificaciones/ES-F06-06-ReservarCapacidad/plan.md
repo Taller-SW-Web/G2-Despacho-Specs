@@ -1,6 +1,6 @@
 # Plan de ES-F06-06: Reservar capacidad para una asignación
 
-**Responsable:** Kevin Rhamses Bohorquez. **Estado:** Preparado antes de implementar.
+**Responsable:** Kevin Rhamses Bohorquez. **Estado:** Ejecutado localmente; revisión humana pendiente.
 
 **UI:** No aplica: operación interna sin controles de usuario.
 
@@ -43,7 +43,7 @@ Implementar paquete `jornadas` con controladores, servicio, modelos y repositori
 | CA-04 | Reserva anterior y concurrencia; comprobar efectos y ausencia de mutaciones ante rechazo | Unitario, HTTP y PostgreSQL aislado según el caso |
 | CA-05 | Permiso técnico; comprobar efectos y ausencia de mutaciones ante rechazo | Unitario, HTTP y PostgreSQL aislado según el caso |
 
-Frontend: tipos, pruebas de interacción y construcción. Backend: unitarias, HTTP con JWT identificado como doble, pruebas PostgreSQL para atomicidad, idempotencia y concurrencia. Nunca usar Supabase para suites que limpian datos. Docker permanece apagado hasta nueva indicación del usuario.
+Frontend: tipos, pruebas de interacción y construcción. Backend: unitarias, HTTP con JWT identificado como doble, pruebas PostgreSQL para atomicidad, idempotencia y concurrencia. Nunca usar Supabase para suites que limpian datos. El usuario confirmó Docker disponible para las pruebas PostgreSQL aisladas.
 
 ## 7. Decisiones y pendientes
 

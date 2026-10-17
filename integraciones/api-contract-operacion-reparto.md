@@ -231,7 +231,7 @@ La apertura recibe exclusivamente `idRepartidor`, `idFurgoneta`, `idZona` (UUID)
 
 Se exige perfil activo/vinculado, vehículo disponible y ausencia de otra jornada activa del mismo recurso, incluso de fecha anterior; también se rechaza carga histórica reservada pendiente de liberar. Se guardan las capacidades del vehículo como instantánea. Creación y auditoría son atómicas. La UI no reenvía automáticamente una apertura incierta: consulta antes el estado.
 
-El cierre no recibe cuerpo. Rechaza despachos `ASIGNADO`/`EN_CAMINO` con `409`; F-03 es responsable de resolver sus pendientes como `NO_INTENTADO` antes del cierre. Conserva reservas de retornos y proyecciones, no reabre turnos ni inventa liberaciones. Repetir un cierre devuelve el primer resultado sin cambiar instante ni duplicar auditoría. La existencia de una reserva histórica activa impide reutilizar el recurso hasta su liberación confirmada.
+El cierre administrativo no recibe cuerpo. Rechaza despachos `ASIGNADO`/`EN_CAMINO` y reservas activas todavía sin una proyección terminal confirmada con `409`; F-03 es responsable de resolver sus pendientes como `NO_INTENTADO` antes del cierre. Conserva reservas de retornos y proyecciones, no reabre turnos ni inventa liberaciones. Repetir un cierre devuelve el primer resultado sin cambiar instante ni duplicar auditoría. La existencia de una reserva histórica activa impide reutilizar el recurso hasta su liberación confirmada.
 
 Jornada: `idJornada`, `idRepartidor`, `idFurgoneta`, `placa`, `idZona`, `fecha`, `estado` (`ACTIVA`/`CERRADA`), `cerradaEn` (UTC o null), `limites`, `ocupacion`, `capacidadRemanente`, `porcentajeOcupacion`. Las tres capacidades usan `{pesoKg, volumenM3, paquetes}`. Los porcentajes usan `{peso, volumen, paquetes}` y no se recortan silenciosamente a 100. El detalle agrega `despachos` con `idDespacho`, `estado` y `secuenciaRuta`, sin exponer teléfonos o direcciones en el monitoreo.
 
@@ -243,7 +243,7 @@ Ocupación suma exclusivamente reservas `ACTIVA`, incluidas las de paquetes fall
 
 Disponibilidad acepta `fecha` e `idZona`; devuelve únicamente jornadas de esa fecha que estén activas con perfil activo/vinculado, vehículo disponible y remanente positivo en las tres dimensiones. Cada candidato tiene `idRepartidor`, `idJornada`, `nombre`, `idZona`, `idFurgoneta`, `placa`, `estadoOperativo`, `limites`, `ocupacion`, `capacidadRemanente` y `porcentajeOcupacion`. Sin candidatos devuelve `{"repartidores":[]}`. Esta lectura no reserva capacidad; F-02 debe confirmar mediante §5.1. Objetivo de respuesta menor de 200 ms, pendiente de medición identificada.
 
-El contexto propio devuelve `idRepartidor`, `estadoOperativo` y `jornada` activa de hoy o null. El cierre propio resuelve el perfil por `sub`; nunca recibe un identificador de otro usuario.
+El contexto propio devuelve `idRepartidor`, `estadoOperativo` y `jornada` activa de hoy o null. El cierre propio recibe exclusivamente `{"idJornada":"UUID"}` obtenido del contexto consultado; resuelve el perfil por `sub` y verifica la propiedad de esa jornada. Repetir el cierre de una jornada anterior no cierra una nueva jornada del mismo repartidor. No recibe identificadores de usuario y rechaza jornadas ajenas con `403`.
 
 #### 4.2.3. Errores y actualización de UI
 

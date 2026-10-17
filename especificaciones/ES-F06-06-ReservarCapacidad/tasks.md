@@ -1,6 +1,6 @@
 # Tareas de ES-F06-06: Reservar capacidad para una asignación
 
-**Responsable:** Kevin Rhamses Bohorquez. **Estado:** Pendiente de implementación y verificación.
+**Responsable:** Kevin Rhamses Bohorquez. **Estado:** Implementación local verificada; integración desplegada y aceptación pendientes.
 
 **Plan de origen:** [plan.md](./plan.md), preparado en esta revisión.
 
@@ -8,44 +8,44 @@
 
 | ID | Resultado | Incremento | Área | Depende de | Estado |
 |---|---|---|---|---|---|
-| T-01 | Definir contrato y trazabilidad | I-01 | Documentación | Ninguna | Pendiente |
-| T-02 | Preparar cliente y casos contractuales | I-02 | Integración | T-01 | Pendiente |
-| T-03 | Implementar persistencia y autorización | I-03 | Backend | T-01 | Pendiente |
-| T-04 | Verificar recorrido y registrar evidencia | I-04 | Calidad | T-02 y T-03 | Pendiente |
+| T-01 | Definir contrato y trazabilidad | I-01 | Documentación | Ninguna | Completada localmente |
+| T-02 | Preparar cliente y casos contractuales | I-02 | Integración | T-01 | Completada localmente |
+| T-03 | Implementar persistencia y autorización | I-03 | Backend | T-01 | Completada localmente |
+| T-04 | Verificar recorrido y registrar evidencia | I-04 | Calidad | T-02 y T-03 | Parcial: automatización aprobada; aceptación pendiente |
 
 ## 2. Detalle de tareas
 
 ### T-01. Definir contrato y trazabilidad
 
-- [ ] Implementada y verificada.
+- [x] Implementada y verificada localmente.
 - Incremento: I-01; área: Documentación; depende de Ninguna.
 - Entradas: spec.md, contrato canónico y plan.md.
 - Criterios: CA-01, CA-02, CA-03, CA-04, CA-05.
 - Verificación: contrastar el resultado observable del criterio y sus efectos; guardar reporte de ejecución y commit en evidence.md.
 - Cierre: resultado reproducible sin atribuir aceptación real a un doble.
-- Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), pendiente.
+- Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), verificación local registrada; límites pendientes.
 
 
 ### T-02. Preparar cliente y casos contractuales
 
-- [ ] Implementada y verificada.
+- [x] Implementada y verificada localmente.
 - Incremento: I-02; área: Integración; depende de T-01.
 - Entradas: spec.md, contrato canónico y plan.md.
 - Criterios: CA-01, CA-02, CA-03, CA-04, CA-05.
 - Verificación: contrastar el resultado observable del criterio y sus efectos; guardar reporte de ejecución y commit en evidence.md.
 - Cierre: resultado reproducible sin atribuir aceptación real a un doble.
-- Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), pendiente.
+- Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), verificación local registrada; límites pendientes.
 
 
 ### T-03. Implementar persistencia y autorización
 
-- [ ] Implementada y verificada.
+- [x] Implementada y verificada localmente.
 - Incremento: I-03; área: Backend; depende de T-01.
 - Entradas: spec.md, contrato canónico y plan.md.
 - Criterios: CA-01, CA-02, CA-03, CA-04, CA-05.
 - Verificación: contrastar el resultado observable del criterio y sus efectos; guardar reporte de ejecución y commit en evidence.md.
 - Cierre: resultado reproducible sin atribuir aceptación real a un doble.
-- Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), pendiente.
+- Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), verificación local registrada; límites pendientes.
 
 
 ### T-04. Verificar recorrido y registrar evidencia
@@ -56,22 +56,22 @@
 - Criterios: CA-01, CA-02, CA-03, CA-04, CA-05.
 - Verificación: contrastar el resultado observable del criterio y sus efectos; guardar reporte de ejecución y commit en evidence.md.
 - Cierre: resultado reproducible sin atribuir aceptación real a un doble.
-- Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), pendiente.
+- Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), verificación local registrada; límites pendientes.
 
 ## 3. Cobertura de criterios
 
 | Criterio | Implementación | Verificación | Evidencia |
 |---|---|---|---|
-| CA-01 | T-01 a T-03 | T-04 | Pendiente |
-| CA-02 | T-01 a T-03 | T-04 | Pendiente |
-| CA-03 | T-01 a T-03 | T-04 | Pendiente |
-| CA-04 | T-01 a T-03 | T-04 | Pendiente |
-| CA-05 | T-01 a T-03 | T-04 | Pendiente |
+| CA-01 | T-01 a T-03 | T-04 | Ver evidence.md |
+| CA-02 | T-01 a T-03 | T-04 | Ver evidence.md |
+| CA-03 | T-01 a T-03 | T-04 | Ver evidence.md |
+| CA-04 | T-01 a T-03 | T-04 | Ver evidence.md |
+| CA-05 | T-01 a T-03 | T-04 | Ver evidence.md |
 
 ## 4. Cierre de la especificación
 
 - [ ] Tareas y criterios verificados.
-- [ ] Integraciones, limitaciones y revisión humana registradas.
+- [x] Integraciones, limitaciones y revisión humana pendiente registradas.
 
 ## 5. Referencias
 

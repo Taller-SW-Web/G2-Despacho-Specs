@@ -4,7 +4,7 @@
 
 **Responsable funcional original:** Luis Alfonso. **Implementación asumida:** Kevin Rhamses Bohorquez, por solicitud del equipo usuario.
 
-**Estado:** En implementación; aceptación pendiente.
+**Estado:** Implementado y verificado localmente; aceptación integrada pendiente.
 
 **UI:** No aplica: API interna consumida por Gestión; sus efectos visibles se cubren en ES-F06-02 y ES-F06-04.
 

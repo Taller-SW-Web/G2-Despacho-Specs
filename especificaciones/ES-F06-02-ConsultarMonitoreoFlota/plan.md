@@ -1,6 +1,6 @@
 # Plan de ES-F06-02: Consultar el monitoreo de flota
 
-**Responsable:** Kevin Rhamses Bohorquez. **Estado:** Preparado antes de implementar.
+**Responsable:** Kevin Rhamses Bohorquez. **Estado:** Ejecutado localmente; revisión humana pendiente.
 
 **UI:** Aplica, según ui.md.
 
@@ -41,7 +41,7 @@ Implementar paquete `jornadas` con controladores, servicio, modelos y repositori
 | CA-02 | Resumen global y paginación; comprobar efectos y ausencia de mutaciones ante rechazo | Unitario, HTTP y PostgreSQL aislado según el caso |
 | CA-03 | Recuperación y permisos; comprobar efectos y ausencia de mutaciones ante rechazo | Unitario, HTTP y PostgreSQL aislado según el caso |
 
-Frontend: tipos, pruebas de interacción y construcción. Backend: unitarias, HTTP con JWT identificado como doble, pruebas PostgreSQL para atomicidad, idempotencia y concurrencia. Nunca usar Supabase para suites que limpian datos. Docker permanece apagado hasta nueva indicación del usuario.
+Frontend: tipos, pruebas de interacción y construcción. Backend: unitarias, HTTP con JWT identificado como doble, pruebas PostgreSQL para atomicidad, idempotencia y concurrencia. Nunca usar Supabase para suites que limpian datos. El usuario confirmó Docker disponible para las pruebas PostgreSQL aisladas.
 
 ## 7. Decisiones y pendientes
 

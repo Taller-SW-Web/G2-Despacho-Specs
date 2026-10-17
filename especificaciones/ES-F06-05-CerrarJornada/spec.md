@@ -4,7 +4,7 @@
 
 **Responsable funcional original:** Luis Alfonso. **Implementación asumida:** Kevin Rhamses Bohorquez, por solicitud del equipo usuario.
 
-**Estado:** En implementación; aceptación pendiente.
+**Estado:** Implementado y verificado localmente; aceptación integrada pendiente.
 
 **UI:** Aplica; interfaz administrativa de jornadas y monitoreo.
 
@@ -14,7 +14,7 @@ Cerrar una jornada sin despachos en curso en Operación de Reparto, como parte d
 
 ## 2. Alcance
 
-Cerrar y auditar atómicamente. No borrar reservas ni proyecciones. Una jornada ya cerrada devuelve el mismo resultado sin otra auditoría. F-03 debe resolver primero ASIGNADO/EN_CAMINO como NO_INTENTADO; F-06 nunca realiza esa conversión por su cuenta.
+Cerrar y auditar atómicamente. No borrar reservas ni proyecciones. Una reserva activa aún sin proyección terminal bloquea el cierre para no interrumpir una asignación F-02 en curso. Una jornada ya cerrada devuelve el mismo resultado sin otra auditoría. F-03 debe resolver primero ASIGNADO/EN_CAMINO como NO_INTENTADO; F-06 nunca realiza esa conversión por su cuenta.
 
 Fuera de alcance: login, CRUD F-05, decisiones comerciales, asignación canónica F-02 y resolución de entregas F-03.
 
@@ -33,7 +33,7 @@ Fuera de alcance: login, CRUD F-05, decisiones comerciales, asignación canónic
 
 ## 5. Reglas, datos e integraciones
 
-Cerrar y auditar atómicamente. No borrar reservas ni proyecciones. Una jornada ya cerrada devuelve el mismo resultado sin otra auditoría. F-03 debe resolver primero ASIGNADO/EN_CAMINO como NO_INTENTADO; F-06 nunca realiza esa conversión por su cuenta.
+Cerrar y auditar atómicamente. No borrar reservas ni proyecciones. Una reserva activa aún sin proyección terminal bloquea el cierre para no interrumpir una asignación F-02 en curso. Una jornada ya cerrada devuelve el mismo resultado sin otra auditoría. F-03 debe resolver primero ASIGNADO/EN_CAMINO como NO_INTENTADO; F-06 nunca realiza esa conversión por su cuenta.
 
 Los DTO, encabezados, scopes, rutas y errores se definen una sola vez en Operación §4.2 [cite: 2]. Los identificadores reales son UUID. Las credenciales no pertenecen a los documentos ni a las capturas.
 

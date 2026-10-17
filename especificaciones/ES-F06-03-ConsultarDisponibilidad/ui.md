@@ -1,6 +1,6 @@
 # UI de ES-F06-03: Consultar repartidores disponibles
 
-**Responsable de implementación:** Kevin Rhamses Bohorquez. **Estado:** Preparada; revisión visual pendiente.
+**Responsable de implementación:** Kevin Rhamses Bohorquez. **Estado:** Implementada; automatización local y revisión visual pendiente.
 
 **Especificación funcional:** [spec.md](./spec.md).
 
@@ -17,6 +17,8 @@ Gestor autenticado en `/jornadas`; navegar desde «Jornadas y monitoreo». Consu
 ### UI-01. Jornadas y monitoreo
 
 Encabezado con Actualizar y Abrir jornada; fecha/filtros; cuatro KPI; tabla paginada; detalle con ocupación, límites, remanente y referencias operativas. Apertura en modal con selectores de catálogos reales y fecha del servidor; cierre confirmado indicando que no libera reservas ni resuelve pendientes.
+
+La consulta de candidatos pertenece a la API consumida por F-02. F-06 entrega el adaptador validado `consultarDisponibilidad`; no completa la pantalla de programación de otro responsable. El tablero muestra monitoreo y remanentes, sin prometer que una lectura reserve capacidad.
 
 ## 4. Estados de la interfaz
 

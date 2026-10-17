@@ -1,6 +1,6 @@
 # UI de ES-F06-05: Cerrar una jornada sin despachos en curso
 
-**Responsable de implementación:** Kevin Rhamses Bohorquez. **Estado:** Preparada; revisión visual pendiente.
+**Responsable de implementación:** Kevin Rhamses Bohorquez. **Estado:** Implementada; automatización local y revisión visual pendiente.
 
 **Especificación funcional:** [spec.md](./spec.md).
 

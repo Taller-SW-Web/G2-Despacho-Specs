@@ -2,7 +2,7 @@
 
 **Responsable funcional original:** Luis Alfonso
 **Implementación asumida:** Kevin Rhamses Bohorquez, por solicitud del usuario
-**Estado:** Preparación SDD e implementación iniciada; aceptación pendiente
+**Estado:** Implementado y verificado localmente; aceptación desplegada pendiente
 **Actor principal:** Gestor de Despacho
 **Lineamiento del curso:** Soporte a la asignación de despacho a operador/repartidor
 
