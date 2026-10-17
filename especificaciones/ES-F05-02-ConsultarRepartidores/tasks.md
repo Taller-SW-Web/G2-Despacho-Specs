@@ -91,7 +91,7 @@ Los estados son Pendiente, En curso, Bloqueada y Completada. Una tarea de compro
 - [ ] Todas las tareas del alcance están verificadas.
 - [ ] Los CA y CUI tienen evidencia individual y las diferencias están resueltas.
 - [ ] Los dobles, fixtures y servicios reales se identifican expresamente.
-- [ ] Los enlaces y el índice de esta migración están verificados en EV-01.
+- [x] Los enlaces y el índice de esta migración están verificados en EV-01.
 - [ ] Los commits, la revisión humana y la aceptación están registrados.
 
 ## 5. Referencias

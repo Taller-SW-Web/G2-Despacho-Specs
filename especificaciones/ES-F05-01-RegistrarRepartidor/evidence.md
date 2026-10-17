@@ -43,9 +43,9 @@ Los resultados de la matriz corresponden a esta migración. La implementación p
 - Preparación: contrastar la plantilla histórica, las plantillas SDD y los ejemplos del repositorio.
 - Comprobación: verificar los cinco archivos, sus títulos/secciones, enlaces, IDs y conservación literal del bloque de criterios original; verificar cobertura de CA/CUI en tareas y evidencia.
 - Resultado esperado: ninguna especificación duplicada ni referencia activa a la ruta anterior; todos los criterios conservados y trazables.
-- Resultado observado: pendiente de registrar tras ejecutar la revisión final de enlaces y estructura.
-- Resultado de la comprobación: Pendiente.
-- Artefacto: diff y commits de migración de esta carpeta; comprobación documental resumida al cerrar este registro.
+- Resultado observado: revisión documental aprobada para las nueve carpetas: 45 archivos SDD, 47 criterios CA originales conservados literalmente, 54 criterios CUI con trazabilidad y 871 enlaces locales revisados, sin errores.
+- Resultado de la comprobación: Aprobado, exclusivamente para la migración documental.
+- Artefacto: [commit de migración 14d9fc4](https://github.com/Taller-SW-Web/G2-Despacho-Specs/commit/14d9fc4) y diff frente a `f3849d9`. La revisión comparó bloques CA, secciones de plantilla, tablas de cobertura y destinos/anclas de enlaces locales.
 - Límite: no se ejecutan pruebas HTTP, UI, rendimiento ni integración desplegada.
 
 ### EV-02. Código y pruebas existentes como referencia
@@ -87,7 +87,7 @@ La herramienta organiza y contrasta documentos; no se atribuye a una persona una
 ## 6. Entrega y revisión
 
 - Código de referencia: commits indicados en EV-02; no se modifica código con esta migración.
-- Commits de migración documental: consultar el historial de esta carpeta; no se declara un hash antes de crearlo.
+- Commit de migración documental: [14d9fc4](https://github.com/Taller-SW-Web/G2-Despacho-Specs/commit/14d9fc4); la verificación documental posterior se identifica en el historial de esta carpeta.
 - Revisor humano y fecha: pendientes.
 - Estado del alcance: parcial documental; aceptación funcional pendiente.
 - Integraciones pendientes: las que exige cada criterio, con Seguridad y F-03/F-06 cuando corresponda; validar configuración y disponibilidad antes del recorrido completo.
