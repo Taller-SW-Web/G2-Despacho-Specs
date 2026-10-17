@@ -1,0 +1,13 @@
+ES-F04-02 - verificación local del 16/10/2026, America/Lima
+Backend: Maven local 3.9.16, Java 21; sin PostgreSQL, Docker ni Storage real.
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.152 s -- in com.modulodespacho.gestiondespachos.servicio_gestion_despachos.incidencias.application.ConsultarDetalleIncidenciaTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.283 s -- in com.modulodespacho.gestiondespachos.servicio_gestion_despachos.incidencias.infrastructure.DetalleIncidenciaJdbcTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 17.36 s -- in com.modulodespacho.gestiondespachos.servicio_gestion_despachos.incidencias.api.ControladorDetalleIncidenciaTests
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.218 s -- in com.modulodespacho.operacionreparto.servicio_operacion_reparto.evidencias.application.AutorizarLecturaEvidenciaTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.119 s -- in com.modulodespacho.operacionreparto.servicio_operacion_reparto.evidencias.infrastructure.FirmadorSupabaseTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.32 s -- in com.modulodespacho.operacionreparto.servicio_operacion_reparto.evidencias.api.ControladorLecturaEvidenciaTests
+Frontend: npm run test:f04 - 3 archivos, 17 pruebas aprobadas (detalle 9, listado 7, sesión 1).
+Frontend final: PaginaDetalleIncidencia.test.tsx - 9 pruebas aprobadas; duración de pruebas 1693 ms, total 9.62 s.
+Frontend: npm run typecheck - aprobado para compartidos y ambas apps; repetición final administrativo aprobada.
+Frontend: npm run build - ambas aplicaciones construidas; aviso de bundle administrativo mayor de 500 kB.
+Las APIs, JWT y almacenamiento utilizados por las pruebas son dobles o fixtures identificados.

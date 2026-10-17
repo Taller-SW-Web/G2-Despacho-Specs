@@ -4,7 +4,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Borrador SDD revisado; implementación y verificación pendientes.
+**Estado:** Código de consulta implementado en frontend y backend; pruebas locales con dobles disponibles. Verificación integral y formularios propietarios pendientes.
 
 **Actor principal:** Gestor de Despacho.
 

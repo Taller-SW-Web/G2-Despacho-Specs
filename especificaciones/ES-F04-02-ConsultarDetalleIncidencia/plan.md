@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Borrador documental; implementación y revisión técnica pendientes.
+**Estado:** Consulta implementada en código con verificación local; integración real, revisión humana y comandos propietarios pendientes.
 
 **UI:** Aplica; página administrativa de detalle.
 
@@ -16,9 +16,9 @@
 | Contrato de Operación | [§3.4](../../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia) y [§5.4](../../integraciones/api-contract-operacion-reparto.md#54-gestión-consulta-repartidores-y-jornadas-de-incidencias) | Lectura de evidencia y datos operativos; implementación pendiente. |
 | Diseño y componentes | [Sistema de diseño](../../disenio/SYSTEM-DESIGN.md), §23; [componentes React](../../disenio/componentes-react.md), CR-01/03/05/08/09/15/18/19 | Contratos compartidos; no equivalen a componentes implementados. |
 | Arquitectura y datos | [Contenedores](../../arquitectura/c4-contenedores.md); [modelo](../../arquitectura/modelo-datos.md), §§3.3–3.5 | Última incidencia, historial, outbox y parámetros según esta revisión. |
-| Base de código consultada | Frontend `d2bc27d`; backend `1e7834b` | Lectura del código local; no se ejecutaron compilaciones ni pruebas funcionales. |
+| Base de código de implementación | Frontend `314537b`; backend `5a5c57b`; specs `0f8f1f1` | Ramas `feature/f04-detalle-incidencia` desde `develop` en código y desde `main` en specs, conforme a la indicación de Gerardo del 16/10/2026. |
 
-Frontend contiene las aplicaciones Vite, cliente Axios y tema compartido; la ruta de F-04 es todavía una página pendiente. Backend contiene seguridad y Gateway configurados, pero no los endpoints de detalle, lectura de evidencia ni lotes operativos. Su existencia documental no acredita ejecución [cite: 1, 2].
+La base actual contiene el listado ES-F04-01, los componentes CR-08/18/19 y el lote operativo. Se reutilizan para el detalle y la lectura temporal de evidencia; los resultados reales de las pruebas locales se registran en `evidence.md`. Gerardo solicitó pruebas esenciales (nueve nuevas por frontend y backend), commits incrementales y ninguna ejecución de Docker ni despliegue. Esta indicación acota la verificación de esta entrega; no acredita las integraciones pendientes [cite: 1, 2].
 
 ## 2. Estrategia y responsabilidades
 
@@ -93,6 +93,15 @@ El frontend aislado y el backend pueden prepararse por separado. La falta de for
 Comandos previstos: `npm run typecheck` y `npm run build` desde el frontend; `./mvnw.cmd test` desde Gestión, Operación y Gateway cuando corresponda. Configurar y registrar el comando de pruebas de interacción en T-01; no se afirma que exista actualmente. Testcontainers necesita Docker. Los resultados, commits, preparación y límites se registrarán en [evidence.md](./evidence.md).
 
 ## 7. Decisiones y pendientes
+
+### Actualización de implementación del 16/10/2026
+
+- Se reutilizan migraciones y persistencia de ES-F04-01/F-02. `V5__consulta_detalle_incidencia.sql` añade únicamente la solicitud durable de liberación leída por el detalle; su comando y procesador quedan en ES-F04-03.
+- Operación añade metadatos de evidencia y el parámetro de vigencia en `V3__lectura_evidencias.sql`; no implementa carga ni asociación de F-03. El adaptador de firma usa Supabase Storage privado, conforme a la propuesta C4, con configuración opcional exclusiva del servidor y error de indisponibilidad mientras falte.
+- La consulta local usa `REPEATABLE_READ`; el enriquecimiento posterior usa el adaptador existente con un límite total de cinco segundos, sin prolongar la transacción.
+- El frontend incorpora ruta, adaptador validado, temporizador de 30 segundos, cancelación de consultas y renovación explícita del visor; no guarda URLs temporales. Los formularios se integrarán mediante callbacks con identidad, versión y resultado.
+- Hallazgo heredado: dos migraciones de Gestión usan `V3` (`programacion_despachos` y `zonas_codigos_postales`). Antes de ejecutar PostgreSQL debe revisarse el historial Flyway de cada entorno; no se renumeran migraciones ya aplicadas por conjetura.
+- T-09 sigue bloqueada por ES-F04-03/04/05. No se habilitan enlaces a formularios inexistentes ni se ejecutan recepciones/decisiones simuladas.
 
 | ID | Decisión o pendiente | Fuente y coordinación | Bloquea |
 |---|---|---|---|
