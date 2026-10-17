@@ -52,10 +52,10 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 
 | ID | Comportamiento | Especificación | Estado |
 |---|---|---|---|
-| **ES-F05-01** | Registrar un nuevo repartidor | [Ver especificación](../especificaciones/ES-F05-01-RegistrarRepartidor.md) | Borrador |
-| **ES-F05-02** | Consultar repartidores | [Ver especificación](../especificaciones/ES-F05-02-ConsultarRepartidores.md) | Borrador |
-| **ES-F05-03** | Editar datos del repartidor | [Ver especificación](../especificaciones/ES-F05-03-EditarRepartidor.md) | Borrador |
-| **ES-F05-04** | Dar de baja lógica al repartidor | [Ver especificación](../especificaciones/ES-F05-04-DarDeBajaRepartidor.md) | Borrador |
+| **ES-F05-01** | Registrar un nuevo repartidor | [Especificación](../especificaciones/ES-F05-01-RegistrarRepartidor/spec.md) · [UI](../especificaciones/ES-F05-01-RegistrarRepartidor/ui.md) · [Plan](../especificaciones/ES-F05-01-RegistrarRepartidor/plan.md) · [Tareas](../especificaciones/ES-F05-01-RegistrarRepartidor/tasks.md) · [Evidencia](../especificaciones/ES-F05-01-RegistrarRepartidor/evidence.md) | Borrador SDD; aceptación por criterio pendiente |
+| **ES-F05-02** | Consultar repartidores | [Especificación](../especificaciones/ES-F05-02-ConsultarRepartidores/spec.md) · [UI](../especificaciones/ES-F05-02-ConsultarRepartidores/ui.md) · [Plan](../especificaciones/ES-F05-02-ConsultarRepartidores/plan.md) · [Tareas](../especificaciones/ES-F05-02-ConsultarRepartidores/tasks.md) · [Evidencia](../especificaciones/ES-F05-02-ConsultarRepartidores/evidence.md) | Borrador SDD; aceptación por criterio pendiente |
+| **ES-F05-03** | Editar datos del repartidor | [Especificación](../especificaciones/ES-F05-03-EditarRepartidor/spec.md) · [UI](../especificaciones/ES-F05-03-EditarRepartidor/ui.md) · [Plan](../especificaciones/ES-F05-03-EditarRepartidor/plan.md) · [Tareas](../especificaciones/ES-F05-03-EditarRepartidor/tasks.md) · [Evidencia](../especificaciones/ES-F05-03-EditarRepartidor/evidence.md) | Borrador SDD; aceptación por criterio pendiente |
+| **ES-F05-04** | Dar de baja lógica al repartidor | [Especificación](../especificaciones/ES-F05-04-DarDeBajaRepartidor/spec.md) · [UI](../especificaciones/ES-F05-04-DarDeBajaRepartidor/ui.md) · [Plan](../especificaciones/ES-F05-04-DarDeBajaRepartidor/plan.md) · [Tareas](../especificaciones/ES-F05-04-DarDeBajaRepartidor/tasks.md) · [Evidencia](../especificaciones/ES-F05-04-DarDeBajaRepartidor/evidence.md) | Borrador SDD; aceptación por criterio pendiente |
 | **ES-F05-05** | Vincular repartidor con Seguridad y Usuarios | [Ver especificación](../especificaciones/ES-F05-05-VincularRepartidorConSeguridad.md) | Borrador |
 | **ES-F05-06** | Registrar una nueva furgoneta | [Ver especificación](../especificaciones/ES-F05-06-RegistrarFurgoneta.md) | Borrador |
 | **ES-F05-07** | Consultar furgonetas | [Ver especificación](../especificaciones/ES-F05-07-ConsultarFurgonetas.md) | Borrador |
