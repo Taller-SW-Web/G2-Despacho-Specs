@@ -141,7 +141,7 @@ El estado nunca se comunica solo con color: cada badge lleva icono y texto.
 - **Tarjetas de resumen:** número en H3 Oswald y etiqueta en Label, con un icono de 24 px por estado: Disponible `IconCircleCheck` en `success`, En ruta `IconTruckDelivery` en `info`, Saturado `IconAlertOctagon` en `error` y Fuera de turno `IconMoon` en `disabled`. La tarjeta funciona como filtro rápido: al hacer clic aplica ese estado a la tabla y queda seleccionada con borde `action/primary`.
 - **Estado operativo:** badges Disponible (success), En ruta (info), Saturado (error) y Fuera de turno (neutral).
 - **Tabla de ocupación:** tres columnas de barra con el patrón de la sección 2.5. La fila con algún límite al 100 % lleva fondo `error/background` y el badge Saturado.
-- **Formularios:** NumberInput con sufijos "kg", "m³" y "paquetes". La placa va en mayúsculas automáticas con formato `ABC-123` en la ayuda. La baja lógica se hace con un Switch "Activo" y una confirmación cuando hay historial.
+- **Formularios:** NumberInput con sufijos "kg", "m³" y "paquetes". La placa va en mayúsculas automáticas con formato `ABC-123` en la ayuda. La baja lógica usa la acción «Dar de baja» y ModalConfirmacion; no ofrece reactivación de repartidores.
 
 **Estados**
 

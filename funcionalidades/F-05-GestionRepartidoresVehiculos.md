@@ -1,7 +1,7 @@
 # Especificación F-05: Gestión de Repartidores y Vehículos
 
 **Responsable:** Rhamses
-**Estado:** En especificación
+**Estado:** Implementación local en verificación; aceptación integrada pendiente
 **Actor principal:** Gestor de Despacho
 **Lineamiento del curso:** Administración de recursos operativos del módulo
 
@@ -22,8 +22,8 @@ Esta funcionalidad incluye:
 - Registro de repartidores con datos personales, brevete y turno habitual.
 - Edición de datos del repartidor.
 - Baja lógica de repartidores con preservación del historial.
-- Vinculación del repartidor con su usuario en Seguridad y Usuarios: solicitud de creación, seguimiento de activación y reintento ante fallos.
-- Estados de registro (`ACTIVO`, `INACTIVO`) y estados de vinculación (`PENDIENTE`, `PENDIENTE_ACTIVACION`, `VINCULADO`, `ERROR`).
+- Asociación manual del repartidor con el UUID de una cuenta creada previamente por el canal administrativo de Seguridad y Usuarios.
+- Estados de registro (`ACTIVO`, `INACTIVO`) y estados de vinculación (`PENDIENTE`, `VINCULADO`).
 - Registro de furgonetas con placa, estado y límites de carga (kg, m³ y máximo de paquetes en ruta).
 - Edición de datos y límites de la furgoneta.
 - Cambio de estado de la furgoneta (`DISPONIBLE`, `EN_MANTENIMIENTO`, `FUERA_DE_SERVICIO`).
@@ -44,14 +44,14 @@ Esta funcionalidad incluye:
 
 | Dependencia | Responsabilidad |
 |---|---|
-| Seguridad y Usuarios | Incorporar el rol `REPARTIDOR`, crear la cuenta del repartidor, gestionar su activación y comunicar el identificador y estado. |
+| Seguridad y Usuarios | Crear y activar la cuenta por su canal administrativo y comunicar su UUID; no existe un rol global `REPARTIDOR`. |
 | Disponibilidad y Capacidad Diaria (F-06) | Consumir los repartidores activos y vinculados y las furgonetas disponibles para crear asignaciones diarias. |
 | Web del Repartidor (F-03) | Identificar al repartidor desde el token vinculado por esta funcionalidad. |
 
 ### 4.3. Resultados
 
-- Un repartidor registrado queda en estado de registro `ACTIVO` y con vinculación `PENDIENTE` hasta que Seguridad confirme la creación y activación de su cuenta.
-- La vinculación progresa por `PENDIENTE` → `PENDIENTE_ACTIVACION` → `VINCULADO`, o queda en `ERROR` si la integración falla.
+- Un repartidor registrado queda en estado de registro `ACTIVO` y con vinculación `PENDIENTE` hasta que el Gestor asocie el UUID comunicado por Seguridad.
+- La vinculación cambia de `PENDIENTE` a `VINCULADO` mediante asociación manual. El registro local no invoca creación remota ni depende de su disponibilidad.
 - Una baja lógica cambia el estado a `INACTIVO`, conserva el historial y excluye al repartidor de nuevas asignaciones.
 - Una furgoneta registrada queda en `DISPONIBLE` con sus límites de carga definidos.
 
@@ -59,8 +59,8 @@ Esta funcionalidad incluye:
 
 | Dimensión | Estados | Cómo cambia |
 |---|---|---|
-| Registro | `ACTIVO`, `INACTIVO` | Acción del Gestor de Despacho (baja lógica / reactivación). |
-| Vinculación | `PENDIENTE`, `PENDIENTE_ACTIVACION`, `VINCULADO`, `ERROR` | Resultado de la integración con Seguridad y Usuarios. |
+| Registro | `ACTIVO`, `INACTIVO` | Alta y baja lógica del Gestor; este alcance no permite reactivar repartidores. |
+| Vinculación | `PENDIENTE`, `VINCULADO` | Asociación manual del UUID por el Gestor. |
 
 ### 4.5. Estados de la furgoneta
 
@@ -68,7 +68,7 @@ Esta funcionalidad incluye:
 |---|---|
 | `DISPONIBLE` | Lista para ser asignada a una jornada. |
 | `EN_MANTENIMIENTO` | Temporalmente fuera de operación, excluida de nuevas asignaciones. |
-| `FUERA_DE_SERVICIO` | Retirada definitivamente, conserva historial. |
+| `FUERA_DE_SERVICIO` | Retirada de operación, conserva historial y admite rehabilitación a `DISPONIBLE`. |
 
 ## 5. Requisitos y criterios de aceptación automatizables
 
@@ -80,7 +80,7 @@ El sistema DEBE permitir registrar, editar, dar de baja y consultar repartidores
 
 - **DADO** que el Gestor de Despacho ingresa nombres, apellidos, DNI, teléfono, correo, número de brevete y turno habitual.
 - **CUANDO** confirma el registro.
-- **ENTONCES** el sistema valida que el DNI no exista, crea el repartidor `ACTIVO` con vinculación `PENDIENTE`, solicita a Seguridad y Usuarios la creación de su usuario y devuelve el identificador del repartidor.
+- **ENTONCES** el sistema valida que el DNI no exista, crea el perfil local `ACTIVO` con vinculación `PENDIENTE`, audita y devuelve su identificador sin solicitar creación remota.
 
 #### CA-02. Rechazo por documento duplicado
 
@@ -162,29 +162,29 @@ El sistema DEBE administrar furgonetas con sus límites de carga y su estado.
 
 El sistema DEBE asociar cada repartidor con su usuario en Seguridad y Usuarios para que F-03 lo identifique desde el token.
 
-#### CA-14. Vinculación y activación exitosas
+#### CA-14. Vinculación manual exitosa
 
-- **DADO** el registro de un nuevo repartidor.
-- **CUANDO** Seguridad crea la cuenta, devuelve su identificador y posteriormente confirma que puede iniciar sesión con rol `REPARTIDOR`.
-- **ENTONCES** el sistema guarda el identificador, pasa primero por `PENDIENTE_ACTIVACION` y finalmente marca al repartidor como `VINCULADO`.
+- **DADO** un perfil `ACTIVO` y `PENDIENTE` y el UUID de una cuenta creada previamente por Seguridad.
+- **CUANDO** el Gestor asocia la cuenta.
+- **ENTONCES** se guarda el UUID único, el vínculo queda `VINCULADO` y se registra auditoría sin modificar la cuenta global.
 
-#### CA-15. Vinculación pendiente o fallida
+#### CA-15. Rechazo de vínculo inválido o incompatible
 
-- **DADO** que Seguridad no responde, rechaza la creación o la cuenta aún no fue activada.
-- **CUANDO** se registra el repartidor.
-- **ENTONCES** el repartidor queda en `PENDIENTE`, `ERROR` o `PENDIENTE_ACTIVACION` según corresponda, no puede recibir una jornada y el panel ofrece reintentar cuando sea aplicable.
+- **DADO** un UUID inválido, un perfil inactivo, una cuenta ya asociada a otro perfil o un intento de cambiar una cuenta vinculada.
+- **CUANDO** el Gestor intenta asociar la cuenta.
+- **ENTONCES** se rechaza conforme al contrato y se conservan el perfil, los vínculos y la auditoría previa.
 
-#### CA-16. Reintento de vinculación
+#### CA-16. Repetición idempotente de vinculación
 
-- **DADO** un repartidor en estado de vinculación `ERROR`.
-- **CUANDO** el Gestor selecciona la opción de reintentar.
-- **ENTONCES** el sistema vuelve a solicitar la creación del usuario a Seguridad y actualiza el estado de vinculación según la respuesta.
+- **DADO** un perfil activo vinculado a una cuenta.
+- **CUANDO** se repite la asociación del mismo UUID.
+- **ENTONCES** se confirma sin duplicar el vínculo ni su auditoría.
 
 ## 6. Frontend
 
 | Elemento | Responsabilidad |
 |---|---|
-| Panel de Repartidores | Listado paginado con filtros por estado de registro, vinculación y turno; acciones de alta, edición, baja y reintento de vinculación. |
+| Panel de Repartidores | Listado paginado con filtros por estado de registro, vinculación y turno; acciones de alta, edición, baja y asociación manual de cuenta. |
 | Formulario de Repartidor | Campos: nombres, apellidos, DNI, teléfono, correo, brevete y turno habitual. Validación en cliente y retroalimentación. |
 | Panel de Furgonetas | Catálogo paginado con filtros por estado y placa; acciones de alta, edición y cambio de estado. |
 | Formulario de Furgoneta | Campos: placa, límites de carga (kg, m³, paquetes) y estado. Validación en cliente. |
@@ -195,11 +195,11 @@ El sistema DEBE asociar cada repartidor con su usuario en Seguridad y Usuarios p
 | Componente lógico | Responsabilidad |
 |---|---|
 | Gestión de repartidores | CRUD con unicidad de DNI, baja lógica, autorización y auditoría. |
-| Vinculación con Seguridad | Solicitar la creación del usuario, guardar su identificador, gestionar reintentos y actualizar estados de vinculación. |
+| Vinculación con Seguridad | Asociar el UUID de una cuenta existente, comprobar unicidad y estado local, y auditar sin gestionar credenciales. |
 | Gestión de furgonetas | CRUD con unicidad de placa, estado, límites de carga y auditoría. |
 | Persistencia y auditoría | Registrar cambios con usuario y marca temporal en UTC. |
 
-Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract-operacion-reparto.md`.
+Las rutas, cuerpos y códigos se centralizan en [Operación §4.1](../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas) [cite: 1]. La baja o retiro también rechazan reservas activas y cierran jornadas vacías de forma atómica; la edición de capacidad conserva las instantáneas existentes. El acceso de campo exige perfil local activo/vinculado y la comprobación de propiedad que corresponde a F-03.
 
 ## 8. Requisitos no funcionales
 
@@ -216,7 +216,7 @@ Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract-oper
 - **Cálculo de ocupación, disponibilidad y saturación:** corresponde a F-06.
 - **Panel de monitoreo de flota en tiempo real:** corresponde a F-06.
 - **Asignación de despachos:** corresponde a F-02.
-- **Autenticación y gestión de credenciales:** corresponden a Seguridad y Usuarios; F-05 solo solicita el alta del usuario y guarda el vínculo.
+- **Autenticación y gestión de credenciales:** corresponden a Seguridad y Usuarios; F-05 solo guarda el vínculo comunicado por el canal administrativo.
 - Motocicletas, automóviles, despacho express y gestión avanzada de flota quedan fuera del alcance aprobado. F-05 administra únicamente furgonetas.
 
 ## 10. Estrategia de verificación
@@ -226,7 +226,7 @@ Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract-oper
 | CA-01 a CA-06 | Registrar, duplicar, editar, dar de baja con y sin despachos en curso, y acceder sin permisos. | Integración y unitaria | Registro `ACTIVO`, `409`, `403` y baja coherente. |
 | CA-07 | Consultar repartidores con filtros y paginación. | Integración y frontend | Listado paginado con filtros funcionales. |
 | CA-08 a CA-13 | Registrar furgonetas, duplicar placa, editar límites y cambiar estado con y sin despachos en curso. | Integración y unitaria | Registro, `409`, edición y cierre de jornada coherente. |
-| CA-14 a CA-16 | Registrar con Seguridad disponible, no disponible y reintentar. | Integración con doble de prueba | Vinculación exitosa, pendiente o error con reintento funcional. |
+| CA-14 a CA-16 | Asociar un UUID válido, rechazar conflictos y repetir el mismo vínculo. | Integración local y recorrido con Seguridad real pendiente | Vínculo único, rechazo sin cambios y repetición sin duplicar auditoría. |
 
 Además, se ejecutarán dos recorridos funcionales completos:
 
@@ -243,3 +243,5 @@ La funcionalidad se considera completa cuando:
 - La baja lógica preserva el historial.
 - No se han incorporado capacidades declaradas fuera de alcance.
 - La evidencia de pruebas puede trazarse hacia cada criterio de aceptación.
+
+La revisión de alineación conserva los IDs de los criterios y actualiza el flujo heredado de creación automática conforme a [Seguridad §8.4](../integraciones/api-contract.md#84-creación-y-vinculación-de-un-usuario-repartidor). Las nueve carpetas SDD registran los cambios y las limitaciones reales de verificación.
