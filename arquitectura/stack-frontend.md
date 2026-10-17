@@ -1,181 +1,68 @@
-# Stack de Dependencias: Frontend
+# Stack de dependencias: frontend
 
-**Responsable de definición:** Rhamses
-**Estado:** Definido
-**Aplica a:** Repositorio frontend del Módulo de Despacho y Entrega a Domicilio
+**Responsable:** Rhamses, con revisión de Max.
+**Estado:** Conciliado con el monorepositorio y SYSTEM-DESIGN.md §15 el 16/10/2026.
 
----
+## 1. Organización y gestor
 
-## 1. Gestor de dependencias
+El frontend usa npm workspaces: dos aplicaciones (`apps/despacho-administrativo` y `apps/despacho-repartidor`) y tres paquetes compartidos. La fuente ejecutable de dependencias son sus `package.json`; `package-lock.json` fija la resolución reproducible. No copiar un manifiesto paralelo desde esta guía [cite: 1].
 
-El frontend usa **npm** y un archivo `package.json` como gestor de dependencias. **Maven no aplica al frontend**; Maven es exclusivo del backend Java.
-
-Para instalar todas las dependencias del proyecto basta ejecutar:
+Requisitos declarados: Node.js >=20 y npm >=10. Desde la raíz de `despacho-frontend`:
 
 ```bash
-npm install
+npm ci
+npm run dev:administrativo
+npm run dev:repartidor
 ```
 
----
+## 2. Stack y dependencias existentes
 
-## 2. Stack base
-
-| Herramienta | Versión mínima | Propósito |
+| Recurso | Versión declarada | Uso |
 |---|---|---|
-| Node.js | 20.x LTS | Entorno de ejecución para desarrollo local |
-| npm | 10.x | Gestor de paquetes |
-| React | 18.3.x | Biblioteca principal de interfaz de usuario |
-| Vite | 5.x | Servidor de desarrollo y bundler de producción |
+| React y React DOM | ^19.2.0 | Interfaz de las dos aplicaciones |
+| TypeScript | ^5.0.0 | Tipado y comprobación estática |
+| Vite | ^5.4.0 | Desarrollo y construcción |
+| Plugin React de Vite | ^4.3.0 | Transformación de JSX |
+| Mantine core, hooks, dates y notifications | 9.6.2 | Controles, fechas y proveedor de notificaciones |
+| Tabler Icons React | ^3.0.0 | Iconos de la guía |
+| React Router DOM | ^6.26.0 | Navegación |
+| Axios | ^1.7.0 | Transporte desde cliente-api |
+| React Hook Form | ^7.53.0 | Formularios |
+| Zod y resolvers | ^3.23.0 / ^5.0.0 | Validación |
+| Day.js | ^1.11.0 | Fechas de presentación |
+| JWT Decode | ^4.0.0 | Utilidad declarada; no concede permisos |
+| Zustand | ^4.5.0 | Dependencia existente; no obliga a crear otro almacén |
+| TanStack React Table | ^8.20.0 | Dependencia administrativa para tablas |
 
----
+No se incorporan dependencias nuevas ni se actualizan versiones en esta conciliación. Tailwind, react-hot-toast y Recharts del borrador anterior no forman parte de la base actual. Mantine sustituye las propuestas visuales anteriores [cite: 1, 2].
 
-## 3. Dependencias de producción
+## 3. Estilos y componentes compartidos
 
-Estas dependencias se incluyen en el bundle final que se despliega en **Vercel**.
+Ambas aplicaciones importan el tema `tema` y `tokens.css` de `@despacho/componentes-compartidos`. Inter se utiliza en cuerpo y controles y Oswald 700 en H1–H3. Los estilos propios usan CSS Modules y variables del tema. Los breakpoints se ajustan al diseño: 576, 768, 992, 1200 y 1408 px [cite: 2].
 
-### 3.1. Enrutamiento
+Cada aplicación mantiene un `MantineProvider` y un `Notifications`; CR-15 adapta ese proveedor existente. No se crea un segundo sistema de notificaciones. Los componentes visuales reciben datos, permisos resueltos y callbacks del consumidor [cite: 3].
 
-| Paquete | Versión | Uso principal | Funcionalidades que lo usan |
-|---|---|---|---|
-| `react-router-dom` | ^6.26.0 | Navegación entre páginas y rutas protegidas | Todas (F-01 a F-05) |
+## 4. Herramientas y comprobaciones
 
-### 3.2. Peticiones HTTP
+Vitest ^3.2.0, JSDOM ^26.1.0, Testing Library React ^16.3.0, DOM ^10.4.0, jest-dom ^6.6.3 y user-event ^14.6.1 están declarados para las pruebas. JSDOM comprueba comportamiento del DOM; el layout requiere navegador.
 
-| Paquete | Versión | Uso principal | Funcionalidades que lo usan |
-|---|---|---|---|
-| `axios` | ^1.7.0 | Llamadas al backend REST y manejo de interceptores JWT | Todas (F-01 a F-05) |
-
-### 3.3. Estilos y componentes visuales
-
-| Paquete | Versión | Uso principal | Funcionalidades que lo usan |
-|---|---|---|---|
-| `tailwindcss` | ^3.4.0 | Sistema de diseño por clases utilitarias | Todas |
-| `@tailwindcss/forms` | ^0.5.7 | Estilos base para inputs, selects y checkboxes | Formularios en general |
-
-### 3.4. Gráficos y dashboard
-
-| Paquete | Versión | Uso principal | Funcionalidades que lo usan |
-|---|---|---|---|
-| `recharts` | ^2.12.0 | Barras de progreso de saturación, tarjetas de resumen y gráficos del panel de monitoreo | **F-05** (panel de flota) |
-
-### 3.5. Tablas con filtros y paginación
-
-| Paquete | Versión | Uso principal | Funcionalidades que lo usan |
-|---|---|---|---|
-| `@tanstack/react-table` | ^8.20.0 | Listados paginados y filtrables de repartidores, furgonetas y despachos | **F-02, F-05** |
-
-### 3.6. Formularios y validación
-
-| Paquete | Versión | Uso principal | Funcionalidades que lo usan |
-|---|---|---|---|
-| `react-hook-form` | ^7.53.0 | Gestión de formularios con bajo re-render | Todos los formularios |
-| `zod` | ^3.23.0 | Esquemas de validación (DNI obligatorio, peso > 0, fechas futuras, etc.) | Todos los formularios |
-| `@hookform/resolvers` | ^3.9.0 | Conector entre react-hook-form y Zod | Todos los formularios |
-
-### 3.7. Notificaciones y feedback
-
-| Paquete | Versión | Uso principal | Funcionalidades que lo usan |
-|---|---|---|---|
-| `react-hot-toast` | ^2.4.0 | Mensajes de éxito, error y advertencia | Todas |
-
-### 3.8. Autenticación y sesión
-
-| Paquete | Versión | Uso principal | Funcionalidades que lo usan |
-|---|---|---|---|
-| `jwt-decode` | ^4.0.0 | Decodificación del token JWT para leer el rol y la expiración en el cliente | Todas (rutas protegidas) |
-
-### 3.9. Estado global
-
-| Paquete | Versión | Uso principal | Funcionalidades que lo usan |
-|---|---|---|---|
-| `zustand` | ^4.5.0 | Almacén global liviano para sesión del usuario y datos compartidos entre componentes | Todas |
-
----
-
-## 4. Dependencias de desarrollo
-
-Estas dependencias solo se usan en desarrollo local y no forman parte del bundle de producción.
-
-| Paquete | Versión | Propósito |
-|---|---|---|
-| `vite` | ^5.x | Servidor de desarrollo con hot reload y build de producción |
-| `@vitejs/plugin-react` | ^4.x | Plugin de Vite para soporte de JSX y Fast Refresh |
-| `postcss` | ^8.4.0 | Procesador CSS requerido por Tailwind |
-| `autoprefixer` | ^10.4.0 | Agrega prefijos CSS para compatibilidad con navegadores |
-| `vitest` | ^1.6.0 | Framework de pruebas unitarias compatible con Vite |
-| `@testing-library/react` | ^14.3.0 | Utilidades para renderizar y testear componentes React |
-| `@testing-library/jest-dom` | ^6.4.0 | Matchers adicionales para assertions sobre el DOM |
-| `@testing-library/user-event` | ^14.5.0 | Simulación de interacciones del usuario en pruebas |
-
----
-
-## 5. Archivo `package.json` de referencia
-
-```json
-{
-  "name": "despacho-frontend",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest"
-  },
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.0",
-    "axios": "^1.7.0",
-    "recharts": "^2.12.0",
-    "@tanstack/react-table": "^8.20.0",
-    "react-hook-form": "^7.53.0",
-    "zod": "^3.23.0",
-    "@hookform/resolvers": "^3.9.0",
-    "react-hot-toast": "^2.4.0",
-    "jwt-decode": "^4.0.0",
-    "zustand": "^4.5.0"
-  },
-  "devDependencies": {
-    "vite": "^5.4.0",
-    "@vitejs/plugin-react": "^4.3.0",
-    "tailwindcss": "^3.4.0",
-    "@tailwindcss/forms": "^0.5.7",
-    "postcss": "^8.4.0",
-    "autoprefixer": "^10.4.0",
-    "vitest": "^1.6.0",
-    "@testing-library/react": "^14.3.0",
-    "@testing-library/jest-dom": "^6.4.0",
-    "@testing-library/user-event": "^14.5.0"
-  }
-}
+```bash
+npm test
+npm run test:f04
+npm run typecheck
+npm run build
 ```
 
----
+La evidencia de implementación y los resultados reales se mantienen en `despacho-frontend/docs/componentes/`; esta guía no certifica por sí sola que los componentes ni sus consumidores estén completos.
 
-## 6. Despliegue
+## 5. Configuración y despliegue
 
-El frontend se despliega en **Vercel**. El archivo `vite.config.js` debe configurar la variable de entorno `VITE_API_BASE_URL` para apuntar al backend desplegado en Render.
+Cada aplicación mantiene su configuración de Vite y Vercel. Los servidores locales usan 5173 y 5174. `VITE_API_BASE_URL` identifica el origen público del Gateway, sin `/api/v1` al final; las variables `VITE_*` se exponen al navegador y no contienen secretos. Consultar los `.env.example` existentes y la guía frontend [cite: 1].
 
-```js
-// vite.config.js (referencial)
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+La autenticación continúa siendo provisional hasta integrar Seguridad y Usuarios. Los componentes no decodifican tokens ni validan permisos del servidor. La marca inversa debe provenir del activo autorizado de Figma; el fallback textual no acredita su aprobación visual.
 
-export default defineConfig({
-  plugins: [react()],
-})
-```
+## 6. Referencias
 
-```env
-# .env.production
-VITE_API_BASE_URL=https://despacho-backend.onrender.com
-```
-
----
-
-## 7. Notas
-
-- Las versiones exactas se fijarán cuando se cree el repositorio de frontend ejecutando `npm install` y commiteando el `package-lock.json`.
-- No agregar dependencias nuevas sin coordinarlo con el equipo, para evitar conflictos entre ramas.
-- El diseño de interfaces usa **Figma** (a cargo de Valqui) como referencia antes de implementar en código.
+- [cite: 1] Manifiestos, lockfile, configuraciones y README del repositorio hermano `../despacho-frontend`.
+- [cite: 2] [Sistema de diseño](../disenio/SYSTEM-DESIGN.md), §§6, 15 y 17.
+- [cite: 3] [Componentes React](../disenio/componentes-react.md), §§1.3–1.5 y 4.5.1.
