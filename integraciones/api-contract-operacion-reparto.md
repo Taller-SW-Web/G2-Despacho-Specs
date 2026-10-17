@@ -107,37 +107,109 @@ El almacenamiento deniega accesos sin firma válida y enlaces vencidos. Un fallo
 
 ### 4.1. Repartidores y furgonetas
 
-| Método | Ruta | Roles | Propósito |
-|---|---|---|---|
-| `GET` | `/api/v1/repartidores` | `GESTOR_DESPACHO` | Listar repartidores |
-| `POST` | `/api/v1/repartidores` | `GESTOR_DESPACHO` | Registrar perfil local pendiente de vinculación |
-| `GET` | `/api/v1/repartidores/{idRepartidor}` | `GESTOR_DESPACHO` | Consultar detalle |
-| `PUT` | `/api/v1/repartidores/{idRepartidor}` | `GESTOR_DESPACHO` | Editar |
-| `PATCH` | `/api/v1/repartidores/{idRepartidor}/estado` | `GESTOR_DESPACHO` | Alta o baja lógica |
-| `PUT` | `/api/v1/repartidores/{idRepartidor}/vinculacion` | `GESTOR_DESPACHO` | Asociar el `usuario_id` creado previamente en Seguridad |
-| `GET` | `/api/v1/furgonetas` | `GESTOR_DESPACHO` | Listar furgonetas |
-| `POST` | `/api/v1/furgonetas` | `GESTOR_DESPACHO` | Registrar furgoneta |
-| `PUT` | `/api/v1/furgonetas/{idFurgoneta}` | `GESTOR_DESPACHO` | Editar límites |
-| `PATCH` | `/api/v1/furgonetas/{idFurgoneta}/estado` | `GESTOR_DESPACHO` | Cambiar disponibilidad o mantenimiento |
+Operación es propietaria del catálogo F-05 y de su auditoría. Todas las operaciones de esta sección requieren un JWT de acceso con rol `GESTOR_DESPACHO`; las escrituras obtienen del `sub` UUID la identidad del actor. Los tokens de servicio no sustituyen este permiso.
 
-La vinculación recibe el identificador de la cuenta global y no crea ni modifica credenciales:
+| Método | Ruta | Resultado exitoso |
+|---|---|---|
+| `GET` | `/api/v1/repartidores` | `200`, página de repartidores |
+| `POST` | `/api/v1/repartidores` | `201`, repartidor creado y `Location` |
+| `GET` | `/api/v1/repartidores/{idRepartidor}` | `200`, repartidor |
+| `PUT` | `/api/v1/repartidores/{idRepartidor}` | `200`, repartidor actualizado |
+| `PATCH` | `/api/v1/repartidores/{idRepartidor}/estado` | `204`, baja lógica; no permite reactivación |
+| `PUT` | `/api/v1/repartidores/{idRepartidor}/vinculacion` | `204`, asociación manual de cuenta existente |
+| `GET` | `/api/v1/furgonetas` | `200`, página de furgonetas |
+| `POST` | `/api/v1/furgonetas` | `201`, furgoneta creada y `Location` |
+| `PUT` | `/api/v1/furgonetas/{idFurgoneta}` | `200`, furgoneta con límites actualizados |
+| `PATCH` | `/api/v1/furgonetas/{idFurgoneta}/estado` | `204`, cambio de estado confirmado |
+
+#### 4.1.1. Consultas y paginación
+
+- `pagina`: entero entre 1 y 2147483647; valor predeterminado 1.
+- `tamanoPagina`: entero entre 1 y 100; valor predeterminado 50. La UI ofrece 20, 50 y 100.
+- Filtros de repartidores: `estadoRegistro` (`ACTIVO`, `INACTIVO`), `estadoVinculacion` (`PENDIENTE`, `VINCULADO`) y `turnoHabitual` (`MANANA`, `TARDE`, `COMPLETO`).
+- Filtros de furgonetas: `estado` (`DISPONIBLE`, `EN_MANTENIMIENTO`, `FUERA_DE_SERVICIO`) y `placa` de hasta diez caracteres. La búsqueda de placa es una coincidencia literal sin distinguir mayúsculas.
+- Los filtros se combinan. Una consulta vacía devuelve `contenido=[]`, `totalElementos=0` y `totalPaginas=0`; no se transforma un error en un catálogo vacío.
+- El orden es `creado_en` descendente e identificador como desempate; el contenido y el total se leen de forma consistente.
+- La página solicitada se conserva en la respuesta, incluso si queda fuera del total. El frontend puede consultar la última página disponible.
+
+La respuesta contiene `contenido`, `pagina`, `tamanoPagina`, `totalElementos` y `totalPaginas`. Esta última es el redondeo superior de total/tamaño, con cero para un catálogo vacío. Cada elemento utiliza el recurso definido a continuación.
+
+#### 4.1.2. Repartidor
+
+| Campo | Tipo y validación | Uso |
+|---|---|---|
+| `idRepartidor` | UUID | Solo respuesta y ruta |
+| `nombres`, `apellidos` | Texto obligatorio, máximo 80 caracteres por campo | Alta; no editables |
+| `dni` | Texto de ocho dígitos, único | Alta; no editable |
+| `telefono` | Texto obligatorio, máximo 20 caracteres, mínimo seis dígitos; admite `+` inicial, espacios, paréntesis y guiones | Alta y edición |
+| `correo` | Correo válido obligatorio, máximo 120 caracteres; único sin distinguir mayúsculas | Alta y edición; se almacena normalizado |
+| `numeroBrevete` | Texto obligatorio, máximo 20 caracteres | Alta y edición |
+| `turnoHabitual` | `MANANA`, `TARDE`, `COMPLETO` | Alta y edición |
+| `estadoRegistro` | `ACTIVO`, `INACTIVO` | Respuesta; el alta usa `ACTIVO` |
+| `estadoVinculacion` | `PENDIENTE`, `VINCULADO` | Respuesta; el alta usa `PENDIENTE` |
+| `usuarioId` | UUID o `null` | Respuesta; `null` antes de la asociación |
+
+El alta recibe los siete campos de datos personales/contacto/turno; la edición recibe únicamente teléfono, correo, brevete y turno, todos obligatorios. Los campos ajenos al comando se rechazan, incluidos DNI, nombres o estados en una edición. No se almacenan contraseñas.
+
+El alta es local y no solicita crear una cuenta remota: una vez autorizado el JWT, su persistencia no depende de invocar la provisión de usuarios. El registro permanece pendiente hasta que el Gestor asocia el identificador comunicado por Seguridad.
+
+#### 4.1.3. Vinculación manual y baja local
+
+La vinculación recibe exclusivamente:
 
 ```json
-{
-  "usuarioId": "2f31c1b1-7568-41b8-bf91-342db68431df"
-}
+{"usuarioId":"2f31c1b1-7568-41b8-bf91-342db68431df"}
 ```
 
-Furgoneta:
+La cuenta debe haber sido creada por el canal administrativo de Seguridad, conforme al [contrato externo §8.4](./api-contract.md#84-creación-y-vinculación-de-un-usuario-repartidor). El módulo asocia el UUID localmente y no prueba por sí mismo la activación remota de la cuenta.
 
-```json
-{
-  "placa": "ABC-123",
-  "capacidadPesoKg": 500,
-  "capacidadVolumenM3": 4,
-  "maximoPaquetes": 80
-}
-```
+- Perfil activo y pendiente: guarda el identificador único y cambia a `VINCULADO`, con auditoría.
+- Mismo identificador ya asociado al mismo perfil activo: `204` sin duplicar auditoría.
+- Cuenta ya asociada a otro perfil, cambio de cuenta sobre un perfil vinculado o perfil inactivo: `409`.
+- UUID inválido o ausente: `400`. Perfil inexistente: `404`.
+- No existen los estados locales `PENDIENTE_ACTIVACION` o `ERROR`, ni un comando de creación automática o reintento de provisión en F-05.
+- `REPARTIDOR` no es un rol global: el acceso de campo utiliza el `sub` para comprobar un perfil local `ACTIVO` y `VINCULADO`.
+
+La baja recibe `{"estado":"INACTIVO"}`. Si ya está inactivo, responde `204` sin otro cambio ni auditoría. Conserva identidad, vínculo e historial; no desactiva la cuenta global.
+
+La baja rechaza despachos locales `ASIGNADO`/`EN_CAMINO` o reservas de capacidad activas, aunque la proyección falte o una jornada histórica ya figure cerrada. Si no hay carga, cierra las jornadas activas vacías y da de baja en una sola transacción. Las restricciones de persistencia impiden abrir jornadas con perfiles inactivos o pendientes; el filtro de campo deniega las rutas `/api/v1/repartidor/**` a perfiles no habilitados. Esto no reemplaza la comprobación de propiedad de cada entrega ni implementa las operaciones de F-03/F-06.
+
+#### 4.1.4. Furgoneta y límites persistibles
+
+| Campo | Tipo y validación | Uso |
+|---|---|---|
+| `idFurgoneta` | UUID | Solo respuesta y ruta |
+| `placa` | Texto obligatorio, máximo diez caracteres, único sin distinguir mayúsculas | Alta; se almacena en mayúsculas y no se edita |
+| `estado` | `DISPONIBLE`, `EN_MANTENIMIENTO`, `FUERA_DE_SERVICIO` | Respuesta; alta en `DISPONIBLE` |
+| `capacidadPesoKg` | Número mayor que cero, máximo 9999999.999 y tres decimales | Alta y edición |
+| `capacidadVolumenM3` | Número mayor que cero, máximo 999999.9999 y cuatro decimales | Alta y edición |
+| `maximoPaquetes` | Entero entre 1 y 32767 | Alta y edición |
+
+No se redondea silenciosamente una capacidad que exceda la precisión: se rechaza con `400`. La edición recibe únicamente las tres capacidades y conserva placa y estado. Solo cambia el maestro; las instantáneas de jornadas existentes se mantienen, y F-06 debe tomar el maestro al abrir futuras jornadas.
+
+El cambio de estado recibe únicamente `estado`. Las transiciones son `DISPONIBLE → EN_MANTENIMIENTO/FUERA_DE_SERVICIO`, `EN_MANTENIMIENTO → DISPONIBLE/FUERA_DE_SERVICIO` y `FUERA_DE_SERVICIO → DISPONIBLE`. Solicitar el mismo estado es idempotente; pasar directamente de fuera de servicio a mantenimiento se rechaza con `409`.
+
+Un retiro a mantenimiento o fuera de servicio comprueba despachos y reservas como la baja del repartidor. Sin carga, cierra las jornadas activas vacías en la misma transacción; con carga responde `409` sin cambiar vehículo ni jornada. El estado operativo fuera de turno se deriva del cierre, cuya presentación corresponde a F-06.
+
+La API usa `FUERA_DE_SERVICIO`. Su valor persistido es `INACTIVA`, conforme al modelo de datos; esa traducción pertenece al adaptador JDBC y no crea un estado nuevo para el consumidor.
+
+#### 4.1.5. Auditoría, errores y recepción
+
+Las mutaciones y su auditoría se confirman o revierten juntas, con identidad del JWT, estados anterior/nuevo e instante UTC. No se duplica auditoría ante la repetición idempotente del estado o vínculo. La comprobación de carga se serializa con los escritores de jornadas/reservas/proyecciones; los fallos de acceso a datos no se interpretan como ausencia de carga.
+
+Se usa [Problem Details del contrato externo §3.5](./api-contract.md#35-errores). La validación de campos puede incluir `errores` con `campo` y `motivo`; no se devuelve SQL ni información privada en los errores.
+
+| HTTP | Código | Situación |
+|---|---|---|
+| `400` | `DESP_ERROR_CAMPOS_INVALIDOS` | Campos, tipos, estados, parámetros o formato no válidos |
+| `401` | `DESP_ERROR_TOKEN_INVALIDO` | Token ausente o no aceptado |
+| `403` | `DESP_ERROR_SCOPE_INSUFICIENTE` | Sin rol o perfil habilitado |
+| `403` | `DESP_ERROR_IDENTIDAD_INVALIDA` | Actor de escritura sin `sub` UUID utilizable |
+| `404` | `DESP_ERROR_RECURSO_NO_ENCONTRADO` | Perfil o vehículo inexistente |
+| `409` | `DESP_ERROR_CONFLICTO_FLOTA` | Duplicado, transición inválida, carga pendiente o vínculo incompatible |
+| `503` | `DESP_ERROR_OPERACION_NO_DISPONIBLE` | No puede completarse la operación o comprobarse el perfil local |
+
+El frontend confirma el resultado con la respuesta válida y la consulta posterior. Ante timeout, `5xx` o respuesta no verificable después de una mutación, conserva el formulario y exige consultar el estado antes de repetir. Los estados futuros desconocidos se presentan sin habilitar transiciones que el cliente no conoce.
 
 ### 4.2. Jornadas y monitoreo
 
