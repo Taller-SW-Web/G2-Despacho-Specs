@@ -90,7 +90,7 @@ Los mensajes y los controles se revisan contra los criterios conservados; no se 
 | CUI-05 | Completar la operación o consulta | Mostrar el resultado confirmado y actualizar la información visible | CA-01 |
 | CUI-06 | Recorrer con teclado y en pantalla reducida | Mantener foco, etiquetas y acceso a todas las acciones disponibles | CA-01; requisitos de accesibilidad §6 |
 
-- Pendiente: Conciliar FUERA_DE_SERVICIO del diseño con INACTIVA del modelo, usando la traducción explícita del adaptador como referencia de implementación. La exigencia de menos de 200 ms debe medirse con un escenario reproducible.
+- Pendiente: Alineado con Operación §4.1: registro local, asociación manual de UUID y estados `PENDIENTE`/`VINCULADO`; sin creación automática de cuentas ni rol global de repartidor. Los efectos integrados en F-03/F-06 siguen pendientes.
 - Evidencia prevista: pruebas de interacción, revisión con teclado y capturas de estados identificadas en [evidence.md](./evidence.md).
 
 ## 8. Referencias

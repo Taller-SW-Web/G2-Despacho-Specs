@@ -4,7 +4,7 @@
 
 **Responsable:** Rhamses (Kevin Rhamses Bohorquez).
 
-**Estado:** Borrador migrado a SDD; revisión funcional y aceptación pendientes.
+**Estado:** Implementación local en verificación; aceptación integrada y revisión humana pendientes.
 
 **Actor principal:** Gestor de Despacho.
 
@@ -12,7 +12,7 @@
 
 **Servicio propietario:** Operación de Reparto y Flota.
 
-> Migración estructural desde `ES-F05-09-CambiarEstadoFurgoneta.md`, revisión `f3849d9`. Se conservan las reglas y los criterios originales, incluidos sus IDs. Las discrepancias detectadas se registran en §7 y en el plan; esta migración no aprueba cambios de contrato ni acredita integración desplegada.
+> La migración SDD se conserva en el historial. Esta revisión alinea los comportamientos con Operación §4.1 y Seguridad §8.4; mantiene los IDs de criterios y registra los cambios funcionales en la evidencia.
 
 ## 1. Contexto y objetivo
 
@@ -72,7 +72,7 @@ El alcance general y la propiedad del catálogo corresponden a la funcionalidad 
 - Si la furgoneta tiene una jornada activa con despachos `ASIGNADO` o `EN_CAMINO`, el cambio a `EN_MANTENIMIENTO` o `FUERA_DE_SERVICIO` se rechaza con `409 Conflict`.
 - Si la furgoneta tiene jornada activa sin despachos en curso, la jornada se cierra y el repartidor pasa a `FUERA_DE_TURNO` en F-06.
 - Una furgoneta en `EN_MANTENIMIENTO` o `FUERA_DE_SERVICIO` queda excluida de nuevas asignaciones diarias en F-06.
-- `FUERA_DE_SERVICIO` representa un retiro definitivo, pero se conserva el historial.
+- `FUERA_DE_SERVICIO` representa un retiro operativo con historial conservado; la rehabilitación explícita a DISPONIBLE está permitida.
 - Un usuario sin rol `GESTOR_DESPACHO` recibe `403 Forbidden`.
 - La auditoría registra usuario, estado anterior, estado nuevo y marca temporal en UTC.
 
@@ -128,7 +128,7 @@ La operación de referencia es `PATCH /api/v1/furgonetas/{idFurgoneta}/estado`, 
 
 - **DADO** una furgoneta `DISPONIBLE` o `EN_MANTENIMIENTO` sin jornada activa con despachos en curso.
 - **CUANDO** el Gestor la cambia a `FUERA_DE_SERVICIO`.
-- **ENTONCES** el sistema actualiza el estado, la excluye definitivamente y conserva el historial.
+- **ENTONCES** el sistema actualiza el estado, la excluye de nuevas asignaciones hasta una rehabilitación explícita y conserva el historial.
 
 ### CA-06. Furgoneta inexistente
 
@@ -144,30 +144,28 @@ La operación de referencia es `PATCH /api/v1/furgonetas/{idFurgoneta}/estado`, 
 
 ## 7. UI, backend y requisitos no funcionales
 
-- UI: interacción, estados y criterios CUI en [ui.md](./ui.md); reutilización de los [componentes compartidos](../../disenio/componentes-react.md).
-- Backend: Cambiar el estado del vehículo y cerrar jornadas vacías sin retirar carga en curso. Propiedad local de `furgonetas y asignaciones_diarias`; no acceder a la base de Gestión.
-- Requisitos no funcionales: Confirmar consistencia de datos, permisos y auditoría; comprobar cancelación, repetición y concurrencia cuando afecten el resultado.
-- Seguridad y datos: no mostrar credenciales, tokens ni errores técnicos en la interfaz; la habilitación visual no reemplaza la autorización del backend.
-- Pendiente funcional P-01: La fuente admite rehabilitación pero también llama definitivo al retiro; revisar esa redacción funcional sin eliminar criterios. Confirmar la traducción FUERA_DE_SERVICIO/INACTIVA y verificar en F-06 el estado FUERA_DE_TURNO derivado del cierre de jornada.
-- Responsable de P-01: Rhamses coordina con Arquitectura; la revisión afecta los criterios indicados y debe resolverse antes de declarar la aceptación completa.
-- Las implementaciones existentes se referencian en [evidence.md](./evidence.md). Su existencia no reemplaza la comprobación individual de los criterios conservados.
+- UI: [interacción y criterios CUI](./ui.md), con controles compartidos y estados de consulta distintos.
+- Backend: Operación valida identidad y rol, aplica las reglas del catálogo y conserva sus datos; no consulta las tablas de Gestión.
+- Acuerdos locales: los DTO, límites, estados, errores e idempotencia están definidos en Operación §4.1 y contrastados con ambos repositorios.
+- Requisitos no funcionales: Conservar autorización, datos y auditoría; comprobar repetición y concurrencia cuando afecten el resultado.
+- Pendientes externos: aceptación con Seguridad real; revisión visual humana y efectos de los consumidores F-03/F-06 que excedan las comprobaciones locales.
+- [Evidencia](./evidence.md) distingue las comprobaciones locales, los dobles y los criterios todavía pendientes.
 
 ## 8. Verificación y completitud
 
-| Criterio | Comprobación prevista | Nivel y preparación |
+| Criterio | Comprobación | Evidencia |
 |---|---|---|
-| CA-01 | Pasar a mantenimiento sin jornada y revisar disponibilidad y auditoría. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-02 | Retirar con jornada vacía y comprobar cierre, auditoría y estado operativo derivado en F-06. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-03 | Crear despachos ASIGNADO y EN_CAMINO y comprobar rechazo del retiro sin cambios. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-04 | Volver de mantenimiento a DISPONIBLE y verificar el catálogo. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-05 | Retirar a FUERA_DE_SERVICIO y conservar el historial; revisar rehabilitación admitida. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-06 | Cambiar estado de un UUID ausente y comprobar recurso inexistente. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-07 | Cambiar estado con otro rol y comprobar rechazo. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
+| CA-01 | Cambio a mantenimiento sin jornada activa; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
+| CA-02 | Cambio a mantenimiento con jornada activa sin despachos en curso; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
+| CA-03 | Rechazo por despachos en curso; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
+| CA-04 | Retorno a disponible desde mantenimiento; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
+| CA-05 | Cambio a fuera de servicio; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
+| CA-06 | Furgoneta inexistente; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
+| CA-07 | Acceso sin permisos; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
 
-- [ ] Todos los criterios y CUI cuentan con resultados por caso en [evidence.md](./evidence.md).
-- [ ] P-01 está resuelto en los documentos propietarios y revisado por el equipo.
-- [ ] Los datos, el contrato y la implementación son consistentes.
-- [ ] Las dependencias simuladas y la integración real pendiente se identifican expresamente.
+- [ ] Todos los CA/CUI y requisitos no funcionales del alcance tienen aceptación completa.
+- [ ] Las dependencias reales y la revisión humana se verificaron.
+- [ ] La verificación local y sus límites están registrados.
 
 ## 9. Referencias
 

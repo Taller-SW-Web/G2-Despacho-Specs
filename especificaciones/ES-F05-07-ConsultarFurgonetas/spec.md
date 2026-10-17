@@ -4,7 +4,7 @@
 
 **Responsable:** Rhamses (Kevin Rhamses Bohorquez).
 
-**Estado:** Borrador migrado a SDD; revisión funcional y aceptación pendientes.
+**Estado:** Implementación local en verificación; aceptación integrada y revisión humana pendientes.
 
 **Actor principal:** Gestor de Despacho.
 
@@ -12,7 +12,7 @@
 
 **Servicio propietario:** Operación de Reparto y Flota.
 
-> Migración estructural desde `ES-F05-07-ConsultarFurgonetas.md`, revisión `f3849d9`. Se conservan las reglas y los criterios originales, incluidos sus IDs. Las discrepancias detectadas se registran en §7 y en el plan; esta migración no aprueba cambios de contrato ni acredita integración desplegada.
+> La migración SDD se conserva en el historial. Esta revisión alinea los comportamientos con Operación §4.1 y Seguridad §8.4; mantiene los IDs de criterios y registra los cambios funcionales en la evidencia.
 
 ## 1. Contexto y objetivo
 
@@ -122,28 +122,26 @@ La operación de referencia es `GET /api/v1/furgonetas`, definida en [Operación
 
 ## 7. UI, backend y requisitos no funcionales
 
-- UI: interacción, estados y criterios CUI en [ui.md](./ui.md); reutilización de los [componentes compartidos](../../disenio/componentes-react.md).
-- Backend: Consultar y filtrar el catálogo paginado de furgonetas. Propiedad local de `furgonetas`; no acceder a la base de Gestión.
-- Requisitos no funcionales: Conservar el requisito original de menos de 200 ms; medirlo con volumen de datos, percentil, red y entorno registrados. No se acredita esa cifra mediante una prueba de presentación.
-- Seguridad y datos: no mostrar credenciales, tokens ni errores técnicos en la interfaz; la habilitación visual no reemplaza la autorización del backend.
-- Pendiente funcional P-01: Conciliar FUERA_DE_SERVICIO del diseño con INACTIVA del modelo, usando la traducción explícita del adaptador como referencia de implementación. La exigencia de menos de 200 ms debe medirse con un escenario reproducible.
-- Responsable de P-01: Rhamses coordina con Arquitectura; la revisión afecta los criterios indicados y debe resolverse antes de declarar la aceptación completa.
-- Las implementaciones existentes se referencian en [evidence.md](./evidence.md). Su existencia no reemplaza la comprobación individual de los criterios conservados.
+- UI: [interacción y criterios CUI](./ui.md), con controles compartidos y estados de consulta distintos.
+- Backend: Operación valida identidad y rol, aplica las reglas del catálogo y conserva sus datos; no consulta las tablas de Gestión.
+- Acuerdos locales: los DTO, límites, estados, errores e idempotencia están definidos en Operación §4.1 y contrastados con ambos repositorios.
+- Requisitos no funcionales: El requisito de menos de 200 ms debe medirse por separado con entorno y volumen registrados; una prueba con mocks o el resultado funcional de una suite no lo acredita.
+- Pendientes externos: aceptación con Seguridad real; revisión visual humana y efectos de los consumidores F-03/F-06 que excedan las comprobaciones locales.
+- [Evidencia](./evidence.md) distingue las comprobaciones locales, los dobles y los criterios todavía pendientes.
 
 ## 8. Verificación y completitud
 
-| Criterio | Comprobación prevista | Nivel y preparación |
+| Criterio | Comprobación | Evidencia |
 |---|---|---|
-| CA-01 | Sembrar furgonetas y revisar filas, capacidades y totales. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-02 | Filtrar por DISPONIBLE y comprobar todas las filas devueltas. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-03 | Buscar ABC y comprobar coincidencias de placa. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-04 | Consultar sin coincidencias y verificar el estado vacío. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
-| CA-05 | Consultar con otro rol y comprobar rechazo. | Integración backend y recorrido UI; simulación identificada si la dependencia no existe |
+| CA-01 | Listado con furgonetas; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
+| CA-02 | Filtro por estado; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
+| CA-03 | Búsqueda por placa; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
+| CA-04 | Listado vacío; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
+| CA-05 | Acceso sin permisos; comprobar el resultado y la ausencia de efectos no autorizados | [Matriz de casos](./evidence.md#2-cobertura-de-criterios) |
 
-- [ ] Todos los criterios y CUI cuentan con resultados por caso en [evidence.md](./evidence.md).
-- [ ] P-01 está resuelto en los documentos propietarios y revisado por el equipo.
-- [ ] Los datos, el contrato y la implementación son consistentes.
-- [ ] Las dependencias simuladas y la integración real pendiente se identifican expresamente.
+- [ ] Todos los CA/CUI y requisitos no funcionales del alcance tienen aceptación completa.
+- [ ] Las dependencias reales y la revisión humana se verificaron.
+- [ ] La verificación local y sus límites están registrados.
 
 ## 9. Referencias
 

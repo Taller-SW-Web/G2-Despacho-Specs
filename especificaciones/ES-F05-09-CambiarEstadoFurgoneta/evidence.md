@@ -4,11 +4,11 @@
 
 **Responsable de verificación:** Rhamses; revisión humana pendiente.
 
-**Última verificación documental:** 16/10/2026. No se ejecutan nuevas pruebas de producto durante esta migración.
+**Identificación de la verificación:** commits de Git y registros EV.
 
 ## 1. Versión y entorno verificados
 
-- Fuente documental: `ES-F05-09-CambiarEstadoFurgoneta.md` en `f3849d9`; criterios conservados en [spec.md](./spec.md).
+- Fuente documental: `ES-F05-09-CambiarEstadoFurgoneta.md` en `f3849d9`; IDs conservados; cambios funcionales posteriores en EV-04 y [spec.md](./spec.md).
 - Plan y UI: borradores de [plan.md](./plan.md) y [ui.md](./ui.md) preparados en esta migración.
 - Código de referencia: frontend `9c7a99d`; backend `8f8282a`, referenciados en EV-02.
 - Entorno de esta comprobación: archivos Markdown del repositorio de especificaciones; no se conectan bases ni despliegues.
@@ -19,13 +19,13 @@
 
 | Criterio | Tareas | Prueba o comprobación prevista | Registro | Resultado |
 |---|---|---|---|---|
-| CA-01 | T-01 a T-04 | Pasar a mantenimiento sin jornada y revisar disponibilidad y auditoría. | EV-03 | No ejecutado |
-| CA-02 | T-01 a T-04 | Retirar con jornada vacía y comprobar cierre, auditoría y estado operativo derivado en F-06. | EV-03 | No ejecutado |
-| CA-03 | T-01 a T-04 | Crear despachos ASIGNADO y EN_CAMINO y comprobar rechazo del retiro sin cambios. | EV-03 | No ejecutado |
-| CA-04 | T-01 a T-04 | Volver de mantenimiento a DISPONIBLE y verificar el catálogo. | EV-03 | No ejecutado |
-| CA-05 | T-01 a T-04 | Retirar a FUERA_DE_SERVICIO y conservar el historial; revisar rehabilitación admitida. | EV-03 | No ejecutado |
-| CA-06 | T-01 a T-04 | Cambiar estado de un UUID ausente y comprobar recurso inexistente. | EV-03 | No ejecutado |
-| CA-07 | T-01 a T-04 | Cambiar estado con otro rol y comprobar rechazo. | EV-03 | No ejecutado |
+| CA-01 | T-01 a T-04 | Cambio a mantenimiento sin jornada activa; contrastar el escenario de spec.md y sus efectos persistidos. | EV-03 | No ejecutado |
+| CA-02 | T-01 a T-04 | Cambio a mantenimiento con jornada activa sin despachos en curso; contrastar el escenario de spec.md y sus efectos persistidos. | EV-03 | No ejecutado |
+| CA-03 | T-01 a T-04 | Rechazo por despachos en curso; contrastar el escenario de spec.md y sus efectos persistidos. | EV-03 | No ejecutado |
+| CA-04 | T-01 a T-04 | Retorno a disponible desde mantenimiento; contrastar el escenario de spec.md y sus efectos persistidos. | EV-03 | No ejecutado |
+| CA-05 | T-01 a T-04 | Cambio a fuera de servicio; contrastar el escenario de spec.md y sus efectos persistidos. | EV-03 | No ejecutado |
+| CA-06 | T-01 a T-04 | Furgoneta inexistente; contrastar el escenario de spec.md y sus efectos persistidos. | EV-03 | No ejecutado |
+| CA-07 | T-01 a T-04 | Acceso sin permisos; contrastar el escenario de spec.md y sus efectos persistidos. | EV-03 | No ejecutado |
 | CUI-01 | T-01, T-03, T-04 | Escenario de ui.md §7 | EV-03 | No ejecutado |
 | CUI-02 | T-01, T-03, T-04 | Escenario de ui.md §7 | EV-03 | No ejecutado |
 | CUI-03 | T-01, T-03, T-04 | Escenario de ui.md §7 | EV-03 | No ejecutado |
@@ -39,7 +39,7 @@ Los resultados de la matriz corresponden a esta migración. La implementación p
 
 ### EV-01. Migración documental a SDD
 
-- Fecha y herramienta: 16/10/2026, Codex; revisión humana de Rhamses pendiente.
+- Fecha y herramienta: revisión documental de F-05, Codex; revisión humana de Rhamses pendiente.
 - Tareas y criterios: soporte documental de T-01 a T-04; no es una prueba de los CA ni de los CUI.
 - Revisión de origen: `f3849d9`; la revisión final se identifica en el historial de esta carpeta.
 - Preparación: contrastar la plantilla histórica, las plantillas SDD y los ejemplos del repositorio.
@@ -63,18 +63,30 @@ Los resultados de la matriz corresponden a esta migración. La implementación p
 
 - Responsable: Rhamses con Calidad; participación de los propietarios de dependencias según el plan.
 - Tareas y criterios: T-01 a T-04; CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07; CUI-01 a CUI-06.
-- Preparación: resolver DT-01/02, identificar commit y entorno, usar datos sintéticos y comprobar permisos.
+- Preparación: revisar DT-01/02, identificar commit y entorno, usar datos sintéticos y comprobar permisos.
 - Pasos: ejecutar la matriz del plan §6 y los escenarios UI §7; registrar cada caso, salida, efecto persistido y dependencia real o simulada.
 - Resultado esperado: el definido por cada CA/CUI, después de revisar las divergencias en sus documentos propietarios.
 - Resultado observado: no ejecutado durante la migración documental.
 - Resultado de la comprobación: No ejecutado.
 - Artefactos funcionales de esta revisión: pendientes.
 
+### EV-04. Alineación con frontend y backend
+
+- Alcance: revisión de las nueve ES-F05 y Operación §4.1 frente al código de flota. La revisión final queda identificada por los commits de esta entrega.
+- Versiones de esta entrega: [frontend `1d688a5`](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/commit/1d688a5) y [backend `cecda68`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/commit/cecda68).
+- Comprobación documental: 45 archivos SDD, 47 IDs CA, 54 CUI y 896 enlaces locales revisados sin errores. Se conservan los IDs; la redacción modificada se documenta a continuación.
+- Cambio de requisitos: se mantienen los 47 IDs CA; ES-F05-01/05 sustituyen la provisión automática heredada por registro local y asociación manual acordada con Seguridad §8.4. ES-F05-02 usa los estados locales vigentes y ES-F05-09 aclara la rehabilitación. EV-01 describe exclusivamente la migración histórica anterior.
+- Contrato: DTO, límites, errores, idempotencia, carga pendiente, cierre de jornadas vacías y traducción de estados centralizados en Operación §4.1 [cite: 3].
+- Frontend: validación de precisión y rangos, filtros/página y acción de vinculación; pruebas de interacción con transporte simulado. Resultado: 51 pruebas F-05 aprobadas, verificación de tipos y construcción de ambas aplicaciones aprobadas. La guía frontend de EV-02 conserva el historial previo y registra esta revisión en su versión posterior.
+- Backend: filtro de perfil activo/vinculado y respuesta de indisponibilidad; pruebas adicionales de flota y de acceso. Resultado: compilación de producción y pruebas aprobada; siete pruebas unitarias de seguridad y 23 del Gateway aprobadas sin Docker. Los dobles JDBC/JWT no acreditan la consulta real de perfiles; el filtro completo se comprueba en la suite PostgreSQL pendiente.
+- Límite: las nuevas pruebas PostgreSQL, concurrencia, exportación de respuestas y medición local no se acreditan como ejecutadas en esta revisión. Docker quedó apagado por indicación del usuario. No se usa Supabase como sustituto para pruebas que limpian datos.
+- Aceptación: la evidencia local no completa EV-03 ni certifica los 200 ms en Render, la revisión visual humana, cuentas reales de Seguridad o el recorrido F-03/F-06. Seguridad continúa sin despliegue disponible.
+
 ## 4. Uso de IA
 
 | Trabajo | Herramienta y fecha | Entradas | Instrucción | Revisión humana |
 |---|---|---|---|---|
-| Migración y trazabilidad documental | Codex, 16/10/2026 | Fuente `f3849d9`, AGENTS.md, plantilla histórica, plantillas SDD, contratos, diseño y código de EV-02 | Migrar las nueve ES-F05 a carpetas SDD, conservando criterios y actualizando enlaces, con commits del usuario | Pendiente de Rhamses y del equipo |
+| Migración y trazabilidad documental | Codex, revisión documental de F-05 | Fuente `f3849d9`, AGENTS.md, plantilla histórica, plantillas SDD, contratos, diseño y código de EV-02 | Migrar las nueve ES-F05 a carpetas SDD, conservando criterios y actualizando enlaces, con commits del usuario | Pendiente de Rhamses y del equipo |
 
 La herramienta organiza y contrasta documentos; no se atribuye a una persona una revisión o prueba que no realizó.
 
@@ -82,13 +94,13 @@ La herramienta organiza y contrasta documentos; no se atribuye a una persona una
 
 | Hallazgo | Criterios afectados | Impacto | Acción y responsable |
 |---|---|---|---|
-| La fuente admite rehabilitación pero también llama definitivo al retiro; revisar esa redacción funcional sin eliminar criterios. Confirmar la traducción FUERA_DE_SERVICIO/INACTIVA y verificar en F-06 el estado FUERA_DE_TURNO derivado del cierre de jornada. | Criterios indicados en P-01; revisar el alcance completo | Aceptación completa pendiente | Rhamses coordina DT-01 con los propietarios |
-| DTO y adaptación no ratificados completamente | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07 según la operación | El código no reemplaza el contrato | Rhamses y Arquitectura, DT-02 |
+| Alineado con Operación §4.1: registro local, asociación manual de UUID y estados `PENDIENTE`/`VINCULADO`; sin creación automática de cuentas ni rol global de repartidor. Los efectos integrados en F-03/F-06 siguen pendientes. | Criterios de spec.md; integración pendiente | Aceptación completa pendiente | Rhamses coordina DT-01 con los propietarios |
+| Contrato ampliado; aceptación integrada pendiente | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07 según la operación | El código no reemplaza el contrato | Rhamses y Arquitectura, DT-02 |
 | Recorrido con dependencias reales pendiente de comprobar | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07; CUI-01 a CUI-06 | Un resultado con dobles no demuestra integración real | Calidad y propietarios externos, DT-03/04 |
 
 ## 6. Entrega y revisión
 
-- Código de referencia: commits indicados en EV-02; no se modifica código con esta migración.
+- Código de referencia: EV-02 conserva el historial previo; EV-04 registra la revisión que también ajusta frontend y backend en sus repositorios.
 - Commit de migración documental: [15f726a](https://github.com/Taller-SW-Web/G2-Despacho-Specs/commit/15f726a); la verificación documental posterior se identifica en el historial de esta carpeta.
 - Revisor humano y fecha: pendientes.
 - Estado del alcance: parcial documental; aceptación funcional pendiente.

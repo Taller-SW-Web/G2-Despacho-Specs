@@ -4,7 +4,7 @@
 
 **Estado:** Pendiente de verificación por criterio; existe código de referencia, pero esta migración no certifica su aceptación.
 
-**Plan de origen:** [plan.md](./plan.md), preparado con la fuente documental `f3849d9`.
+**Plan de origen:** [plan.md](./plan.md); fuente histórica `f3849d9` y alineación contractual registrada en EV-04.
 
 ## 1. Orden y dependencias
 
@@ -27,7 +27,7 @@ Los estados son Pendiente, En curso, Bloqueada y Completada. Una tarea de compro
 - Objetivo y alcance: Revisar los acuerdos que afectan este comportamiento y comprobar la disponibilidad de los CR antes de aceptar su pantalla.
 - Entradas: [spec.md](./spec.md), criterios CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07; CUI-01 a CUI-06; [ui.md](./ui.md) cuando corresponda; fuentes del plan §1.
 - Dependencias: Fuentes del plan; responsables de contrato y CR.
-- Verificación: Contrastar P-01 y DT-01/02 contra el contrato y el modelo; registrar resolución o bloqueo, versión de componentes y responsable.
+- Verificación: Contrastar los acuerdos de Operación §4.1 y DT-01/02 contra el contrato y el modelo; registrar resolución o bloqueo, versión de componentes y responsable.
 - Condición de cierre: Revisión registrada y ninguna discrepancia funcional sin tratar para el incremento que se acepte.
 - Evidencia: [EV-03](./evidence.md#ev-03-aceptación-por-criterio-pendiente), pendiente; [EV-02](./evidence.md#ev-02-código-y-pruebas-existentes-como-referencia) solo identifica código de referencia.
 - Bloqueo potencial: DT-01/02; Rhamses coordina su resolución y registra qué criterios afecta.
@@ -75,13 +75,13 @@ Los estados son Pendiente, En curso, Bloqueada y Completada. Una tarea de compro
 
 | Criterio | Tareas que lo implementan o contrastan | Comprobación que lo verifica | Evidencia funcional |
 |---|---|---|---|
-| CA-01 | T-01, T-02, T-03 | T-04; Pasar a mantenimiento sin jornada y revisar disponibilidad y auditoría. | Pendiente; EV-03 |
-| CA-02 | T-01, T-02, T-03 | T-04; Retirar con jornada vacía y comprobar cierre, auditoría y estado operativo derivado en F-06. | Pendiente; EV-03 |
-| CA-03 | T-01, T-02, T-03 | T-04; Crear despachos ASIGNADO y EN_CAMINO y comprobar rechazo del retiro sin cambios. | Pendiente; EV-03 |
-| CA-04 | T-01, T-02, T-03 | T-04; Volver de mantenimiento a DISPONIBLE y verificar el catálogo. | Pendiente; EV-03 |
-| CA-05 | T-01, T-02, T-03 | T-04; Retirar a FUERA_DE_SERVICIO y conservar el historial; revisar rehabilitación admitida. | Pendiente; EV-03 |
-| CA-06 | T-01, T-02, T-03 | T-04; Cambiar estado de un UUID ausente y comprobar recurso inexistente. | Pendiente; EV-03 |
-| CA-07 | T-01, T-02, T-03 | T-04; Cambiar estado con otro rol y comprobar rechazo. | Pendiente; EV-03 |
+| CA-01 | T-01, T-02, T-03 | Cambio a mantenimiento sin jornada activa; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
+| CA-02 | T-01, T-02, T-03 | Cambio a mantenimiento con jornada activa sin despachos en curso; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
+| CA-03 | T-01, T-02, T-03 | Rechazo por despachos en curso; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
+| CA-04 | T-01, T-02, T-03 | Retorno a disponible desde mantenimiento; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
+| CA-05 | T-01, T-02, T-03 | Cambio a fuera de servicio; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
+| CA-06 | T-01, T-02, T-03 | Furgoneta inexistente; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
+| CA-07 | T-01, T-02, T-03 | Acceso sin permisos; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
 | CUI-01 | T-01, T-03 | T-04; escenario de ui.md §7 | Pendiente; EV-03 |
 | CUI-02 | T-01, T-03 | T-04; escenario de ui.md §7 | Pendiente; EV-03 |
 | CUI-03 | T-01, T-03 | T-04; escenario de ui.md §7 | Pendiente; EV-03 |

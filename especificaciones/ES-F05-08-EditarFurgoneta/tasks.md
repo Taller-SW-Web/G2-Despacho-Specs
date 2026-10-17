@@ -4,7 +4,7 @@
 
 **Estado:** Pendiente de verificación por criterio; existe código de referencia, pero esta migración no certifica su aceptación.
 
-**Plan de origen:** [plan.md](./plan.md), preparado con la fuente documental `f3849d9`.
+**Plan de origen:** [plan.md](./plan.md); fuente histórica `f3849d9` y alineación contractual registrada en EV-04.
 
 ## 1. Orden y dependencias
 
@@ -27,7 +27,7 @@ Los estados son Pendiente, En curso, Bloqueada y Completada. Una tarea de compro
 - Objetivo y alcance: Revisar los acuerdos que afectan este comportamiento y comprobar la disponibilidad de los CR antes de aceptar su pantalla.
 - Entradas: [spec.md](./spec.md), criterios CA-01, CA-02, CA-03, CA-04, CA-05; CUI-01 a CUI-06; [ui.md](./ui.md) cuando corresponda; fuentes del plan §1.
 - Dependencias: Fuentes del plan; responsables de contrato y CR.
-- Verificación: Contrastar P-01 y DT-01/02 contra el contrato y el modelo; registrar resolución o bloqueo, versión de componentes y responsable.
+- Verificación: Contrastar los acuerdos de Operación §4.1 y DT-01/02 contra el contrato y el modelo; registrar resolución o bloqueo, versión de componentes y responsable.
 - Condición de cierre: Revisión registrada y ninguna discrepancia funcional sin tratar para el incremento que se acepte.
 - Evidencia: [EV-03](./evidence.md#ev-03-aceptación-por-criterio-pendiente), pendiente; [EV-02](./evidence.md#ev-02-código-y-pruebas-existentes-como-referencia) solo identifica código de referencia.
 - Bloqueo potencial: DT-01/02; Rhamses coordina su resolución y registra qué criterios afecta.
@@ -75,11 +75,11 @@ Los estados son Pendiente, En curso, Bloqueada y Completada. Una tarea de compro
 
 | Criterio | Tareas que lo implementan o contrastan | Comprobación que lo verifica | Evidencia funcional |
 |---|---|---|---|
-| CA-01 | T-01, T-02, T-03 | T-04; Editar capacidades y comprobar valores, auditoría, placa y estado. | Pendiente; EV-03 |
-| CA-02 | T-01, T-02, T-03 | T-04; Crear jornada con capacidades originales, editar el maestro y comprobar que solo las jornadas futuras toman los nuevos límites. | Pendiente; EV-03 |
-| CA-03 | T-01, T-02, T-03 | T-04; Enviar límites inválidos y comprobar que el maestro no cambia. | Pendiente; EV-03 |
-| CA-04 | T-01, T-02, T-03 | T-04; Editar un UUID ausente y comprobar recurso inexistente. | Pendiente; EV-03 |
-| CA-05 | T-01, T-02, T-03 | T-04; Editar con otro rol y comprobar rechazo. | Pendiente; EV-03 |
+| CA-01 | T-01, T-02, T-03 | Edición exitosa de límites; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
+| CA-02 | T-01, T-02, T-03 | Límites aplican solo a jornadas futuras; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
+| CA-03 | T-01, T-02, T-03 | Límites inválidos; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
+| CA-04 | T-01, T-02, T-03 | Furgoneta inexistente; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
+| CA-05 | T-01, T-02, T-03 | Acceso sin permisos; contrastar el escenario de spec.md y sus efectos persistidos. | Pendiente; EV-03 |
 | CUI-01 | T-01, T-03 | T-04; escenario de ui.md §7 | Pendiente; EV-03 |
 | CUI-02 | T-01, T-03 | T-04; escenario de ui.md §7 | Pendiente; EV-03 |
 | CUI-03 | T-01, T-03 | T-04; escenario de ui.md §7 | Pendiente; EV-03 |
