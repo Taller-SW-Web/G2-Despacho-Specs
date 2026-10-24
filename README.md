@@ -57,7 +57,7 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Plantillas y flujo SDD](./plantillas/sdd/README.md) | Organización aprobada por especificación, con adopción progresiva: comportamiento, UI opcional, plan, tareas y evidencia; componentes React compartidos. |
 | [Historias de usuario](./historias-usuario/) | Historias en formato Jira (COMO/QUIERO/PARA) con criterios de aceptación Gherkin y DoD. |
 | [Reglas del repositorio](./AGENTS.md) | Convenciones para crear y mantener la documentación. |
-| [Guía de contribución](./CONTRIBUTING.md) | Flujo de ramas, commits y revisión de cambios. |
+| [Guía de contribución](./CONTRIBUTING.md) | Integración de código en `develop`, documentación en `main`, revisión de PR y entregas con changelog y tags manuales. |
 
 F-01 cuenta con sus ocho carpetas SDD preparadas. Las últimas migraciones son [cotización con productos (ES-F01-06)](./especificaciones/ES-F01-06-CotizarEnvioConProductos/spec.md), [resolución de zona (ES-F01-07)](./especificaciones/ES-F01-07-ResolverZonaParaModulo/spec.md) y [trazabilidad de configuración (ES-F01-08)](./especificaciones/ES-F01-08-RegistrarTrazabilidadConfiguracion/spec.md), cada una con especificación, plan, tareas y evidencia. La UI no aplica en esas tres; su implementación y verificación funcional están pendientes. El [índice funcional](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-01) enlaza todos sus documentos.
 
