@@ -4,7 +4,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Borrador SDD; implementación y verificación pendientes.
+**Estado:** Recepción en Gestión y frontend implementados y verificados localmente; integración real y aceptación pendientes. Avance al 24/10/2026 en [evidence.md](./evidence.md).
 
 **Actor principal:** Gestor de Despacho.
 

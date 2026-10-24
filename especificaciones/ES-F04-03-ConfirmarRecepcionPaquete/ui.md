@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Borrador SDD; implementación y verificación pendientes.
+**Estado:** Modal implementado desde listado y detalle; pruebas con APIs simuladas y revisión local de teclado/móvil aprobadas. Integración real, ampliación al 200 % y revisión visual con Max pendientes; ver [EV-04](./evidence.md#ev-04-modal-estados-y-accesibilidad), 24/10/2026.
 
 **Aplicabilidad:** Modal de recepción desde listado o detalle de entregas fallidas.
 
@@ -24,7 +24,7 @@
 | [Diseño F-04](../../disenio/funcionalidades/f-04.md) | Pantalla 3 | Resumen y formulario de recepción. |
 | [Componentes React](../../disenio/componentes-react.md) | CR-01/02/08/09/15 | Acciones, campos, estados, etiquetas y notificación. |
 
-`ModalRecepcionPaquete` es una composición local propuesta con `Modal`, `Radio.Group` y `Textarea` de Mantine. CR-12 es una confirmación genérica y no contiene este formulario; no se crea otro proveedor de notificaciones ni una biblioteca de formularios [cite: 2].
+`ModalRecepcionPaquete` está implementado como composición local con `Modal`, `Radio.Group` y `Textarea` de Mantine, reutilizando el tema y el cliente existentes. El resultado se anuncia en la pantalla de origen. CR-12 es una confirmación genérica y no contiene este formulario; no se crea otro proveedor de notificaciones ni una biblioteca de formularios [cite: 2].
 
 ## 3. Pantallas e interacción
 
@@ -102,8 +102,9 @@ Si falla la lectura posterior a un `202`, mantener `Paquete recibido` y ofrecer 
 | CUI-07 | Perder autorización durante apertura o recuperación. | Datos retirados y acceso bloqueado. | CA-06 |
 | CUI-08 | Recorrer con teclado, móvil y ampliación. | Selección, errores, envío, cierre y retorno de foco utilizables. | CA-02/12 |
 
-- Pendientes: verificar disponibilidad de componentes/herramientas y revisión visual con Max; se concretan en DT-01 del plan, no cambian las reglas funcionales.
-- Evidencia prevista: interacción con fixtures identificados, recorrido con APIs reales y comprobación manual de foco/responsive [cite: 4].
+- Verificado localmente: 10 pruebas del modal y una prueba de integración de componentes en cada pantalla; `npm run test:f04` aprueba 32 pruebas contando las regresiones. Se comprobaron No sin observación, Unicode, doble envío, errores, permisos, recuperación, refresco y conservación del origen con APIs simuladas.
+- Revisión manual con datos simulados: apertura desde ambos orígenes, teclado/Tab/Escape, foco inicial y retorno al disparador o encabezado; a 390 × 844 píxeles CSS el modal no desborda y la acción principal queda debajo de Cancelar.
+- Pendientes: recorrido con Gateway y servicios reales, ampliación al 200 % y revisión visual con Max. La reutilización comprobada no cierra las tareas generales de los componentes compartidos. Resultados, captura, commits y límites en [EV-04](./evidence.md#ev-04-modal-estados-y-accesibilidad) y [EV-05](./evidence.md#ev-05-recorrido-real-y-coherencia-del-módulo) [cite: 4].
 
 ## 8. Referencias
 
