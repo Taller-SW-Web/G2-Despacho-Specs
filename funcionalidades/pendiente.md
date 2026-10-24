@@ -26,18 +26,21 @@ Este documento centraliza las posibles ampliaciones y los acuerdos que todavía 
 
 ## F-03: Operación del repartidor
 
-### Política de fotografía acordada y pendientes
+### Política de fotografía acordada
 
 - Formatos permitidos: `image/jpeg`, `image/png` e `image/webp`; tamaño máximo: 2.097.152 bytes (2 MiB), conforme al esquema y contrato de Operación.
-- Configurar el bucket privado con los mismos tipos y límite.
-- Definir si se aplicará compresión básica en el navegador.
-- Definir si se eliminarán metadatos EXIF y en qué componente se realizará.
-- Configurar y verificar el almacenamiento privado y la lectura con URL firmada definidos en [Operación §3.5](../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia). La autorización de lectura está implementada en backend; la configuración real del bucket y la comprobación de extremo a extremo permanecen pendientes.
+- Decisión del 24/10/2026: la app del repartidor reduce la foto en el navegador antes de subirla (lado mayor 1600 px, JPEG de calidad 0,8 a 0,5 hasta quedar bajo 2 MiB). Una foto de cámara Android pesa de 3 a 8 MB, por lo que sin este paso la mayoría se rechazaría. Al re-codificar se descartan los metadatos EXIF, incluida la ubicación; la app lo indica como «sin datos de ubicación». El backend no comprime y solo valida tipo y tamaño ([Operación §3.2](../integraciones/api-contract-operacion-reparto.md#32-autorizar-la-carga-de-evidencia)).
 
-### Trabajo futuro sujeto a la decisión anterior
+### Pendientes de F-03
 
-- Compresión avanzada de imágenes en el navegador.
-- Procesamiento sofisticado de metadatos de las fotografías.
+- Configurar el bucket privado con los mismos tipos y límite, y verificar de extremo a extremo la carga firmada, la comprobación previa a la asociación y la lectura con URL firmada ([Operación §3.5](../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia)). Por decisión del equipo, el entorno local no emula Storage: sin las variables `EVIDENCIAS_*` la entrega y el fallo responden `503`.
+- Acceso humano: Seguridad y Usuarios debe confirmar el login propuesto en el [contrato externo §8.6](../integraciones/api-contract.md#86-acceso-humano-de-la-app-del-repartidor-propuesto), entregar cuentas de prueba y definir la renovación del token; hoy un token de 15 minutos obliga a reingresar durante la jornada.
+- Corte automático de fin de turno (ES-F03-07 CA-03) y bandeja de regularización de jornadas anteriores.
+- Operación sin conexión: la app avisa y exige reintento explícito (RN-08); no guarda operaciones para enviarlas después.
+
+### Trabajo futuro
+
+- Compresión avanzada de imágenes o procesamiento de metadatos más allá de la re-codificación actual.
 
 La aplicación no implementará cálculo de rutas ni navegación propia. El repartidor podrá utilizar Waze, Google Maps u otra aplicación externa.
 

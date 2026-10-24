@@ -508,25 +508,62 @@ Estas rutas las implementa Gestión y las consume Operación con credencial de s
 
 - **Método:** `POST`
 - **Ruta:** `/internal/v1/despachos/{idDespacho}/transiciones`
-- **Consumidor:** Operación de Reparto y Flota.
-- **Idempotencia:** clave de operación obligatoria; puede transportarse en `Idempotency-Key` cuando se apruebe la convención común.
+- **Consumidor:** Operación de Reparto y Flota, con JWT de servicio `sub=modulo-despacho`, audiencia `api-despacho` y scope `gestion:despachos:transicionar`. Otro cliente o un token humano reciben `403`.
+- **Idempotencia:** `Idempotency-Key` UUID obligatorio, el mismo que el repartidor envió a Operación (o uno derivado de forma estable en el cierre). La misma clave con el mismo contenido devuelve la respuesta original sin duplicar historial, intento ni eventos; con otro contenido, `409` `DESP_ERROR_OPERACION_REUTILIZADA`.
 
 ```json
 {
   "estadoDestino": "ENTREGADO",
-  "idRepartidor": "REP-0012",
-  "idJornada": "JOR-20260923-0012",
-  "idEvidencia": "EVI-92812",
-  "recibidoPor": "Ana Mendoza"
+  "idRepartidor": "7d0f4a52-1b39-4c0a-9a0e-2f5e1b6c8d11",
+  "idJornada": "d42d8d4b-1a80-481f-9f35-9ff0c6c935f1",
+  "idEvidencia": "f7d6a0fc-6546-4a57-a2c2-a944f8d2f98b",
+  "recibidoPor": "Ana Mendoza",
+  "motivo": null,
+  "comentario": null,
+  "ejecutor": "22222222-2222-4222-8222-222222222222",
+  "origen": "MANUAL"
 }
 ```
 
-Gestión valida la máquina de estados, modifica el estado, incrementa el intento cuando corresponda, escribe el historial y registra el evento para Ventas. Operación nunca modifica directamente la base de datos de Gestión.
+| `estadoDestino` | Origen admitido | Datos | Efecto |
+|---|---|---|---|
+| `EN_CAMINO` | `ASIGNADO` | Sin evidencia ni motivo | No cambia el contador. |
+| `ENTREGADO` | `EN_CAMINO` | `idEvidencia` obligatorio; `recibidoPor` opcional (máx. 120) | Registra el intento con resultado `ENTREGADO` y solicita la liberación de la reserva a Operación (§5.2, motivo `ENTREGA`) mediante el outbox. |
+| `FALLIDO` | `EN_CAMINO` | `motivo` activo y seleccionable en campo, `idEvidencia` obligatorio, `comentario` opcional (máx. 200) | Incrementa el contador si el motivo consume intento; crea la incidencia y actualiza `ultima_incidencia_id`. |
+| `FALLIDO` con `motivo=NO_INTENTADO` | `ASIGNADO` o `EN_CAMINO` | Sin evidencia | Cierre de jornada: no incrementa el contador; crea la incidencia vigente. |
+
+`idRepartidor` e `idJornada` deben coincidir con la asignación vigente del despacho; si no, `409` `DESP_ERROR_DESPACHO_REASIGNADO`. Un origen distinto responde `409` `DESP_ERROR_ESTADO_INCOMPATIBLE` con el estado actual. `ejecutor` es el `sub` del repartidor y `origen` es `MANUAL` o `AUTOMATICO`; ambos se guardan en el historial con `funcionalidad_origen=F-03`. Errores de forma: `400` `DESP_ERROR_CAMPOS_INVALIDOS`; motivo no admitido: `400` `DESP_ERROR_MOTIVO_INVALIDO`; despacho inexistente: `404`.
+
+Respuesta `200`:
+
+```json
+{
+  "idDespacho": "854e7b68-394e-4e5f-9ccf-5350d7d4e3e8",
+  "estadoAnterior": "EN_CAMINO",
+  "estado": "ENTREGADO",
+  "version": 5,
+  "numeroIntentos": 0,
+  "motivoFallo": null,
+  "hitos": {
+    "asignadoEn": "2026-10-17T13:12:00Z",
+    "enCaminoEn": "2026-10-17T15:41:00Z",
+    "entregadoEn": "2026-10-17T16:05:00Z",
+    "fallidoEn": null
+  },
+  "registradoEn": "2026-10-17T16:05:00Z"
+}
+```
+
+`hitos` se calcula del historial del ciclo vigente (desde la última asignación). En la misma transacción, Gestión cambia el estado (con control de versión), escribe el historial, el intento y, si corresponde, el evento para Ventas (`DESPACHO_EN_CAMINO`, `DESPACHO_ENTREGADO` o `DESPACHO_FALLIDO`; no para despachos simulados) y la proyección para Operación (§5.3 de Operación, con `motivoFallo` y `hitos`). Operación nunca modifica directamente la base de datos de Gestión.
 
 Al aceptar `FALLIDO`, Gestión crea el registro de incidencia en `intentos_entrega` y actualiza `despachos.ultima_incidencia_id` dentro de esa transacción. La misma regla se aplica a `NO_INTENTADO`, aunque no incremente el contador. Esa referencia es la utilizada por la consulta de Gestión §5.1 y no se sustituye por la jornada actual del repartidor. Referencia: [Gestión](./api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
 
 Al aceptar un fallo, Gestión captura también la reserva de capacidad que ya conserva para la asignación y la vincula de forma inmutable a la incidencia junto con repartidor/jornada. No requiere un identificador de reserva editable enviado por el repartidor. El historial conserva esas referencias, condición de consumo y contador resultante conforme a §5.3. Las operaciones posteriores conservan su propia referencia a la incidencia; así el detalle y la liberación no usan una reserva de una salida posterior.
 
+
+### 6.2. Operación consulta el catálogo de motivos
+
+`GET /internal/v1/catalogos/motivos-fallo`, con JWT de servicio `sub=modulo-despacho` y scope `gestion:catalogos:leer`. Devuelve exactamente la respuesta de §4. Operación la expone al repartidor filtrada por `activo` y `seleccionableEnCampo`, después de validar su perfil de campo, porque Gestión no conoce los perfiles locales de Operación.
 
 ## 7. APIs de Operación consumidas por Gestión
 

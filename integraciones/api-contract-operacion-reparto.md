@@ -24,9 +24,10 @@ Todos los recursos requieren un JWT humano con `tipo=acceso`. En las rutas `/rep
 | `POST` | `/api/v1/repartidor/despachos/{idDespacho}/fallo` | Registrar `FALLIDO` |
 | `POST` | `/api/v1/repartidor/jornada/cierre` | Cerrar la jornada |
 | `GET` | `/api/v1/repartidor/jornada/resumen` | Consultar el resumen propio |
+| `GET` | `/api/v1/repartidor/motivos-fallo` | Consultar los motivos seleccionables en campo |
 | `POST` | `/api/v1/evidencias/{idEvidencia}/acceso` | Obtener URL firmada de lectura |
 
-Los comandos que cambian estado requieren `Idempotency-Key` UUID v4. La misma clave con el mismo contenido devuelve el resultado original; con contenido distinto responde `409`. Las consultas no requieren clave.
+Los comandos que cambian estado requieren `Idempotency-Key` UUID v4. La misma clave con el mismo contenido devuelve el resultado original; con otra operación o contenido responde `409` con `DESP_ERROR_CLAVE_REUTILIZADA`. Las consultas no requieren clave. La clave pertenece al `sub` autenticado; un rechazo definitivo (`4xx`) la libera, de modo que repetirla vuelve a validar y obtiene el mismo rechazo, mientras que un `503` la conserva para reintentar sin duplicar la transición.
 
 ### 3.1. Consultar ruta, detalle y resumen
 
@@ -47,7 +48,14 @@ Los comandos que cambian estado requieren `Idempotency-Key` UUID v4. La misma cl
     "maximoIntentos": 2,
     "destinatario": "Ana Mendoza",
     "direccion": "Av. Ejemplo 123",
-    "distrito": "Centro"
+    "distrito": "Centro",
+    "motivoFallo": null,
+    "hitos": {
+      "asignadoEn": "2026-10-17T13:12:00Z",
+      "enCaminoEn": null,
+      "entregadoEn": null,
+      "fallidoEn": null
+    }
   }]
 }
 ```
@@ -56,11 +64,53 @@ La ruta no entrega teléfono. Nombre y dirección solo se incluyen para `ASIGNAD
 
 `GET /api/v1/repartidor/despachos/{idDespacho}` acepta un UUID y devuelve únicamente despachos de la jornada activa propia. Para `ASIGNADO` y `EN_CAMINO` devuelve destinatario y destino completos; para otros estados, ambos campos son `null`. Un despacho ajeno, no existente o de otra jornada responde `404` sin datos parciales.
 
-`GET /api/v1/repartidor/jornada/resumen` devuelve solo contadores de la jornada de hoy, incluso si ya está cerrada: `asignados`, `entregados`, `fallidosConIntento`, `noIntentados` y `pendientes`. Sin jornada devuelve contadores en cero. La respuesta no contiene datos personales.
+`motivoFallo` es el código del catálogo de Gestión para un `FALLIDO` (incluido `NO_INTENTADO`) y `null` en otro caso; no es un dato personal y se entrega en todos los estados. `hitos` contiene las marcas del ciclo vigente informadas por Gestión, en UTC: `asignadoEn` (asignación de F-02), `enCaminoEn`, `entregadoEn` y `fallidoEn`. Siguen el orden asignado < en camino < entregado o fallido; un hito aún no ocurrido es `null`. Tras una reprogramación no se muestran hitos de salidas anteriores. Proyecciones creadas antes de incorporar estos campos pueden devolver `hitos: null`. La UI presenta las horas en `America/Lima`.
 
-Las tres consultas responden con `Cache-Control: no-store`. La bandeja de regularización de jornadas anteriores es una lectura separada, de solo lectura y sin datos personales ni acciones; no forma parte de `mi-ruta` y su endpoint queda pendiente de implementación.
+`GET /api/v1/repartidor/jornada/resumen` devuelve la jornada de hoy, incluso si ya está cerrada (ampliado para F-03, pantalla 11 de Figma):
 
-En esta entrega están implementadas estas tres consultas. Las transiciones de estado, la asociación de evidencia y el cierre recuperable continúan pendientes de integrar con Gestión; los endpoints de comando de la tabla describen el contrato objetivo y no deben habilitarse en la UI hasta completar esa coordinación.
+```json
+{
+  "idJornada": "d42d8d4b-1a80-481f-9f35-9ff0c6c935f1",
+  "fecha": "2026-10-17",
+  "estadoJornada": "CERRADA",
+  "cerradaEn": "2026-10-17T23:05:00Z",
+  "asignados": 4,
+  "entregados": 2,
+  "fallidosConIntento": 0,
+  "noIntentados": 2,
+  "pendientes": 0,
+  "paquetesPorDevolver": [{
+    "idDespacho": "6f0c1d2e-3a4b-4c5d-8e9f-0a1b2c3d4e5f",
+    "codigoRastreoInterno": "TRK-78910",
+    "direccion": "Calle Los Pinos 345",
+    "distrito": "San Isidro",
+    "motivoFallo": "NO_INTENTADO"
+  }]
+}
+```
+
+- `fallidosConIntento` cuenta los `FALLIDO` con motivo distinto de `NO_INTENTADO`; `noIntentados`, los `FALLIDO` con `NO_INTENTADO`. Para proyecciones previas sin motivo se conserva la regla anterior, basada en el contador.
+- `paquetesPorDevolver` lista los despachos `FALLIDO` de la jornada, con o sin intento consumido, porque el paquete regresa físicamente con el repartidor. Es la única excepción a la omisión de datos personales: incluye dirección y distrito, sin destinatario ni teléfono, para que el repartidor identifique cada paquete en el centro. La confirmación de recepción sigue perteneciendo a F-04.
+- `estadoJornada` (`ACTIVA`/`CERRADA`) y `cerradaEn` (UTC o `null`) provienen de la jornada. Sin jornada responde `idJornada: null`, contadores en cero y lista vacía.
+
+Las consultas responden con `Cache-Control: no-store`. La bandeja de regularización de jornadas anteriores es una lectura separada, de solo lectura y sin datos personales ni acciones; no forma parte de `mi-ruta` y su endpoint queda pendiente de implementación.
+
+`GET /api/v1/repartidor/motivos-fallo` devuelve `{ "motivos": [...] }` con la forma del [catálogo de Gestión §4](./api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo), filtrada a `activo=true` y `seleccionableEnCampo=true`. Operación lo obtiene de Gestión con su credencial técnica después de validar el perfil de campo; no mantiene una copia propia. Si Gestión no responde: `503` con `DESP_ERROR_GESTION_NO_DISPONIBLE`, y la UI no fabrica motivos.
+
+#### 3.1.1. Comandos y su coordinación con Gestión
+
+El inicio de traslado, §3.3, §3.4 y §3.6 siguen el mismo procedimiento:
+
+1. Registrar la clave del `sub` (tabla `comandos_repartidor`). Una clave completada devuelve la respuesta original.
+2. En el primer intento, validar localmente perfil activo, jornada activa de hoy, propiedad y estado de origen en la proyección; para entrega y fallo, verificar además la evidencia (§3.2). Un reintento de una clave en proceso omite estas validaciones, porque la proyección pudo actualizarse con el resultado original.
+3. Solicitar la transición a [Gestión §6.1](./api-contract-gestion-despachos.md#61-operación-solicita-una-transición-a-gestión) fuera de toda transacción local, reenviando la misma clave. Gestión aplica la máquina de estados bajo su bloqueo y es idempotente por clave.
+4. Aplicar la respuesta a la proyección por versión, asociar la evidencia y completar la clave.
+
+Errores comunes: `400` `DESP_ERROR_CAMPOS_INVALIDOS` (falta `Idempotency-Key` UUID v4 o el cuerpo no cumple), `403` sin perfil de campo, `404` `DESP_ERROR_DESPACHO_NO_ENCONTRADO` (ajeno o de otra jornada), `409` `DESP_ERROR_FUERA_DE_TURNO` (sin jornada activa), `409` `DESP_ERROR_ESTADO_INCOMPATIBLE` o `DESP_ERROR_DESPACHO_REASIGNADO` (el despacho cambió: la UI informa y actualiza la ruta) y `503` `DESP_ERROR_GESTION_NO_DISPONIBLE` (no se registró; reintentar con la misma clave). Si Gestión no responde en 1,5 s se trata como `503` (ES-F03-04 RN-09).
+
+#### 3.1.2. Iniciar traslado
+
+`POST /api/v1/repartidor/despachos/{idDespacho}/inicio-traslado`, sin cuerpo. Solo desde `ASIGNADO`; no modifica el contador. Responde `200` con el detalle de §3.1 en `EN_CAMINO`, con `hitos.enCaminoEn`.
 
 ### 3.2. Autorizar la carga de evidencia
 
@@ -84,28 +134,40 @@ En esta entrega están implementadas estas tres consultas. Las transiciones de e
 La fotografía se carga directamente al bucket privado. La API recibe después solamente `idEvidencia`; no recibe imágenes Base64.
 
 Se aceptan `image/jpeg`, `image/png` e `image/webp`, hasta 2.097.152 bytes (2 MiB) por archivo. El bucket privado debe imponer los mismos tipos y límite. El endpoint valida los metadatos declarados para autorizar la carga; no comprime la imagen ni elimina EXIF.
-Los identificadores `idDespacho` e `idEvidencia` de esta operación son UUID.
+Los identificadores `idDespacho` e `idEvidencia` de esta operación son UUID. La autorización exige el despacho propio en `EN_CAMINO` dentro de la jornada activa.
+
+La app del repartidor reduce la foto antes de solicitar la autorización (lado mayor 1600 px, JPEG con calidad de 0,8 a 0,5 hasta quedar bajo 2 MiB) y la sube con `PUT` a `urlCarga` con su `Content-Type`. Re-codificar la imagen descarta los metadatos EXIF, incluida la ubicación. Esta decisión pertenece al cliente; el backend sigue sin comprimir y solo valida.
+
+Antes de asociar una evidencia a una entrega o un fallo, Operación comprueba que pertenezca al mismo despacho, `sub` y tipo (`ENTREGA` o `FALLO`), que siga `AUTORIZADA` o `CARGADA`, y que el objeto exista en el bucket con un tipo y tamaño permitidos e igual al tipo autorizado (ES-F03-05 RN-03). Si el objeto aún no existe responde `409` `DESP_ERROR_EVIDENCIA_NO_CARGADA` sin cambiar el estado; si no corresponde o incumple la política, `400` `DESP_ERROR_EVIDENCIA_INVALIDA`; si el almacenamiento no responde, `503` `DESP_ERROR_EVIDENCIA_NO_DISPONIBLE`. Tras la transición aceptada, la evidencia queda `ASOCIADA`.
 
 ### 3.3. Registrar entrega
 
+`POST /api/v1/repartidor/despachos/{idDespacho}/entrega`
+
 ```json
 {
-  "idEvidencia": "EVI-92812",
+  "idEvidencia": "f7d6a0fc-6546-4a57-a2c2-a944f8d2f98b",
   "recibidoPor": "Ana Mendoza"
 }
 ```
+
+Solo desde `EN_CAMINO`. `idEvidencia` (UUID) es obligatorio; `recibidoPor` es opcional, hasta 120 caracteres. No modifica el contador. Responde `200` con el detalle de §3.1 en `ENTREGADO`, ya sin destinatario ni destino, con `hitos.entregadoEn`. Gestión solicita después la liberación de la reserva por §5.2 con motivo `ENTREGA` (ES-F03-05 RN-06).
 
 No se captura firma ni geolocalización.
 
 ### 3.4. Registrar fallo
 
+`POST /api/v1/repartidor/despachos/{idDespacho}/fallo`
+
 ```json
 {
   "motivo": "CLIENTE_AUSENTE",
   "comentario": "No respondieron al teléfono",
-  "idEvidencia": "EVI-92813"
+  "idEvidencia": "0c4b1f62-77d2-4d1e-9a39-5b2f0e8c6a10"
 }
 ```
+
+Solo desde `EN_CAMINO`. `motivo` e `idEvidencia` son obligatorios; `comentario` es opcional, hasta 200 caracteres. Gestión incrementa el contador una sola vez al aceptar la transición. Responde `200` con el detalle de §3.1 en `FALLIDO`, con `motivoFallo`, `numeroIntentos` actualizado y `hitos.fallidoEn`. La reserva se conserva hasta la recepción en centro (F-04). Un motivo inexistente, inactivo o no seleccionable responde `400` `DESP_ERROR_MOTIVO_INVALIDO`.
 
 Motivos permitidos para el repartidor:
 
@@ -117,7 +179,6 @@ Motivos permitidos para el repartidor:
 - `PAQUETE_DANADO`.
 
 `NO_INTENTADO` es exclusivo del cierre manual o automático de jornada.
-
 
 ### 3.5. Autorizar la lectura de evidencia
 
@@ -139,6 +200,13 @@ Motivos permitidos para el repartidor:
 | `503` | `DESP_ERROR_EVIDENCIA_NO_DISPONIBLE` | No puede autorizarse/comprobarse la lectura por indisponibilidad temporal. |
 
 El almacenamiento deniega accesos sin firma válida y enlaces vencidos. Un fallo de descarga se distingue en UI de los errores HTTP de esta autorización; `Volver a cargar` ejecuta nuevamente esta operación.
+
+### 3.6. Cerrar la jornada propia
+
+`POST /api/v1/repartidor/jornada/cierre` con `Idempotency-Key` y cuerpo `{ "idJornada": "<UUID>" }`. La jornada debe pertenecer al perfil del `sub` (`403` en otro caso).
+
+Cada despacho `ASIGNADO` o `EN_CAMINO` se resuelve primero en Gestión como `FALLIDO` con motivo `NO_INTENTADO`, sin fotografía ni incremento del contador, con origen manual y el repartidor como ejecutor (ES-F03-07). Cada solicitud usa una clave derivada de forma estable de la clave del cierre y del despacho, de modo que un reintento no duplica transiciones. Después se cierra la jornada como en §4.2.1 y responde `200` con el recurso Jornada. Si algún despacho no pudo resolverse responde `503` y la jornada sigue abierta: se reintenta con la misma clave. Una jornada ya cerrada devuelve su estado sin cambios. El corte automático de fin de turno sigue pendiente de implementación.
+
 
 ## 4. API de F-05 y F-06: perfiles, flota y jornadas
 
@@ -380,10 +448,15 @@ Autorización: JWT de servicio con `sub=modulo-despacho`, audiencia `api-despach
   },
   "fechaProgramada": "2026-09-25",
   "numeroIntentos": 0,
+  "maximoIntentos": 2,
+  "motivoFallo": null,
+  "hitos": { "asignadoEn": "2026-09-23T19:10:00Z" },
   "version": 2,
   "actualizadoEn": "2026-09-23T19:10:00Z"
 }
 ```
+
+`motivoFallo` (código del catálogo o `null`) y `hitos` (`asignadoEn`, `enCaminoEn`, `entregadoEn`, `fallidoEn`, cada uno UTC u omitido) son opcionales por compatibilidad: Gestión los envía desde F-03 y Operación conserva `null` cuando faltan. Un `FALLIDO` del cierre llega con `motivoFallo: "NO_INTENTADO"`; Operación no usa un estado `NO_INTENTADO`.
 
 Al asignar o reasignar se envía la información completa necesaria para la ruta móvil. En cambios posteriores puede enviarse el mismo esquema actualizado. La proyección no es el estado canónico: una versión repetida se ignora y una versión anterior nunca reemplaza una posterior.
 

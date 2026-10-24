@@ -648,6 +648,8 @@ Respuesta esperada:
 
 El arreglo `scopes` pertenece a la respuesta HTTP de emisión. Dentro del JWT emitido, el claim `scope` contiene esos valores separados por espacios. El canal utiliza después `Authorization: Bearer <jwt-de-servicio>` al llamar a Despacho. Del mismo modo, `modulo-despacho` solicita otro token con sus propias credenciales y el scope aceptado por Productos; nunca reutiliza el token del canal.
 
+`modulo-despacho` usa además estos scopes internos, emitidos por Seguridad con audiencia `api-despacho`, entre sus propios microservicios: `operacion:capacidad:reservar`, `operacion:capacidad:liberar`, `operacion:proyecciones:escribir` y `operacion:incidencias:leer` (Gestión hacia Operación), y `gestion:despachos:transicionar` y `gestion:catalogos:leer` (Operación hacia Gestión).
+
 ### 8.3. Introspección de un usuario antes de una operación sensible
 
 Seguridad ofrece `POST /api/v1/auth/introspeccion` para que un backend compruebe un token humano antes de una operación sensible. Esa ruta recibe el token humano en el cuerpo y se protege con el token de servicio del módulo que realiza la comprobación y el scope `tokens:introspeccion`.
@@ -681,6 +683,17 @@ Despacho prevé consumir los eventos `usuario.desactivado`, `usuario.bloqueado`,
 - `usuario.roles_cambiados` actualiza oportunamente el acceso administrativo de quienes ejercen como `GESTOR_DESPACHO`.
 
 Seguridad ha previsto publicar estos cambios mediante RabbitMQ, pero el contrato asíncrono todavía debe definir disponibilidad, exchange, routing keys, payloads, credenciales, permisos de consumo y política de reentrega. Hasta que ese contrato esté disponible, Despacho no asume que los eventos puedan consumirse en producción.
+
+### 8.6. Acceso humano de la app del repartidor (propuesto)
+
+La app móvil del repartidor necesita que la persona ingrese con su usuario y contraseña. Mientras Seguridad y Usuarios publica su flujo de acceso, Despacho propone esta forma, implementada por la herramienta `seguridad-local` y consumida desde un único adaptador de la app:
+
+- **Método y ruta:** `POST /api/v1/auth/login` en el origen de Seguridad; en local, el Gateway la enruta a `seguridad-local` sin exigir JWT.
+- **Content-Type:** `application/x-www-form-urlencoded`, campos `usuario` (usuario o correo) y `clave`.
+- **Respuesta `200`:** `{ "accessToken": "<jwt>", "tokenType": "Bearer", "expiresIn": 900 }`. El JWT es el mismo token humano de §8.1: `tipo=acceso`, `sub` igual al `usuario_id` vinculado en F-05 y sin rol obligatorio de repartidor.
+- **Errores:** `401` con credenciales inválidas, sin indicar si falló el usuario o la contraseña.
+
+Pendiente de confirmar con Seguridad: ruta y formato definitivos, cuentas de prueba, renovación (un token de 15 minutos obliga a reingresar durante la jornada) y cierre de sesión. Si el contrato definitivo difiere, solo cambian `VITE_SEGURIDAD_URL` y el adaptador `servicioAcceso.ts` del frontend; Operación sigue validando el JWT por §8.1.
 
 ## 9. Reglas de idempotencia y concurrencia
 
@@ -738,7 +751,7 @@ El contrato funcional con Ventas y Postventa está cerrado: se confirmaron el mo
 
 | Equipo | Acuerdo pendiente |
 |---|---|
-| Seguridad y Usuarios | Registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
+| Seguridad y Usuarios | Confirmar el acceso humano propuesto en §8.6 (ruta, cuentas de prueba, renovación del token); registrar `gestion:despachos:transicionar` y `gestion:catalogos:leer` para `modulo-despacho`; registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
 | Productos y Ofertas | Registrar en Seguridad la concesión de `productos:fisicos:leer` a `modulo-despacho` para `api-productos` y ejecutar las pruebas de contrato entre ambos backends |
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
 | Equipo de Despacho | Tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
