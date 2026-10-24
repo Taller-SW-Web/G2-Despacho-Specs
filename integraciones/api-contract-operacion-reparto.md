@@ -8,11 +8,11 @@ Contrato del microservicio `servicio-operacion-reparto`, proveedor de F-03, F-05
 
 Aplican las [convenciones compartidas](./api-contract.md#3-convenciones-comunes), [Seguridad y Usuarios](./api-contract.md#8-integración-con-seguridad-y-usuarios) y [reglas de idempotencia y concurrencia](./api-contract.md#9-reglas-de-idempotencia-y-concurrencia) del contrato externo. La administración de perfiles, vehículos y jornadas requiere `GESTOR_DESPACHO`; la operación de campo verifica el perfil local y la propiedad del recurso conforme a §3. Las APIs privadas requieren credencial de servicio y no se publican en el Gateway.
 
-El estado canónico del despacho pertenece a [Gestión de Despachos](./api-contract-gestion-despachos.md). Operación solicita las transiciones y conserva únicamente su proyección confirmada; no modifica la base de Gestión.
+El estado canónico del despacho pertenece a [Gestión de Despachos](./api-contract-gestion-despachos.md). Operación solicita las transiciones y conserva únicamente su proyección confirmada; no modifica la base de Gestión. La identidad humana se resuelve por `sub` contra un perfil local activo y vinculado; no se exige el rol global `REPARTIDOR`.
 
 ## 3. API de F-03: operación del repartidor
 
-Todos los recursos requieren un JWT humano con `tipo=acceso`. En las rutas `/repartidor/`, el backend toma el `sub`, resuelve el perfil local de repartidor vinculado y comprueba que esté activo; el cliente no puede elegir otro `idRepartidor`. No se exige un rol global `REPARTIDOR` ni un claim `idRepartidor`. La lectura de evidencia admite también al Gestor conforme a §3.4, sin exigirle perfil de repartidor.
+Todos los recursos requieren un JWT humano con `tipo=acceso`. En las rutas `/repartidor/`, el backend toma el `sub`, resuelve el perfil local de repartidor vinculado y comprueba que esté activo; el cliente no puede elegir otro `idRepartidor`. No se exige un rol global `REPARTIDOR` ni un claim `idRepartidor`. La lectura de evidencia admite también al Gestor conforme a §3.5, sin exigirle perfil de repartidor.
 
 | Método | Ruta | Propósito |
 |---|---|---|
@@ -26,13 +26,47 @@ Todos los recursos requieren un JWT humano con `tipo=acceso`. En las rutas `/rep
 | `GET` | `/api/v1/repartidor/jornada/resumen` | Consultar el resumen propio |
 | `POST` | `/api/v1/evidencias/{idEvidencia}/acceso` | Obtener URL firmada de lectura |
 
-Los comandos de transición deben ser idempotentes. Se recomienda enviar `Idempotency-Key`; su obligatoriedad como encabezado común aún debe acordarse.
+Los comandos que cambian estado requieren `Idempotency-Key` UUID v4. La misma clave con el mismo contenido devuelve el resultado original; con contenido distinto responde `409`. Las consultas no requieren clave.
 
-### 3.1. Autorizar la carga de evidencia
+### 3.1. Consultar ruta, detalle y resumen
+
+`GET /api/v1/repartidor/mi-ruta` devuelve la jornada activa de hoy en `America/Bogota`. Si no hay jornada activa, responde `200` con `idJornada: null`, `estadoOperativo: "FUERA_DE_TURNO"` y `despachos: []`. La lista respeta la secuencia de F-02.
 
 ```json
 {
-  "idDespacho": "DSP-100234",
+  "idJornada": "d42d8d4b-1a80-481f-9f35-9ff0c6c935f1",
+  "fecha": "2026-10-17",
+  "estadoOperativo": "DISPONIBLE",
+  "despachos": [{
+    "idDespacho": "854e7b68-394e-4e5f-9ccf-5350d7d4e3e8",
+    "codigoRastreoInterno": "TRK-001",
+    "estado": "ASIGNADO",
+    "secuenciaRuta": 1,
+    "fechaProgramada": "2026-10-17",
+    "numeroIntentos": 0,
+    "maximoIntentos": 2,
+    "destinatario": "Ana Mendoza",
+    "direccion": "Av. Ejemplo 123",
+    "distrito": "Centro"
+  }]
+}
+```
+
+La ruta no entrega teléfono. Nombre y dirección solo se incluyen para `ASIGNADO` y `EN_CAMINO`; para otros estados se serializan como `null`. `maximoIntentos` procede de `MAXIMO_INTENTOS` en Gestión; proyecciones creadas antes de incorporar ese dato pueden devolverlo como `null` hasta recibir una proyección actualizada.
+
+`GET /api/v1/repartidor/despachos/{idDespacho}` acepta un UUID y devuelve únicamente despachos de la jornada activa propia. Para `ASIGNADO` y `EN_CAMINO` devuelve destinatario y destino completos; para otros estados, ambos campos son `null`. Un despacho ajeno, no existente o de otra jornada responde `404` sin datos parciales.
+
+`GET /api/v1/repartidor/jornada/resumen` devuelve solo contadores de la jornada de hoy, incluso si ya está cerrada: `asignados`, `entregados`, `fallidosConIntento`, `noIntentados` y `pendientes`. Sin jornada devuelve contadores en cero. La respuesta no contiene datos personales.
+
+Las tres consultas responden con `Cache-Control: no-store`. La bandeja de regularización de jornadas anteriores es una lectura separada, de solo lectura y sin datos personales ni acciones; no forma parte de `mi-ruta` y su endpoint queda pendiente de implementación.
+
+En esta entrega están implementadas estas tres consultas. Las transiciones de estado, la asociación de evidencia y el cierre recuperable continúan pendientes de integrar con Gestión; los endpoints de comando de la tabla describen el contrato objetivo y no deben habilitarse en la UI hasta completar esa coordinación.
+
+### 3.2. Autorizar la carga de evidencia
+
+```json
+{
+  "idDespacho": "854e7b68-394e-4e5f-9ccf-5350d7d4e3e8",
   "tipo": "ENTREGA",
   "contentType": "image/jpeg",
   "tamanioBytes": 845120
@@ -41,7 +75,7 @@ Los comandos de transición deben ser idempotentes. Se recomienda enviar `Idempo
 
 ```json
 {
-  "idEvidencia": "EVI-92812",
+  "idEvidencia": "f7d6a0fc-6546-4a57-a2c2-a944f8d2f98b",
   "urlCarga": "https://storage.example/signed-upload",
   "venceEn": "2026-09-23T19:25:00Z"
 }
@@ -49,7 +83,10 @@ Los comandos de transición deben ser idempotentes. Se recomienda enviar `Idempo
 
 La fotografía se carga directamente al bucket privado. La API recibe después solamente `idEvidencia`; no recibe imágenes Base64.
 
-### 3.2. Registrar entrega
+Se aceptan `image/jpeg`, `image/png` e `image/webp`, hasta 2.097.152 bytes (2 MiB) por archivo. El bucket privado debe imponer los mismos tipos y límite. El endpoint valida los metadatos declarados para autorizar la carga; no comprime la imagen ni elimina EXIF.
+Los identificadores `idDespacho` e `idEvidencia` de esta operación son UUID.
+
+### 3.3. Registrar entrega
 
 ```json
 {
@@ -60,7 +97,7 @@ La fotografía se carga directamente al bucket privado. La API recibe después s
 
 No se captura firma ni geolocalización.
 
-### 3.3. Registrar fallo
+### 3.4. Registrar fallo
 
 ```json
 {
@@ -82,7 +119,7 @@ Motivos permitidos para el repartidor:
 `NO_INTENTADO` es exclusivo del cierre manual o automático de jornada.
 
 
-### 3.4. Autorizar la lectura de evidencia
+### 3.5. Autorizar la lectura de evidencia
 
 - **Método y ruta:** `POST /api/v1/evidencias/{idEvidencia}/acceso`, sin cuerpo ni parámetros de consulta; no requiere `Idempotency-Key`.
 - **Autorización:** JWT humano válido y rol `GESTOR_DESPACHO`, o perfil local de repartidor activo vinculado al `sub` y propietario del despacho en la proyección de Operación. No exige jornada abierta para leer evidencia. Autenticación y permisos se comprueban antes de devolver referencias o URLs.

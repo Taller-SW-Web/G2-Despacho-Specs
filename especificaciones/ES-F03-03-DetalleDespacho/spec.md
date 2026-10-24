@@ -21,7 +21,7 @@ Mostrar al repartidor la información necesaria para ejecutar la entrega de un d
 
 ## 3. Actor, precondiciones y resultados
 
-- Actor y autorización: repartidor autenticado según ES-F03-01, con rol `REPARTIDOR`.
+- Actor y autorización: JWT humano con perfil local activo y vinculado resuelto por `sub`, sin exigir rol global `REPARTIDOR`.
 - Precondiciones: el despacho existe, está asignado al repartidor del token y pertenece a la jornada en curso.
 - Disparador: el repartidor selecciona un despacho en «Mi Ruta» (ES-F03-02).
 - Resultado exitoso: detalle del despacho.
@@ -44,7 +44,7 @@ Mostrar al repartidor la información necesaria para ejecutar la entrega de un d
 | Regla | Descripción comprobable | Origen |
 |---|---|---|
 | RN-01 | El detalle muestra dirección, referencia, destinatario, teléfono con llamada directa, intento actual sobre el máximo configurado, fecha programada y estado. | F-03 CA-09 |
-| RN-02 | Teléfono y dirección se muestran solo al repartidor propietario y solo en `ASIGNADO` o `EN_CAMINO`. | F-03 §8 |
+| RN-02 | Teléfono, dirección y destinatario se muestran solo al repartidor propietario y solo en `ASIGNADO` o `EN_CAMINO`; en otros estados se omiten. | F-03 §8 |
 | RN-03 | No hay exportación ni copia masiva de datos del destinatario. | F-03 §8 |
 | RN-04 | Un despacho asignado a otro repartidor responde `403`. | F-03 CA-10 |
 | RN-05 | Un código inexistente responde `404` sin datos parciales. | F-03 CA-11 |
@@ -52,7 +52,7 @@ Mostrar al repartidor la información necesaria para ejecutar la entrega de un d
 | Operación o dependencia | Uso | Contrato o fuente |
 |---|---|---|
 | F-02 Programación y Asignación | Destinatario, dirección, teléfono y fecha programada | [Contrato de operación de reparto](../../integraciones/api-contract-operacion-reparto.md) |
-| Ventas y Postventa | Origen del teléfono y la referencia de dirección | Acuerdo pendiente, Anexo C n.º 2 de F-03 |
+| F-02 Programación y Asignación | Proyección de destinatario, teléfono, dirección y referencia | Contrato de API; Gestión es la fuente canónica |
 
 ## 6. Criterios de aceptación
 

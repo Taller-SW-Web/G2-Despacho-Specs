@@ -36,7 +36,7 @@ El frontend obtiene el contexto del repartidor y adapta la vista; el backend val
 
 ## 4. Backend e integraciones
 
-- Validar vigencia y rol `REPARTIDOR` en cada solicitud.
+- Validar vigencia del JWT y resolver por `sub` el perfil local activo y vinculado; no exigir rol global `REPARTIDOR`.
 - Resolver el repartidor a partir del identificador de usuario del token; ignorar identificadores del cliente.
 - Consultar en F-05 estado operativo y asignación diaria; calcular la habilitación según RN-04.
 - Rechazar transiciones con `409` cuando el repartidor no está en turno.

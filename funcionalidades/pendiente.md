@@ -26,12 +26,13 @@ Este documento centraliza las posibles ampliaciones y los acuerdos que todavía 
 
 ## F-03: Operación del repartidor
 
-### Decisión pendiente sobre fotografías
+### Política de fotografía acordada y pendientes
 
+- Formatos permitidos: `image/jpeg`, `image/png` e `image/webp`; tamaño máximo: 2.097.152 bytes (2 MiB), conforme al esquema y contrato de Operación.
+- Configurar el bucket privado con los mismos tipos y límite.
 - Definir si se aplicará compresión básica en el navegador.
 - Definir si se eliminarán metadatos EXIF y en qué componente se realizará.
-- Acordar formatos permitidos y tamaño máximo de archivo.
-- Configurar y verificar el almacenamiento privado y la lectura con URL firmada definidos en [Operación §3.4](../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia). El mecanismo de lectura está definido documentalmente; su implementación permanece pendiente.
+- Configurar y verificar el almacenamiento privado y la lectura con URL firmada definidos en [Operación §3.5](../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia). La autorización de lectura está implementada en backend; la configuración real del bucket y la comprobación de extremo a extremo permanecen pendientes.
 
 ### Trabajo futuro sujeto a la decisión anterior
 

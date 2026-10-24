@@ -12,7 +12,7 @@
 
 ## 1. Contexto y objetivo
 
-Permitir el ingreso a la vista de campo solo a usuarios con rol `REPARTIDOR` vinculados a un repartidor activo en F-05, y determinar si ese repartidor puede ejecutar cambios de estado (en turno) o solo consultar (fuera de turno). Así ningún despacho es operado por alguien no autorizado y solo el personal en turno registra transiciones. Concreta RF-01 y la sección 8 (Seguridad) de F-03.
+Permitir el ingreso a la vista de campo solo a usuarios cuyo `sub` esté vinculado a un perfil local activo de F-05, y determinar si ese repartidor puede ejecutar cambios de estado (en turno) o solo consultar (fuera de turno). No se requiere un rol global `REPARTIDOR`. Así ningún despacho es operado por alguien no autorizado y solo el personal en turno registra transiciones. Concreta RF-01 y la sección 8 (Seguridad) de F-03.
 
 ## 2. Alcance
 
@@ -21,7 +21,7 @@ Permitir el ingreso a la vista de campo solo a usuarios con rol `REPARTIDOR` vin
 
 ## 3. Actor, precondiciones y resultados
 
-- Actor y autorización: repartidor desde su celular, con JWT de rol `REPARTIDOR` emitido por Seguridad y Usuarios.
+- Actor y autorización: repartidor desde su celular, con JWT humano `tipo=acceso` emitido por Seguridad y Usuarios y un perfil local activo y vinculado por `sub`.
 - Precondiciones: el usuario del token está vinculado a un repartidor registrado y activo en F-05; existe conexión activa.
 - Condición de habilitación operativa: asignación diaria activa y estado operativo `DISPONIBLE`, `EN_RUTA` o `SATURADO`.
 - Resultado exitoso: contexto del repartidor (identificador resuelto, estado operativo, habilitación para transiciones) y vista «Mi Ruta» en modo operativo o de solo lectura.
@@ -30,7 +30,7 @@ Permitir el ingreso a la vista de campo solo a usuarios con rol `REPARTIDOR` vin
 ## 4. Flujo principal y alternativas
 
 1. El repartidor abre la vista web y se autentica.
-2. El backend valida el JWT (vigencia y rol `REPARTIDOR`).
+2. El backend valida el JWT y resuelve el perfil local activo vinculado a su `sub`.
 3. El backend resuelve en F-05 el repartidor vinculado al usuario del token.
 4. El backend consulta en F-05 su estado operativo y asignación diaria.
 5. El sistema muestra «Mi Ruta» con las acciones de cambio de estado habilitadas.
@@ -38,7 +38,7 @@ Permitir el ingreso a la vista de campo solo a usuarios con rol `REPARTIDOR` vin
 | Alternativa | Condición | Comportamiento esperado | Criterio |
 |---|---|---|---|
 | Credencial inválida | Sin token o token vencido | `401 Unauthorized`; sin datos de despachos | CA-02 |
-| Acceso no autorizado | Rol distinto de `REPARTIDOR` o usuario no vinculado a un repartidor activo | `403 Forbidden`; la pantalla indica el motivo | CA-03 |
+| Acceso no autorizado | Usuario no vinculado a un perfil local activo | `403 Forbidden`; la pantalla indica el motivo | CA-03 |
 | Fuera de turno | Estado operativo `FUERA_DE_TURNO` | Solo consulta de ruta y resumen del día; toda transición recibe `409 Conflict` | CA-04 |
 
 ## 5. Reglas, datos e integraciones
@@ -47,14 +47,14 @@ Permitir el ingreso a la vista de campo solo a usuarios con rol `REPARTIDOR` vin
 |---|---|---|
 | RN-01 | El repartidor se resuelve siempre desde el token; el backend ignora identificadores enviados por el cliente. | F-03 §8 |
 | RN-02 | Sin token o con token vencido se responde `401` sin exponer información de despachos. | F-03 CA-02 |
-| RN-03 | Rol distinto de `REPARTIDOR` o usuario no vinculado a un repartidor activo se responde `403`. | F-03 CA-03 |
+| RN-03 | Un usuario sin perfil local activo y vinculado se responde `403`; el backend no exige un rol global `REPARTIDOR`. | F-03 CA-03 y contrato de API |
 | RN-04 | Las transiciones solo se habilitan con asignación diaria activa y estado `DISPONIBLE`, `EN_RUTA` o `SATURADO`. | F-03 RF-01 |
 | RN-05 | En `FUERA_DE_TURNO` se permite consultar ruta y resumen; toda transición se rechaza con `409` indicando turno inactivo. | F-03 CA-04 |
 | RN-06 | La interfaz oculta o deshabilita lo no permitido, pero la validación definitiva ocurre siempre en el backend. | F-03 §8 |
 
 | Operación o dependencia | Uso | Contrato o fuente |
 |---|---|---|
-| Seguridad y Usuarios | Emisión y validación del JWT | Acuerdo pendiente, Anexo C n.º 1 de F-03 |
+| Seguridad y Usuarios | Emisión y validación del JWT humano; la identidad de aplicación se resuelve por `sub` | Contrato de API y F-05 |
 | F-05 Monitoreo de Flota | Vínculo usuario–repartidor, estado operativo y asignación diaria | [Contrato de operación de reparto](../../integraciones/api-contract-operacion-reparto.md) |
 | Rutas y códigos de respuesta | Contexto del repartidor y rechazo de transiciones | [Contrato de operación de reparto](../../integraciones/api-contract-operacion-reparto.md) |
 
@@ -74,7 +74,7 @@ Permitir el ingreso a la vista de campo solo a usuarios con rol `REPARTIDOR` vin
 
 ### CA-03. Rol distinto o usuario no vinculado
 
-- **DADO** un token válido cuyo rol no es `REPARTIDOR`, o cuyo usuario no está vinculado a un repartidor activo en F-05.
+- **DADO** un token humano válido cuyo usuario no está vinculado a un perfil local activo en F-05.
 - **CUANDO** se invocan los recursos de operación de campo.
 - **ENTONCES** el backend responde `403 Forbidden`.
 
@@ -97,7 +97,7 @@ Permitir el ingreso a la vista de campo solo a usuarios con rol `REPARTIDOR` vin
 |---|---|---|
 | CA-01 | Integración y UI | Repartidor vinculado, asignación activa, estado `DISPONIBLE` |
 | CA-02 | Seguridad | Solicitud sin token y con token vencido |
-| CA-03 | Seguridad | Token con otro rol; token `REPARTIDOR` sin vínculo o con repartidor inactivo |
+| CA-03 | Seguridad | Token humano sin vínculo o con perfil local inactivo |
 | CA-04 | Integración y UI | Repartidor `FUERA_DE_TURNO` que intenta una transición |
 
 Tareas en [tasks.md](./tasks.md); resultados en [evidence.md](./evidence.md).
