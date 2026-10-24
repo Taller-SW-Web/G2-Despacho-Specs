@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Borrador documental; implementación y revisión técnica pendientes.
+**Estado:** Recepción en Gestión y frontend implementados y verificados localmente; integración real y revisión humana pendientes. Avance del 24/10/2026 en [evidence.md](./evidence.md).
 
 **UI:** Aplica; modal administrativo desde listado o detalle.
 
@@ -13,12 +13,12 @@
 | Comportamiento | [spec.md](./spec.md), CA-01 a CA-12 | Revisión funcional de esta conversación sobre la base documental `0734268`; migración SDD del 15/10/2026 incluida en el commit que introduce esta carpeta. |
 | UI | [ui.md](./ui.md), UI-01 y CUI-01 a CUI-08 | Misma revisión documental que este plan. |
 | Gestión | [§5.2.1](../../integraciones/api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03) y §5.3 | Transacción, repetición, procesador y consulta de sincronización de esta revisión. |
-| Operación | [§5.2](../../integraciones/api-contract-operacion-reparto.md#52-gestión-libera-una-reserva-en-operación); §5.1 para nuevas asignaciones | Liberación por reserva e identidad por operación; implementación pendiente. |
-| Diseño y componentes | [Diseño F-04](../../disenio/funcionalidades/f-04.md), Pantalla 3; [componentes](../../disenio/componentes-react.md), CR-01/02/08/09/15 | Reutilización documentada; no acredita código implementado. |
-| Arquitectura y datos | [Contenedores](../../arquitectura/c4-contenedores.md); [modelo](../../arquitectura/modelo-datos.md), §3.4 | Dos servicios, referencias por salida y tabla propuesta `liberaciones_capacidad`. |
-| Código consultado | Frontend `d2bc27d`; backend `1e7834b` | Lectura estática local; sin compilaciones ni pruebas funcionales ejecutadas. |
+| Operación | [§5.2](../../integraciones/api-contract-operacion-reparto.md#52-gestión-libera-una-reserva-en-operación); §5.1 para nuevas asignaciones | Consumidor HTTP de Gestión probado con dobles; proveedor y ocupación reales no verificados en este incremento. |
+| Diseño y componentes | [Diseño F-04](../../disenio/funcionalidades/f-04.md), Pantalla 3; [componentes](../../disenio/componentes-react.md), CR-01/02/08/09/15 | Tema, controles Mantine y cliente existentes reutilizados; revisión con Max y ampliación al 200 % pendientes. |
+| Arquitectura y datos | [Contenedores](../../arquitectura/c4-contenedores.md); [modelo](../../arquitectura/modelo-datos.md), §3.4 | Esquema V1/V2 de Gestión verificado con Flyway en PostgreSQL vacío; no requiere V3. Reconciliación histórica real pendiente. |
+| Código implementado | Backend `31e1f6e`; frontend `779f6c4`, documentación `9108caf` | Verificación local del 24/10/2026: 109 pruebas de Gestión y 32 de frontend aprobadas; ver EV-01/03/04. |
 
-La base frontend tiene aplicaciones Vite, Mantine, Axios y tema compartido; F-04 sigue como pantalla pendiente y no hay script de pruebas. Backend tiene Gateway/seguridad y cotización inicial, pero no recepción, reservas ni procesador implementados. Las ubicaciones nuevas siguientes son propuestas, ajustables al iniciar sin cambiar contratos [cite: 1, 2].
+La preparación SDD del 15/10/2026 consultó frontend `d2bc27d` y backend `1e7834b`. La implementación posterior parte de `develop`: backend `a9a8f73` y frontend `8a37d13`. Ya existen listado/detalle, pruebas Vitest y el modal conectado al cliente API; Gestión incorpora recepción y procesador durable. La verificación usó PostgreSQL aislado y dobles de proveedores. Por autorización del usuario no se modificó Operación ni su base, Gateway o Seguridad; la integración conjunta sigue pendiente [cite: 1, 2].
 
 ## 2. Estrategia y responsabilidades
 
@@ -26,11 +26,11 @@ Gestión confirma el retorno con una transacción local que incluye una solicitu
 
 | Capa | Responsabilidad | Ubicación o elementos previstos |
 |---|---|---|
-| Frontend administrativo | Modal, validación, identidad original, recuperación y actualización de origen. | `apps/despacho-administrativo/src/features/entregas-fallidas/`; `ModalRecepcionPaquete.tsx` propuesto. |
-| Paquetes frontend | Transporte/tipos y controles visuales sin reglas de negocio propias. | `packages/cliente-api`, `packages/tipos-compartidos`, `packages/componentes-compartidos`. |
+| Frontend administrativo | Modal, validación, identidad original, recuperación y actualización de origen. | `apps/despacho-administrativo/src/features/entregas-fallidas/ModalRecepcionPaquete.tsx` y `apiRecepcion.ts`, integrados en listado y detalle. |
+| Paquetes frontend | Transporte/tipos y controles visuales sin reglas de negocio propias. | Se reutilizan `packages/cliente-api`, `packages/tipos-compartidos` y `packages/componentes-compartidos`, sin modificarlos en este incremento. |
 | Gateway | Propagar identidad/correlación y respuesta `202` sin cachear ni reintentar el POST automáticamente. | Ruta existente `/api/v1/despachos/**`; verificar su seguridad y manejo de errores. |
-| Gestión | Recepción, historial, versión, solicitud y procesador de liberaciones. | Funcionalidad propuesta `incidencias/` y adaptador HTTP bajo el paquete base existente. |
-| Operación | Liberación idempotente, verificación de pertenencia y ocupación local. | Funcionalidad de reservas/jornadas; contrato interno y coordinación con F-02/F-06. |
+| Gestión | Recepción, historial, versión, solicitud y procesador de liberaciones. | `incidencias/api`, `incidencias/application` e `incidencias/infrastructure` bajo el paquete base existente. |
+| Operación | Liberación idempotente, verificación de pertenencia y ocupación local. | Dependencia de reservas/jornadas y F-02/F-06; sin cambios ni pruebas del proveedor real en esta entrega. |
 
 ## 3. Frontend y componentes React
 
@@ -50,7 +50,7 @@ Gestión confirma el retorno con una transacción local que incluye una solicitu
 - Transacción: bloquear/controlar la versión del despacho y revalidar incidencia, estado, recepción e integridad dentro de la misma escritura. Guardar recepción, historial, nueva versión, solicitud y respuesta original juntos.
 - Restricciones: una recepción y solicitud por incidencia; reserva original única en la solicitud. Resolver carreras de escritura/unicidad como `409` o repetición exacta, sin exponer excepciones SQL ni producir duplicados.
 - Historial: un único `RECEPCION_EN_CENTRO`, `FALLIDO` → `FALLIDO`; no aumentar intentos ni emitir evento a Ventas. Reintentos técnicos actualizan su solicitud, no el historial/versión del despacho.
-- Migración propuesta: referencia de reserva en incidencia, tabla `liberaciones_capacidad`, índices/restricciones y clave de asignación en la reserva de Operación. Reutilizar migraciones de despacho/historial de trabajos previos; no crear otro esquema completo.
+- Decisión comprobada: V1/V2 de Gestión ya incluyen referencias por salida, `liberaciones_capacidad` e índices/restricciones necesarios; Flyway los crea en PostgreSQL vacío. Se reutilizan sin V3 ni reescritura de migraciones. La clave de asignación de Operación se mantiene como dependencia de T-06; no se modifica su esquema.
 - Compatibilidad: revisar datos antes de exigir referencias nuevas. Regularizar reservas/jornadas históricas con información verificable; recepciones ya registradas necesitan reconciliación comprobada para crear su solicitud/estado, sin fabricar una respuesta original ni reenviar a ciegas.
 - Si los históricos no permiten reconstrucción segura, registrar y resolver los casos antes de habilitar la lectura/recepción afectada. Una ausencia inconsistente se informa según contrato; no elegir la reserva actual por conjetura.
 - Operación §5.2 valida credencial técnica y pertenencia; libera una sola reserva y devuelve la liberación original si ya ocurrió. Su actualización local es atómica y no reabre jornadas cerradas.
@@ -91,24 +91,24 @@ El backend y la UI aislada pueden prepararse por separado; mocks y dobles se ide
 | CA-11 | `NO_INTENTADO`, anulado, máximo, sin foto y jornada activa/cerrada. | Datos combinados sin alterar intentos ni jornada. |
 | CA-12; CUI-01 a CUI-08 | Apertura en ambos orígenes, errores, consulta previa a repetición, foco y refresco. | Fixtures identificados y recorrido real con teclado/móvil. |
 
-Comandos previstos: `npm run typecheck` y `npm run build` desde frontend; `./mvnw.cmd test` desde Gestión, Operación y Gateway según el cambio. T-01 concreta el comando de interacción aún inexistente; Testcontainers requiere Docker. T-09 registra además consultas antes/después y reinicios reales. No se han ejecutado estas comprobaciones.
+Comandos ejecutados el 24/10/2026: `./mvnw.cmd clean verify` desde Gestión (109 pruebas, sin fallos, errores ni omisiones, y JAR construido); `npm run test:f04` desde frontend (32 pruebas), `npm run typecheck` (los tres espacios de trabajo) y `npm run build -w @despacho/administrativo` (compilación administrativa aprobada, advertencia de tamaño del bundle). No se ejecutó la construcción de ambas apps en este incremento ni pruebas de Operación/Gateway. Testcontainers utilizó Docker y PostgreSQL/PostGIS desechable; frontend y proveedores remotos usaron dobles. T-09 conserva pendientes las consultas antes/después y reinicios de servicios reales.
 
 ## 7. Decisiones y pendientes
 
 | ID | Decisión o pendiente | Responsable y fuente | Bloquea |
 |---|---|---|---|
-| DT-01 | Verificar herramientas y CR necesarios; completar lo faltante con sus responsables. | Gerardo con Max y responsables del catálogo compartido. | I-01/02/06 real. |
-| DT-02 | Migraciones/productores conservan reserva original; reconciliación histórica si hay datos existentes. | Gerardo con Arquitectura y responsables F-02/F-03; modelo §3.4. | I-03/07 real. |
-| DT-03 | Credencial técnica y ejecución del procesador con reclamación recuperable y aviso operativo. | Gerardo con responsables de Operación y DevOps; contratos §§5.2/5.2.1. | I-04/05/07 real. |
-| DT-04 | Listado/detalle y reglas de nueva asignación/ocupación integrados. | Gerardo con F-02/F-06; especificaciones relacionadas. | I-06/07 real, no fixtures. |
+| DT-01 | Herramientas y reutilización necesarias comprobadas localmente; pendientes revisión con Max y ampliación al 200 %. | Gerardo con Max y responsables del catálogo compartido; EV-04. | Cierre visual de I-02/06/07. |
+| DT-02 | V1/V2 y reserva original verificados en base nueva y fixtures; faltan inspección/reconciliación de datos históricos reales y productores entre servicios. | Gerardo con Arquitectura y F-02/F-03; EV-01. | Habilitación de históricos afectados e I-07 real. |
+| DT-03 | Procesador y consumidor técnico implementados con dobles; falta validar credencial, proveedor y reinicios desplegados. | Gerardo con Operación y DevOps; EV-02/03/05. | I-04/05/07 con servicios reales. |
+| DT-04 | Listado/detalle conectados y probados con APIs simuladas; faltan reglas reales de nueva asignación y ocupación. | Gerardo con F-02/F-06; EV-04/05. | Aceptación integrada de I-06/07. |
 
-La tabla durable y la ejecución asíncrona son decisiones de esta revisión, con trabajo de backend explícito. No se implementaron al redactar el modelo. Los pendientes anteriores son de preparación técnica e integración, no reglas funcionales sin definir.
+La tabla durable existente y la ejecución asíncrona están consumidas por Gestión en `31e1f6e`. Esta actualización registra decisiones verificadas y pendientes de integración; no cambia los requisitos ni el contrato y no atribuye cierre a trabajos de otros responsables.
 
 ## 8. Condiciones para iniciar y cerrar
 
-- [ ] Las entradas, contratos y migraciones del incremento están revisados; las bases de código se vuelven a comprobar al iniciar.
-- [ ] Componentes y dependencias necesarios para la tarea están disponibles o su simulación está declarada.
-- [ ] No hay pendientes técnicos que bloqueen el incremento a implementar.
+- [x] Las entradas, contratos y migraciones del incremento local fueron revisados; históricos reales pendientes según DT-02.
+- [x] Componentes y dependencias del incremento local disponibles; los dobles y sus límites están declarados en la evidencia.
+- [x] No hay pendientes que impidan el incremento local de Gestión/frontend; DT-01 a DT-04 conservan el trabajo requerido para aceptación integrada.
 - [ ] Todas las tareas y criterios cuentan con evidencia real, revisión y commits de implementación al cerrar.
 
 ## 9. Referencias
