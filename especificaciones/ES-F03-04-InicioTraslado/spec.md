@@ -21,7 +21,7 @@ Permitir que el repartidor declare que recogió el paquete y salió del centro d
 
 ## 3. Actor, precondiciones y resultados
 
-- Actor y autorización: repartidor en turno según ES-F03-01, con rol `REPARTIDOR`.
+- Actor y autorización: repartidor en turno, con perfil local activo y vinculado resuelto desde el `sub` del JWT; no se exige rol global `REPARTIDOR`.
 - Precondiciones: el despacho está en `ASIGNADO`, asignado al repartidor del token y en la jornada en curso; el repartidor recogió el paquete sellado; existe conexión activa.
 - Disparador: el repartidor pulsa «En camino».
 - Resultado exitoso: despacho en `EN_CAMINO` con marca temporal del servidor, ejecutor y registro en el historial.

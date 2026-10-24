@@ -21,7 +21,7 @@ Garantizar que ningún despacho quede en `ASIGNADO` ni `EN_CAMINO` al terminar l
 
 ## 3. Actor, precondiciones y resultados
 
-- Actor y autorización: repartidor en turno con rol `REPARTIDOR` (cierre manual); proceso programado del módulo (corte automático). El resumen se consulta también fuera de turno (ES-F03-01).
+- Actor y autorización: perfil local activo y vinculado resuelto desde el `sub` del JWT (cierre manual); proceso programado del módulo (corte automático). No se exige rol global `REPARTIDOR`. El resumen propio también se consulta fuera de turno.
 - Precondiciones: asignación diaria activa; hora de corte configurada; conexión activa (cierre manual).
 - Disparador: el repartidor pulsa «Cerrar jornada», o llega la hora de corte.
 - Resultado exitoso: pendientes en `FALLIDO` / `NO_INTENTADO` con historial, repartidor en `FUERA_DE_TURNO`, lista de paquetes a devolver y resumen.

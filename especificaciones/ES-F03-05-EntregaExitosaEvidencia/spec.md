@@ -21,7 +21,7 @@ Permitir que el repartidor cierre un despacho como `ENTREGADO` solo con una foto
 
 ## 3. Actor, precondiciones y resultados
 
-- Actor y autorización: repartidor en turno según ES-F03-01, con rol `REPARTIDOR`.
+- Actor y autorización: repartidor en turno, con perfil local activo y vinculado resuelto desde el `sub` del JWT; no se exige rol global `REPARTIDOR`.
 - Precondiciones: el despacho está en `EN_CAMINO`, asignado al repartidor del token y en la jornada en curso; el celular tiene cámara y conexión activa.
 - Disparador: el repartidor pulsa «Confirmar entrega».
 - Resultado exitoso: despacho en `ENTREGADO` con referencia de evidencia, nombre del receptor si se informó y registro en el historial.
@@ -32,7 +32,7 @@ Permitir que el repartidor cierre un despacho como `ENTREGADO` solo con una foto
 1. El repartidor abre el formulario, captura y previsualiza la fotografía y, opcionalmente, registra el nombre de quien recibe.
 2. El repartidor pulsa «Confirmar entrega».
 3. El backend recibe la solicitud con clave de idempotencia y valida token, turno, propiedad y archivo.
-4. El backend registra la evidencia en el almacenamiento privado y obtiene su referencia.
+4. El backend verifica que la carga completa exista en el almacenamiento privado y obtiene su referencia.
 5. El backend aplica la transición `EN_CAMINO` → `ENTREGADO` y persiste en una misma transacción estado, referencia de evidencia, nombre del receptor, marca temporal del servidor, ejecutor e historial.
 6. El frontend muestra la confirmación de éxito.
 
@@ -50,7 +50,7 @@ Permitir que el repartidor cierre un despacho como `ENTREGADO` solo con una foto
 |---|---|---|
 | RN-01 | La fotografía es obligatoria; la interfaz bloquea el envío sin ella y el backend valida su presencia. | F-03 CA-16 |
 | RN-02 | Solo se permite desde `EN_CAMINO`; otro origen responde `409`. | F-03 Anexo A |
-| RN-03 | Si el almacenamiento falla o excede el tiempo de espera, el estado no cambia y la imagen se conserva en el formulario. | F-03 CA-17 |
+| RN-03 | El backend solo asocia una evidencia cuya carga completa verificó en el almacenamiento privado. Si la verificación falla, el estado no cambia. | F-03 CA-17 y acuerdo F-03 |
 | RN-04 | Un archivo que incumple formato o tamaño responde `400`, no se guarda y el estado no cambia. | F-03 CA-18 |
 | RN-05 | No modifica el contador de intentos. | F-03 RF-05 |
 | RN-06 | Un despacho `ENTREGADO` deja de contar en la ocupación del repartidor (recalculada por F-05). | F-03 RF-05 |

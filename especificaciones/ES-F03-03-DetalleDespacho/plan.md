@@ -61,10 +61,10 @@ El backend verifica propiedad y filtra los datos personales según estado antes 
 
 | ID | Decisión o pregunta | Responsable | Bloquea |
 |---|---|---|---|
-| DT-01 | Origen del teléfono y de la referencia de dirección (Anexo C n.º 2 de F-03) | Max Rojas con Ventas y Postventa | I-02 |
-| DT-02 | Fuente del máximo de intentos configurado (F-04) | Max Rojas con responsable de F-04 | CA-01 |
-| DT-03 | Componentes compartidos aplicables | Max Rojas con responsables de componentes | I-01 |
-| DT-04 | Respuesta ante un despacho propio que no pertenece a la jornada en curso | Max Rojas con responsable de F-03 | CA-01 |
+| DT-01 | Resuelta: teléfono y referencia llegan en la proyección F-02 desde Gestión; Operación no consulta Ventas directamente. | Contrato F-02/F-03 | — |
+| DT-02 | Resuelta: `MAXIMO_INTENTOS` es propiedad de Gestión y se propaga en la proyección; proyecciones anteriores pueden carecer del valor hasta actualizarse. | Parámetro canónico de Gestión | — |
+| DT-03 | Resuelta: reutilizar `TarjetaDespacho` para navegación desde ruta; el detalle usa los componentes Mantine existentes. | CR-16 | — |
+| DT-04 | Resuelta: un despacho ajeno o fuera de la jornada activa responde `404` sin datos parciales. | Contrato de API | — |
 
 ## 8. Condiciones para cerrar
 

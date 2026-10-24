@@ -111,4 +111,4 @@ Gerardo pidió implementar ES-F04-02 siguiendo plan/tareas y las reglas de AGENT
 ## 7. Referencias
 
 - [cite: 1] [Especificación](./spec.md), [UI](./ui.md), [plan](./plan.md) y [tareas](./tasks.md).
-- [cite: 2] [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02), [Operación §3.4](../../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia) y [modelo de datos](../../arquitectura/modelo-datos.md).
+- [cite: 2] [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02), [Operación §3.5](../../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia) y [modelo de datos](../../arquitectura/modelo-datos.md).

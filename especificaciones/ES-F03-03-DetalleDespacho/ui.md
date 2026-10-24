@@ -10,7 +10,7 @@
 
 ## 1. Usuario, contexto y objetivo
 
-- Usuario: repartidor con rol `REPARTIDOR`.
+- Usuario: titular del JWT humano con perfil local activo y vinculado; el backend comprueba propiedad y estado antes de mostrar datos personales.
 - Contexto: en campo, desde el celular; diseño mobile-first.
 - Objetivo visible: tener a mano los datos para entregar y llamar al destinatario.
 - Entrada: elemento de «Mi Ruta» (ES-F03-02). Salidas: «En camino» (ES-F03-04), «Confirmar entrega» (ES-F03-05) y «Marcar como fallido» (ES-F03-06), según estado y modo de ES-F03-01.

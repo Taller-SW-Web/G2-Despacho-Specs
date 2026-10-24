@@ -10,7 +10,7 @@
 
 ## 1. Usuario, contexto y objetivo
 
-- Usuario: repartidor con rol `REPARTIDOR`.
+- Usuario: titular del JWT humano con perfil local activo y vinculado por `sub`.
 - Contexto: uso en campo desde el celular; diseño mobile-first.
 - Objetivo visible: ingresar y saber de inmediato si puede operar o solo consultar.
 - Salida: «Mi Ruta» en modo operativo o de solo lectura; su contenido se define en otra especificación de F-03.

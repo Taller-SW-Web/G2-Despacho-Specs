@@ -10,7 +10,7 @@
 
 ## 1. Usuario, contexto y objetivo
 
-- Usuario: repartidor con rol `REPARTIDOR`, en turno o fuera de turno (ES-F03-01).
+- Usuario: titular del JWT humano con perfil local activo y vinculado; en turno o fuera de turno (ES-F03-01).
 - Contexto: uso en campo desde el celular; diseño mobile-first.
 - Objetivo visible: saber qué despachos entregar hoy y en qué orden.
 - Salida: la operación de cada despacho se define en otras especificaciones de F-03.

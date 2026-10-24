@@ -26,7 +26,7 @@
 
 - **Especificación origen:** [F-04-GestionEntregasFallidas.md](../../funcionalidades/F-04-GestionEntregasFallidas.md), `RF-02`, `CA-04` y `CA-05`; restricciones de `RF-03`, `RF-06` y `RF-07` [cite: 1].
 - **Especificación atómica:** [ES-F04-02](../../especificaciones/ES-F04-02-ConsultarDetalleIncidencia/spec.md).
-- **Contrato asociado:** [Detalle, Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) y [lectura de evidencia, Operación §3.4](../../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia), con respuesta, nulabilidad, acciones y errores definidos documentalmente; implementación pendiente [cite: 2].
+- **Contrato asociado:** [Detalle, Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) y [lectura de evidencia, Operación §3.5](../../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia), con respuesta, nulabilidad, acciones y errores definidos documentalmente; implementación pendiente [cite: 2].
 - **Roles requeridos:** `GESTOR_DESPACHO` con identidad autenticada.
 - **Componentes de Frontend:**
   - Vista responsive de detalle de la incidencia.

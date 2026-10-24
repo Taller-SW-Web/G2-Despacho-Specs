@@ -28,7 +28,7 @@ Esta funcionalidad incluye:
 - Registro de entrega exitosa (`ENTREGADO`) con fotografía obligatoria y nombre opcional de quien recibe.
 - Registro de entrega fallida (`FALLIDO`) con motivo del catálogo, fotografía obligatoria y comentario opcional.
 - Incremento del contador de intentos solo cuando existió un intento real de entrega.
-- Registro y consulta autorizada de evidencia: almacenamiento privado y lectura mediante URL firmada según [Operación §3.4](../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia). Compresión, metadatos y límites de carga conservan sus decisiones pendientes; la integración real debe verificarse.
+- Registro y consulta autorizada de evidencia: almacenamiento privado y lectura mediante URL firmada según [Operación §3.5](../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia). Compresión, metadatos y límites de carga conservan sus decisiones pendientes; la integración real debe verificarse.
 - Cierre de jornada con resolución obligatoria de pendientes y corte automático de respaldo.
 - Resumen de jornada del propio repartidor.
 - Catálogo único de motivos de fallo para el módulo.

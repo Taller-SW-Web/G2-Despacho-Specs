@@ -2030,7 +2030,7 @@ La especificación de comportamiento vigente es [ES-F04-01](../especificaciones/
 
 El motivo de cada botón deshabilitado se muestra como texto visible debajo del botón y se asocia con `aria-describedby`.
 
-El comportamiento vigente corresponde a [ES-F04-02](../especificaciones/ES-F04-02-ConsultarDetalleIncidencia/spec.md), incluida la actualización de 30 segundos, acciones bloqueadas durante actualización, cambio de incidencia, degradación y regreso con filtros. Consumir [Gestión §5.3](../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) y [Operación §3.4](../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia); no construir contratos HTTP desde componentes visuales.
+El comportamiento vigente corresponde a [ES-F04-02](../especificaciones/ES-F04-02-ConsultarDetalleIncidencia/spec.md), incluida la actualización de 30 segundos, acciones bloqueadas durante actualización, cambio de incidencia, degradación y regreso con filtros. Consumir [Gestión §5.3](../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) y [Operación §3.5](../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia); no construir contratos HTTP desde componentes visuales.
 
 #### P3 Confirmación de recepción
 

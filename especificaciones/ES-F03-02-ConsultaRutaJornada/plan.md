@@ -64,10 +64,10 @@ El backend filtra, ordena y protege los datos antes de responder; el frontend so
 
 | ID | Decisión o pregunta | Responsable | Bloquea |
 |---|---|---|---|
-| DT-01 | Definición de «jornada en curso» (fecha en `America/Lima` o asignación diaria de F-05) | Max Rojas con Arquitectura | I-02 |
-| DT-02 | Ruta y DTO de la ruta y de la bandeja en el contrato | Max Rojas con Backend | I-02, I-03 |
-| DT-03 | Componentes compartidos aplicables | Max Rojas con responsables de componentes | I-01 |
-| DT-04 | Si la bandeja muestra la dirección de despachos que siguen en `ASIGNADO` o `EN_CAMINO` (RN-05 frente a RN-07) | Max Rojas con responsable de F-03 | CA-04 |
+| DT-01 | Resuelta: la jornada en curso es la asignación activa del día según `America/Bogota` en Operación. | Contrato F-06 y backend | — |
+| DT-02 | Resuelta para la ruta vigente: `GET /api/v1/repartidor/mi-ruta`; DTO con estado, posición, intentos y datos mínimos. El endpoint separado de regularización sigue pendiente. | Contrato de API | CA-04 |
+| DT-03 | Resuelta: reutilizar `TarjetaDespacho` de componentes compartidos. | CR-16 | — |
+| DT-04 | Resuelta: dirección y nombre solo en `ASIGNADO` o `EN_CAMINO`; regularización histórica no expone PII ni acciones. | Contrato F-03 | — |
 
 ## 8. Condiciones para cerrar
 

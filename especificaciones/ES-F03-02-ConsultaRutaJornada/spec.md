@@ -16,15 +16,15 @@ Mostrar al repartidor, en «Mi Ruta», solo sus despachos de la jornada en curso
 
 ## 2. Alcance
 
-- Incluye: consulta de los despachos de la jornada del repartidor resuelto desde el token, su orden por secuencia, la protección de la dirección del destinatario y la bandeja de pendientes de regularización.
+- Incluye: consulta de los despachos de la jornada activa de hoy del repartidor resuelto desde el token, su orden por secuencia y la protección de datos personales. La bandeja de regularización histórica es una lectura separada y permanece pendiente de implementación.
 - Fuera de alcance: definición de secuencia, asignación, reasignación y cancelación (F-02); cálculo de rutas o navegación (se usan aplicaciones externas de mapas); regularización de despachos de jornadas anteriores; acceso y habilitación operativa (ES-F03-01).
 
 ## 3. Actor, precondiciones y resultados
 
-- Actor y autorización: repartidor autenticado según ES-F03-01, con rol `REPARTIDOR`, en turno o fuera de turno.
+- Actor y autorización: JWT humano; se resuelve por `sub` un perfil local activo y vinculado, sin exigir rol global `REPARTIDOR`.
 - Precondiciones: F-02 asignó los despachos con jornada y secuencia.
 - Disparador: el repartidor abre «Mi Ruta».
-- Resultado exitoso: lista ordenada de despachos de la jornada, mensaje de ruta vacía y, si existen, bandeja de pendientes de regularización.
+- Resultado exitoso: lista ordenada de despachos de la jornada activa o mensaje de ruta vacía.
 - Resultado ante rechazo: `403 Forbidden` sin datos.
 
 ## 4. Flujo principal y alternativas
@@ -48,10 +48,10 @@ Mostrar al repartidor, en «Mi Ruta», solo sus despachos de la jornada en curso
 | RN-01 | Solo se muestran despachos del repartidor resuelto desde el token y de la jornada en curso. | F-03 RF-02 |
 | RN-02 | Se excluyen los despachos `CANCELADO` y los reasignados a otro repartidor. | F-03 CA-05 |
 | RN-03 | El orden es la secuencia definida por F-02. | F-03 RF-02 |
-| RN-04 | Cada elemento muestra código operativo interno, dirección, destinatario, estado, número de intento y posición en la secuencia. | F-03 CA-05 |
-| RN-05 | La dirección solo se muestra en `ASIGNADO` o `EN_CAMINO`; no hay exportación ni copia masiva. | F-03 §8 |
+| RN-04 | Cada elemento muestra código de rastreo interno, estado, intento, máximo configurado y posición; no muestra teléfono. | F-03 CA-05 |
+| RN-05 | Nombre y dirección solo se muestran en `ASIGNADO` o `EN_CAMINO`; no hay exportación ni copia masiva. | F-03 §8 |
 | RN-06 | Un identificador de repartidor distinto al del token se rechaza con `403` sin exponer datos. | F-03 CA-07 |
-| RN-07 | Los despachos de jornadas anteriores sin cierre no entran en la ruta vigente; van a la bandeja de pendientes de regularización y no pueden operarse. | F-03 CA-08 |
+| RN-07 | Los despachos de jornadas anteriores sin cierre no entran en la ruta vigente. La bandeja separada no muestra datos personales ni ofrece acciones y aún no está implementada. | F-03 CA-08 y contrato de API |
 
 | Operación o dependencia | Uso | Contrato o fuente |
 |---|---|---|
@@ -65,7 +65,7 @@ Mostrar al repartidor, en «Mi Ruta», solo sus despachos de la jornada en curso
 
 - **DADO** que el repartidor tiene despachos en la jornada actual.
 - **CUANDO** abre «Mi Ruta».
-- **ENTONCES** el sistema lista los despachos ordenados por secuencia con código operativo interno, dirección, destinatario, estado, número de intento y posición, y excluye los `CANCELADO` o reasignados a otro repartidor.
+- **ENTONCES** el sistema lista los despachos ordenados por secuencia con código de rastreo interno, estado, intento, máximo configurado y posición; nombre y dirección solo aparecen para `ASIGNADO` o `EN_CAMINO`.
 
 ### CA-02. Jornada sin asignaciones
 
@@ -83,7 +83,7 @@ Mostrar al repartidor, en «Mi Ruta», solo sus despachos de la jornada en curso
 
 - **DADO** despachos de fechas anteriores sin cierre por una falla del corte automático.
 - **CUANDO** el repartidor carga su ruta.
-- **ENTONCES** el sistema no los incorpora a la ruta vigente, los muestra en la bandeja de pendientes de regularización y no permite operarlos.
+- **ENTONCES** el sistema no los incorpora a la ruta vigente. La bandeja histórica los presentará sin datos personales ni acciones cuando se implemente.
 
 ## 7. UI, backend y requisitos no funcionales
 
