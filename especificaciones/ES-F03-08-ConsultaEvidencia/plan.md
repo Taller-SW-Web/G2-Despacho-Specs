@@ -12,7 +12,7 @@
 |---|---|
 | Comportamiento | [spec.md](./spec.md), CA-01 a CA-03 |
 | UI | [ui.md](./ui.md), UI-01 y CUI-01 a CUI-04 |
-| Contrato | [Operación §3.4](../../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia) |
+| Contrato | [Operación §3.5](../../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia) |
 | Pendientes del equipo | [pendiente.md](../../funcionalidades/pendiente.md), sección F-03 |
 | Origen de la evidencia | [ES-F03-05](../ES-F03-05-EntregaExitosaEvidencia/spec.md) y [ES-F03-06](../ES-F03-06-EntregaFallida/spec.md) |
 
@@ -71,4 +71,4 @@ El backend autoriza cada solicitud y concede una URL firmada de corta vigencia; 
 ## 9. Referencias
 
 1. [spec.md](./spec.md), [ui.md](./ui.md), [tasks.md](./tasks.md) y [evidence.md](./evidence.md).
-2. [Operación §3.4](../../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia).
+2. [Operación §3.5](../../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia).

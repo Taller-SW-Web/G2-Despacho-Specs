@@ -81,7 +81,7 @@ Reunir la incidencia más reciente, recepción, intentos consumidos e historial 
 - Durante una actualización se bloquean nuevas acciones; si falla, se conservan solo datos todavía autorizados con aviso y las acciones permanecen bloqueadas hasta obtener datos actuales.
 - Gestión es dueño de incidencia, recepción, historial, contador, política y marca local de anulación registrada por F-02. No consulta Ventas para reconstruir esa marca.
 - Operación provee perfiles F-05 y jornadas F-06 mediante su lectura interna por lotes; F-03 origina el fallo y Operación autoriza la evidencia. La consulta no altera jornadas ni capacidad.
-- Campos, nulabilidad, acciones y errores: [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02). Evidencia y datos operativos: [Operación §§3.4 y 5.4](../../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia) [cite: 2].
+- Campos, nulabilidad, acciones y errores: [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02). Evidencia y datos operativos: [Operación §§3.5 y 5.4](../../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia) [cite: 2].
 
 ## 6. Criterios de aceptación
 
