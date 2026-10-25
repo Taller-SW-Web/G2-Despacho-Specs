@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo; revisión visual con el responsable de UI pendiente.
 
-**Estado:** Preparada documentalmente; implementación y verificación pendientes.
+**Estado:** Modal implementado; interacción, transporte y navegador verificados localmente. Revisión humana pendiente.
 
 **Aplicabilidad:** Modal administrativo sobre detalle, sin ruta propia.
 
@@ -23,7 +23,7 @@
 | [Diseño F-04](../../disenio/funcionalidades/f-04.md) | Pantalla 5 | Resumen, campos y navegación. |
 | [Componentes](../../disenio/componentes-react.md) | CR-01/02/08/09/15 | Acciones, campos, estados, etiquetas y notificación. |
 
-`ModalCierreDespacho` es una composición local propuesta con Modal, Textarea de Mantine. CR-12 es una confirmación genérica; no se lo transforma obligatoriamente en formulario. Reutilizar tema/proveedor; verificar controles compartidos en T-01 antes de consumirlos [cite: 2].
+`ModalCierreDespacho` es una composición local implementada con Modal, Textarea de Mantine. CR-12 es una confirmación genérica; no se lo transforma obligatoriamente en formulario. Reutilizar tema/proveedor; verificar controles compartidos en T-01 antes de consumirlos [cite: 2].
 
 ## 3. Pantallas e interacción
 
@@ -104,8 +104,8 @@ El contenedor conserva identidad/cuerpo enviados mientras recupera un resultado 
 | CUI-07 | 200 y refresco fallido; comunicación pendiente/fallida. | Conserva cierre aceptado, restaura filtros/página y no promete recepción en Ventas. | CA-03/14/15 |
 | CUI-08 | Teclado, móvil, zoom 200 % y pérdida de autorización. | Foco/etiquetas/errores utilizables; 401/403 retiran datos. | CA-07/14 |
 
-- No hay decisiones funcionales nuevas de UI pendientes. Disponibilidad/revisión de controles y herramienta de interacción: DT-01 del plan, pendiente de ejecución.
-- Evidencia prevista: EV-03 de [evidence.md](./evidence.md); distinguir fixtures, API real y revisión manual de foco/móvil. Ningún CUI fue ejecutado al preparar esta carpeta.
+- No hay decisiones funcionales nuevas pendientes. DT-01 se resolvió reutilizando Mantine, el tema compartido, Vitest/Testing Library y Playwright con Edge.
+- Resultados: EV-03 de [evidence.md](./evidence.md). Se verificaron CUI-01 a CUI-08 con fixtures, y teclado/foco, móvil, reflujo 200 % y recuperación con Gestión/PostgreSQL reales en navegador. La revisión visual de las capturas por IA no sustituye la aceptación humana.
 
 ## 8. Referencias
 

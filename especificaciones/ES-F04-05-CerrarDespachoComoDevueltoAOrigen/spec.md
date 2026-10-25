@@ -4,13 +4,13 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Implementada y verificada localmente; integración conjunta y revisión humana pendientes.
 
 **Actor principal:** Gestor de Despacho. **Servicio propietario:** Gestión de Despachos.
 
 **UI:** Aplica; modal administrativo descrito en [ui.md](./ui.md).
 
-Documentos SDD: [plan](./plan.md), [tareas](./tasks.md), [evidencia](./evidence.md) y [UI](./ui.md). Preparación del 16/10/2026 sobre la revisión funcional `c8e6e29`; conservar los criterios no acredita su implementación.
+Documentos SDD: [plan](./plan.md), [tareas](./tasks.md), [evidencia](./evidence.md) y [UI](./ui.md). Requisitos conservados desde la revisión funcional `c8e6e29`; implementación local del 24/10/2026 sobre backend `8fff3d9`, frontend `0989de1` y Specs `d833e55`. Resultados y límites en evidencia.
 
 ## 1. Contexto y objetivo
 
@@ -217,9 +217,9 @@ Finalizar el tratamiento logístico del mismo despacho mediante `FALLIDO` → `D
 - Integración de recepción/liberación y consultas: CA-04/11/15; comprobar continuidad de la solicitud original y reserva correcta después de cerrar.
 - Eventos: CA-01/03/05/08/13; comprobar payload acordado y mismo identificador, entrega fallida y ausencia de comunicación para simulados. Distinguir pruebas con dobles de la entrega real.
 - UI: CA-06/07/09/14/15; teclado/foco, doble confirmación, respuesta desconocida, datos desactualizados y retorno con filtros.
-- Las verificaciones funcionales están pendientes; validar Markdown/JSON/enlaces no acredita código ni aceptación de Ventas.
+- Las verificaciones locales de Gestión, PostgreSQL, UI y navegador están registradas en evidencia. La integración con Gateway, Seguridad, Operación y Ventas desplegados y la aceptación humana siguen pendientes.
 
-La definición funcional y la preparación documental SDD están listas para desarrollar. La implementación se considera completa solo cuando:
+El comportamiento está implementado y verificado localmente. La aceptación completa requiere:
 
 - [ ] CA-01 a CA-15 tienen evidencia real y revisión.
 - [ ] Contrato, UI, persistencia, recepción/liberación y evento se verificaron, distinguiendo dobles de servicios reales.

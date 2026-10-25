@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Preparado documentalmente; implementación y revisión técnica pendientes.
+**Estado:** Implementación local terminada; verificación registrada en evidencia y revisión humana pendiente.
 
 **UI:** Aplica; modal administrativo desde el detalle de incidencia.
 
@@ -11,14 +11,14 @@
 | Documento o base | Referencia | Revisión utilizada |
 |---|---|---|
 | Comportamiento | [spec.md](./spec.md), CA-01 a CA-15 | Revisión funcional `c8e6e29`, migrada sin cambiar criterios en esta entrega SDD del 16/10/2026. |
-| UI | [ui.md](./ui.md), UI-01 y CUI-01 a CUI-08 | Misma entrega documental; no acredita interfaz implementada. |
+| UI | [ui.md](./ui.md), UI-01 y CUI-01 a CUI-08 | Modal implementado; resultados y límites en EV-03. |
 | API del proveedor | [Gestión §5.2.3](../../integraciones/api-contract-gestion-despachos.md#523-cerrar-como-devuelto-a-origen--es-f04-05); [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) | Contratos documentales de la base `c8e6e29`; formatos canónicos, sin copiarlos. |
-| Transversales y datos | [Overview](../../overview.md), RT-01/02/03; [modelo](../../arquitectura/modelo-datos.md), §3.4 | Misma base documental; persistencia propuesta pendiente de migrar/implementar. |
+| Transversales y datos | [Overview](../../overview.md), RT-01/02/03; [modelo](../../arquitectura/modelo-datos.md), §3.4 | Base documental conservada; V4 y captura común implementadas. |
 | Consumidores/productores | [Detalle ES-F04-02](../ES-F04-02-ConsultarDetalleIncidencia/spec.md), [recepción ES-F04-03](../ES-F04-03-ConfirmarRecepcionPaquete/spec.md) y otras carpetas F-04 | Usar sus tareas dependientes; no duplicar el trabajo común. |
-| Código inspeccionado | Frontend `d2bc27d`; backend `1e7834b` | Lectura estática local del 16/10/2026, sin compilación ni pruebas funcionales ejecutadas. |
-| Diseño y componentes | [SYSTEM-DESIGN](../../disenio/SYSTEM-DESIGN.md), F-04/P5; [componentes](../../disenio/componentes-react.md), CR-01/02/08/09/15 | Fuentes de UI y límites reutilizables; implementación por comprobar. |
+| Bases de implementación | Frontend `0989de1`; backend `8fff3d9`; Specs `d833e55` | Ramas `feature/f04-cerrar-devuelto-origen`; bases locales contrastadas con origin el 24/10/2026. |
+| Diseño y componentes | [SYSTEM-DESIGN](../../disenio/SYSTEM-DESIGN.md), F-04/P5; [componentes](../../disenio/componentes-react.md), CR-01/02/08/09/15 | Controles y tema existentes reutilizados; comprobaciones en EV-03. |
 
-El frontend contiene monorepositorio, tema Mantine y una pantalla F-04 pendiente; el paquete compartido exporta el tema, no los CR completos, y no hay script de interacción. Gestión contiene seguridad y cotización inicial; los comandos y el historial de F-04 siguen pendientes. Los nombres/rutas nuevas de este plan son propuestas, ajustables al iniciar sin cambiar contratos [cite: 1, 2].
+La base ya incorpora listado, detalle, recepción, reprogramación, captura común `HistorialIncidenciasJdbc`, entrega de eventos y herramientas de prueba. Se reutilizaron sin modificar Operación ni Gateway [cite: 1, 2].
 
 ## 2. Estrategia y responsabilidades
 
@@ -26,9 +26,9 @@ Gestión confirma un estado final con motivo obligatorio, guarda el resultado or
 
 | Capa | Responsabilidad | Ubicación prevista |
 |---|---|---|
-| Gestión | Caso de uso, persistencia y captura común conforme al contrato. | Bajo el paquete base existente; áreas propuestas `incidencias/` y `shared/historial/`. |
+| Gestión | Caso de uso, persistencia y captura común conforme al contrato. | Bajo el paquete base existente; área existente `incidencias/` y escritor `HistorialIncidenciasJdbc`. |
 | Datos | Reutilizar migraciones base y añadir solo cambios de este alcance. | Migraciones Flyway del servicio Gestión; nombres secuenciales a comprobar al implementar. |
-| Frontend administrativo | Formulario local, identidad del comando, recuperación y navegación. | `apps/despacho-administrativo/src/features/entregas-fallidas/`, `ModalCierreDespacho.tsx` propuesto. |
+| Frontend administrativo | Formulario local, identidad del comando, recuperación y navegación. | `apps/despacho-administrativo/src/features/entregas-fallidas/`, `ModalCierreDespacho.tsx`. |
 | Paquetes frontend | Transporte/tipos, controles y notificaciones existentes. | `packages/cliente-api`, `packages/tipos-compartidos`, `packages/componentes-compartidos`. |
 | Gateway | Propagar identidad, correlación y resultado sin cachear o repetir el POST. | Verificar ruta existente `/api/v1/despachos/**`; no crear otro gateway. |
 | Operación y Ventas | Mantener contratos de capacidad/eventos que ya poseen. | APIs/procesadores existentes; sin SQL entre servicios ni nuevas reglas comerciales. |
@@ -41,7 +41,7 @@ Implementar/verificar los controles necesarios antes del modal. Los CR son confi
 
 ## 4. Backend, persistencia e integraciones
 
-- Datos/migración: Reutilizar `historial_estados_despacho`; no añadir tabla de cierres. Incorporar el índice único parcial del cierre y los metadatos `controlCierre` ya definidos en el modelo. La migración se coordina con la base RT-02, verifica datos previos y no fabrica resultados originales ausentes.
+- Datos/migración: Reutilizar `historial_estados_despacho`; no añadir tabla de cierres. V4 incorpora el índice único parcial del cierre y los metadatos `controlCierre` ya definidos en el modelo. La migración usa el historial de V1/V2; conserva históricos sin inventar resultados y falla si existen cierres duplicados. Se verificó base vacía y actualización V3 con datos sintéticos.
 - Validar JWT humano/rol antes de existencia/resultados, formato y normalización de motivo/observación. Motivo es texto libre, no enum ni catálogo de fallos; usuario y fecha proceden del contexto/servidor.
 - Reconocer primero el resultado aceptado del mismo ejecutor/contenido. Para una decisión nueva validar incidencia/versión, FALLIDO, recepción e integridad local sin exigir máximo agotado, sello intacto, foto, jornada cerrada o liberación confirmada.
 - Comparar versión dentro de la escritura; confirmar estado final, versión, historial con resultado original y evento si es real en una transacción local. `motivo_codigo` queda null; motivo de cierre y control interno siguen el modelo.
@@ -85,23 +85,23 @@ Las dependencias concretas y criterios están en [tasks.md](./tasks.md). Las bas
 | CA-15 | Fuera de fallidos/cola, detalle final autorizado y sin metadatos. | T-04/06/07; cierre T-08 | EV-01/03/04 |
 | CUI-01 a CUI-08 | Interacción, errores, recuperación, teclado, móvil y autorización. | T-01/T-02/T-06; revisión T-08 | EV-03 |
 
-Comandos previstos: `./mvnw.cmd test` desde Gestión y, si cambia su código en el recorrido, Operación/Gateway; PostgreSQL/Testcontainers requiere Docker. Desde frontend, `npm run typecheck`, `npm run build` y el comando de interacción que se incorpore en T-01 (todavía no existe en la base inspeccionada). Los pasos de recorrido real y datos antes/después se registrarán en evidencia, sin tokens ni datos personales reales. Estos comandos y recorridos no se ejecutaron al preparar documentos.
+Comandos ejecutados y resultados en EV-01/03: `./mvnw.cmd clean verify` en Gestión con Docker/Testcontainers, `npm.cmd run test:f04 -- --maxWorkers=1`, `npm run typecheck`, `npm run build` y `npm run test:f04:cierre:e2e` con Edge. No hubo cambios ni pruebas nuevas de Operación o Gateway. El recorrido usa proxy de prueba hacia Gestión aislada, identidad sintética y sin receptor real de Ventas.
 
 ## 7. Decisiones y pendientes
 
 | ID | Preparación técnica | Responsable de referencia | Bloquea |
 |---|---|---|---|
-| DT-01 | Comprobar controles compartidos/herramienta de interacción; reutilizar lo preparado en trabajos previos. | Gerardo con Max y responsables CR. | I-01/I-02 real. |
-| DT-02 | Revisar migraciones base, datos previos y propiedad de cada cambio; regularizar solo desde información verificable. | Gerardo con Arquitectura y productores. | I-03/I-04 real. |
-| DT-03 | Disponibilidad de comandos, detalle, procesadores, credenciales y servicios necesarios para el recorrido real. | Gerardo coordina con responsables F-02/F-03/F-06 y DevOps. | I-05/I-06 real. |
+| DT-01 | Comprobar controles compartidos/herramienta de interacción; reutilizar lo preparado en trabajos previos. | Resuelto localmente: controles y herramientas disponibles. | No bloquea implementación. |
+| DT-02 | Revisar migraciones base, datos previos y propiedad de cada cambio; regularizar solo desde información verificable. | Resuelto localmente: V4 sobre historial común, sin tabla nueva. | No bloquea implementación. |
+| DT-03 | Disponibilidad de comandos, detalle, procesadores, credenciales y servicios necesarios para el recorrido real. | Gestión/PostgreSQL y procesadores comprobados; Gerardo coordina los servicios desplegados. | Integración conjunta pendiente. |
 
 Son prerrequisitos de implementación/integración, no preguntas funcionales nuevas. Las revisiones técnicas y visuales se registran al ejecutar; este documento no reasigna trabajo de otros integrantes ni acredita disponibilidad de sus servicios.
 
 ## 8. Condiciones para iniciar y cerrar
 
-- [ ] Entradas y bases de código comprobadas en el incremento que se inicia.
-- [ ] Tareas y componentes/dependencias necesarios disponibles o simulación explícitamente identificada.
-- [ ] No hay bloqueos técnicos para la tarea a ejecutar.
+- [x] Entradas y bases de código comprobadas en el incremento que se inicia.
+- [x] Tareas y componentes/dependencias necesarios disponibles o simulación explícitamente identificada.
+- [x] Implementación local sin bloqueos técnicos; integración conjunta y revisión humana separadas.
 - [ ] Al cerrar, cada criterio tiene evidencia real, revisión y referencias de implementación; los mocks no acreditan integración real.
 
 ## 9. Referencias
