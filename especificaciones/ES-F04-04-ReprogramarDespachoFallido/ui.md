@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo; revisión visual con el responsable de UI pendiente.
 
-**Estado:** Preparada documentalmente; implementación y verificación pendientes.
+**Estado:** Implementación local y pruebas automatizadas verificadas el 24/10/2026; revisión humana/zoom nativo pendientes.
 
 **Aplicabilidad:** Modal administrativo sobre detalle, sin ruta propia.
 
@@ -23,7 +23,7 @@
 | [Diseño F-04](../../disenio/funcionalidades/f-04.md) | Pantalla 4 | Resumen, campos y navegación. |
 | [Componentes](../../disenio/componentes-react.md) | CR-01/02/08/09/15 | Acciones, campos, estados, etiquetas y notificación. |
 
-`ModalReprogramacionDespacho` es una composición local propuesta con Modal, Textarea y DatePickerInput de Mantine. CR-12 es una confirmación genérica; no se lo transforma obligatoriamente en formulario. Reutilizar tema/proveedor; verificar controles compartidos en T-01 antes de consumirlos [cite: 2].
+`ModalReprogramacionDespacho` es una composición local implementada con Modal, Textarea y DatePickerInput de Mantine. CR-12 es una confirmación genérica; no se lo transforma obligatoriamente en formulario. Reutilizar tema/proveedor; verificar controles compartidos en T-01 antes de consumirlos [cite: 2].
 
 ## 3. Pantallas e interacción
 
@@ -81,7 +81,7 @@ Contar puntos de código después de normalizar según el contrato; un límite n
 
 Fecha futura se valida al confirmar en Lima; medianoche puede invalidar la selección y exige corregir. Liberación pendiente/de revisión, jornada, sello o visor no añaden bloqueos.
 
-El contenedor conserva identidad/cuerpo enviados mientras recupera un resultado desconocido. Cerrar el modal no autoriza otra decisión sin consultar; si cambia la incidencia, no copiar el formulario a la nueva salida ni atribuirle el resultado antiguo [cite: 3].
+El contenedor conserva identidad/cuerpo enviados mientras recupera un resultado desconocido. Cerrar el modal no autoriza otra decisión sin consultar; si cambia la incidencia, no copiar el formulario a la nueva salida ni atribuirle el resultado antiguo. El detalle mantiene «Revisar reprogramación pendiente» aunque su lectura actual sea histórica, para recuperar ese mismo comando sin iniciar otra decisión [cite: 3].
 
 ## 6. Accesibilidad y adaptación
 
@@ -104,8 +104,8 @@ El contenedor conserva identidad/cuerpo enviados mientras recupera un resultado 
 | CUI-07 | 200 o replay y fallo del refresco posterior. | Conserva éxito, actualiza origen y ofrece Actualizar sin reenviar. | CA-12/17 |
 | CUI-08 | Teclado, móvil, zoom 200 % y pérdida de permisos. | Foco/errores utilizables; retira datos protegidos ante 401/403. | CA-15/17 |
 
-- No hay decisiones funcionales nuevas de UI pendientes. Disponibilidad/revisión de controles y herramienta de interacción: DT-01 del plan, pendiente de ejecución.
-- Evidencia prevista: EV-03 de [evidence.md](./evidence.md); distinguir fixtures, API real y revisión manual de foco/móvil. Ningún CUI fue ejecutado al preparar esta carpeta.
+- Composición local Mantine y base de interacción reutilizadas/verificadas; no se cambiaron componentes compartidos. La regresión de CR-03 tiene un fallo previo documentado en EV-03.
+- Resultados ejecutados: EV-03 de [evidence.md](./evidence.md), con JSDOM y navegador contra Gestión/PostgreSQL reales. Se separan fixtures, proxy de pruebas y proveedores externos. CUI-08 mantiene pendiente revisión humana y zoom nativo.
 
 ## 8. Referencias
 
