@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Preparado documentalmente; implementación y revisión técnica pendientes.
+**Estado:** Implementación y verificación local ejecutadas el 24/10/2026; integración conjunta y revisión humana pendientes.
 
 **UI:** Aplica; modal administrativo desde el detalle de incidencia.
 
@@ -18,7 +18,7 @@
 | Código inspeccionado | Frontend `d2bc27d`; backend `1e7834b` | Lectura estática local del 16/10/2026, sin compilación ni pruebas funcionales ejecutadas. |
 | Diseño y componentes | [SYSTEM-DESIGN](../../disenio/SYSTEM-DESIGN.md), F-04/P4; [componentes](../../disenio/componentes-react.md), CR-01/02/08/09/15 | Fuentes de UI y límites reutilizables; implementación por comprobar. |
 
-El frontend contiene monorepositorio, tema Mantine y una pantalla F-04 pendiente; el paquete compartido exporta el tema, no los CR completos, y no hay script de interacción. Gestión contiene seguridad y cotización inicial; los comandos y el historial de F-04 siguen pendientes. Los nombres/rutas nuevas de este plan son propuestas, ajustables al iniciar sin cambiar contratos [cite: 1, 2].
+La inspección inicial anterior corresponde al 16/10. La implementación parte ahora de backend `60855de`, frontend `af94b54` y especificaciones `542a483`, en la rama común `feature/f04-reprogramar-despacho-fallido`. Ya están disponibles listado, detalle y recepción ES-F04-03, componentes compartidos, cliente API y pruebas de interacción. Se reutilizan sin reinicializar proyectos ni modificar Operación. Gestión incorpora V3 para el registro durable y un escritor común de historial dentro de la transacción del productor; la verificación final de ES-F04-06 mantiene su alcance propio.
 
 ## 2. Estrategia y responsabilidades
 
@@ -88,23 +88,23 @@ Las dependencias concretas y criterios están en [tasks.md](./tasks.md). Las bas
 | CA-18 | Máximo ausente/no entero/no positivo sin escrituras. | T-04; cierre T-08 | EV-01 |
 | CUI-01 a CUI-08 | Interacción, errores, recuperación, teclado, móvil y autorización. | T-01/T-02/T-06; revisión T-08 | EV-03 |
 
-Comandos previstos: `./mvnw.cmd test` desde Gestión y, si cambia su código en el recorrido, Operación/Gateway; PostgreSQL/Testcontainers requiere Docker. Desde frontend, `npm run typecheck`, `npm run build` y el comando de interacción que se incorpore en T-01 (todavía no existe en la base inspeccionada). Los pasos de recorrido real y datos antes/después se registrarán en evidencia, sin tokens ni datos personales reales. Estos comandos y recorridos no se ejecutaron al preparar documentos.
+Comandos ejecutados: `.\mvnw.cmd clean verify` desde Gestión; `npm run test:f04`, `npm run typecheck`, `npm run build`, `npm test` y `npm run test:f04:e2e` desde frontend. Docker/Testcontainers aporta PostgreSQL desechable. Playwright usa el arranque aislado `ReprogramacionNavegadorPruebas`, documentado en README backend. EV-01 a EV-04 registran resultados, capturas, el fallo previo de CR-03 y los límites de dobles/proveedores. No se ejecutaron migraciones sobre bases persistentes ni se modificó Operación/Gateway.
 
 ## 7. Decisiones y pendientes
 
 | ID | Preparación técnica | Responsable de referencia | Bloquea |
 |---|---|---|---|
-| DT-01 | Comprobar controles compartidos/herramienta de interacción; reutilizar lo preparado en trabajos previos. | Gerardo con Max y responsables CR. | I-01/I-02 real. |
-| DT-02 | Revisar migraciones base, datos previos y propiedad de cada cambio; regularizar solo desde información verificable. | Gerardo con Arquitectura y productores. | I-03/I-04 real. |
-| DT-03 | Disponibilidad de comandos, detalle, procesadores, credenciales y servicios necesarios para el recorrido real. | Gerardo coordina con responsables F-02/F-03/F-06 y DevOps. | I-05/I-06 real. |
+| DT-01 | Comprobar controles compartidos/herramienta de interacción; reutilizar lo preparado en trabajos previos. | Gerardo con Max y responsables CR. | Resuelta para el modal; revisión visual humana en T-08. |
+| DT-02 | Revisar migraciones base, datos previos y propiedad de cada cambio; regularizar solo desde información verificable. | Gerardo con Arquitectura y productores. | Resuelta: V3, datos previos y escritor común verificados. |
+| DT-03 | Disponibilidad de comandos, detalle, procesadores, credenciales y servicios necesarios para el recorrido real. | Gerardo coordina con responsables F-02/F-03/F-06 y DevOps. | Gestión/HTTP/UI local disponibles; recorrido con otros proveedores pendiente. |
 
 Son prerrequisitos de implementación/integración, no preguntas funcionales nuevas. Las revisiones técnicas y visuales se registran al ejecutar; este documento no reasigna trabajo de otros integrantes ni acredita disponibilidad de sus servicios.
 
 ## 8. Condiciones para iniciar y cerrar
 
-- [ ] Entradas y bases de código comprobadas en el incremento que se inicia.
-- [ ] Tareas y componentes/dependencias necesarios disponibles o simulación explícitamente identificada.
-- [ ] No hay bloqueos técnicos para la tarea a ejecutar.
+- [x] Entradas y bases de código comprobadas para el alcance local.
+- [x] Dependencias locales disponibles y simulaciones identificadas en evidencia.
+- [x] Implementación local ejecutada; dependencias conjuntas abiertas en DT-03.
 - [ ] Al cerrar, cada criterio tiene evidencia real, revisión y referencias de implementación; los mocks no acreditan integración real.
 
 ## 9. Referencias

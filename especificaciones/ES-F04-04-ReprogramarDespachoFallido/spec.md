@@ -4,7 +4,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Implementación local de Gestión y frontend verificada; aceptación conjunta pendiente según [evidence.md](./evidence.md).
 
 **Actor principal:** Gestor de Despacho. **Servicio propietario:** Gestión de Despachos.
 
@@ -241,5 +241,5 @@ Fijar una nueva fecha sobre el mismo despacho, devolverlo inmediatamente a la co
 
 - [cite: 1] [F-04](../../funcionalidades/F-04-GestionEntregasFallidas.md), RF-03/05/06/07; [ES-F04-01](../ES-F04-01-ConsultarEntregasFallidas/spec.md), [ES-F04-02](../ES-F04-02-ConsultarDetalleIncidencia/spec.md), [ES-F04-03](../ES-F04-03-ConfirmarRecepcionPaquete/spec.md) y [ES-F04-05](../ES-F04-05-CerrarDespachoComoDevueltoAOrigen/spec.md).
 - [cite: 2] [Gestión §5.2.2](../../integraciones/api-contract-gestion-despachos.md#522-reprogramar-un-despacho-fallido--es-f04-04), §§5.2/5.3; [convenciones](../../integraciones/api-contract.md), §§3/7.3/9.
-- [cite: 3] [Cola F-02](../ES-F02-03-ConsultarColaPendientes.md), [asignación F-02](../ES-F02-04-AsignarDespachoRepartidor.md), [modelo](../../arquitectura/modelo-datos.md), §§3.3/3.4/3.5, y [overview](../../overview.md), RT-01/02/03.
+- [cite: 3] [Cola F-02](../ES-F02-03-ConsultarColaPendientes/spec.md), [asignación F-02](../ES-F02-04-AsignarDespachoRepartidor/spec.md), [modelo](../../arquitectura/modelo-datos.md), §§3.3/3.4/3.5, y [overview](../../overview.md), RT-01/02/03.
 - [cite: 4] [Diseño F-04](../../disenio/funcionalidades/f-04.md), Pantalla 4; [componentes compartidos](../../disenio/componentes-react.md) y [guía SDD](../../plantillas/sdd/README.md).
