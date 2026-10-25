@@ -58,7 +58,7 @@ Permitir visualizar la fotografía de evidencia de un despacho solo a usuarios a
 
 | Operación o dependencia | Uso | Contrato o fuente |
 |---|---|---|
-| Autorizar la lectura de evidencia | URL firmada, vigencia configurable, permisos y errores | [Operación §3.4](../../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia) |
+| Autorizar la lectura de evidencia | URL firmada, vigencia configurable, permisos y errores | [Operación §3.5](../../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia) |
 | Almacenamiento privado de evidencia | Origen de la fotografía | Operación de Reparto y Flota |
 | F-04 Entregas Fallidas | Consulta de la evidencia de su incidencia, también después de resolver el despacho | F-04 |
 
@@ -102,4 +102,4 @@ Tareas en [tasks.md](./tasks.md); resultados en [evidence.md](./evidence.md).
 
 1. [F-03](../../funcionalidades/F-03-AppMovilRepartidor.md), RF-09 y CA-27 a CA-29.
 2. [Pendientes](../../funcionalidades/pendiente.md), sección F-03.
-3. [Contrato de operación de reparto, §3.4](../../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia).
+3. [Contrato de operación de reparto, §3.5](../../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia).

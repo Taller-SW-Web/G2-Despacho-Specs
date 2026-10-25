@@ -63,11 +63,11 @@ Reutiliza el patrón de transición de ES-F03-04 y añade el registro previo de 
 
 | ID | Decisión o pregunta | Responsable | Bloquea |
 |---|---|---|---|
-| DT-01 | Formatos, tamaño máximo, compresión y tratamiento de metadatos (`pendiente.md`, F-03) | Equipo F-03 | CA-04, I-02 |
-| DT-02 | Mecanismo de almacenamiento privado y forma de envío del archivo (en la misma petición o carga previa) | Max Rojas con Arquitectura | I-02 |
-| DT-03 | Componentes compartidos aplicables | Max Rojas con responsables de componentes | I-01 |
-| DT-04 | Limpieza de evidencias almacenadas cuya transición no se completa | Max Rojas con Arquitectura | I-02 |
-| DT-05 | Contenido del campo «observaciones» del historial en una entrega exitosa | Max Rojas con responsable de F-03 | CA-05 |
+| DT-01 | Resuelta parcialmente: JPEG/PNG/WebP, máximo 2 MiB. Compresión y tratamiento EXIF siguen pendientes y no se aplican. | Contrato CR-17 | — para validar archivo |
+| DT-02 | Resuelta: almacenamiento privado, URL firmada de carga y envío directo al bucket; la API recibe solo el identificador. | Contrato CR-17 | — |
+| DT-03 | Resuelta: reutilizar `CapturaEvidencia` compartido. | CR-17 | — |
+| DT-04 | Pendiente: limpieza recuperable de archivos cargados sin una transición confirmada. | Arquitectura/Backend | I-02 |
+| DT-05 | Pendiente: contenido permitido de observaciones del historial; no copiar datos personales a la bandeja histórica. | Responsable F-03 | CA-05 |
 
 ## 8. Condiciones para cerrar
 

@@ -61,10 +61,10 @@ Primera transición de campo. Establece el patrón común de idempotencia, confl
 
 | ID | Decisión o pregunta | Responsable | Bloquea |
 |---|---|---|---|
-| DT-01 | Ruta, payload, encabezado de idempotencia y códigos de error que distingan las causas de `409` | Max Rojas con Backend | I-02, I-03 |
-| DT-02 | Componentes compartidos aplicables | Max Rojas con responsables de componentes | I-01 |
-| DT-03 | Vigencia y almacenamiento de las claves de idempotencia | Max Rojas con Arquitectura | I-02 |
-| DT-04 | Mecanismo de publicación del evento (RT-03): en la transacción o con bandeja de salida | Max Rojas con Arquitectura | I-02 |
+| DT-01 | Resuelta para el contrato: `POST /api/v1/repartidor/despachos/{idDespacho}/inicio-traslado`, sin cuerpo y con `Idempotency-Key` UUID v4; Gestión confirma conflictos de estado. Implementación pendiente. | Contrato F-03 | I-02, I-03 |
+| DT-02 | Resuelta: usar los controles compartidos existentes del detalle; no trasladar llamadas HTTP a componentes visuales. | CR-16 y arquitectura frontend | — |
+| DT-03 | Resuelta: persistir idempotencia en Gestión por actor, operación y clave, con retención de 24 horas según esquema actual. | Contrato común | — |
+| DT-04 | Resuelta: reutilizar la bandeja de salida de Gestión para publicar la proyección confirmada a Operación. | Gestión `eventos_salientes` | — |
 
 ## 8. Condiciones para cerrar
 

@@ -77,7 +77,7 @@ La página no tiene formulario de modificación propio. Los botones abren los fl
 - Los mensajes de bloqueo proceden de códigos contractuales, no de comparar textos de error; máximo y contador se interpolan con valores reales.
 - Formatear instantes del servidor en `America/Lima`, diferenciando incidencia, recepción, último cambio de estado y consulta.
 - Actualizar la vista activa al menos cada 30 segundos y tras operaciones/conflictos. Si cambia la incidencia, informar y retirar su evidencia previa; las respuestas anteriores no reemplazan la consulta vigente.
-- No persistir URLs firmadas ni incluirlas en logs o capturas de pruebas; los modelos HTTP y errores pertenecen a los contratos de [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) y [Operación §3.4](../../integraciones/api-contract-operacion-reparto.md#34-autorizar-la-lectura-de-evidencia) [cite: 3].
+- No persistir URLs firmadas ni incluirlas en logs o capturas de pruebas; los modelos HTTP y errores pertenecen a los contratos de [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) y [Operación §3.5](../../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia) [cite: 3].
 
 ## 6. Accesibilidad y adaptación
 

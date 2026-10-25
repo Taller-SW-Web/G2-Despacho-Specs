@@ -21,7 +21,7 @@ Permitir que el repartidor declare un intento real de entrega no exitoso, cambia
 
 ## 3. Actor, precondiciones y resultados
 
-- Actor y autorización: repartidor en turno según ES-F03-01, con rol `REPARTIDOR`.
+- Actor y autorización: repartidor en turno, con perfil local activo y vinculado resuelto desde el `sub` del JWT; no se exige rol global `REPARTIDOR`.
 - Precondiciones: el despacho está en `EN_CAMINO`, asignado al repartidor del token y en la jornada en curso; el catálogo canónico de motivos de Gestión de Despachos está disponible; existe conexión activa.
 - Disparador: el repartidor pulsa «Marcar como fallido».
 - Resultado exitoso: despacho en `FALLIDO` con motivo, evidencia, comentario, contador incrementado y registro en el historial.
