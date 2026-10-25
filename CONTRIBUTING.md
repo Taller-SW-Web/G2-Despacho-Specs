@@ -90,8 +90,8 @@ Para cambios de este repositorio documental, el mismo proceso utiliza `main` en 
 ### 3.1 Entregas y versiones
 
 - Revisar el corte de entrega aproximadamente cada dos semanas, sin que esa cadencia requiera adoptar Scrum ni obligue a publicar una versión sin cambios.
-- En el backend, registrar los cambios significativos de integración en `Sin publicar` de `CHANGELOG.md`. El README conserva las instrucciones de ejecución.
-- Al preparar una entrega, cerrar la sección con su versión y fecha, verificar el alcance y abrir el PR de `develop` a `main`. El changelog viaja con ese PR; no se actualiza mediante *push* directo a `main`.
+- Actualizar `CHANGELOG.md` únicamente al preparar y publicar una nueva línea base en `main`. No añadir entradas por especificación durante el desarrollo; el avance se registra en commits y en los documentos SDD. El README conserva las instrucciones de ejecución.
+- Al preparar esa línea base, consolidar los cambios entregados con su versión y fecha, verificar el alcance y abrir el PR de `develop` a `main`. El changelog viaja con ese PR; no se actualiza mediante *push* directo a `main`.
 - Usar `0.x.y` durante el desarrollo inicial. La primera línea base de código se identifica como `0.1.0`; las versiones siguientes dependen de los cambios entregados, no del número de hito.
 - Crear manualmente el tag sobre el commit aprobado de `main`, sin mover tags de entregas anteriores. No se requiere crear una GitHub Release.
 
