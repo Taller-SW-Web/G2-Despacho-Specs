@@ -1,7 +1,7 @@
 # Especificación F-06: Disponibilidad y Capacidad Diaria de la Flota
 
 **Responsable funcional original:** Luis Alfonso
-**Implementación asumida:** Kevin Rhamses Bohorquez, por solicitud del usuario
+**Responsable actual:** Kevin Rhamses Bohorquez (F-05 y F-06)
 **Estado:** Implementado y verificado localmente; aceptación desplegada pendiente
 **Actor principal:** Gestor de Despacho
 **Lineamiento del curso:** Soporte a la asignación de despacho a operador/repartidor
@@ -202,6 +202,8 @@ El sistema DEBE mantener el estado operativo coherente con los despachos y cerra
 | Persistencia y auditoría | Registrar asignaciones, cierres y cambios de estado con usuario y marca temporal en UTC. |
 
 Las rutas, cuerpos y códigos se centralizan en `integraciones/api-contract-operacion-reparto.md`.
+
+La revisión del 26/10/2026 completa la retirada de datos/formularios y el descarte de respuestas anteriores al cambiar sesión en el tablero. También verifica la auditoría de las jornadas vacías cerradas indirectamente desde F-05, dentro de la misma transacción que la baja o el retiro. La verificación automatizada y los pendientes de Seguridad real se distinguen en el [reporte F-05/F-06](../especificaciones/ES-F06-01-AbrirJornada/evidencia/validacion.md#revision-f05-f06-2026-10-26).
 
 ## 8. Requisitos no funcionales
 

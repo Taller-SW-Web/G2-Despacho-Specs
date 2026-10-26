@@ -4,7 +4,7 @@
 
 **Responsable:** Rhamses (Kevin Rhamses Bohorquez).
 
-**Estado:** Implementación local en verificación; aceptación integrada y revisión humana pendientes.
+**Estado:** Implementación y automatización verificadas; Seguridad real y revisión humana pendientes.
 
 **Actor principal:** Gestor de Despacho.
 

@@ -2,7 +2,7 @@
 
 **Responsable:** Rhamses.
 
-**Estado:** Borrador de mantenimiento y aceptación de código existente; pendiente de revisión técnica.
+**Estado:** Contraste técnico y automatización ejecutados; Seguridad real y revisión humana pendientes.
 
 **UI:** Aplica; vincular cuenta mediante UUID en `/repartidores`.
 
@@ -108,3 +108,8 @@ Complementar con las comprobaciones CUI, teclado y recorrido integrado. Registra
 1. [Especificación](./spec.md), [UI](./ui.md) y [tareas](./tasks.md) [cite: 1].
 2. [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas), [Seguridad §8.4](../../integraciones/api-contract.md#84-creación-y-vinculación-de-un-usuario-repartidor) y [modelo de datos](../../arquitectura/modelo-datos.md) [cite: 2].
 3. [Componentes React](../../disenio/componentes-react.md) y [evidencia](./evidence.md) [cite: 3].
+
+
+## Revisión técnica del 26/10/2026
+
+El contraste contractual y la verificación automatizada se registran en [EV-05](./evidence.md#ev-05-revision-f05-f06). La implementación conserva la vinculación manual y los permisos locales; no incorpora la provisión ni el login de Seguridad real. Las tareas de aceptación humana e integración externa permanecen pendientes.

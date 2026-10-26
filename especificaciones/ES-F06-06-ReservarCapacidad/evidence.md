@@ -33,7 +33,7 @@ Los resultados «Aprobado» se limitan a las comprobaciones locales indicadas; n
 
 Codex preparó SDD, componentes, casos de uso, migración, pruebas y registro por solicitud de Kevin Rhamses. Luis conserva la asignación funcional original; implementación asumida por Kevin. No se inventan fechas, aprobación humana ni resultados.
 
-## 5. Diferencias, fallos y pendientes
+## 5. Diferencias, fallos y pendientes del incremento original
 
 Seguridad real y concesión de scopes, sesión administrativa, recorrido autenticado Render/Vercel, revisión visual y aceptación humana pendientes. El p95 local está medido, pero no acredita el objetivo en Render. Gestión tiene dos migraciones V3 preexistentes: su suite completa falla por esa colisión; el consumidor F02/F06 pasó por separado. Véase el [detalle de límites](../ES-F06-01-AbrirJornada/evidencia/validacion.md#4-límites-y-pendientes).
 
@@ -47,3 +47,15 @@ Código identificado en §1; publicación en `develop` para frontend/backend y `
 2. [Plan](./plan.md) y [tareas](./tasks.md) [cite: 2].
 3. [Contrato de Operación](../../integraciones/api-contract-operacion-reparto.md) [cite: 3].
 4. [Reporte de verificación](../ES-F06-01-AbrirJornada/evidencia/validacion.md) [cite: 4].
+
+
+<a id="ev-02-revision-f05-f06"></a>
+
+## EV-02. Revisión de F-05 y F-06 (26/10/2026)
+
+- Responsable actual: Kevin Rhamses Bohorquez. Base documental `03343ce`; frontend `39a361b`; cambio funcional backend `4163b80`, con conservación adicional de mediciones en `b81fc39`.
+- Criterios contrastados: CA-01, CA-02, CA-03, CA-04, CA-05. Backend: `GestorJornadasTests`, `CalculoOcupacionTests`, `JornadasHttpTests`, `ConsultaZonaHttpTests` y `JornadasPostgresTests`, según el criterio. Frontend: modelos, transporte, consultas y `PaginaJornadas.test.tsx`; navegador para apertura, detalle, cierre e invalidación de sesión. Los comandos internos no tienen una pantalla nueva.
+- Resultado: [CI backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend/actions/runs/40419989916) aprobado, incluidas 119 pruebas de Operación con PostgreSQL temporal; [CI frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/actions/runs/40419367650) aprobado: 165 pruebas administrativas (Zonas excluida), 208 compartidas, 13 de repartidor, cuatro E2E F-02 y seis E2E F-05/F-06, además de tipos y compilación.
+- Correcciones: invalidación de datos y formularios de F-05/F-06 al cambiar sesión; descarte de respuestas tardías. Los cierres de jornadas vacías por baja o retiro conservan auditoría propia, actor y estados anterior/nuevo, con reversión conjunta ante error y sin duplicación al repetir.
+- Entorno y límites: PostgreSQL desechable en GitHub Actions; JWT identificados como dobles o emisor temporal. El navegador usa APIs simuladas. Docker Desktop local falló al iniciar; la ejecución completa local no se presenta como aprobada. No se modificaron Supabase, Render, Vercel ni migraciones aplicadas. Seguridad real, permisos de cuentas reales, SLA desplegado y aceptación humana siguen pendientes.
+- Entrega: [PR frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/pull/17) y [PR backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/19); [reporte común y trazabilidad](../ES-F06-01-AbrirJornada/evidencia/validacion.md#revision-f05-f06-2026-10-26). No se ha realizado el merge.

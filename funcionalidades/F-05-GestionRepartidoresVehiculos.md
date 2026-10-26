@@ -1,7 +1,7 @@
 # Especificación F-05: Gestión de Repartidores y Vehículos
 
-**Responsable:** Rhamses
-**Estado:** Implementación local en verificación; aceptación integrada pendiente
+**Responsable actual:** Kevin Rhamses Bohorquez (F-05 y F-06)
+**Estado:** Implementación y automatización verificadas; Seguridad real y aceptación humana pendientes
 **Actor principal:** Gestor de Despacho
 **Lineamiento del curso:** Administración de recursos operativos del módulo
 
@@ -200,6 +200,10 @@ El sistema DEBE asociar cada repartidor con su usuario en Seguridad y Usuarios p
 | Persistencia y auditoría | Registrar cambios con usuario y marca temporal en UTC. |
 
 Las rutas, cuerpos y códigos se centralizan en [Operación §4.1](../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas) [cite: 1]. La baja o retiro también rechazan reservas activas y cierran jornadas vacías de forma atómica; la edición de capacidad conserva las instantáneas existentes. El acceso de campo exige perfil local activo/vinculado y la comprobación de propiedad que corresponde a F-03.
+
+Los catálogos retiran los datos y formularios al cambiar/cerrar la sesión local o al cambiar su almacenamiento en otra pestaña. Se cancelan las consultas y se descartan los resultados tardíos de la identidad anterior. Esta protección se verifica con el proveedor temporal; no requiere que el login de Seguridad real ya esté integrado.
+
+La revisión del 26/10/2026 completó la auditoría propia de cada jornada vacía cerrada por baja o retiro. La mutación del recurso, el cierre y sus auditorías se confirman o revierten juntos; repetir una operación ya aplicada no crea otra auditoría de cierre. Los resultados y límites están en el [reporte de revisión F-05/F-06](../especificaciones/ES-F06-01-AbrirJornada/evidencia/validacion.md#revision-f05-f06-2026-10-26).
 
 ## 8. Requisitos no funcionales
 
