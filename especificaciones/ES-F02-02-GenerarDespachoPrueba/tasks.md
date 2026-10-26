@@ -2,7 +2,7 @@
 
 **Responsable de coordinación:** Tarqui.
 
-**Estado:** Pendiente de implementación.
+**Estado:** Backend implementado y verificado localmente; frontend funcional pendiente. Ver [evidence.md](./evidence.md).
 
 **Plan de origen:** [plan.md](./plan.md), preparado el 16/10/2026.
 
@@ -11,9 +11,9 @@
 | ID | Resultado | Área | Depende de | Criterios | Estado |
 |---|---|---|---|---|---|
 | T-01 | Contrato de endpoint `POST /api/v1/despachos/simulaciones` documentado y alineado a Gestión §3.2. | Contrato | api-contract-gestion-despachos.md | CA-01 | Completada |
-| T-02 | Servicio `SimuladorDatosService` con generador coherente de datos dentro de zonas activas. | Backend / Dominio | Catálogo Zonas (F-01) | CA-01, CA-02 | Pendiente |
-| T-03 | Caso de uso y controlador REST con autorización `@PreAuthorize("hasRole('GESTOR_DESPACHO')")`. | Backend / API | T-02 | CA-01 a CA-04 | Pendiente |
-| T-04 | Pruebas de integración de backend con MockMvc y Testcontainers. | Calidad / Backend | T-03 | CA-01 a CA-04 | Pendiente |
+| T-02 | Caso de uso `GenerarDespachoPrueba` con generador coherente de datos dentro de zonas activas. | Backend / Dominio | Catálogo Zonas (F-01) | CA-01, CA-02 | Verificada localmente |
+| T-03 | Caso de uso y controlador REST protegidos mediante Spring Security y rol `GESTOR_DESPACHO`. | Backend / API | T-02 | CA-01 a CA-04 | Verificada localmente |
+| T-04 | Pruebas de integración de backend con MockMvc y PostgreSQL real. | Calidad / Backend | T-03 | CA-01 a CA-04 | Aprobada con PostgreSQL externo; ver evidencia |
 | T-05 | Componente React `BotonGenerarPrueba` con estado loading y feedback toast Mantine. | Frontend / UI | T-01, CR-01, CR-15 | CUI-01, CUI-02 | Pendiente |
 | T-06 | Integración reactiva del botón con la tabla de pendientes e indicador "Simulado". | Integración UI | T-03, T-05, ES-F02-03 | CUI-03, CUI-04 | Pendiente |
 
@@ -24,7 +24,7 @@
 - Comprobación: esquemas validados.
 
 ### T-02. Implementar servicio simulador de datos
-- Alcance: selección de zona activa, generación de coordenadas, pesos, volúmenes, fecha de hoy y códigos con prefijo `SIM-`.
+- Alcance: selección de zona activa, generación de datos ficticios, pesos, volúmenes, fecha de hoy y códigos con prefijo `SIM-`. No se fabrican coordenadas opcionales sin una fuente geográfica.
 - Comprobación: tests unitarios que verifiquen coherencia de datos autogenerados.
 
 ### T-03. Controlador y caso de uso

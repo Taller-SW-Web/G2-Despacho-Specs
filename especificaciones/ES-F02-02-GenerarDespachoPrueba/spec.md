@@ -4,7 +4,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Backend implementado y verificado localmente; interfaz funcional pendiente. Ver [evidence.md](./evidence.md).
 
 **Actor principal:** Gestor de Despacho (aplicación web) / Equipo técnico.
 
@@ -62,7 +62,7 @@ El objetivo es permitir que el Gestor de Despacho genere de forma autónoma desp
 | Parámetros personalizados | Se especifica zona activa y peso/volumen positivos | Crea el despacho respetando los parámetros indicados y autogenerando el resto | CA-02 |
 | Zona inexistente o inactiva | Se envía `idZona` de una zona inactiva o inexistente | Responde `422 Unprocessable Entity` con detalle de error | CA-03 |
 | Peso o volumen inválidos | Se envía `pesoKg <= 0` o `volumenM3 <= 0` | Responde `400 Bad Request` indicando el campo fuera de rango | CA-03 |
-| Sin rol Gestor | Token sin rol `GESTOR_DESPACHO` o petición anónima | Responde `403 Forbidden` | CA-04 |
+| Sin autorización | Token aceptado sin rol `GESTOR_DESPACHO` o petición sin token aceptado | Responde `403 Forbidden` o `401 Unauthorized`, respectivamente, según Común §3.5 | CA-04 |
 
 ## 5. Reglas, datos e integraciones
 
@@ -104,7 +104,7 @@ El objetivo es permitir que el Gestor de Despacho genere de forma autónoma desp
 
 - **DADO** un usuario sin el rol `GESTOR_DESPACHO` o sin token de autenticación.
 - **CUANDO** intenta invocar el endpoint de simulaciones.
-- **ENTONCES** el backend responde `403 Forbidden` y no genera despachos ni expone información interna.
+- **ENTONCES** el backend responde `403 Forbidden` si el token aceptado no autoriza el rol, o `401 Unauthorized` si no hay token aceptado, según Común §3.5; no genera despachos ni expone información interna.
 
 ## 7. Referencias
 

@@ -4,7 +4,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Implementada y verificada localmente en `feature/f02-rutas-transferencia-segura`; aceptación humana pendiente. Resultados en evidence.md.
 
 **Actor principal:** Gestor de Despacho (aplicación web administrativa).
 
@@ -18,11 +18,11 @@ Documentos SDD: [plan](./plan.md), [tareas](./tasks.md), [evidencia](./evidence.
 
 Una vez que los despachos han sido asignados a un repartidor para la jornada en curso, el Gestor de Despacho necesita supervisar el recorrido integral y optimizar manualmente el orden de las paradas según criterios logísticos, geográficos o de prioridad de entrega.
 
-El objetivo es permitir al Gestor consultar el seguimiento operativo completo de la ruta asignada a un repartidor en su jornada y reordenar manualmente la secuencia de aquellos despachos que aún se encuentran en estado `ASIGNADO` antes de que el operador inicie su recorrido en campo. La especificación garantiza que la secuencia resultante sea matemáticamente continua (1..N sin duplicados ni huecos) y actualice de forma inmediata la ruta consumida por la web del repartidor (F-03) [cite: 1].
+El objetivo es consultar la ruta y permutar las posiciones vigentes de despachos `ASIGNADO`, preservando posiciones históricas de paradas iniciadas/cerradas. Una ruta nueva es continua `1..N`; los huecos históricos por retiro no se compactan. El orden se entrega a F-03 mediante proyecciones versionadas durables, con consistencia eventual [cite: 1].
 
 ## 2. Alcance
 
-- Incluye: consulta del listado ordenado de despachos en la ruta de un repartidor en su jornada; exposición de estados (`ASIGNADO`, `EN_CAMINO`, `ENTREGADO`, `FALLIDO`); reordenamiento manual de despachos en estado `ASIGNADO` mediante arrastre o botones subir/bajar; validación de secuencia continua sin saltos; persistencia en base de datos; barra flotante de cambios pendientes con acciones "Guardar orden" y "Descartar"; registro de auditoría (RT-02).
+- Incluye: consulta ordenada de ruta con estados; reordenamiento de `ASIGNADO` mediante arrastre o subir/bajar; permutación de posiciones vigentes, conservando huecos históricos y posiciones fijas; fotografía versionada, resultado recuperable, persistencia, barra Guardar/Descartar, auditoría y proyecciones durables (RT-02).
 - Fuera de alcance: optimización automática de rutas mediante algoritmos TSP / ruteo vehicular externo (el orden lo decide el Gestor); alteración del orden de despachos en estado `EN_CAMINO`, `ENTREGADO` o `FALLIDO` (bloqueados permanentemente); ejecución del traslado por el repartidor (F-03).
 
 ## 3. Actor, precondiciones y resultados
@@ -42,10 +42,10 @@ El objetivo es permitir al Gestor consultar el seguimiento operativo completo de
 
 ### 3.3. Resultados
 
-- Secuencia actualizada en base de datos con posiciones correlativas `1..N`.
+- Secuencia actualizada permutando los espacios vigentes (`1..N` en rutas nuevas), sin compactar huecos históricos.
 - Respuesta HTTP `200 OK` con la lista de despachos reordenados.
 - En la interfaz web, la ruta refleja el orden confirmado y la barra de cambios pendientes desaparece.
-- F-03 muestra las paradas en el nuevo orden en la siguiente sincronización.
+- F-03 muestra las paradas en el nuevo orden tras procesar las proyecciones versionadas y consultar de nuevo.
 
 ## 4. Flujo principal y alternativas
 
@@ -57,9 +57,9 @@ El objetivo es permitir al Gestor consultar el seguimiento operativo completo de
 6. El frontend envía `PUT /api/v1/jornadas/{idJornada}/secuencia` con el arreglo de `{ idDespacho, posicion }`.
 7. El backend valida:
    - Que todos los despachos pertenezcan a la jornada indicada.
-   - Que todos los despachos cuyo orden cambia estén estrictamente en estado `ASIGNADO`.
-   - Que las posiciones formen una permutación continua `1..N` sin números repetidos ni huecos.
-   - Control de concurrencia optimista sobre los despachos afectados.
+   - Que todos los despachos cuyo orden cambia estén estrictamente en estado `ASIGNADO` y la jornada esté confirmada activa.
+   - Que las posiciones sean una permutación exacta de los espacios vigentes, sin duplicados ni huecos nuevos.
+   - Control de fotografía original mediante `If-Match` y versiones de despacho; resultado durable con `Idempotency-Key`.
 8. Persiste atómicamente la nueva secuencia y el registro de auditoría.
 9. Responde `200 OK`.
 10. La interfaz muestra notificación de confirmación y oculta la barra de cambios pendientes.
@@ -77,7 +77,7 @@ El objetivo es permitir al Gestor consultar el seguimiento operativo completo de
 | Regla | Descripción comprobable | Origen |
 |---|---|---|
 | RN-01 | Solo los despachos en estado `ASIGNADO` admiten reordenamiento; los estados posteriores quedan fijados. | F-02 RF-06, CA-14 |
-| RN-02 | La secuencia de una jornada debe ser estrictamente continua: enteros desde 1 hasta el total de paradas. | F-02 RF-06 |
+| RN-02 | Permutar exactamente las posiciones vigentes; `1..N` en rutas nuevas. No crear huecos ni compactar los históricos por retiro. | Gestión §3.2.1 |
 | RN-03 | Los despachos ya completados o en traslado conservan su número de posición histórica. | api-contract-gestion-despachos.md §3.2 |
 | RN-04 | Todo reordenamiento exitoso queda auditado con la secuencia anterior y la nueva. | F-02 RF-04, RT-02 |
 
@@ -99,7 +99,7 @@ El objetivo es permitir al Gestor consultar el seguimiento operativo completo de
 
 - **DADO** una jornada con varios despachos en estado `ASIGNADO`.
 - **CUANDO** el Gestor envía una nueva secuencia válida en `PUT /api/v1/jornadas/{idJornada}/secuencia`.
-- **ENTONCES** el sistema actualiza de forma atómica las posiciones de los despachos sin huecos ni duplicados, registra la auditoría y responde `200 OK`.
+- **ENTONCES** permuta atómicamente las posiciones vigentes sin nuevos huecos ni duplicados, conserva las posiciones fijas y los huecos históricos, audita y responde `200 OK` con la ruta y nueva versión.
 
 ### CA-03. Rechazo de alteración de posición para despachos en traslado o cerrados
 
@@ -109,7 +109,7 @@ El objetivo es permitir al Gestor consultar el seguimiento operativo completo de
 
 ### CA-04. Rechazo por secuencia discontinua o duplicada
 
-- **DADO** un payload con posiciones repetidas (ej. dos despachos en posición 2) o con huecos en la numeración (ej. posiciones 1 y 3 sin posición 2).
+- **DADO** un payload con posiciones repetidas, identidades omitidas/ajenas o posiciones que no corresponden al conjunto vigente (por ejemplo, 1 y 3 para una ruta original 1 y 2).
 - **CUANDO** es validado por el backend.
 - **ENTONCES** el sistema responde `400 Bad Request` ("Secuencia de ruta inválida") y no aplica cambios en base de datos.
 

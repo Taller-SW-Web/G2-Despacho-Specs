@@ -35,7 +35,7 @@
   - Barra inferior flotante de cambios pendientes (`BarraAccionesFija` CR-13) con botones "Guardar orden" y "Descartar".
 - **Reglas de negocio:**
   - Solo los despachos en estado `ASIGNADO` admiten modificación de posición.
-  - La secuencia resultante debe ser continua: enteros de `1..N` sin duplicados ni saltos.
+  - Se permutan las posiciones vigentes sin duplicados ni huecos nuevos: `1..N` para rutas nuevas; conservar los huecos históricos por retiro y las posiciones fijas, conforme a Gestión §3.2.1.
   - Actualización atómica en base de datos bajo bloqueo optimista.
 
 ---
@@ -45,7 +45,7 @@
 - [ ] **CA-14: Reordenamiento de la secuencia de ruta**
   - **DADO** un repartidor con varios despachos en estado `ASIGNADO` en la jornada actual.
   - **CUANDO** el Gestor cambia el orden de esos despachos mediante arrastre o botones subir/bajar y confirma en `PUT /api/v1/jornadas/{idJornada}/secuencia`.
-  - **ENTONCES** el sistema actualiza la secuencia en base de datos sin posiciones repetidas ni vacías, registra la auditoría correspondiente y F-03 muestra la ruta con el nuevo orden en la siguiente consulta, manteniendo bloqueadas e inalteradas las paradas que no estén en `ASIGNADO`.
+  - **ENTONCES** permuta las posiciones vigentes sin duplicados ni nuevos huecos, conserva los huecos históricos y las posiciones de no `ASIGNADO`, registra auditoría y publica proyecciones versionadas. F-03 muestra el orden tras procesarlas y consultar de nuevo, conforme a Gestión §3.2.1.
 
 ---
 

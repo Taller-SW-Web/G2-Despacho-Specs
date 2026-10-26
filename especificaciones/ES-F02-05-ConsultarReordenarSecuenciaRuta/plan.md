@@ -2,7 +2,23 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Plan técnico documental preparado el 16/10/2026; implementación y verificación pendientes.
+**Estado:** Actualizado el 26/10/2026 para la implementación en curso.
+
+## Decisiones vigentes de esta iteración
+
+Prevalece [Gestión §3.2.1](../../integraciones/api-contract-gestion-despachos.md#321-ruta-y-secuencia-administrativa--es-f02-05) sobre las propuestas técnicas históricas de las secciones siguientes:
+
+- `ControladorRutas`, `RutasPersistencia`, `ModelosRuta` y `ValidadorSecuencia`; columna real `secuencia_ruta`, no `posicion_secuencia`.
+- Consulta de estado por el puerto existente de Operación §5.4 fuera de transacción local. Desconocida/no disponible: `503`, sin suponer inexistencia.
+- `If-Match` obligatorio, identidad de guardado UUID v4 y tabla durable `resultados_secuencia_ruta` (Flyway V5). Recuperación exacta después de perder respuesta.
+- Bloqueo de jornada compartido con asignación, filas en orden determinista y comparación de la fotografía completa. Restricción única diferida para intercambiar posiciones en un lote.
+- Permutación de espacios vigentes, sin compactar huecos históricos ni mover paradas no `ASIGNADO`.
+- Historial y outbox dentro de la misma transacción. Cada parada movida incrementa versión; su proyección reutiliza el mecanismo existente sin reiniciar el hito de asignación.
+- `RutasProgramacion` consume monitoreo de F-06 incluyendo saturados; no usa disponibilidad como catálogo de todas las rutas. Reutiliza CR-09/13 y hooks existentes. Arrastre HTML nativo y flechas accesibles, sin añadir biblioteca ni React Query al proyecto.
+- Gateway enruta las operaciones específicas a Gestión antes del comodín de jornadas de Operación.
+- Verificación: `RutasHttpTests`, pruebas React y recorrido Playwright real con servicios/base desechables en `pruebas/compose.f02.yaml` y `pruebas/verificar_f02_rutas.py` del backend. El emisor es Seguridad temporal, no G7.
+
+## Propuesta histórica (16/10/2026)
 
 **UI:** Aplica; pestaña "Rutas por repartidor" en `/programacion`.
 

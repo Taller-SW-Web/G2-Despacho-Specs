@@ -1,10 +1,12 @@
 # Evidencia de ES-F02-06: Reasignar despacho a otro repartidor
 
-**Estado:** Pendiente de implementación y verificación funcional.
+**Estado:** Primitiva F-06 implementada y verificada con PostgreSQL desechable; caso de uso público de reasignación y UI pendientes.
+
+**Avance del 26/10/2026:** rama `feature/f02-rutas-transferencia-segura`, sin commit atribuido. `JornadasPostgresTests` verifica transferencia local atómica, carga/ocupación, resultado idempotente incluso después de liberar destino, reutilización de clave, rechazo sin perder origen, fallo inducido al insertar destino con rollback y dos transferencias concurrentes. `JornadasHttpTests` comprueba identidad técnica, scopes y entrada. Esto no acredita CA-01 ni cierre de T-02: Gestión todavía no orquesta ni recupera una reasignación pública; no hay modal habilitado. Contrato canónico: Operación §5.3.1.
 
 **Responsable de verificación:** Tarqui.
 
-**Última verificación funcional:** No ejecutada.
+**Última verificación funcional:** 26/10/2026 para la primitiva F-06; reasignación pública completa no ejecutada.
 
 ## 1. Versión y entorno verificados
 

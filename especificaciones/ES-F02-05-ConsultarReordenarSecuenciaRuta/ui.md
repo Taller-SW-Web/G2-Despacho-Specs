@@ -2,7 +2,9 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Especificación de UI preparada el 16/10/2026; implementación pendiente.
+**Estado:** Implementada y verificada en React y navegador con servicios G2 reales; aceptación humana pendiente. Resultados en evidence.md.
+
+**Precisión vigente (26/10/2026):** se muestran los números de posición persistidos, conservando huecos históricos y paradas fijas conforme a Gestión §3.2.1. Se usa arrastre HTML nativo con alternativa subir/bajar por teclado; no se incorpora una biblioteca DND. La acción de reasignar permanece fuera de esta entrega hasta completar ES-F02-06. Respuesta perdida conserva clave, versión y cuerpo, bloquea descarte/cambio de jornada y ofrece «Recuperar guardado». Conflicto descarta edición y consulta ruta vigente.
 
 **Aplicabilidad:** Pestaña "Rutas por repartidor" dentro del Panel de Programación (`/programacion`).
 

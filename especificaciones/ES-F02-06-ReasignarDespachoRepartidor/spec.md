@@ -83,7 +83,7 @@ El objetivo es permitir al Gestor de Despacho transferir de forma transaccional 
 | RN-01 | Solo los despachos en estado `ASIGNADO` pueden ser reasignados. | F-02 RF-07, CA-16 |
 | RN-02 | El motivo de reasignación es estrictamente obligatorio para fines de auditoría. | F-02 RF-07, CA-15 |
 | RN-03 | El despacho reasignado se ubica siempre en la última posición (`MAX + 1`) de la ruta del nuevo repartidor. | F-02 CA-15 |
-| RN-04 | La transferencia de reservas en F-06 es atómica: se asegura el cupo nuevo antes de consolidar el cambio. | api-contract-operacion-reparto.md §5.1 |
+| RN-04 | La transferencia de reservas es localmente atómica en F-06 conforme a §5.3.1. Gestión necesita intención durable y bloqueo del traslado para consolidar/recuperar el cambio; no existe atomicidad distribuida implícita. | api-contract-operacion-reparto.md §5.3.1 |
 
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|

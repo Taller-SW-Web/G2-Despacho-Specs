@@ -4,7 +4,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Backend implementado y verificado localmente; integración con proveedores reales pendiente. Ver [evidence.md](./evidence.md).
 
 **Actor principal:** Módulo de Ventas y Postventa (token de servicio).
 
@@ -41,7 +41,7 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 
 - **Ventas y Postventa:** emite la solicitud de entrega según [api-contract.md §7.1](../../integraciones/api-contract.md#71-crear-un-despacho-para-un-pedido-listo-para-entrega).
 - **Zonas y Cotizador (F-01):** resuelve la zona de cobertura a partir del distrito o código postal.
-- **Productos y Ofertas:** provee peso y dimensiones vigentes por SKU según [api-contract.md §5.2](../../integraciones/api-contract.md#52-obtener-datos-físicos-vigentes-de-productos).
+- **Productos y Ofertas:** provee peso y dimensiones vigentes por SKU según [api-contract.md §5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas).
 - **Seguridad y Usuarios:** valida firma y claims del token entrante y emite token para consultar Productos.
 - **Cola de pendientes (ES-F02-03):** expone el despacho persistido a los gestores de despacho.
 - **Trazabilidad (ES-F02-08 / RT-02):** persiste el registro inicial de creación.
@@ -92,7 +92,7 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 |---|---|---|
 | `POST /api/v1/despachos` | Endpoint canónico de recepción externa. | [api-contract.md §7.1](../../integraciones/api-contract.md#71-crear-un-despacho-para-un-pedido-listo-para-entrega) |
 | Resolución de zona (F-01) | Obtener zona activa y plazo estimado. | [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) |
-| `POST /api/v1/productos/lote-datos-fisicos` | Obtener peso y dimensiones en lote. | [api-contract.md §5.2](../../integraciones/api-contract.md#52-obtener-datos-físicos-vigentes-de-productos) |
+| `POST /api/v1/productos/datos-fisicos/consulta` | Obtener peso y dimensiones en lote. | [api-contract.md §5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas) |
 | Auditoría transaccional (RT-02) | Registrar creación con usuario de servicio. | [api-contract-gestion-despachos.md §3.2](../../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación) |
 
 ## 6. Criterios de aceptación
@@ -143,4 +143,4 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 
 1. [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md): especificación funcional padre.
 2. [api-contract.md §7.1](../../integraciones/api-contract.md#71-crear-un-despacho-para-un-pedido-listo-para-entrega): contrato canónico de recepción externa.
-3. [api-contract.md §5.2](../../integraciones/api-contract.md#52-obtener-datos-físicos-vigentes-de-productos): contrato de consulta de datos físicos en lote.
+3. [api-contract.md §5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas): contrato de consulta de datos físicos en lote.

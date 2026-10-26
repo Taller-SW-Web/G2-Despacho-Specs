@@ -2,7 +2,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Plan técnico documental preparado el 16/10/2026; implementación y verificación pendientes.
+**Estado:** Backend implementado y verificado localmente; frontend funcional pendiente. Ejecución en [evidence.md](./evidence.md).
 
 **UI:** Aplica; página `/programacion`.
 
@@ -18,7 +18,7 @@
 
 ## 2. Estrategia y responsabilidades
 
-El backend implementa un caso de uso de consulta paginada utilizando Spring Data JPA Specifications para componer dinámicamente predicados SQL sobre la tabla `despachos`. Se calculan las 3 métricas de resumen en una sola consulta de agregación o mediante queries optimizadas con índices. En el frontend, se construye la pantalla bajo la estructura `ShellAdministrativo` (CR-03) integrando componentes compartidos Mantine y sincronizando el estado con React Query y React Router.
+El backend implementa una consulta paginada con SQL parametrizado mediante el patrón JDBC existente de F-04. Calcula las 3 métricas de resumen mediante agregación e índices, dentro de una lectura consistente. Las escrituras del agregado utilizan JPA con `@Version`. La pantalla prevista bajo `ShellAdministrativo`, React Query y React Router permanece pendiente.
 
 | Capa | Responsabilidad | Elementos previstos |
 |---|---|---|
@@ -42,7 +42,7 @@ El backend implementa un caso de uso de consulta paginada utilizando Spring Data
 - **Seguridad:** `@PreAuthorize("hasRole('GESTOR_DESPACHO')")`.
 - **Persistencia:**
   - Predicado base: `estado = 'PENDIENTE_ASIGNACION'`.
-  - Filtro `tipoIntento = REINTENTOS`: `despachos.id IN (SELECT id_despacho FROM historial_estados_despacho WHERE estado_nuevo = 'PENDIENTE_ASIGNACION' AND motivo_cambio LIKE '%REPROGRAMACION%')`.
+  - Filtro `tipoIntento = REINTENTOS`: existencia de una transición histórica estructurada de F-04 desde `FALLIDO` a `PENDIENTE_ASIGNACION` con `datos.nuevaFechaProgramada`; no usar texto libre ni el contador de fallos.
   - Ordenamiento: `ORDER BY fecha_programada ASC, creado_en ASC`.
 - **Índices recomendados:** `CREATE INDEX idx_despachos_cola ON despachos (estado, fecha_programada) WHERE estado = 'PENDIENTE_ASIGNACION'`.
 

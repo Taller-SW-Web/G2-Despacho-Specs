@@ -2,7 +2,9 @@
 
 **Responsable de coordinación:** Tarqui.
 
-**Estado:** Pendiente de implementación.
+**Estado:** Primitiva atómica en F-06 implementada; orquestación y UI pendientes.
+
+**Avance 26/10/2026:** T-02 incluye ya el proveedor privado de transferencia conforme a Operación §5.3.1, con resultado durable y pruebas PostgreSQL de rollback/concurrencia. T-02 no se cierra: falta consumidor/orquestación recuperable en Gestión. No ejecutar las rutas antiguas de las propuestas históricas ni marcar CA-01 como completado por esta primitiva.
 
 **Plan de origen:** [plan.md](./plan.md), preparado el 16/10/2026.
 

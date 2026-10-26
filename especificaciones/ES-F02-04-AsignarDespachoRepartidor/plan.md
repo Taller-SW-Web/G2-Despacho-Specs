@@ -2,7 +2,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Plan técnico documental preparado el 16/10/2026; implementación y verificación pendientes.
+**Estado:** Backend de Gestión implementado y verificado con Operación HTTP simulada. Proveedor real y frontend funcional pendientes; ver [evidence.md](./evidence.md).
 
 **UI:** Aplica; modal interactivo de asignación en `/programacion`.
 
@@ -18,7 +18,7 @@
 
 ## 2. Estrategia y responsabilidades
 
-La asignación involucra una transacción distribuida ligera o de dos pasos entre `servicio-gestion-despachos` y `servicio-operacion-reparto`. Primero, Gestión solicita a Operación la reserva de capacidad en la furgoneta mediante una clave de idempotencia única generada para esta asignación; si Operación valida que hay espacio libre en peso, volumen y paquetes, confirma la reserva. Luego, Gestión actualiza el despacho a `ASIGNADO`, asigna la posición secuencial y registra la auditoría. Si la transacción en Gestión falla, se ejecuta una llamada de compensación a Operación para liberar la reserva técnica.
+La asignación utiliza una intención local durable, seguida de HTTP fuera de la transacción y una confirmación local con control de versión. La intención conserva clave de reserva y carga originales para recuperar respuestas perdidas. Si Operación confirma y falla la escritura local, se conserva una compensación durable y se solicita liberación; un fallo de liberación se reintenta. No se promete una transacción compartida entre servicios ni se libera una reserva cuya asignación otra recuperación ya confirmó.
 
 | Capa | Responsabilidad | Elementos previstos |
 |---|---|---|
@@ -43,15 +43,14 @@ La asignación involucra una transacción distribuida ligera o de dos pasos entr
   - Despacho en `PENDIENTE_ASIGNACION`.
   - `fechaProgramada <= LocalDate.now("America/Lima")`.
 - **Llamada a Operación (F-06):**
-  - `POST /internal/v1/operacion/capacidad/reserva` con:
-    `{ "idJornada": "...", "idDespacho": "...", "pesoKg": ..., "volumenM3": ..., "paquetes": ..., "claveIdempotencia": "UUID" }`.
+  - Reserva conforme al endpoint y cuerpo canónicos de Operación §5.1; clave técnica UUID v4 en el encabezado `Idempotency-Key`, conservada por la intención local.
   - Respuestas de Operación: `200 OK` (reserva exitosa), `422 Unprocessable Entity` (sobrecarga en alguna variable), `409 Conflict` (repartidor saturado/fuera de turno).
 - **Cálculo de secuencia:**
-  - Consulta: `SELECT COALESCE(MAX(posicion_secuencia), 0) + 1 FROM despachos WHERE id_jornada = :idJornada AND estado = 'ASIGNADO'`.
+  - Calcular la siguiente posición de la jornada bajo exclusión corta, conservando las posiciones de despachos que ya avanzaron en esa misma ruta; no repetir una posición al excluirlos por estado.
 - **Persistencia en Gestión:**
   - Transición a `ASIGNADO`, seteo de repartidor, jornada, secuencia, observaciones y marca temporal.
   - Registro en `historial_estados_despacho` con usuario gestor.
-- **Compensación:** si ocurre un error inesperado tras la reserva en Operación, bloque `catch` invoca `DELETE /internal/v1/operacion/capacidad/reserva/{claveIdempotencia}` para liberar el cupo.
+- **Compensación:** registrar y ejecutar la liberación POST de Operación §5.2 con el `idReserva` confirmado y motivo `COMPENSACION`; persistir el pendiente si no puede confirmarse. No usar un DELETE ni sustituir otra reserva.
 
 ## 5. Orden de implementación
 

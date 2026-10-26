@@ -90,6 +90,22 @@ Secuencia:
 
 El filtro `tipoIntento` de la cola admite `TODOS`, `PRIMER_INTENTO` y `REINTENTOS`. `REINTENTOS` selecciona despachos con al menos una reprogramación aceptada en su historial; `PRIMER_INTENTO`, los que no tienen ninguna; `TODOS` no aplica esa restricción. No se deduce la reprogramación de `numeroIntentos > 1`: el acumulado cuenta fallos reales, permanece en uno tras el primer fallo reprogramado y puede seguir en cero con `NO_INTENTADO`. La etiqueta `Reintento` y el KPI correspondiente usan esa misma condición, sin incrementar el contador ni presentar una nueva salida como ya realizada. Las demás reglas de la cola se desarrollan en [ES-F02-03](../especificaciones/ES-F02-03-ConsultarColaPendientes/spec.md).
 
+#### 3.2.1. Ruta y secuencia administrativa — ES-F02-05
+
+`GET /api/v1/jornadas/{idJornada}/ruta` requiere JWT humano `GESTOR_DESPACHO`, sin cuerpo ni parámetros. Responde `200`, `Cache-Control: no-store` y `ETag`. Campos: `idJornada` (cadena opaca), `estadoJornada` (`ACTIVA`/`CERRADA`), `despachos` ordenados por `posicion`, `versionRuta` (igual al ETag, incluidas sus comillas) y `consultadoEn` UTC. Cada parada contiene `idDespacho` UUID, `codigoOperativo`, `codigoRastreoInterno`, `estado`, `posicion`, `version`, `destinatario` (nombre), `direccion`, `pesoKg`, `volumenM3`, `cantidadPaquetes` y `actualizadoEn` UTC.
+
+Gestión consulta el estado de jornada mediante Operación §5.4 fuera de su transacción local. Jornada confirmada sin paradas: arreglo vacío; cerrada: solo lectura. Jornada desconocida o proveedor no disponible: `503 DESP_ERROR_OPERACION_NO_DISPONIBLE`; §5.4 no distingue inexistencia de indisponibilidad y no permite fabricar un `404`.
+
+`PUT /api/v1/jornadas/{idJornada}/secuencia` conserva el cuerpo de §3.2 e incluye **todas** las paradas vigentes, una vez cada una (máximo 1000). Requiere `If-Match` con la `versionRuta` original e `Idempotency-Key` UUID v4; no admite parámetros. Ausencia/formato inválido, omisiones, ajenos, duplicados o posiciones inválidas: `400`; fotografía desactualizada, jornada cerrada o intento de mover una parada no `ASIGNADO`: `409`; sin token: `401`; sin rol humano: `403`.
+
+**Posiciones e historia:** se permutan exactamente las posiciones vigentes, sin nuevos huecos ni duplicados. Una ruta nueva tiene `1..N`; los huecos históricos por retiro se conservan, sin renumerar paradas iniciadas/cerradas. Solo `ASIGNADO` cambia de posición. Esta precisión reemplaza la interpretación de compactación global de las guías anteriores y rige para futuras cancelaciones/reasignaciones.
+
+La versión es una huella de identidades, versiones, estados y posiciones. Gestión serializa con la asignación por jornada, bloquea filas en orden determinista, compara la fotografía y persiste posiciones, versiones, historial y outbox atómicamente. La consulta previa de estado no constituye una transacción distribuida con F-06; sus reglas impiden cerrar una jornada con paradas asignadas.
+
+Responde `200` con el esquema de ruta y ETag nuevo. Repetir actor, clave, jornada, If-Match y cuerpo recupera el resultado original aunque la ruta avance o la jornada cierre, sin efectos duplicados; otra solicitud con esa clave produce `409`. Tras perder respuesta el cliente conserva y reenvía exactamente ese comando, sin clave nueva ni aplicar la edición sobre otra fotografía.
+
+Cada parada modificada registra `REORDENAMIENTO`, posiciones anterior/nueva, secuencias completas, jornada, usuario y UTC. Falla de historial revierte el lote. El outbox publica proyecciones versionadas para F-03; no genera evento comercial de cambio de estado a Ventas. El repartidor ve el orden tras procesar las proyecciones, no necesariamente en la primera consulta anterior a su entrega.
+
 ## 4. Catálogo único de motivos de fallo
 
 - **Método y ruta:** `GET /api/v1/catalogos/motivos-fallo`.

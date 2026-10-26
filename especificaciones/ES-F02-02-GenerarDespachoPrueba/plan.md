@@ -2,7 +2,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Plan técnico documental preparado el 16/10/2026; implementación y verificación pendientes.
+**Estado:** Backend implementado y verificado localmente; frontend funcional pendiente. La ejecución y las diferencias de nombres técnicos se registran en [evidence.md](./evidence.md).
 
 **UI:** Aplica; botón y modal en cabecera de `/programacion`.
 
@@ -47,7 +47,7 @@ El generador de simulaciones forma parte de `servicio-gestion-despachos`. Se com
   - Si no se envía `volumenM3`: valor aleatorio entre 0.010 y 0.080 m³ con 3 decimales.
   - Fija `cantidadPaquetes = 1`.
   - Fija `fechaProgramada = LocalDate.now("America/Lima")`.
-  - Genera códigos con prefijo `SIM-`: `idPedido = "PED-SIM-" + System.currentTimeMillis() % 100000`, `codigoRastreo = "TRK-SIM-" + RandomString(5)`.
+  - Genera códigos con prefijo `SIM-` mediante secuencia de base de datos y restricciones únicas; no usa un contador de milisegundos que pueda repetirse.
 - **Persistencia:** transaccional con `es_simulacion = true`.
 - **Auditoría:** registra `CREACION_SIMULACION` en `historial_estados_despacho` con el usuario extraído del JWT.
 - **Sin efectos externos:** el dispatcher de eventos hacia Ventas descarta despachos con `esSimulacion == true`.

@@ -1,45 +1,39 @@
 # Evidencia de ES-F02-02: Generación de despachos de prueba para simulación
 
-**Estado:** Pendiente de implementación y verificación funcional.
+**Estado:** Backend implementado y verificado localmente; pantalla funcional e integración de frontend pendientes.
 
-**Responsable de verificación:** Tarqui.
+**Responsable de coordinación:** Tarqui.
 
-**Última verificación funcional:** No ejecutada.
+**Última ejecución:** 16/10/2026, America/Lima.
 
 ## 1. Versión y entorno verificados
 
-- Documentación preparada: [spec.md](./spec.md), [ui.md](./ui.md), [plan.md](./plan.md) y [tasks.md](./tasks.md).
-- Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-09, CA-20).
-- Contratos asociados: `integraciones/api-contract-gestion-despachos.md` (§3.2).
-- Commits de implementación y entorno de pruebas: pendientes.
-- Alcance efectivamente verificado: preparación documental completa; ningún criterio funcional se declara aprobado antes de la ejecución de pruebas reales.
+- Entradas: [spec.md](./spec.md), [plan.md](./plan.md), [tasks.md](./tasks.md) y Gestión §3.2.
+- Backend: rama `feature/f02-implementacion-specs`, base `316767f`, cambios en el árbol de trabajo.
+- Linux, Java 21.0.12.1 y PostgreSQL 18.6 aislado. Migraciones, entidad JPA y controlador reales; JWT RS256 y JWKS de prueba.
+- Implementación: `GenerarDespachoPrueba`, `CoberturaProgramacionLocal`, `ProgramacionPersistencia` y `ControladorProgramacion`.
+- [Registro compartido de ejecución](../../../G2-Despacho-Backend/docs/f02-implementacion-especificaciones.md), §§7–8 [cite: 1].
 
 ## 2. Cobertura de criterios
 
-| Criterio | Tareas | Comprobación prevista | Registro previsto | Resultado |
-|---|---|---|---|---|
-| CA-01 | T-02, T-03, T-04 | Generación exitosa con payload vacío en zona activa y fecha hoy. | EV-01 | No ejecutado |
-| CA-02 | T-02, T-03, T-04 | Generación exitosa respetando zona y valores físicos personalizados. | EV-01 | No ejecutado |
-| CA-03 | T-03, T-04 | Rechazo con 400/422 ante parámetros inválidos o zona inexistente. | EV-01 | No ejecutado |
-| CA-04 | T-03, T-04 | Acceso sin rol GESTOR_DESPACHO rechazado con 403 Forbidden. | EV-01 | No ejecutado |
-| CUI-01 | T-05 | Botón visible en cabecera con foco accesible y nombre semántico. | EV-02 | No ejecutado |
-| CUI-02 | T-05 | Control en estado loading deshabilitado durante la petición en vuelo. | EV-02 | No ejecutado |
-| CUI-03 | T-05, T-06 | Toast de confirmación emitido y badge "Simulado" visible en la tabla. | EV-02, EV-03 | No ejecutado |
-| CUI-04 | T-05 | Notificación de error adecuada ante fallos sin romper la interfaz. | EV-02 | No ejecutado |
+| Criterio | Tareas | Comprobación ejecutada | Resultado |
+|---|---|---|---|
+| CA-01 | T-02 a T-04 | `{}` genera despacho pendiente, códigos `SIM`, paquete 1 y fecha civil de Lima; persiste historial y aparece en cola. | Backend aprobado. |
+| CA-02 | T-02 a T-04 | Respeta zona, 12,5 kg y 0,045 m³ personalizados. También conserva decimales pequeños y admite cobertura solo postal. | Backend aprobado. |
+| CA-03 | T-03, T-04 | Rechaza carga no positiva o con tipo incorrecto con `400`; zona inactiva con `422`; sin escrituras. | Backend aprobado. |
+| CA-04 | T-03, T-04 | Acceso humano sin rol o token de servicio: `403`; petición sin token: `401` según Común §3.5. | Backend aprobado aplicando el contrato canónico. |
+| CUI-01 a CUI-04 | T-05, T-06 | Botón, carga, toast, actualización de pantalla y badge integrado. | No ejecutado; frontend funcional pendiente. |
 
-## 3. Registros de verificación previstos
+## 3. Registros ejecutados
 
-### EV-01. Pruebas de integración del simulador backend
-- Tareas asociadas: T-02, T-03, T-04.
-- Comando previsto: `./mvnw test -Dtest=SimulacionControllerTest`
-- Resultado: **No ejecutado**.
+- **EV-01:** `ProgramacionHttpTests`, casos de simulación, validación, acceso, cobertura y carga decimal. Verificación adicional de que crear/asignar simulados no genera comunicaciones a Ventas.
+- **EV-02 y EV-03:** no ejecutados; corresponden a la interfaz funcional y su integración.
+- Suite completa de Gestión: **69 pruebas aprobadas, sin fallos, errores u omisiones**, mediante `mvnw verify`; empaquetado correcto. Informes y comando reproducible en la guía del backend.
 
-### EV-02. Pruebas de componentes React del botón de simulación
-- Tareas asociadas: T-05.
-- Comando previsto: `npm run test -- BotonGenerarPrueba.test.tsx`
-- Resultado: **No ejecutado**.
+## 4. Límites
 
-### EV-03. Verificación de flujo reactivo en navegador (E2E)
-- Tareas asociadas: T-06.
-- Comando previsto: `npx playwright test tests/e2e/simulacion-despacho.spec.ts`
-- Resultado: **No ejecutado**.
+La generación no consulta Productos ni inventa repartidores o zonas. Los códigos se generan mediante secuencia de base de datos, evitando el correlativo basado en milisegundos sugerido por el plan. Las coordenadas son opcionales y no se fabrican sin una fuente geográfica. No se ejecutaron pruebas de navegador de esta funcionalidad ni integración con los servicios reales del equipo.
+
+## 5. Referencias
+
+1. `G2-Despacho-Backend/docs/f02-implementacion-especificaciones.md`: entorno, fuentes, implementación y resultados reproducibles.

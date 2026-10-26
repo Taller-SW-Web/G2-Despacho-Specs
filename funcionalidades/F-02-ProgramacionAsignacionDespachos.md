@@ -1,7 +1,7 @@
 # Especificación F-02: Programación y Asignación de Despachos
 
 **Responsable:** Tarqui  
-**Estado:** En especificación  
+**Estado:** En implementación; aceptación conjunta pendiente
 **Actor principal:** Gestor de Despacho  
 **Lineamientos del curso:** Generación de solicitud de despacho a partir de un pedido; Asignación de despacho a operador/repartidor  
 
@@ -59,7 +59,7 @@ Esta funcionalidad incluye:
 - Una solicitud repetida para el mismo pedido no crea un segundo despacho y responde de forma idempotente.
 - Una generación de prueba crea un despacho simulado en `PENDIENTE_ASIGNACION` disponible de inmediato en la cola.
 - Una asignación válida cambia el estado a `ASIGNADO`, registra repartidor, jornada, observaciones y secuencia, reflejándose en la ocupación calculada por F-06.
-- Un reordenamiento exitoso actualiza la secuencia de entrega sin huecos ni posiciones duplicadas.
+- Un reordenamiento permuta las posiciones vigentes sin crear huecos ni duplicados; conserva los huecos históricos por retiro y las posiciones de paradas iniciadas/cerradas (Gestión §3.2.1).
 - Una reasignación válida transfiere el despacho al final de la ruta del nuevo repartidor, actualiza las capacidades en F-06 y registra el motivo.
 - Una cancelación válida cambia el estado a `CANCELADO` y libera la reserva de capacidad del repartidor si el despacho estaba asignado.
 - Toda operación queda auditada con fecha en UTC, usuario o sistema origen, despacho, estado anterior, estado nuevo y observaciones.
@@ -178,7 +178,7 @@ El sistema DEBE definir para cada despacho asignado la jornada y su posición en
 
 - **DADO** un repartidor con varios despachos en `ASIGNADO` en la jornada actual.
 - **CUANDO** el Gestor cambia el orden de esos despachos y confirma.
-- **ENTONCES** el sistema actualiza la secuencia sin posiciones repetidas ni vacías, y F-03 muestra la ruta con el nuevo orden en la siguiente consulta. Solo cambian de posición los despachos en `ASIGNADO`.
+- **ENTONCES** el sistema permuta las posiciones vigentes sin crear posiciones repetidas ni huecos nuevos y conserva los históricos por retiro. F-03 muestra el orden tras procesar las proyecciones versionadas y consultar de nuevo. Solo cambian de posición los despachos en `ASIGNADO`; se conserva la posición de los demás.
 
 ### RF-07. Reasignación de despachos
 

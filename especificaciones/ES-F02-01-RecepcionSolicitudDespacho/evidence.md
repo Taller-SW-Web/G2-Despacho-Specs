@@ -1,44 +1,45 @@
 # Evidencia de ES-F02-01: Recepción de solicitudes de despacho
 
-**Estado:** Pendiente de implementación y verificación funcional.
+**Estado:** Backend implementado y verificado localmente con PostgreSQL real y Productos/Seguridad de prueba; integración con los proveedores reales pendiente.
 
-**Responsable de verificación:** Tarqui.
+**Responsable de coordinación:** Tarqui.
 
-**Última verificación funcional:** No ejecutada.
+**Última ejecución:** 16/10/2026, America/Lima.
 
 ## 1. Versión y entorno verificados
 
-- Documentación preparada: [spec.md](./spec.md), [plan.md](./plan.md) y [tasks.md](./tasks.md).
-- Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-01, RF-05).
-- Contratos asociados: `integraciones/api-contract.md` (§7.1 y §5.2).
-- Commits de implementación y entorno de pruebas: pendientes de ejecución en los repositorios de código.
-- Alcance efectivamente verificado: preparación técnica y documental completada; ningún criterio funcional se declara aprobado antes de la ejecución de pruebas reales.
+- Entradas: [spec.md](./spec.md), [plan.md](./plan.md), [tasks.md](./tasks.md), Común §§3, 5.2, 7.1, 8 y 9.
+- Backend: rama `feature/f02-implementacion-specs`, base `316767f`, cambios en el árbol de trabajo; no se atribuye un commit nuevo.
+- Linux, Temurin 21.0.12.1, PostgreSQL 18.6 local aislado, Flyway V1–V3 y JPA reales.
+- `ProgramacionHttpTests` utiliza MockMvc, JWT RS256 firmados y descubrimiento/JWKS HTTP de prueba. Productos es un doble HTTP con ruta y payload canónicos; no un catálogo local usado como éxito real.
+- Registro reproducible: [guía del backend](../../../G2-Despacho-Backend/docs/f02-implementacion-especificaciones.md), §§7–8 [cite: 1].
 
 ## 2. Cobertura de criterios
 
-| Criterio | Tareas | Comprobación prevista | Registro previsto | Resultado |
-|---|---|---|---|---|
-| CA-01 | T-06, T-07, T-08 | Recepción exitosa con zona activa, datos físicos de Productos, fecha calculada y estado PENDIENTE_ASIGNACION. | EV-01, EV-03 | No ejecutado |
-| CA-02 | T-04, T-08 | Solicitud con destino sin zona de cobertura activa rechazada con 422 DESP_ERROR_SIN_COBERTURA. | EV-01, EV-03 | No ejecutado |
-| CA-03 | T-01, T-08 | Solicitud con datos incompletos o inválidos rechazada con 400 Bad Request. | EV-01 | No ejecutado |
-| CA-04 | T-03, T-08 | Solicitud repetida para el mismo idPedido responde 200 OK de forma idempotente sin duplicar. | EV-01, EV-03 | No ejecutado |
-| CA-05 | T-05, T-08 | SKU inexistente o con dimensiones nulas rechazado con 422 DESP_ERROR_PRODUCTO_NO_ENCONTRADO / INCOMPLETO. | EV-02, EV-03 | No ejecutado |
-| CA-06 | T-05, T-08 | Caída o timeout de Productos y Ofertas rechazada con 503 DESP_ERROR_PRODUCTOS_NO_DISPONIBLE. | EV-02, EV-03 | No ejecutado |
-| CA-07 | T-02, T-08 | Petición sin token o sin scope despachos:crear rechazada con 401/403. | EV-01 | No ejecutado |
+| Criterio | Tareas | Comprobación ejecutada | Resultado |
+|---|---|---|---|
+| CA-01 | T-04 a T-08 | SKU repetidos agrupados; 2,65 kg y 0,02126 m³; paquete lógico 1; fecha hábil según Lima; códigos únicos; despacho e historial atómicos. | Backend aprobado con Productos HTTP simulado. |
+| CA-02 | T-04, T-08 | Zona inactiva produce `422 DESP_ERROR_SIN_COBERTURA`, sin consultar Productos ni persistir. | Aprobado localmente. |
+| CA-03 | T-01, T-08 | Obligatorios, cantidades cero/fraccionarias/cadenas, campos extra y UUID v4 inválido; `400` con errores por campo. | Aprobado localmente. |
+| CA-04 | T-03, T-08 | Misma clave/contenido devuelve código/cuerpo originales; otra clave para el mismo pedido devuelve `200` con estado actual. Dos creaciones concurrentes conservan una entidad y un historial. | Aprobado localmente. |
+| CA-05 | T-05, T-08 | SKU no encontrado y peso nulo producen los `422` correspondientes, sin datos parciales. | Aprobado con Productos simulado. |
+| CA-06 | T-05, T-08 | `5xx` y espera superior al timeout producen `503`; no queda despacho ni clave aceptada. | Aprobado con fallos HTTP inducidos. |
+| CA-07 | T-02, T-08 | Firma, emisor, expiración, audiencia y tipo inválidos: `401`; scope/sub no autorizados: `403`; sin efectos. | Aprobado con JWT y JWKS de prueba. |
 
-## 3. Registros de verificación previstos
+## 3. Registros ejecutados
 
-### EV-01. Validación de controlador y seguridad
-- Tareas asociadas: T-01, T-02, T-03.
-- Comando previsto: `./mvnw test -Dtest=CrearDespachoControllerTest`
-- Resultado: **No ejecutado**.
+- **EV-01:** `ProgramacionHttpTests`: validación, autorización e idempotencia de recepción.
+- **EV-02:** misma suite, casos de datos físicos, rechazo y timeout del proveedor HTTP.
+- **EV-03:** misma suite, persistencia PostgreSQL/JPA, unicidad concurrente y fallo inducido al insertar historial: rollback de despacho y clave.
+- `ProveedorTokenServicioTests`: 2 pruebas adicionales de credencial propia, scope, renovación y emisión fallida.
+- La suite completa de Gestión terminó con **69 pruebas aprobadas, 0 fallos, 0 errores y 0 omitidas** mediante `mvnw verify`; incluye 23 pruebas HTTP de F-02 y regresiones F-01/F-04. Comando completo e informes en la guía del backend.
 
-### EV-02. Cliente de Productos y manejo de fallos
-- Tareas asociadas: T-05.
-- Comando previsto: `./mvnw test -Dtest=ProductosClientWireMockTest`
-- Resultado: **No ejecutado**.
+## 4. Ajustes respecto del plan y límites
 
-### EV-03. Prueba de integración E2E con PostgreSQL
-- Tareas asociadas: T-04, T-06, T-07, T-08.
-- Comando previsto: `./mvnw test -Dtest=CrearDespachoIntegrationTest`
-- Resultado: **No ejecutado**.
+Se utiliza la ruta canónica de Productos `/api/v1/productos/datos-fisicos/consulta`, no `lote-datos-fisicos`. Los dobles HTTP se implementan con el servidor HTTP del JDK, sin añadir WireMock. Al no disponer de daemon Docker, todas las suites se ejecutaron contra PostgreSQL externo de pruebas, incluida la suite JDBC histórica en un esquema aislado; no se ejecutó el modo Testcontainers.
+
+No hay UI propia de esta especificación. La aceptación entre módulos reales y sus credenciales por ambiente permanece pendiente; las pruebas locales no acreditan disponibilidad de Productos o Seguridad del equipo.
+
+## 5. Referencias
+
+1. `G2-Despacho-Backend/docs/f02-implementacion-especificaciones.md`: implementación, comando reproducible, entorno, resultados y límites de los dobles HTTP.

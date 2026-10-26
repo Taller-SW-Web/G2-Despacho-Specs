@@ -4,7 +4,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Backend de Gestión implementado y verificado con Operación HTTP simulada; proveedor real e interfaz funcional pendientes. Ver [evidence.md](./evidence.md).
 
 **Actor principal:** Gestor de Despacho (aplicación web administrativa).
 
@@ -73,7 +73,7 @@ El objetivo es ejecutar la asignación validando de forma transaccional y en tie
 | Conflicto concurrente | El despacho ya fue asignado o cancelado concurrentemente | Responde `409 Conflict` indicando que el despacho ya fue procesado | CA-04 |
 | Fecha programada a futuro | Se intenta forzar asignación en `fechaProgramada > hoy` | Responde `409 Conflict` ("Despacho programado para fecha futura") | CA-05 |
 | Reserva previa no liberada | Reprogramado con reserva de salida anterior activa | Responde `409 Conflict` hasta confirmar liberación en F-06 | CA-06 |
-| Sin rol Gestor | Token sin rol `GESTOR_DESPACHO` o petición anónima | Responde `403 Forbidden` | CA-07 |
+| Sin autorización | Token aceptado sin rol `GESTOR_DESPACHO` o petición sin token aceptado | Responde `403 Forbidden` o `401 Unauthorized`, respectivamente, según Común §3.5 | CA-07 |
 
 ## 5. Reglas, datos e integraciones
 
@@ -88,7 +88,7 @@ El objetivo es ejecutar la asignación validando de forma transaccional y en tie
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|
 | `POST /api/v1/despachos/{idDespacho}/asignacion` | Endpoint canónico de asignación. | [api-contract-gestion-despachos.md §3.2](../../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación) |
-| `POST /internal/v1/operacion/capacidad/reserva` | Reserva tridimensional en Operación. | [api-contract-operacion-reparto.md §5.1](../../integraciones/api-contract-operacion-reparto.md#51-gestión-consulta-y-reserva-capacidad-en-operación) |
+| `POST /internal/v1/capacidad/reservas` | Reserva tridimensional en Operación. | [api-contract-operacion-reparto.md §5.1](../../integraciones/api-contract-operacion-reparto.md#51-gestión-consulta-y-reserva-capacidad-en-operación) |
 | Auditoría (RT-02) | Registro de la asignación en auditoría. | [ES-F02-08](../ES-F02-08-RegistrarTrazabilidadOperaciones/spec.md) |
 
 ## 6. Criterios de aceptación
@@ -133,7 +133,7 @@ El objetivo es ejecutar la asignación validando de forma transaccional y en tie
 
 - **DADO** un usuario autenticado sin el rol `GESTOR_DESPACHO` o una petición anónima.
 - **CUANDO** intenta invocar el endpoint de asignación.
-- **ENTONCES** el backend responde `403 Forbidden` y no efectúa ninguna reserva ni cambio de estado.
+- **ENTONCES** el backend responde `403 Forbidden` si el token aceptado carece del rol, o `401 Unauthorized` si no hay token aceptado, según Común §3.5; no efectúa ninguna reserva ni cambio de estado.
 
 ## 7. Referencias
 

@@ -4,7 +4,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Backend implementado y verificado localmente; pantalla e integración frontend pendientes. Ver [evidence.md](./evidence.md).
 
 **Actor principal:** Gestor de Despacho (aplicación web administrativa).
 
@@ -118,7 +118,7 @@ El objetivo es permitir al Gestor consultar de forma paginada y filtrable los de
 
 - **DADO** un usuario autenticado sin el rol `GESTOR_DESPACHO` o una petición sin token.
 - **CUANDO** intenta consultar el listado de pendientes en `GET /api/v1/despachos/pendientes`.
-- **ENTONCES** el sistema responde `403 Forbidden` y no expone datos operativos ni contadores de la cola.
+- **ENTONCES** el sistema responde `403 Forbidden` si el token aceptado carece del rol, o `401 Unauthorized` si no hay token aceptado, según Común §3.5; no expone datos operativos ni contadores de la cola.
 
 ## 7. Referencias
 

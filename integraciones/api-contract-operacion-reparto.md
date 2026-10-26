@@ -271,6 +271,20 @@ Los motivos iniciales son `ENTREGA`, `CANCELACION`, `RECEPCION_EN_CENTRO`, `REAS
 
 Al asignar o reasignar se envía la información completa necesaria para la ruta móvil. En cambios posteriores puede enviarse el mismo esquema actualizado. La proyección no es el estado canónico: una versión repetida se ignora y una versión anterior nunca reemplaza una posterior.
 
+#### 5.3.1. Transferencia atómica de reserva — primitiva para ES-F02-06
+
+- `POST /internal/v1/capacidad/transferencias`, privada, sin Gateway.
+- JWT de servicio `modulo-despacho` con **ambos** scopes `operacion:capacidad:reservar` y `operacion:capacidad:liberar`.
+- `Idempotency-Key` UUID v4 obligatorio, conservado por Gestión; espacio de claves independiente de la asignación inicial.
+- Cuerpo: `idReservaOrigen`, `idDespacho`, `idNuevoRepartidor`, `idNuevaJornada` (UUID obligatorios). La carga procede de la reserva origen, no del consumidor.
+- `200`: `idReservaOrigen`, `idDespacho`, `idNuevaReserva`, `idNuevaJornada`, `estado=TRANSFERIDA`, `capacidadRemanente` tridimensional del destino y `transferidaEn` UTC.
+
+Valida origen activo perteneciente al despacho, destino distinto y habilitado para hoy y capacidad suficiente en las tres variables. En una sola transacción y el bloqueo común de reservas/liberaciones/proyecciones libera origen con `REASIGNACION`, crea destino y guarda solicitud/respuesta durable. Cualquier fallo revierte todo; un rechazo no pierde el origen. Permanece una sola reserva activa; no se reactiva una liberada.
+
+Misma clave/contenido recupera resultado original incluso si la nueva reserva se liberó después; otro contenido: `409 DESP_ERROR_CLAVE_REUTILIZADA`. `400` por entrada inválida o mismo destino; `409` por origen incompatible o destino inhabilitado; `422 DESP_ERROR_CAPACIDAD_EXCEDIDA` sin efectos; credenciales `401/403` según Común §3.5.
+
+**Límite:** garantiza atomicidad en F-06, no confirma la reasignación canónica en Gestión. ES-F02-06 deberá conservar intención durable, impedir traslado mientras se resuelve el cambio, recuperar con la misma clave tras timeout/reinicio y consolidar resultado/proyección. No invocar esta primitiva antes de una escritura local no recuperable. Esta iteración no habilita el comando público ni modal de reasignación. La secuencia antigua «reservar otra vez y después liberar» no es válida: §5.1 la rechaza.
+
 ### 5.4. Gestión consulta repartidores y jornadas de incidencias
 
 - **Método y ruta:** `POST /internal/v1/operacion/consulta-incidencias`.

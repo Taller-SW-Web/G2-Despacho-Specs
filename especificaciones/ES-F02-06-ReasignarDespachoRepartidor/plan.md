@@ -2,7 +2,13 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Plan técnico documental preparado el 16/10/2026; implementación y verificación pendientes.
+**Estado:** Primitiva F-06 en implementación; orquestación canónica y UI de reasignación pendientes.
+
+## Corrección de integración — 26/10/2026
+
+Las rutas y el orden de llamadas propuestos abajo son históricos. Prevalece [Operación §5.3.1](../../integraciones/api-contract-operacion-reparto.md#531-transferencia-atómica-de-reserva--primitiva-para-es-f02-06): transferencia local atómica con clave durable, no reserva duplicada y liberación separada. El origen se conserva ante rechazo/fallo; la carga proviene de su reserva.
+
+Esto no completa T-02/CA-01: falta en Gestión la intención durable y el control que impida traslado mientras se recupera o consolida la transferencia. No se habilita endpoint público ni modal hasta resolver esa coordinación. No prometer atomicidad distribuida con `@Transactional` ni una compensación que pierda el origen. La norma de motivo es no vacío tras trim; el mínimo de cinco caracteres de la propuesta histórica no es un requisito aprobado.
 
 **UI:** Aplica; modal interactivo de reasignación en `/programacion`.
 

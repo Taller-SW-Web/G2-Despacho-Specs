@@ -2,7 +2,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Plan técnico documental preparado el 16/10/2026; implementación y verificación pendientes.
+**Estado:** Plan técnico preparado el 16/10/2026; backend implementado y verificado localmente. Ejecución y ajustes en [evidence.md](./evidence.md); integración real pendiente.
 
 **UI:** No aplica; interfaz externa REST de servicio a servicio.
 
@@ -12,7 +12,7 @@
 |---|---|---|
 | Comportamiento | [spec.md](./spec.md), CA-01 a CA-07 | Especificación atómica SDD de ES-F02-01. |
 | Funcionalidad padre | [F-02](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md), RF-01, RF-05, CA-01, CA-02, CA-11, CA-12, CA-21 | Especificación funcional vigente. |
-| Contrato de API | [api-contract.md §7.1](../../integraciones/api-contract.md#71-crear-un-despacho-para-un-pedido-listo-para-entrega) y [§5.2](../../integraciones/api-contract.md#52-obtener-datos-físicos-vigentes-de-productos) | Contrato canónico de integración con Ventas y Productos. |
+| Contrato de API | [api-contract.md §7.1](../../integraciones/api-contract.md#71-crear-un-despacho-para-un-pedido-listo-para-entrega) y [§5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas) | Contrato canónico de integración con Ventas y Productos. |
 | Arquitectura y datos | [C4 Contenedores](../../arquitectura/c4-contenedores.md), §3; [Modelo de datos](../../arquitectura/modelo-datos.md), §§1 y 3.1 | Entidades `despachos` e `historial_estados_despacho`. |
 
 ## 2. Estrategia y responsabilidades
@@ -36,7 +36,7 @@ No aplica. La recepción es un proceso de backend consumido exclusivamente por `
 - **Seguridad:** validar token con `sub=modulo-ventas`, `aud=api-despacho` y scope `despachos:crear`.
 - **Idempotencia:** índice único en base de datos sobre `id_pedido`. Comprobación rápida: si ya existe, devolver HTTP `200 OK` con la entidad existente. La tabla de idempotencia almacena `idempotency_key`, `id_despacho`, `hash_payload` y `respuesta_json`.
 - **Integración con F-01:** consulta interna a `ZonaService` para validar que el distrito/código postal pertenezca a una zona activa y obtener los días de plazo.
-- **Integración con Productos y Ofertas:** llamada POST a `/api/v1/productos/lote-datos-fisicos` enviando lista de SKU deduplicados. Timeout: 1500 ms con fallback que responda `503 Service Unavailable`.
+- **Integración con Productos y Ofertas:** llamada POST al endpoint canónico de Común §5.2, `/api/v1/productos/datos-fisicos/consulta`, enviando SKU deduplicados. Timeout: 1500 ms y error `503` si no puede confirmarse la consulta, sin fabricar datos.
 - **Cálculo físico:** `pesoTotalKg = SUM(pesoKg * cantidad)`, `volumenTotalM3 = SUM(volumenM3 * cantidad)`. Registrar `cantidadPaquetes = 1`.
 - **Cálculo de fecha:** `fechaProgramada = hoy + plazoDiasHabiles` considerando fines de semana según calendario de operaciones.
 - **Persistencia:** inserción atómica en `despachos` e `historial_estados_despacho` con `estado_nuevo = PENDIENTE_ASIGNACION`.
