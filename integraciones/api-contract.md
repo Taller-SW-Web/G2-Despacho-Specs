@@ -130,6 +130,8 @@ Las respuestas de error usan `Content-Type: application/problem+json`, siguiendo
 | `409 Conflict` | Estado incompatible, duplicado o modificación concurrente |
 | `422 Unprocessable Entity` | Solicitud válida, pero no procesable por una regla del negocio |
 | `429 Too Many Requests` | Límite de cotizaciones excedido |
+| `500 Internal Server Error` | Error interno que impide completar la operación, incluida la persistencia obligatoria de una cotización |
+| `502 Bad Gateway` | Respuesta de una dependencia que incumple el contrato esperado |
 | `503 Service Unavailable` | Dependencia necesaria temporalmente no disponible |
 
 Todos los endpoints protegidos aplican esta distinción antes de ejecutar la operación de negocio. Una respuesta `401` incluye el encabezado `WWW-Authenticate: Bearer` y no indica si el recurso solicitado existe. Una respuesta `403` tampoco expone datos del pedido, despacho, destinatario o repartidor.
@@ -199,7 +201,7 @@ Para cerrar la integración se deben probar, como mínimo, los casos sin token, 
 - **Autenticación:** token de servicio con `tipo=servicio` y scope `cotizaciones:calcular`.
 - **Identidad del consumidor:** claim `sub` del token, por ejemplo `modulo-chatbot`.
 - **Límite:** configurable por `sub` e IP.
-- **Idempotencia:** no requiere `Idempotency-Key`, porque solo calcula y no modifica recursos.
+- **Idempotencia:** no requiere `Idempotency-Key`. Cada ejecución exacta exitosa conserva su propia instantánea interna; una repetición puede producir otra cotización, sin crear pedidos, despachos ni cobros y sin prometer reutilizar el precio de una ejecución anterior.
 
 La misma operación atiende tres consultas según el cuerpo recibido:
 
@@ -245,6 +247,12 @@ Reglas:
 - Despacho evalúa primero la cobertura. Si el destino no tiene cobertura, responde sin consultar a Productos ni validar las líneas.
 - Con `lineas`, Despacho agrupa los SKU repetidos, consulta a Productos en lote y calcula el peso y volumen totales; el canal no envía esos totales.
 - La cotización no crea un pedido ni un despacho.
+- Después de resolver cobertura y validar las líneas, se admiten como máximo 100 SKU únicos. Superar ese límite se rechaza antes de llamar a Productos; no se particiona la consulta en este alcance.
+- Solo se emite una cotización exacta cuando todos los SKU existen, son comercialmente elegibles y tienen perfil físico válido. La regla prevista para `BORRADOR` depende de la homologación de §11.1.
+- Antes de devolver `200 OK` con `tipoCotizacion=EXACTA`, Gestión guarda en `cotizaciones` el resultado y la instantánea de la tarifa aplicada. Se registra en F-01, aunque todavía no exista un pedido: `pedido_id` y `despacho_id` quedan nulos. La respuesta pública mantiene su esquema y no agrega un identificador de cotización obligatorio.
+- La consulta de solo cobertura, los destinos sin cobertura, las zonas sin tarifa y cualquier rechazo no generan una fila en `cotizaciones`. No se inventan importes para satisfacer las columnas obligatorias.
+- Un fallo al confirmar la escritura responde `500 DESP_ERROR_PERSISTENCIA_COTIZACION`, sin costo ni registro parcial. No se interpreta como indisponibilidad de Productos.
+- La instantánea histórica no es una caché del catálogo ni una reserva de tarifa; no sustituye la consulta física de F-02 ni habilita aceptación, cancelación o vencimiento de cotizaciones. El modelo y el detalle interno de persistencia se documentan en [modelo de datos §3.1](../arquitectura/modelo-datos.md#31-zonas-y-tarifas-gestión-de-despachos-escribe-f-01).
 
 Respuesta con cobertura, sin productos (`200 OK`):
 
@@ -298,9 +306,13 @@ Errores propios:
 | `DESP_ERROR_DESTINO_REQUERIDO` | `400` | No se informó `distrito` |
 | `DESP_ERROR_LINEAS_VACIAS` | `400` | Se envió `lineas` sin elementos |
 | `DESP_ERROR_CANTIDAD_INVALIDA` | `400` | Cantidad menor o igual a cero |
+| `DESP_ERROR_LIMITE_SKUS_EXCEDIDO` | `400` | Más de 100 SKU únicos, después de agrupar las líneas |
 | `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` | `422` | Productos no reconoce un SKU |
-| `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS` | `422` | Falta peso o dimensiones válidas |
+| `DESP_ERROR_PRODUCTO_NO_ELEGIBLE` | `422` | SKU existente no elegible para F-01; tratamiento de estados previsto en §5.2 y pendiente de homologación H-G2-02 |
+| `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS` | `422` | Productos comunica datos físicos incompletos o inválidos mediante el error de negocio acordado |
+| `DESP_ERROR_RESPUESTA_PRODUCTOS_INVALIDA` | `502` | Respuesta malformada, incoherente o que incumple la integridad del lote |
 | `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE` | `503` | No fue posible consultar Productos |
+| `DESP_ERROR_PERSISTENCIA_COTIZACION` | `500` | No se pudo confirmar la instantánea obligatoria de la cotización |
 | `DESP_ERROR_LIMITE_COTIZACION` | `429` | El canal excedió su límite |
 
 
@@ -364,6 +376,38 @@ volumenLineaM3 = volumenUnitarioM3 × cantidad
 No se accede directamente a la base de datos de Productos. La consulta debe ser en lote para evitar una llamada por línea. Puede utilizarse una caché breve, pero los datos siguen siendo propiedad de Productos y Ofertas.
 
 Despacho no reenvía a Productos el token recibido de Marketplace o Chatbot. Obtiene y utiliza su propio token de servicio, porque Productos autoriza a `modulo-despacho`, no al canal que inició la cotización.
+
+#### 5.2.1. Preparación y validación del lote
+
+- Se envían entre 1 y 100 SKU únicos por petición. Los SKU son identificadores opacos: no se cambian mayúsculas, ceros iniciales ni su identidad al agruparlos. G2 conserva la suma de cantidades por SKU y la usa en todos los cálculos.
+- En una respuesta `200`, `productos` y `noEncontrados` son obligatorios. Cada SKU solicitado debe aparecer exactamente una vez en uno de esos arreglos. Se rechazan duplicados dentro de cada arreglo o entre ambos, omisiones y SKU inesperados.
+- Cada producto debe contener `sku`, `estado`, `pesoKg` positivo, `dimensionesCm` con tres magnitudes positivas y `actualizadoEn` válido en ISO 8601. Un estado desconocido, JSON ilegible o un campo obligatorio inválido hace inválida la respuesta.
+- Primero se valida la integridad de toda la respuesta; después se interpretan los SKU inexistentes y las reglas comerciales. Un SKU correctamente clasificado en `noEncontrados` es un resultado de negocio, no una omisión del proveedor.
+- Una respuesta inválida produce `502 DESP_ERROR_RESPUESTA_PRODUCTOS_INVALIDA`. G2 no completa datos, no calcula costos parciales y no persiste una cotización ni crea un despacho con una parte del lote.
+- En el alcance inicial G2 rechaza más de 100 SKU únicos con el error de §5.1, tanto en F-01 como en F-02. Las consultas de solo cobertura y las respuestas sin cobertura de F-01 conservan su precedencia: no consultan Productos.
+
+#### 5.2.2. Traducción de errores y estado comercial
+
+Las siguientes reglas constituyen la decisión y propuesta de implementación de G2; su homologación bilateral está pendiente en §11.1. No acreditan cambios desplegados por G6.
+
+| Resultado de Productos | Tratamiento de G2 |
+|---|---|
+| `422 DATOS_FISICOS_INCOMPLETOS`, con SKU afectados identificados | `422 DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`, preservando esos SKU en el error público |
+| `200` íntegro con `noEncontrados` no vacío | `422 DESP_ERROR_PRODUCTO_NO_ENCONTRADO` |
+| Timeout, fallo de conexión o error técnico `5xx` de Productos, incluida su indisponibilidad/PostgreSQL | `503 DESP_ERROR_PRODUCTOS_NO_DISPONIBLE` |
+| `200` malformado o incoherente, incluido un perfil físico que no cumple el esquema | `502 DESP_ERROR_RESPUESTA_PRODUCTOS_INVALIDA` |
+
+Un `422` distinto no se traduce automáticamente como producto inexistente ni como datos incompletos: se contrasta su código con el contrato de G6. Un error no contemplado se trata como respuesta no conforme. Un `401`/`403` de G6 corresponde a la credencial saliente de G2, no a la del canal; G2 informa dependencia no disponible, registra el diagnóstico técnico y no reenvía ese rechazo como si el consumidor hubiera fallado su autenticación. No se reintenta un rechazo de permiso de forma indiscriminada.
+
+La regla comercial propuesta es:
+
+| Estado del SKU existente y con perfil válido | F-01: cotización | F-02: pedido pagado y preparado |
+|---|---|---|
+| `ACTIVO` | Puede continuar el cálculo | Puede continuar la recepción |
+| `INACTIVO` | `422 DESP_ERROR_PRODUCTO_NO_ELEGIBLE` | No se rechaza solo por este estado |
+| `BORRADOR` — incorporación propuesta al esquema de G6 | `422 DESP_ERROR_PRODUCTO_NO_ELEGIBLE` | Se propone no rechazar solo por este estado; requiere aceptación expresa de G6 |
+
+Un SKU existente no pasa a `noEncontrados` por su estado comercial. La elegibilidad de venta de F-01 se aplica después de validar el perfil y el lote; F-02 conserva las demás validaciones de cobertura, identidad, existencia e integridad física. Si G6 comunica datos incompletos, se aplica ese error antes de cualquier cálculo.
 
 ## 6. RT-04: seguimiento para Marketplace y Chatbot
 
@@ -477,6 +521,8 @@ Las coordenadas y `codigoPostal` son opcionales. Debe enviarse al menos una lín
 La llamada autenticada con `sub=modulo-ventas` declara que el pedido está pagado, preparado y listo para entrega. Despacho no consulta el estado del pedido en Ventas: valida su propia cobertura y los datos recibidos y, si son correctos, crea inmediatamente el despacho en `PENDIENTE_ASIGNACION`. La creación no asigna todavía un repartidor ni incorpora el pedido a una ruta.
 
 Antes de persistir el despacho, Despacho consulta en lote a Productos los datos físicos de las líneas y calcula `pesoTotalKg` y `volumenTotalM3` conforme a la sección 5.2. Esos valores se guardan para la asignación y el control de capacidad de la furgoneta. `cantidadPaquetes` no se recibe de Ventas: se registra internamente con valor `1`. Esta consulta obtiene únicamente datos físicos; Despacho no consulta, reserva ni modifica stock.
+
+F-02 no exige una cotización previa ni recibe un identificador de cotización. No usa una instantánea histórica de `cotizaciones` como fuente física y no escribe en esa tabla al recibir el pedido. Para un pedido ya registrado, la respuesta idempotente se resuelve antes de repetir la consulta a Productos. Para uno nuevo se aplican el límite, la integridad del lote y la regla comercial prevista en §5.2; un cambio posterior a `INACTIVO` no constituye por sí solo un motivo de rechazo. La extensión a `BORRADOR` sigue pendiente de homologación.
 
 Despacho calcula `fechaProgramada` al crear el despacho a partir de la zona, el plazo aplicable y el calendario operativo.
 
@@ -719,6 +765,7 @@ Seguridad -> Despacho: token de servicio para Productos
 Despacho -> Productos: consulta física en lote + Bearer token propio
 Productos -> Despacho: peso + dimensiones por SKU
 Despacho -> Despacho: calcula totales, cobertura, tarifa y plazo
+Despacho -> PostgreSQL de Gestión: confirma cotización exacta e instantánea de tarifa
 Despacho -> Marketplace/Chatbot: cotización
 ```
 
@@ -752,7 +799,31 @@ El contrato funcional con Ventas y Postventa está cerrado: se confirmaron el mo
 | Equipo | Acuerdo pendiente |
 |---|---|
 | Seguridad y Usuarios | Confirmar el acceso humano propuesto en §8.6 (ruta, cuentas de prueba, renovación del token); registrar `gestion:despachos:transicionar` y `gestion:catalogos:leer` para `modulo-despacho`; registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
-| Productos y Ofertas | Registrar en Seguridad la concesión de `productos:fisicos:leer` a `modulo-despacho` para `api-productos` y ejecutar las pruebas de contrato entre ambos backends |
+| Productos y Ofertas | Homologar H-G2-01 a H-G2-03 de §11.1; fijar revisión de OpenAPI; coordinar con Seguridad la concesión de `productos:fisicos:leer` a `modulo-despacho` para `api-productos` y ejecutar las pruebas de contrato entre ambos backends |
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
 | Equipo de Despacho | Tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
 
+### 11.1. Respuesta propuesta y plan de homologación física G2–G6
+
+Preparación del 26/10/2026 sobre el issue comunicado por G6 el 20/10/2026. Estas respuestas son la propuesta de G2 para publicar en el issue; no constituyen evidencia de un comentario publicado ni de aceptación bilateral [cite: 1, 2].
+
+| Punto | Respuesta propuesta de G2 | Precisión para el cierre |
+|---|---|---|
+| H-G2-01 — Datos físicos incompletos | **ACEPTAMOS** | G6 distingue `422 DATOS_FISICOS_INCOMPLETOS` de fallos técnicos; G2 aplica §5.2.2. Se propone concretar la lista de SKU afectados en `details.skusAfectados` del problema G6; debe incorporarse expresamente a su esquema. |
+| H-G2-02 — Estados comerciales | **PROPONEMOS CAMBIO** | Aceptar la distinción F-01/F-02 y añadir `BORRADOR` explícitamente al perfil físico; nunca confundir estado no elegible con inexistencia. G2 propone el código público de §5.1 y extender a `BORRADOR` la no exclusión comercial de pedidos pagados en F-02. Esa extensión requiere aceptación expresa. |
+| H-G2-03 — Integridad por lote | **ACEPTAMOS** | Validar la partición completa y exclusiva del lote. G2 decide rechazar más de 100 SKU únicos antes de llamar a G6; códigos públicos y tratamiento de respuestas inválidas en §§5.1 y 5.2.1. |
+
+Se mantienen sin renegociación la ruta de §5.2, unidades, propiedad de los datos, consulta HTTP sin mutaciones de inventario, identidad `modulo-despacho`, audiencia `api-productos` y scope `productos:fisicos:leer`.
+
+Orden de cierre:
+
+1. Publicar las respuestas y enlazar la aceptación de ambos equipos. Fijar el commit/revisión contractual de G6 que incorpora errores, estados y clasificación del lote; un enum global de errores no sustituye su declaración en la operación.
+2. En el backend de G2, revisar `CatalogoProductosStub`, su `@Primary` y los perfiles para que F-01 utilice el cliente HTTP normal. Revisar también el adaptador de F-02 seleccionado por `@Qualifier("productosProgramacion")`; compartir transporte y validación, conservando reglas comerciales por caso de uso.
+3. Implementar agrupación, validación integral, traducción de errores y persistencia exacta de F-01. La tabla creada no acredita el escritor ni sus pruebas; los planes y tareas de [ES-F01-06](../especificaciones/ES-F01-06-CotizarEnvioConProductos/plan.md) y [ES-F02-01](../especificaciones/ES-F02-01-RecepcionSolicitudDespacho/plan.md) detallan los incrementos.
+4. Con G7, acreditar concesión y provisión efectiva de la credencial. Verificar token ausente, inválido/vencido, audiencia incorrecta, scope ausente y correcto.
+5. Ejecutar cotización y recepción reales G2 → G6. Registrar commits, entorno, resultados y límites en la evidencia SDD; dobles y documentación no acreditan E2E.
+
+Fuentes de contraste:
+
+- [cite: 1] [OpenAPI de G6](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-docs/blob/master/contratos/http/openapi.yaml), operación `consultarDatosFisicos`; la revisión contrastada durante la preparación publica `0.6.0-rc.1` y mantiene la operación provisional. El enlace de rama no fija una revisión bilateral.
+- [cite: 2] [DEC-F-011 y DEC-F-012 de G6](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-docs/blob/master/arquitectura/decisiones/REGISTRO_DEC_F.md), propiedad del perfil físico y distinción entre contrato, concesión de permisos e implementación.

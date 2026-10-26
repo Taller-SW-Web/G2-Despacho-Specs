@@ -14,6 +14,7 @@
 - Dependencias: integración con F-02 y consumo desde Operación no ejecutados; contrato remoto pendiente.
 - Alcance efectivamente verificado: ningún criterio funcional ejecutado; solo preparación documental SDD.
 - UI: no aplica; resolución interna sin interfaz nueva ni `ui.md`.
+- Actualización del 26/10/2026: se incorpora la fuente postal `zonas_codigos_postales` con datos comunicados por la persona responsable. La preparación no acredita consulta al entorno, uso efectivo por el lector ni resolución de la precedencia pendiente DT-02.
 
 ## 2. Cobertura de criterios
 
@@ -83,7 +84,7 @@ Se trasladaron reglas y criterios y se prepararon plan, tareas y registros pendi
 |---|---|---|---|
 | DT-01: acceso de Operación sin contrato específico | Consumo de CA-01 a CA-04 | Bloquea I-03 | Valqui con F-05 y Arquitectura |
 | DT-02: original admite distrito o postal, pero la lista de entradas indicaba distrito | CA-01, CA-02, CA-04 | Normalización/precedencia por revisar | Valqui con Backend y consumidores |
-| DT-03: `zona_distritos` frente a `zonas_distritos` | CA-01 a CA-03 | Bloquea integración local | Valqui con Arquitectura |
+| DT-03: esquema real y lector de `zonas_distritos`/`zonas_codigos_postales` sin verificar | CA-01 a CA-03 | Bloquea integración local, aunque se comuniquen datos postales existentes | Valqui con Arquitectura |
 | DT-04: consistencia entre resolución y creación concurrente | CA-01 y CA-05 | Bloquea aceptación con F-02 | Valqui con F-02 |
 | DT-05: entorno/carga de medición sin concretar | Rendimiento | Sin evidencia de menos de 100 ms | Valqui con DevOps y Calidad |
 

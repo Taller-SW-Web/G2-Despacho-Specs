@@ -37,7 +37,7 @@ No aplica. No hay formulario, pantalla ni componente React asociado; la asignaci
 
 - Entrada: destino identificable y contexto autorizado del consumidor; adaptar el acceso remoto solo tras DT-01. La llamada local de F-02 conserva la autorización de su operación de entrada.
 - Caso de uso: normalizar distrito/código postal, consultar exclusivamente zonas `ACTIVO` y retornar zona y destino normalizado o ausencia de cobertura. Un destino sin ambos identificadores se rechaza.
-- Datos: zonas y delimitación pertenecen a Gestión. No consultar directamente `asignaciones_diarias` ni otra tabla de Operación; los consumidores no acceden a la base de Gestión.
+- Datos: zonas y delimitación pertenecen a Gestión. Leer `zonas_distritos` y `zonas_codigos_postales` como fuentes de cobertura distrital/postal, sin una segunda fuente postal en la columna heredada. No consultar directamente `asignaciones_diarias` ni otra tabla de Operación; los consumidores no acceden a la base de Gestión.
 - Migración: reutilizar el esquema de cobertura y sus índices una vez conciliados (DT-03); no agregar persistencia de resoluciones.
 - Estabilidad: con la misma configuración, ambos consumidores reciben la misma resolución; no mantener una segunda lógica ni una caché sin invalidación acordada.
 - Efectos secundarios: ninguno en la resolución. F-02 persiste la asociación bajo su propio caso de uso. Desactivar una zona no reescribe despachos existentes.
@@ -71,7 +71,7 @@ Agregar destino solo con código postal, destino con ambos identificadores y rep
 |---|---|---|---|---|
 | DT-01 | Definir consumo de Operación: catálogo activo o resolución, ruta si corresponde, identidad, permisos y respuestas | F-01 RF-04; F-05 consume catálogo; Gestión §6 no define esa operación | Valqui con F-05 y Arquitectura | I-03 |
 | DT-02 | Precisar normalización, destino solo postal y precedencia/conflicto de ambos identificadores | Original admite distrito o código postal; cotización exige distrito | Valqui con Backend y consumidores | I-01 y validación del adaptador |
-| DT-03 | Conciliar `zona_distritos`/`zonas_distritos` y representación del código postal | Modelo §§3.1 y 6; ES-F01-05 | Valqui con Arquitectura | Integración local |
+| DT-03 | Verificar el esquema real y las consultas sobre `zonas_distritos` y `zonas_codigos_postales`; preservar los datos postales comunicados | Modelo §§1.2 y 3.1 actualizado el 26/10/2026; ES-F01-05 | Valqui con Arquitectura | Integración local |
 | DT-04 | Acordar frontera de consistencia entre resolución y alta de despacho ante cambios concurrentes | F-01 exige configuración vigente y conservación de registros previos | Valqui con F-02 | I-02 |
 | DT-05 | Acordar datos, carga, entorno y medición de menos de 100 ms | F-01 §8 | Valqui con DevOps y Calidad | Verificación de I-03 |
 

@@ -44,10 +44,10 @@ No se crean módulos desplegables nuevos ni una interfaz administrativa.
 
 - Entrada: `POST /api/v1/cotizaciones` sin `lineas`. Validar el token de servicio y su scope; el canal no sustituye esta comprobación.
 - Caso de uso: normalizar el destino, buscar la zona `ACTIVO` que contiene el distrito o el código postal y componer la respuesta sin costo.
-- Datos locales: `zonas` y `zona_distritos`, con lectura de solo lectura.
+- Datos locales: `zonas`, `zonas_distritos`, `distrito` y `zonas_codigos_postales`, de solo lectura. La tabla postal con datos fue comunicada el 26/10/2026; verificar que las consultas la utilicen y no la columna postal heredada de otra relación. No vaciar ni recrear esos datos.
 - Migración: revisar el esquema existente y su gestión con Arquitectura; crear migraciones Flyway solo para cambios necesarios.
 - Integraciones: Seguridad y Usuarios emite el token de servicio; no se consulta a Productos y Ofertas porque no hay líneas.
-- Efectos secundarios: ninguno; la operación no crea ni modifica recursos.
+- Efectos secundarios: ninguno; la variante sin líneas no crea ni modifica recursos, incluida `cotizaciones`. La persistencia exacta de ES-F01-06 no debe trasladarse a esta consulta.
 - Límite de tasa: aplicar el parámetro `LIMITE_COTIZACIONES_POR_MINUTO` por `sub` e IP (DT-05); su implementación puede residir en el Gateway o en el servicio según se acuerde.
 - Errores: aplicar el formato central de §3.5; el detalle del DTO y del límite se concreta en el contrato.
 - Fechas: el modelo establece `America/Lima` para presentación y UTC para instantes si la respuesta incluyera marcas temporales.
@@ -77,7 +77,7 @@ Comandos previstos: desde Gestión, `./mvnw.cmd test`; las pruebas con Testconta
 | ID | Decisión o pregunta | Justificación y fuente | Responsable | Bloquea qué incremento |
 |---|---|---|---|---|
 | DT-01 | DTO de la respuesta de cobertura, códigos de error y forma del mensaje fuera de cobertura | Contrato externo §5.1 y §10.1 | Valqui con Backend y Arquitectura | Adaptadores de I-01/02 |
-| DT-02 | Conciliación entre `zona_distritos` (modelo §6) y `zonas_distritos` (modelo §3.1) y su efecto en la evaluación de cobertura | Modelo de datos §3.1 y §6 | Arquitectura | CA-01/02 e integración real |
+| DT-02 | Verificar esquema real y lector de `zonas_distritos`/`zonas_codigos_postales`, y acordar precedencia/conflicto entre distrito y postal con ES-F01-07 | Modelo §3.1 actualizado con DDL comunicado; tabla postal con datos no acredita consultas correctas | Arquitectura con Backend | CA-01/02 e integración real |
 | DT-03 | Esquema/migraciones necesarios, base compartida de errores, conexión de datos y rutas del Gateway, y emisión de tokens de servicio con scope | Inicialización actual del backend y modelo | Valqui coordina con Arquitectura, DevOps y Seguridad | Ejecución real de I-02 |
 | DT-04 | Verificación del contrato de consumo de Marketplace y Chatbot (que no inyecten peso/volumen ni esperen costo) | Contrato externo §5.1 y §10.1 | Valqui con los responsables de los canales | Aceptación de I-02 |
 | DT-05 | Mecanismo del límite de tasa por `sub` e IP y valor de `LIMITE_COTIZACIONES_POR_MINUTO` | Modelo de datos, parámetros globales; F-01 CA-14 | Valqui con Arquitectura y DevOps | CA-05 e I-03 |

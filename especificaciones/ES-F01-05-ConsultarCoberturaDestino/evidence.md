@@ -15,6 +15,7 @@
 - Dependencias: ninguna utilizada todavía; el contrato y la base de tokens están pendientes.
 - Alcance efectivamente verificado: preparación documental; ningún criterio se declara aprobado por ella.
 - UI: no aplica; no se incluye `ui.md`.
+- Actualización documental del 26/10/2026: la persona responsable comunica datos existentes en `zonas_codigos_postales`; se alinea la fuente postal y se excluye esta consulta de la persistencia exacta. No se inspeccionaron tablas ni se ejecutaron pruebas del lector.
 
 ## 2. Cobertura de criterios
 
@@ -93,7 +94,7 @@ Este registro describe asistencia en documentación; no acredita ejecución de T
 | Hallazgo | Criterio afectado | Impacto | Siguiente acción y responsable |
 |---|---|---|---|
 | DT-01: DTO y errores de cobertura pendientes en el contrato. | CA-01 a CA-05 | Bloquea la implementación del adaptador | Revisar el contrato; Valqui con Backend y Arquitectura |
-| DT-02: `zona_distritos` frente a `zonas_distritos` en el modelo. | CA-01/02 | Evaluación de cobertura | Conciliar con Arquitectura |
+| DT-02: fuente postal `zonas_codigos_postales` documentada; lector y precedencia todavía sin verificar. | CA-01/02 | Evaluación compartida de cobertura, sin nuevas cotizaciones | Contrastar esquema, consultas y casos de conflicto con Arquitectura/Backend |
 | DT-03: base compartida, tokens de servicio y rutas del Gateway. | CA-01 a CA-05 | Bloquea la ejecución real | Coordinar con Arquitectura, DevOps y Seguridad |
 | DT-04: verificación del consumo de Marketplace y Chatbot. | CA-01 a CA-04 | Aceptación de la integración | Acordar con los responsables de los canales |
 | DT-05: mecanismo del límite de tasa y valor del parámetro. | CA-05 | Control de tasa | Acordar con Arquitectura y DevOps |

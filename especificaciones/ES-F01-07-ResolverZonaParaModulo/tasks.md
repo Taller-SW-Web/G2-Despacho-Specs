@@ -34,9 +34,9 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Registra
 
 - [ ] Implementada y verificada.
 - Incremento: I-01. Responsable: Valqui con Backend.
-- Objetivo y entradas: caso de uso único de cobertura según [spec.md](./spec.md), compartido con ES-F01-05/06, usando el modelo conciliado.
+- Objetivo y entradas: caso de uso único de cobertura según [spec.md](./spec.md), compartido con ES-F01-05/06, usando `zonas_distritos` y la fuente postal `zonas_codigos_postales`. Verificar el lector sobre el esquema comunicado sin recrear sus datos.
 - Dependencias: decisiones DT-02/03 de T-01.
-- Verificación: suite unitaria e integración PostgreSQL: Lima Centro, destino no cubierto, zonas inactivas, destino inválido y repetición estable mientras no cambie la configuración.
+- Verificación: suite unitaria e integración PostgreSQL: Lima Centro, destino no cubierto, zonas inactivas, destino inválido y repetición estable; códigos postales con ceros iniciales y coincidencia/conflicto con distrito según DT-02; ausencia de filas nuevas en `cotizaciones`.
 - Cierre: CA-01 a CA-04 cubiertos en resolución local, sin escrituras ni cálculo de tarifas.
 - Evidencia prevista: [EV-02](./evidence.md#ev-02-resolución-local). Bloqueo: normalización o datos sin conciliar; Valqui con Arquitectura.
 

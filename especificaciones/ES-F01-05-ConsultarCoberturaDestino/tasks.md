@@ -58,10 +58,10 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Al inici
 
 - Incremento del plan: I-01/I-02.
 - Responsable: Valqui con Backend.
-- Objetivo y alcance: caso de uso que normaliza el destino, busca la zona `ACTIVO` y compone la respuesta sin costo, con sus errores.
+- Objetivo y alcance: caso de uso que normaliza el destino, busca la zona `ACTIVO` con `zonas_distritos` y `zonas_codigos_postales` según DT-02 y compone la respuesta sin costo. Reutilizar el lector de ES-F01-07; no usar una segunda fuente postal ni escribir cotizaciones.
 - Entradas: contrato cerrado, datos de zonas y distritos, base de errores disponible; reglas de [spec.md](./spec.md).
 - Dependencias: T-01 y T-02.
-- Verificación: `./mvnw.cmd test` desde Gestión; PostgreSQL aislado; destino cubierto y no cubierto; ausencia de `distrito`.
+- Verificación: `./mvnw.cmd test` desde Gestión; PostgreSQL aislado; destino cubierto y no cubierto, ausencia de `distrito`, postal conservando ceros y coincidencia/conflicto con distrito según DT-02; comparar filas de `cotizaciones` antes y después.
 - Condición de cierre: CA-01 a CA-03 cubiertos en backend, sin modificar recursos.
 - Evidencia: pendiente; completar enlace a EV-01.
 - Bloqueo, si existe: contrato y base pendientes.

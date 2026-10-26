@@ -23,13 +23,14 @@ Un pedido puede contener varias líneas y unidades de producto sin dejar de repr
 | **Cobertura disponible** | Resultado que indica que un destino pertenece a una zona activa. No implica que ya exista un pedido o despacho. |
 | **Tarifa** | Regla de configuración asociada a una zona. Contiene tarifa base, peso incluido, recargo por kilogramo, factor volumétrico, moneda y plazo. |
 | **Tarifa base** | Importe mínimo configurado para una zona hasta el peso incluido. Es un dato de configuración, no una cotización ni el precio comercial cobrado al cliente. |
-| **Cotización base** | Resultado obtenido enviando solamente el destino. Confirma cobertura y muestra el importe mínimo de la zona como “desde S/ ...”. No considera los productos. |
+| **Consulta de cobertura** | Resultado obtenido enviando solamente el destino. Confirma cobertura y zona, sin costo, plazo ni registro en `cotizaciones`. |
 | **Cotización calculada** | Resultado obtenido enviando destino y líneas de productos. Despacho consulta peso y dimensiones por SKU y calcula el costo logístico con esos datos. En el contrato actual se identifica como `tipoCotizacion=EXACTA`, pero no equivale al precio comercial final. |
+| **Instantánea de cotización** | Registro de un cálculo exacto exitoso y su tarifa en `cotizaciones`, confirmado por F-01 antes de responder al canal, aun sin pedido. Es histórico, no una caché del catálogo ni una tarifa reservada para F-02. |
 | **Costo logístico calculado** | Importe que Despacho comunica como resultado de aplicar sus reglas de cobertura y tarifa. Sirve como insumo para los canales y Ventas. |
 | **Importe cobrado al cliente** | Precio comercial decidido por Ventas y Postventa. Puede incorporar promociones, envío gratuito, descuentos o cobro parcial y no pertenece a Despacho. |
 | **Plazo estimado** | Cantidad de días hábiles calculada para una zona. Es informativa y sirve de insumo para que Despacho calcule la fecha programada del despacho al crearlo. |
 
-La tarifa base y la cotización base no son sinónimos: la primera es una regla almacenada y la segunda es una respuesta calculada utilizando esa regla. Tampoco debe llamarse “cotización final” a la cotización con productos, porque Ventas conserva la decisión sobre el importe que finalmente cobra.
+La tarifa base es una regla almacenada; la consulta de cobertura no devuelve un importe “desde”. Tampoco debe llamarse “cotización final” a la cotización con productos, porque Ventas conserva la decisión sobre el importe que finalmente cobra. Alcance y persistencia se rigen por [contrato externo §5.1](../integraciones/api-contract.md#51-solicitar-cotización) y [modelo de datos §3.1](./modelo-datos.md#31-zonas-y-tarifas-gestión-de-despachos-escribe-f-01) [cite: 1].
 
 ## 3. Peso, dimensiones y capacidad
 
@@ -72,3 +73,5 @@ La tarifa base y la cotización base no son sinónimos: la primera es una regla 
 ## 6. Estados del despacho
 
 Los significados, transiciones, precondiciones y transiciones prohibidas se definen en [Diagrama de estados del despacho](./diagrama-estados-despacho.md).
+
+[cite: 1] [F-01 RF-03](../funcionalidades/F-01-Gestor_ZonasGeograficas.md#rf-03-cotización-en-tiempo-real-para-canales-de-venta), actualización del 26/10/2026; persistencia exacta acordada e implementación pendiente.

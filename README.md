@@ -42,6 +42,7 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Visión general](./overview.md) | Problema, objetivos, alcance, actores y flujo general del módulo. |
 | [Índice de funcionalidades](./funcionalidades/funcionalidad.md) | Listado y estado de las especificaciones funcionales. |
 | [Integraciones externas](./integraciones/api-contract.md) | Comunicaciones con otros módulos y convenciones compartidas. |
+| [Homologación física G2–G6](./integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6) | Respuestas propuestas a H-G2-01/02/03, revisión contractual, credencial G7 y recorrido real pendientes. |
 | [API de Gestión de Despachos](./integraciones/api-contract-gestion-despachos.md) | Zonas, programación, catálogo, incidencias y API interna provista por Gestión. |
 | [API de Operación de Reparto y Flota](./integraciones/api-contract-operacion-reparto.md) | Repartidor, flota, jornadas, evidencias, capacidad y API interna provista por Operación. |
 | [Modelo de datos](./arquitectura/modelo-datos.md) | Base evolutiva de entidades, relaciones y decisiones de persistencia. |
@@ -60,6 +61,10 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Guía de contribución](./CONTRIBUTING.md) | Integración de código en `develop`, documentación en `main`, revisión de PR y entregas con changelog y tags manuales. |
 
 F-01 cuenta con sus ocho carpetas SDD preparadas. Las últimas migraciones son [cotización con productos (ES-F01-06)](./especificaciones/ES-F01-06-CotizarEnvioConProductos/spec.md), [resolución de zona (ES-F01-07)](./especificaciones/ES-F01-07-ResolverZonaParaModulo/spec.md) y [trazabilidad de configuración (ES-F01-08)](./especificaciones/ES-F01-08-RegistrarTrazabilidadConfiguracion/spec.md), cada una con especificación, plan, tareas y evidencia. La UI no aplica en esas tres; su implementación y verificación funcional están pendientes. El [índice funcional](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-01) enlaza todos sus documentos.
+
+Actualización del 26/10/2026: F-01 guardará únicamente cotizaciones exactas exitosas antes de responder al canal, sin exigir un pedido. El [modelo](./arquitectura/modelo-datos.md#12-persistencia-exacta-y-estado-comunicado-del-esquema) recoge `cotizaciones` creada y `zonas_codigos_postales` con datos como antecedentes comunicados. El [plan de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/plan.md) y su [tarea T-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/tasks.md#t-06-implementar-la-persistencia-de-cotizaciones-exactas) mantienen pendientes el escritor, la verificación del esquema/lector y las pruebas. La preparación documental y la existencia de tablas no acreditan esos resultados [cite: 1].
+
+[cite: 1] [Evidencia de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md), antecedentes y límites de la actualización; [contrato externo §11.1](./integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6), homologación con G6 aún pendiente.
 
 ## 🗂️ Repositorios del módulo
 

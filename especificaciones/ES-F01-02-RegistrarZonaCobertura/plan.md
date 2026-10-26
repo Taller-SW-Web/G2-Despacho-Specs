@@ -45,7 +45,7 @@ Los nombres de clases y subpaquetes son decisiones técnicas propuestas. No se c
 
 - Entradas: `POST /api/v1/zonas` y `PUT /api/v1/zonas/{idZona}`. Autorizar el JWT humano y exigir `GESTOR_DESPACHO`; el cliente no sustituye esta comprobación.
 - Caso de uso: crear una zona nueva o actualizar una existente, validando presencia de delimitación, unicidad de nombre y ausencia de solapamiento con zonas `ACTIVO`.
-- Datos locales: `zonas` y `zona_distritos`, con referencia a `distrito`. Resolver la delimitación de forma transaccional para no persistir cambios parciales.
+- Datos locales: `zonas`, `zonas_distritos` y `zonas_codigos_postales`, con referencia a `distrito`. Mantener el código postal solo en su fuente canónica y validar solapamientos activos además de la unicidad de la terna. Resolver la delimitación de forma transaccional sin cambios parciales ni recreación de datos existentes.
 - Migración: revisar el esquema existente y su gestión con Arquitectura; crear migraciones Flyway solo para cambios necesarios.
 - Integraciones: ninguna con otros módulos; no publica eventos. La delimitación pertenece a esta funcionalidad.
 - Efectos secundarios: crea o actualiza una zona y su delimitación; la auditoría se genera según ES-F01-08. No requiere clave de idempotencia para un alta o una edición explícitas.
@@ -84,7 +84,7 @@ Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; de
 | DT-02 | Fuente y formato del catálogo de distritos y códigos postales de selección | Modelo de datos, tabla `distrito` | Valqui con Arquitectura | CA-01 a CA-05 e integración real |
 | DT-03 | Esquema/migraciones necesarios y base compartida de JWT, errores, conexión de datos y rutas del Gateway | Inicialización actual del backend y modelo | Valqui coordina con Arquitectura y DevOps | Ejecución real de I-02/03 |
 | DT-04 | Disponibilidad y verificación de componentes, tema y herramientas de pruebas | Componentes React §§4.5–4.6 | Valqui para los CR consumidos; coordinación con los responsables del resto | Composición y aceptación de I-01 según sus dependencias |
-| DT-05 | Conciliación entre `zona_distritos` (modelo §6) y `zonas_distritos` (modelo §3.1) y su efecto en la unicidad de cobertura por zona activa | Modelo de datos §3.1 y §6 | Arquitectura | CA-02, CA-05 e integración real |
+| DT-05 | Verificar esquema distrital real, escritura postal y control de solapamiento activo; la unicidad de la terna postal no basta | Modelo §3.1 actualizado con `zonas_codigos_postales` y datos comunicados | Arquitectura | CA-02, CA-05 e integración real |
 | DT-06 | Necesidad de control de versión en la edición de zonas | Modelo de datos; el modelo no define una columna de versión en `zonas` | Valqui con Arquitectura | CA-04/CA-05 e integración real |
 
 ## 8. Condiciones para iniciar y cerrar

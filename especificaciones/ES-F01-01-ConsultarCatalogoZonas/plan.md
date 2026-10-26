@@ -45,7 +45,7 @@ Los nombres de clases y subpaquetes son decisiones técnicas propuestas. No se c
 
 - Entrada: `GET /api/v1/zonas`. Autorizar el JWT humano y exigir `GESTOR_DESPACHO`; el cliente no sustituye esta comprobación.
 - Caso de uso: consultar zonas con filtros combinados y paginación, incorporando la tarifa vigente o su ausencia y la última modificación.
-- Datos locales: `zonas`, `zona_distritos` y `tarifas_zona`. Resolver la tarifa vigente (`activa=true`) por zona antes de componer la página.
+- Datos locales: `zonas`, `zonas_distritos`, `zonas_codigos_postales` y `tarifas_zona`. Leer los códigos desde su fuente postal canónica y resolver la tarifa vigente (`activa=true`) por zona antes de componer la página.
 - Migración: revisar el esquema existente y su gestión con Arquitectura; crear migraciones Flyway solo para cambios necesarios. No asumir que las tablas ya están disponibles por aparecer en el modelo.
 - Integraciones: ninguna con otros módulos; la operación es de solo lectura y no publica eventos.
 - Efectos secundarios: no crea ni modifica recursos; no requiere clave de idempotencia.
@@ -81,7 +81,7 @@ Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; de
 | DT-02 | Fuente exacta de la última modificación (`actualizado_en` de `zonas` y de la tarifa) y su presentación | Modelo de datos §3.1 | Valqui con Arquitectura | CA-01 e integración real |
 | DT-03 | Esquema/migraciones necesarios y base compartida de JWT, errores, conexión de datos y rutas del Gateway | Inicialización actual del backend y modelo | Valqui coordina con Arquitectura y DevOps | Ejecución real de I-02/03 |
 | DT-04 | Disponibilidad y verificación de componentes, tema y herramientas de pruebas | Componentes React §§4.5–4.6 | Valqui para los CR consumidos; coordinación con los responsables del resto | Composición y aceptación de I-01 según sus dependencias |
-| DT-05 | Conciliación entre `zona_distritos` (modelo §6) y `zonas_distritos` (modelo §3.1) y su efecto en la resolución de filtros por distrito | Modelo de datos §3.1 y §6 | Valqui con Arquitectura | CA-01/02 e integración real |
+| DT-05 | Verificar esquema real, filtros distritales y lectura de `zonas_codigos_postales` sin multiplicar filas del catálogo | Modelo §3.1 actualizado con fuente postal canónica; lector pendiente | Valqui con Arquitectura | CA-01/02 e integración real |
 
 ## 8. Condiciones para iniciar y cerrar
 

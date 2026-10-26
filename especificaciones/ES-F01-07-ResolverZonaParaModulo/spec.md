@@ -78,6 +78,8 @@ Determinar qué zona de cobertura activa contiene un destino y entregar esa reso
 - F-05 consume el catálogo de zonas activas para asignar la zona de trabajo del repartidor.
 - El mecanismo concreto por el que F-05, que pertenece al microservicio de Operación de Reparto y Flota, acceda a esta resolución no está definido en la [API interna de Gestión, sección 6](../../integraciones/api-contract-gestion-despachos.md#6-api-interna-provista-por-gestión) y permanece como acuerdo pendiente de documentar en ese contrato [cite: 2].
 - La zona es propiedad de Gestión de Despachos; ningún consumidor accede a su base de datos.
+- La resolución local usa `zonas_distritos` para distrito y `zonas_codigos_postales` como fuente postal canónica, conforme al modelo. La existencia de datos postales fue comunicada el 26/10/2026; el uso efectivo por el lector y la precedencia ante ambos identificadores siguen pendientes de verificar [cite: 3].
+- Esta resolución no inserta en `cotizaciones`; el histórico de cálculos exactos se escribe exclusivamente desde ES-F01-06 y no determina la zona de una recepción nueva.
 
 ## 6. Criterios de aceptación
 
@@ -139,7 +141,7 @@ Las tareas están en [tasks.md](./tasks.md); la migración documental no acredit
 
 - [cite: 1] [Funcionalidad F-01](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md), RF-04, CA-02, CA-12 y CA-13; §8.
 - [cite: 2] [Contrato de Gestión](../../integraciones/api-contract-gestion-despachos.md), §§3.1 y 6; [convenciones compartidas](../../integraciones/api-contract.md#3-convenciones-comunes), §§3.2 y 3.4.
-- [cite: 3] [Modelo de datos](../../arquitectura/modelo-datos.md), tablas `zonas`, `zona_distritos` y `asignaciones_diarias`.
+- [cite: 3] [Modelo de datos](../../arquitectura/modelo-datos.md), tablas de cobertura `zonas`, `zonas_distritos`, `distrito` y `zonas_codigos_postales`.
 - [cite: 4] [Visión general](../../overview.md), §§3.1 y 3.2 sobre relaciones entre F-01, F-02 y F-05.
 - [cite: 5] [Macroproceso](../../arquitectura/macroproceso-despacho.md), solicitud de despacho y resolución de zona.
 - Documentos SDD: [plan](./plan.md), [tareas](./tasks.md) y [evidencia](./evidence.md).

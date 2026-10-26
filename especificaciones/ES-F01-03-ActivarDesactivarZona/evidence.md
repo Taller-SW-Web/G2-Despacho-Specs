@@ -100,7 +100,7 @@ Este registro describe asistencia en documentación; no acredita ejecución de T
 | Hallazgo | Criterio afectado | Impacto | Siguiente acción y responsable |
 |---|---|---|---|
 | DT-01: formato del `409` (solapamiento y versión) e idempotencia pendientes en el contrato. | CA-01 a CA-06 | Bloquea la integración real, no la UI aislada | Revisar el contrato antes de integrar; Valqui con Backend/Frontend |
-| DT-02: `zona_distritos` frente a `zonas_distritos` en el modelo. | CA-02 | Detección de solapamiento | Conciliar con Arquitectura |
+| DT-02: verificación del solapamiento distrital y postal en el esquema real pendiente. | CA-02 | Activación sin cobertura duplicada con `zonas_codigos_postales` | Contrastar validador con Arquitectura |
 | DT-03: base compartida de JWT, errores, conexión de datos y rutas del Gateway. | CA-01 a CA-06 | Bloquea la ejecución real del backend | Coordinar con Arquitectura y DevOps |
 | DT-04: componentes, tema y herramientas de pruebas. | CUI-01 a CUI-07 | Bloquea la composición de la confirmación | Coordinar con los responsables de CR |
 | DT-05: `zonas` no define columna de versión en el modelo. | CA-05 | Posibles cambios concurrentes sin detección | Acordar control de versión con Arquitectura |

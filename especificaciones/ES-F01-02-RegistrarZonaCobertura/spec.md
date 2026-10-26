@@ -114,7 +114,7 @@ Los cuerpos, respuestas y códigos de error se consultan en el contrato de Gesti
 - UI: aplica. La interacción, los estados, la accesibilidad y los criterios de UI se detallan en [ui.md](./ui.md).
 - Backend: alta y edición autorizadas sobre las tablas propias de zonas; valida unicidad y solapamiento antes de persistir; no publica eventos.
 - Requisitos no funcionales: las operaciones administrativas requieren JWT de rol `GESTOR_DESPACHO`; la identidad del ejecutor y la marca temporal proceden del servidor, nunca de un campo libre del cliente; las marcas se persisten en UTC y se presentan en `America/Lima`.
-- Pendientes: la conciliación entre `zona_distritos` y `zonas_distritos`, y el detalle del cuerpo de creación y edición se registran en [plan.md, sección 7](./plan.md#7-decisiones-y-pendientes); su resolución precede a la integración real.
+- Pendientes: verificar el esquema distrital real y la escritura de códigos en `zonas_codigos_postales`, así como el cuerpo de creación/edición, según [plan.md, sección 7](./plan.md#7-decisiones-y-pendientes); su resolución precede a la integración real. La fuente postal canónica se define en el modelo §3.1.
 
 ## 8. Verificación y completitud
 
@@ -138,5 +138,5 @@ La descomposición está en [tasks.md](./tasks.md) y los resultados se registrar
 1. [cite: 1] [Funcionalidad F-01](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md), RF-01, CA-01, CA-03, CA-04 y CA-16.
 2. [cite: 2] [Contrato de Gestión, sección 3.1](../../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas); [convenciones compartidas](../../integraciones/api-contract.md#3-convenciones-comunes), secciones 3.3 y 3.5.
 3. [cite: 3] [Diseño de F-01](../../disenio/funcionalidades/f-01.md), Pantalla 2; [alta fidelidad F-01](../../disenio/SystemDesign/f-01-alta-fidelidad.md), formulario de zona.
-4. [cite: 4] [Modelo de datos](../../arquitectura/modelo-datos.md), tablas `zonas`, `zona_distritos` y `distrito`.
+4. [cite: 4] [Modelo de datos](../../arquitectura/modelo-datos.md), tablas `zonas`, `zonas_distritos`, `zonas_codigos_postales` y `distrito`.
 5. Archivos de esta especificación: [ui.md](./ui.md), [plan.md](./plan.md), [tasks.md](./tasks.md) y [evidence.md](./evidence.md).

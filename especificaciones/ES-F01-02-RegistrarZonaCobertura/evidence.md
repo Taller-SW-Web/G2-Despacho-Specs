@@ -103,7 +103,7 @@ Este registro describe asistencia en documentación; no acredita ejecución de T
 | DT-02: fuente y formato del catálogo de distritos y códigos postales. | CA-01 a CA-05 | Selección de la delimitación | Acordar con Arquitectura |
 | DT-03: base compartida de JWT, errores, conexión de datos y rutas del Gateway. | CA-01 a CA-06 | Bloquea la ejecución real del backend | Coordinar con Arquitectura y DevOps |
 | DT-04: componentes, tema y herramientas de pruebas. | CUI-01 a CUI-07 | Bloquea la composición del formulario | Coordinar con los responsables de CR |
-| DT-05: `zona_distritos` frente a `zonas_distritos` en el modelo. | CA-02, CA-05 | Unicidad de cobertura por zona activa | Conciliar con Arquitectura |
+| DT-05: escritura distrital/postal y solapamiento activo sin comprobar contra el esquema real. | CA-02, CA-05 | Unicidad de cobertura además de la terna de `zonas_codigos_postales` | Contrastar con Arquitectura; los datos postales comunicados no acreditan escritor |
 | DT-06: `zonas` no define columna de versión en el modelo. | CA-04, CA-05 | Posibles ediciones concurrentes | Acordar control de versión con Arquitectura |
 
 Sin hallazgos de implementación porque no se ha ejecutado aún ninguna tarea.

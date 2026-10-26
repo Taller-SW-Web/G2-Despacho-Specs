@@ -2,7 +2,7 @@
 
 Este documento define el modelo relacional de los dos microservicios del módulo de Despacho y Entrega, derivado de F-01 a F-05, de los requisitos transversales RT-01 a RT-04 del [overview](../overview.md), del [contrato de API](../integraciones/api-contract.md) y del [C4 de contenedores](./c4-contenedores.md).
 
-- **Gestión de Despachos:** F-01, F-02 y F-04; es dueño de zonas, tarifas, despacho canónico, intentos, recepción en centro, historial y eventos.
+- **Gestión de Despachos:** F-01, F-02 y F-04; es dueño de zonas, cobertura postal, tarifas, cotizaciones exactas, despacho canónico, intentos, recepción en centro, historial y eventos.
 - **Operación de Reparto y Flota:** F-03, F-05 y F-06; es dueño de repartidores, furgonetas, jornadas, reservas de capacidad, proyección móvil y evidencias.
 
 Cada microservicio usa una credencial de base de datos distinta. Para el curso pueden emplearse dos esquemas aislados en un mismo proyecto de Supabase, pero un servicio no consulta las tablas del otro y no existen claves foráneas ni relaciones JPA entre esquemas.
@@ -32,6 +32,12 @@ Ventas y Postventa no informa `cantidadPaquetes`. Para el alcance inicial, cada 
 
 Gestión conserva este valor para que Operación lo utilice, junto con el peso y el volumen calculados a partir de los datos físicos de Productos, al reservar capacidad en la furgoneta. Admitir más de un bulto por pedido requerirá una ampliación explícita del contrato; no debe inferirse desde la cantidad de productos.
 
+### 1.2. Persistencia exacta y estado comunicado del esquema
+
+El 26/10/2026 se acordó guardar en F-01 únicamente cálculos `EXACTA` exitosos, antes de responder al canal y aunque no exista un pedido. La persona responsable comunicó el DDL de `cotizaciones` como tabla creada, sin escritor implementado, y `zonas_codigos_postales` como tabla con datos. Este es un antecedente comunicado: aquí no se ejecutó SQL ni se verificaron conexión, migraciones, filas o código backend. La evidencia funcional continúa pendiente en [ES-F01-06](../especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md) [cite: 1].
+
+`cotizaciones` conserva una instantánea histórica del cálculo, no un catálogo maestro, una caché de Productos ni una tarifa comprometida para un pedido. F-02 consulta el perfil vigente por su API y no exige una cotización previa. Las reglas públicas se definen una sola vez en el [contrato externo §§5.1 y 7.1](../integraciones/api-contract.md#51-solicitar-cotización) [cite: 2].
+
 ---
 
 ## 2. Diagramas entidad-relación
@@ -42,8 +48,15 @@ Las líneas siguientes representan únicamente relaciones dentro de cada persist
 
 ```mermaid
 erDiagram
-    zonas ||--o{ zona_distritos : comprende
+    zonas ||--o{ zonas_distritos : comprende
+    distrito ||--o{ zonas_distritos : pertenece
+    zonas ||--o{ zonas_codigos_postales : delimita
+    distrito ||--o{ zonas_codigos_postales : identifica
     zonas ||--o{ tarifas_zona : tarifica
+    zonas |o--o{ cotizaciones : cubre
+    tarifas_zona |o--o{ cotizaciones : referencia
+    distrito |o--o{ cotizaciones : ubica
+    despachos |o--o{ cotizaciones : vinculo_opcional
     zonas ||--o{ despachos : cubre
     despachos ||--o{ intentos_entrega : registra
     motivos_fallo ||--o{ intentos_entrega : tipifica
@@ -139,6 +152,8 @@ Las tablas de soporte también son locales a cada servicio. No existe una tabla 
 
 Cada tabla indica qué microservicio y funcionalidad la escriben. Una funcionalidad del otro servicio accede mediante API o mediante una proyección, nunca con SQL directo.
 
+La existencia física comunicada de `cotizaciones` y `zonas_codigos_postales` se distingue de la implementación pendiente de sus lectores/escritores. No se deben recrear ni vaciar tablas existentes para alinear este documento; cualquier diferencia confirmada se resuelve mediante migraciones incrementales trazables.
+
 ### 3.1. Zonas y tarifas (Gestión de Despachos; escribe F-01)
 
 #### `zonas`
@@ -176,12 +191,30 @@ Cada tabla indica qué microservicio y funcionalidad la escriben. Una funcionali
 | `id` | `UUID` | PK | Identificador. |
 | `zona_id` | `UUID` | FK → `zonas.id`, NOT NULL | Zona a la que pertenece. |
 | `distrito_id` | `UUID` | FK → `distrito.id`, NOT NULL | Distrito al que pertenece. |
-| `codigo_postal` | `TEXT` | NULL | Código postal, si aplica. |
+| `codigo_postal` | `TEXT` | NULL, si la columna histórica existe | Columna heredada; no es la fuente canónica de delimitación postal. |
 | `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
 | `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
 | | | UNIQUE (`zona_id`, `distrito_id`) | Evita duplicar la misma asociación. |
 
 Índice: `idx_zonas_distritos_distrito` sobre (`distrito_id`).
+
+El nombre documental canónico es `zonas_distritos`. Las menciones previas a `zona_distritos` deben contrastarse con el esquema del entorno antes de modificar consultas. Esta relación representa cobertura por distrito; la cobertura postal se lee y escribe exclusivamente en la tabla siguiente. No se mantienen dos fuentes activas del código postal.
+
+#### `zonas_codigos_postales`
+
+| Columna | Tipo | Restricciones comunicadas | Descripción |
+|---|---|---|---|
+| `id` | `UUID` | PK, DEFAULT `gen_random_uuid()` | Identificador local. |
+| `zona_id` | `UUID` | NOT NULL, FK → `zonas.id`, ON DELETE CASCADE | Zona a la que pertenece el código postal. |
+| `distrito_id` | `UUID` | NOT NULL, FK → `distrito.id` | Distrito del código postal. |
+| `codigo_postal` | `TEXT` | NOT NULL | Código opaco; conserva sus ceros iniciales. |
+| `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Creación. |
+| `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Actualización por trigger. |
+
+Restricción `uq_zcp`: UNIQUE (`zona_id`, `distrito_id`, `codigo_postal`). Índices comunicados: `idx_zcp_zona` (`zona_id`) e `idx_zcp_cp` (`codigo_postal`). Trigger `trg_zcp_actualizado_en`, con `public.set_actualizado_en()`.
+
+La unicidad de la terna no impide por sí sola que un distrito o código postal solape zonas activas. La administración de F-01 debe comprobar esa regla también al activar o editar zonas. Los lectores comparten la misma resolución de cobertura; la precedencia/conflicto cuando se informan distrito y código postal sigue como decisión pendiente en [ES-F01-07/plan.md](../especificaciones/ES-F01-07-ResolverZonaParaModulo/plan.md#7-decisiones-y-pendientes), sin elegir arbitrariamente una coincidencia. La presencia de datos en esta tabla no acredita que los lectores actuales la utilicen [cite: 1, 2].
+
 #### `zona_conflictos_log`
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
@@ -215,6 +248,50 @@ Cada tabla indica qué microservicio y funcionalidad la escriben. Una funcionali
 | `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
 
 Índice: `idx_tarifas_zona_zona` sobre (`zona_id`).
+
+#### `cotizaciones`
+
+Escribe F-01 al completar un cálculo exacto exitoso. La tabla creada se describe conforme al DDL comunicado; las validaciones funcionales del escritor no deben confundirse con restricciones SQL que ese DDL no tiene [cite: 1].
+
+| Columna | Tipo | Restricciones comunicadas | Uso previsto en F-01 |
+|---|---|---|---|
+| `id` | `UUID` | PK, DEFAULT `gen_random_uuid()` | Identificador interno; no agrega un campo obligatorio al contrato público. |
+| `zona_id` | `UUID` | NULL, FK → `zonas.id` | El escritor exacto informa la zona resuelta. |
+| `tarifa_zona_id` | `UUID` | NULL, FK → `tarifas_zona.id` | Identidad de la tarifa aplicada, además de su copia histórica. |
+| `distrito_id` | `UUID` | NULL, FK → `distrito.id` | Distrito resuelto localmente. |
+| `direccion`, `distrito`, `codigo_postal` | `TEXT` | NULL | Destino utilizado en el cálculo. |
+| `latitud`, `longitud` | `NUMERIC(9,6)` | NULL | Coordenadas cuando correspondan; no determinan cobertura por geometría. |
+| `peso_kg` | `NUMERIC(10,2)` | NULL | Peso físico total calculado desde los SKU y cantidades. |
+| `volumen_m3` | `NUMERIC(10,3)` | NULL | Volumen total calculado. |
+| `cantidad_paquetes` | `INTEGER` | NULL | Un paquete lógico en el alcance inicial. |
+| `tarifa_base` | `NUMERIC(12,2)` | NOT NULL | Copia de la tarifa base aplicada. |
+| `peso_base_kg` | `NUMERIC(10,2)` | NULL | Peso incluido de esa tarifa. |
+| `recargo_kg_adicional` | `NUMERIC(12,2)` | NULL | Recargo aplicado por kg adicional. |
+| `factor_volumetrico` | `NUMERIC(10,2)` | NULL | Factor aplicado en la fórmula vigente de F-01. |
+| `peso_volumetrico_kg`, `peso_cobrable_kg` | `NUMERIC(10,2)` | NULL | Términos derivados; su correspondencia con la fórmula se fija antes de implementar el escritor. |
+| `recargo_total` | `NUMERIC(12,2)` | NOT NULL, DEFAULT 0 | Recargo calculado. |
+| `total` | `NUMERIC(12,2)` | NOT NULL | Costo logístico devuelto; puede ser cero si resulta de una tarifa válida, no como sustituto de un error. |
+| `moneda` | `TEXT` | NULL | Moneda de la tarifa aplicada. |
+| `plazo_min_dias`, `plazo_max_dias` | `INTEGER` | NULL | Copia de los plazos de la tarifa. |
+| `estado` | `TEXT` | NOT NULL, DEFAULT `'vigente'` | Valor físico del DDL existente, en minúsculas. |
+| `vence_en` | `TIMESTAMPTZ` | NULL | Nulo mientras no exista política de vencimiento aprobada. |
+| `es_simulado` | `BOOLEAN` | NOT NULL, DEFAULT false | Cotización del flujo normal: `false`. |
+| `pedido_id` | `UUID` | NULL, sin FK | Nulo al cotizar; no convertir el `idPedido` opaco de Ventas a UUID. |
+| `despacho_id` | `UUID` | NULL, FK → `despachos.id` | Nulo al cotizar; F-01 no crea despachos. |
+| `detalle` | `JSONB` | NULL en DDL | El escritor conserva líneas/cantidades, perfil físico usado con `actualizadoEn`, desglose, precisión de cálculo y fecha estimada respondida, para contrastar el resultado histórico. |
+| `creado_en`, `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Instantes UTC; el escritor captura `creado_en` coherente con `cotizadoEn` de la respuesta. |
+| `creado_por`, `actualizado_por` | `UUID` | NULL | Para actores humanos si aplican; el `sub` técnico no se fuerza a UUID y puede registrarse en `detalle`. |
+
+Índices comunicados: `idx_cotizaciones_zona`, `idx_cotizaciones_tarifa`, `idx_cotizaciones_despacho`, `idx_cotizaciones_pedido` y `idx_cotizaciones_estado` (`estado`, `vence_en`). Trigger `trg_cotizaciones_actualizado_en`, con `public.set_actualizado_en()`.
+
+Reglas del escritor pendiente:
+
+- Insertar la instantánea completa después de validar y calcular, y confirmar la transacción antes de responder con costo. No mantener una transacción de escritura abierta durante la llamada HTTP a G6. Respuesta y fila se construyen desde el mismo cálculo y la misma tarifa capturada; una sustitución posterior no altera el histórico.
+- Solo las cotizaciones exactas exitosas generan fila: cobertura sin productos, destino sin cobertura, zona sin tarifa y todos los rechazos dejan la tabla sin nuevas cotizaciones. Un fallo de escritura revierte la inserción y se traduce conforme al contrato externo.
+- Una repetición de la solicitud puede generar otra instantánea. No hay unicidad por contenido ni garantía de reutilización del precio anterior; no se crea un pedido, cobro o despacho.
+- Usar aritmética decimal sin redondear antes de calcular. Las escalas físicas del DDL y los términos derivados se deben conciliar con precisión, redondeo y fórmula en DT-02 de ES-F01-06; `detalle` conserva el desglose necesario. La creación de columnas no cambia la fórmula funcional.
+- Mantener `pedido_id` y `despacho_id` nulos. La futura vinculación con un pedido textual requerirá una decisión de contrato y, si procede, migración incremental del campo UUID; no bloquea el registro inicial sin pedido.
+- El comentario del DDL menciona `aceptada`, `vencida` y `cancelada`, pero no define transiciones ni aporta un CHECK. Este alcance solo usa el valor físico inicial `vigente`; no habilita comandos de ciclo de vida ni una fecha de expiración inventada.
 
 
 ### 3.2. Flota y capacidad (Operación de Reparto y Flota; escribe F-05)
@@ -584,6 +661,7 @@ Idempotencia significa que repetir una solicitud porque se perdió la respuesta 
 |---|---|
 | `despachos.estado` | `PENDIENTE_ASIGNACION`, `ASIGNADO`, `EN_CAMINO`, `ENTREGADO`, `FALLIDO`, `DEVUELTO_A_ORIGEN`, `CANCELADO` |
 | `zonas.estado` | `ACTIVO`, `INACTIVO` |
+| `cotizaciones.estado` | `vigente` como valor físico inicial del DDL comunicado; los demás valores y transiciones no están habilitados por este alcance |
 | `repartidores.estado_registro` | `ACTIVO`, `INACTIVO` |
 | `repartidores.estado_vinculacion` | `PENDIENTE`, `VINCULADO` |
 | `furgonetas.estado` | `DISPONIBLE`, `EN_MANTENIMIENTO`, `INACTIVA` |
@@ -646,7 +724,9 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 
 | Servicio | Tabla | Índice | Consulta que atiende |
 |---|---|---|---|
-| Gestión | `zona_distritos` | `(distrito)`, `(codigo_postal)` | Resolución de zona |
+| Gestión | `zonas_distritos` | `idx_zonas_distritos_distrito (distrito_id)` | Cobertura por distrito |
+| Gestión | `zonas_codigos_postales` | `uq_zcp (zona_id, distrito_id, codigo_postal)`, `idx_zcp_zona`, `idx_zcp_cp` | Cobertura postal |
+| Gestión | `cotizaciones` | Índices por zona, tarifa, despacho, pedido y `(estado, vence_en)` de §3.1 | Conservación de instantáneas exactas; sin nueva API de consulta en este alcance |
 | Gestión | `despachos` | `(estado, fecha_programada)` | Cola y fallidos |
 | Gestión | `despachos` | `(id_pedido)` UNIQUE | Seguimiento e idempotencia |
 | Gestión | `despachos` | `(asignacion_diaria_id_externa, secuencia_ruta)` | Asignación y reordenamiento |
@@ -666,7 +746,8 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 
 | Datos | Propietario | Origen o consumidores | Requisitos que soporta |
 |---|---|---|---|
-| `zonas`, `zona_distritos`, `tarifas_zona` | Gestión | F-01; F-02 y F-05 consumen por API | F-01 RF-01 a RF-04 |
+| `zonas`, `zonas_distritos`, `zonas_codigos_postales`, `tarifas_zona` | Gestión | F-01; F-02 y F-05 consumen por API | F-01 RF-01 a RF-04 |
+| `cotizaciones` | Gestión | F-01 escribe antes de responder al canal; F-02 no depende del histórico | F-01 RF-03; ES-F01-06 |
 | `despachos`, `intentos_entrega` | Gestión | F-02 y F-04; F-03 origina comandos | F-02, F-03 y F-04 |
 | `historial_estados_despacho`, `eventos_salientes` | Gestión | RT-01 a RT-04 | Estados, seguimiento y eventos |
 | `repartidores`, `furgonetas`, `asignaciones_diarias` | Operación | F-05 y F-03 | F-05 RF-01 a RF-07 |
@@ -683,7 +764,7 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 
 - **Datos del pedido distintos del envío** (productos, montos, pagos): pertenecen a Ventas y Postventa; solo se guarda `id_pedido`.
 - **Credenciales, contraseñas y roles:** pertenecen a Seguridad y Usuarios; solo se guarda `id_usuario_seguridad`.
-- **Stock y productos:** pertenecen a Productos y Ofertas.
+- **Stock y catálogo maestro de productos:** pertenecen a Productos y Ofertas. `cotizaciones.detalle` puede conservar el perfil utilizado como instantánea histórica del cálculo, sin mantener un maestro local ni reemplazar la API de G6.
 - **Binarios de las fotografías y URL firmadas:** la foto vive en el bucket y la URL se genera en cada solicitud.
 - **Ubicación del repartidor:** no se captura GPS.
 - **Tokens, secretos y scopes:** se validan o configuran, pero no se persisten en las tablas de negocio.
@@ -695,3 +776,8 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 ## 9. Triggers de actualización (`actualizado_en`)
 
 Para mantener `actualizado_en` actualizado en cada UPDATE, se utiliza la función `public.set_actualizado_en()` y los triggers correspondientes sobre todas las tablas que incluyen dicha columna, conforme al DDL de la base de datos (BD 2).
+
+## 10. Referencias de la actualización de F-01
+
+- [cite: 1] [ES-F01-06: evidencia y antecedentes comunicados](../especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md), actualización del 26/10/2026 basada en el SQL y la aclaración aportados por la persona responsable; comprobación contra base de datos pendiente.
+- [cite: 2] [Contrato externo](../integraciones/api-contract.md), §§5.1, 5.2, 7.1 y 11.1; [F-01 RF-03](../funcionalidades/F-01-Gestor_ZonasGeograficas.md#rf-03-cotización-en-tiempo-real-para-canales-de-venta).

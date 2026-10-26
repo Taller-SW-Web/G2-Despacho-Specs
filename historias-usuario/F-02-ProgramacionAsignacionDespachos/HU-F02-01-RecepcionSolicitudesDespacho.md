@@ -35,6 +35,8 @@
   - Fija `cantidadPaquetes = 1` y calcula `fechaProgramada` a partir del plazo de la zona y el calendario de operaciones.
   - Genera código operativo único (`DSP-XXXXXX`) y código de rastreo público (`TRK-XXXXX`).
   - Idempotencia: una solicitud repetida para el mismo `idPedido` o con la misma clave devuelve el despacho existente con HTTP `200 OK` sin duplicarlo.
+  - No exige cotización previa ni lee o escribe `cotizaciones` para recibir el pedido; consulta el perfil físico vigente por la operación canónica del [contrato externo §5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas).
+  - Agrupa cantidades, limita a 100 SKU únicos y valida el lote íntegro. La regla prevista para `INACTIVO` no rechaza automáticamente pedidos pagados; `BORRADOR` y demás precisiones siguen pendientes de homologación en §11.1 [cite: 1].
 
 ---
 
@@ -61,9 +63,12 @@
   - **ENTONCES** el sistema responde `422 Unprocessable Entity` con el código `DESP_ERROR_SIN_COBERTURA` y no persiste el despacho.
 
 - [ ] **CA-21: Rechazo por datos físicos no disponibles en Productos y Ofertas**
-  - **DADO** una solicitud con un `sku` que Productos y Ofertas no reconoce, o sin peso o dimensiones válidos, o con el servicio de Productos temporalmente no disponible.
+  - **DADO** un SKU inexistente en una respuesta íntegra, un error de negocio de datos físicos incompletos o el servicio de Productos temporalmente no disponible.
   - **CUANDO** el sistema intenta obtener los datos físicos de las líneas antes de persistir el despacho.
   - **ENTONCES** el sistema responde `422 Unprocessable Entity` con `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` o `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`, o `503 Service Unavailable` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE`, respectivamente, y no crea el despacho.
+
+- [ ] **CA-22 a CA-24: Lote, estado comercial y límite físico**
+  - Escenarios en [F-02 RF-05](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md#rf-05-integridad-de-la-recepción), concretados por ES-F02-01 CA-08 a CA-10; pendientes de implementación, homologación y verificación [cite: 1].
 
 ---
 
@@ -73,5 +78,7 @@
 - [ ] Seguridad implementada exigiendo token de servicio y scope `despachos:crear`.
 - [ ] Cliente REST hacia Productos y Ofertas integrado con manejo de errores y timeouts.
 - [ ] Mecanismo de idempotencia verificado ante reintentos simultáneos con el mismo `idPedido`.
-- [ ] Pruebas unitarias y de integración con `JUnit 5 + Mockito` y `Testcontainers` cubriendo los 5 criterios de aceptación (`CA-01`, `CA-02`, `CA-11`, `CA-12`, `CA-21`).
+- [ ] Pruebas unitarias y de integración con `JUnit 5 + Mockito` y `Testcontainers` cubriendo `CA-01`, `CA-02`, `CA-11`, `CA-12` y `CA-21` a `CA-24`, con idempotencia previa a G6 y sin escritura en `cotizaciones`.
 - [ ] Documentación y trazabilidad sincronizadas con [ES-F02-01](../../especificaciones/ES-F02-01-RecepcionSolicitudDespacho/spec.md).
+
+[cite: 1] [Contrato externo §§5.2, 7.1 y 11.1](../../integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6). La actualización documental no acredita aceptación bilateral ni pruebas ejecutadas.

@@ -25,6 +25,7 @@ Esta funcionalidad incluye:
 - Matriz de tarifas: una regla vigente por zona con tarifa base, peso incluido, recargo por kilogramo adicional, factor volumétrico, moneda y plazo estimado en días hábiles.
 - Consulta de los datos físicos de cada producto ante Productos y Ofertas, en lote y con token propio, para calcular el peso y el volumen cotizables.
 - Cotización de envíos para Marketplace y Chatbot, con costo en soles y plazo estimado.
+- Persistencia de cada cotización exacta exitosa y de la tarifa aplicada antes de responder al canal, aun sin pedido confirmado.
 - Validación de cobertura y resolución de zona para un destino, como servicio interno para F-02 y F-05.
 - Registro de auditoría de los cambios en zonas y tarifas.
 
@@ -38,7 +39,7 @@ Quedan fuera de la cotización la resolución por geometría o por polígonos, l
 - La cotización requiere un token de servicio con `tipo=servicio` y scope `cotizaciones:calcular`; no requiere token de usuario humano.
 - Una solicitud de cotización debe identificar el destino con `distrito`; `direccion` y `codigoPostal` son opcionales.
 - `lineas` es opcional. Si se omite, la operación solo confirma cobertura y zona. Si se envía, debe contener al menos un elemento con `sku` y `cantidad` mayor que cero.
-- Cada producto cotizable debe tener identificador, peso mayor a cero y dimensiones válidas en Productos y Ofertas.
+- Cada producto cotizable debe tener identificador, peso mayor a cero, dimensiones válidas y marca de actualización en Productos y Ofertas. La elegibilidad comercial y el cierre bilateral de estados se rigen por el contrato externo §§5.2 y 11.1 [cite: 1].
 - Solo se cotiza contra zonas en estado `ACTIVO`.
 - Un distrito o código postal no puede pertenecer a más de una zona activa.
 - Los límites de cotización por consumidor y el tiempo de caché de los datos físicos de productos son acuerdos pendientes de cierre en el contrato.
@@ -60,6 +61,7 @@ Quedan fuera de la cotización la resolución por geometría o por polígonos, l
 - Una regla tarifaria válida queda asociada a su zona como tarifa vigente y se aplica a las cotizaciones siguientes; la tarifa anterior se conserva como histórico.
 - Una consulta de cobertura retorna la disponibilidad, la zona y los datos del destino, con o sin costo según incluya `lineas`.
 - Una cotización válida retorna la cobertura, la zona, el peso y el volumen totales, el costo, la moneda, el plazo estimado en días hábiles y la fecha estimada de entrega.
+- Una cotización exacta exitosa queda guardada en `cotizaciones`, con la instantánea de tarifa y cálculo y con `pedido_id` y `despacho_id` nulos. Consultas de cobertura, resultados sin tarifa y rechazos no generan una cotización.
 - Una resolución de zona retorna el identificador de la zona que cubre el destino o indica que no existe cobertura.
 - La desactivación de una zona no modifica los despachos ya registrados en ella.
 - Toda creación, edición, activación o desactivación de zonas y toda alta o sustitución de tarifas queda registrada con usuario y marca temporal.
@@ -153,6 +155,8 @@ Reglas de cálculo y de integración:
 
 - La cobertura se evalúa primero. Si el destino no tiene cobertura, el sistema responde sin consultar a Productos y Ofertas ni validar las líneas.
 - Con `lineas`, el sistema agrupa los SKU repetidos, consulta a Productos y Ofertas en lote y calcula los totales; el canal no envía peso ni volumen.
+- Después de confirmar cobertura se admiten como máximo 100 SKU únicos; se conservan las cantidades acumuladas por SKU. Una respuesta por lote debe clasificar todos los SKU una sola vez, sin omisiones, duplicados ni elementos inesperados.
+- Las reglas comerciales previstas y la diferencia entre error de negocio, fallo técnico y respuesta inválida se referencian desde el contrato externo §§5.1 y 5.2. La aceptación de G6 para H-G2-01 a H-G2-03 continúa pendiente en §11.1 [cite: 1].
 - El sistema utiliza su propio token de servicio (`modulo-despacho`) y no reenvía a Productos el token recibido del canal.
 - El cálculo de los totales por línea es el siguiente:
 
@@ -167,7 +171,8 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 ```
 
 - El sistema calcula el plazo estimado en días hábiles y la fecha estimada de entrega. Ventas y Postventa pueden conservar la fecha estimada como referencia, pero no debe enviarla al crear el despacho.
-- La cotización no crea un pedido ni un despacho y no requiere `Idempotency-Key`, porque solo calcula y no modifica recursos.
+- La cotización no crea un pedido ni un despacho. No requiere `Idempotency-Key`: cada ejecución exacta exitosa registra una instantánea nueva y una repetición puede volver a calcular y guardar otro resultado, sin prometer la tarifa anterior.
+- Se confirma la escritura en `cotizaciones` antes de responder con costo. Si falla, no se devuelve una cotización exitosa ni quedan registros parciales. El registro histórico no sustituye las consultas vigentes de Productos ni es requisito para crear un despacho en F-02.
 - Las promociones, incluido el envío gratuito, y el importe finalmente cobrado al cliente pertenecen a Ventas y Postventa y no modifican el costo logístico calculado por el módulo.
 - El límite de solicitudes se aplica por `sub` del token de servicio e IP.
 
@@ -185,7 +190,7 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 
 #### CA-09. Cotización con datos físicos inválidos
 
-- **DADO** una solicitud que contiene un producto sin peso mayor a cero o sin dimensiones válidas.
+- **DADO** que G6 comunica mediante su error de negocio acordado un SKU sin peso mayor a cero, dimensiones válidas o marca de actualización.
 - **CUANDO** se envía la cotización.
 - **ENTONCES** el sistema responde `422 Unprocessable Entity` con `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`, identifica el producto incompleto y no calcula una cotización hasta que Productos y Ofertas proporcione sus datos físicos.
 
@@ -237,6 +242,42 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 - **CUANDO** se procesa la solicitud.
 - **ENTONCES** el sistema confirma la cobertura y la zona, no devuelve costo ni plazo y no inventa una regla tarifaria; el tratamiento exacto de esta situación permanece como acuerdo pendiente en el contrato de integración.
 
+#### CA-24. Persistencia exacta antes de confirmar la venta
+
+- **DADO** un cálculo exacto exitoso para un canal autorizado, sin pedido ni despacho creados.
+- **CUANDO** F-01 completa la cotización.
+- **ENTONCES** confirma una fila en `cotizaciones` con el destino, carga, tarifa capturada, desglose y resultado coherentes con la respuesta, conserva nulos los vínculos al pedido y despacho y solo después devuelve el costo; una sustitución posterior de tarifa no modifica esa instantánea.
+
+#### CA-25. Exclusión de consultas y rechazos del histórico
+
+- **DADO** una consulta de solo cobertura, un destino sin cobertura, una zona sin tarifa o un rechazo de validación, autorización, límite o Productos.
+- **CUANDO** se procesa la solicitud.
+- **ENTONCES** no se inserta una fila en `cotizaciones` ni se inventan importes para completar columnas obligatorias.
+
+#### CA-26. Fallo de persistencia de la cotización
+
+- **DADO** un cálculo exacto válido cuya inserción o confirmación en PostgreSQL falla.
+- **CUANDO** F-01 intenta confirmar el resultado.
+- **ENTONCES** responde con el error interno de persistencia definido en el contrato, sin costo exitoso ni registro parcial; no lo traduce como caída de Productos.
+
+#### CA-27. Respuesta por lote inválida
+
+- **DADO** una respuesta `200` de G6 con SKU omitidos, duplicados, inesperados o campos físicos obligatorios malformados.
+- **CUANDO** F-01 valida la respuesta completa.
+- **ENTONCES** aplica el error contractual de respuesta inválida, sin completar datos, calcular un costo parcial ni persistir una cotización.
+
+#### CA-28. Producto existente no elegible
+
+- **DADO** un SKU existente con perfil físico válido y estado comercial no elegible conforme al acuerdo H-G2-02 de §11.1 del contrato externo.
+- **CUANDO** F-01 evalúa una cotización.
+- **ENTONCES** aplica el rechazo de elegibilidad, identifica el SKU y no lo presenta como inexistente, sin costo ni nueva cotización. El escenario con `BORRADOR` queda pendiente de homologación externa.
+
+#### CA-29. Límite de SKU y conservación de cantidades
+
+- **DADO** líneas repetidas cuya agrupación conserva la suma de cantidades por SKU.
+- **CUANDO** F-01 confirma cobertura y valida el lote.
+- **ENTONCES** hasta 100 SKU únicos se consultan una sola vez por SKU y se calculan con todas sus unidades; más de 100 se rechazan con el error contractual antes de llamar a G6 o guardar una cotización.
+
 ### RF-04. Resolución de zona para el módulo
 
 El sistema DEBE ofrecer al resto del módulo la resolución de la zona que cubre un destino, como fuente única de cobertura. F-02 la utiliza al crear un despacho y F-05 al asignar la zona de trabajo de un repartidor; el módulo no mantiene una lógica de cobertura propia.
@@ -278,7 +319,7 @@ La interfaz debe impedir acciones conocidas como inválidas, pero las mismas reg
 | Motor de cotización | Calcular cobertura, costo y plazo a partir del destino y los datos físicos de los productos. |
 | Resolución de zona | Determinar la zona activa que contiene el distrito o código postal; servicio interno para F-02 y F-05. |
 | Control de límite de solicitudes | Aplicar el límite configurado por `sub` del cliente técnico e IP. |
-| Persistencia y auditoría | Almacenar zonas, tarifas y sus cambios con usuario y marca temporal. |
+| Persistencia y auditoría | Almacenar zonas, cobertura postal, tarifas y sus cambios; guardar la instantánea de cada cotización exacta exitosa antes de responder. |
 
 Las rutas administrativas, cuerpos, respuestas y códigos de error se definen en el [contrato de Gestión](../integraciones/api-contract-gestion-despachos.md); la cotización y la consulta de datos físicos a Productos y Ofertas, en el [contrato externo](../integraciones/api-contract.md#5-f-01-cotización-para-marketplace-y-chatbot). Se publicarán mediante Swagger UI desde el backend desplegado. Las entidades y sus restricciones se encuentran en `arquitectura/modelo-datos.md`.
 
@@ -289,6 +330,7 @@ Las rutas administrativas, cuerpos, respuestas y códigos de error se definen en
 - **Seguridad:** la configuración requiere JWT con rol `GESTOR_DESPACHO`. La cotización requiere token de servicio con `cotizaciones:calcular` y no expone configuración interna.
 - **Comunicación:** la cotización es la única integración con otros módulos que responde de forma síncrona, porque el canal la necesita para mostrar el costo al cliente.
 - **Trazabilidad:** toda creación, edición, activación o desactivación de zonas y toda alta o sustitución de tarifas registra usuario y marca temporal en UTC. Las tarifas se conservan por sustitución de la regla vigente, no por actualización destructiva.
+- **Consistencia del cálculo:** la respuesta exacta y su fila histórica proceden del mismo cálculo y tarifa capturada. La llamada HTTP a Productos se realiza antes de abrir la transacción de escritura.
 - **Tolerancia a fallos:** si Productos y Ofertas no responde, la cotización informa la indisponibilidad sin devolver un costo estimado.
 
 ## 9. Fuera de alcance
@@ -298,6 +340,7 @@ Las rutas administrativas, cuerpos, respuestas y códigos de error se definen en
 - **Geometría, polígonos y PostGIS:** no forman parte del alcance; la cobertura se define por distritos y códigos postales.
 - **Rangos de peso por tramos:** la tarifa vigente se define con peso incluido y recargo por kilogramo adicional.
 - **Registro de despachos:** corresponde a F-02.
+- **Ciclo comercial de cotizaciones:** aceptación, cancelación, vencimiento, consulta pública y asociación automática a pedidos o despachos requieren un alcance posterior; los campos existentes en la tabla no habilitan esos comportamientos.
 - **Asignación de repartidores:** corresponde a F-02 con información de F-05.
 - **Ejecución de la entrega:** corresponde a F-03.
 
@@ -319,6 +362,8 @@ Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendien
 | CA-19 y CA-20 | Consultar cobertura sin `lineas` y cotizar sin `distrito`. | Integración | Respuesta de cobertura sin costo y `400` con `DESP_ERROR_DESTINO_REQUERIDO`. |
 | CA-22 | Cotizar con Productos y Ofertas no disponible. | Integración | `503` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE`. |
 | CA-23 | Cotizar con `lineas` en una zona activa sin tarifa vigente. | Integración | Cobertura confirmada sin costo ni plazo y sin regla implícita. |
+| CA-24 a CA-26 | Confirmar cálculo y fila, cambiar la tarifa después, repetir la solicitud e inyectar fallos de escritura; comparar ausencia de filas en cobertura/rechazos. | Integración PostgreSQL | Instantáneas independientes y coherentes con las respuestas; rollback y error interno al fallar la escritura. |
+| CA-27 a CA-29 | Lotes incompletos/duplicados/inesperados, perfil malformado, estados comerciales, 100/101 SKU únicos y líneas repetidas. | Contrato e integración | Rechazos sin filas; cantidades conservadas y cero llamadas al superar el límite; estados según homologación pendiente. |
 | CA-12 | Resolver zona para un destino cubierto y otro sin cobertura. | Integración | Zona asociada al despacho y ausencia de cobertura declarada. |
 
 Además, se ejecutarán dos recorridos funcionales completos:
@@ -330,10 +375,12 @@ Además, se ejecutarán dos recorridos funcionales completos:
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-23` están implementados y cuentan con pruebas automatizadas exitosas.
+- Los criterios `CA-01` a `CA-29` están implementados y cuentan con pruebas automatizadas exitosas, con la homologación externa de estados y errores enlazada.
 - Los dos recorridos funcionales han sido verificados de extremo a extremo.
 - La cotización y la resolución de zona devuelven resultados coherentes con la configuración vigente.
 - F-02 obtiene la zona de cada despacho desde este servicio y no mantiene una lógica de cobertura propia.
 - La interfaz muestra correctamente las zonas por distrito o código postal, los estados de carga y los errores.
 - No se han incorporado alcances no especificados.
 - La evidencia de pruebas puede trazarse hacia cada criterio de aceptación.
+
+Referencia de la actualización del 26/10/2026: [cite: 1] [contrato externo §§5 y 11.1](../integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6), [modelo de datos](../arquitectura/modelo-datos.md#12-persistencia-exacta-y-estado-comunicado-del-esquema) y [evidencia de ES-F01-06](../especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md). La tabla creada y los datos postales son antecedentes comunicados; implementación del escritor y pruebas pendientes.

@@ -42,10 +42,11 @@
   - Con `lineas`, el sistema agrupa los SKU repetidos, consulta a Productos y Ofertas en lote con su propio token de servicio (scope `productos:fisicos:leer`) y calcula el peso y el volumen totales; el canal nunca envía peso, volumen ni costo.
   - Si el destino se encuentra fuera de todas las zonas activas, se responde `200 OK` con `coberturaDisponible: false`, `nombreZona: null`, sin costo ni plazo y el mensaje "La dirección se encuentra fuera de nuestra zona de cobertura".
   - Sin `lineas`, la respuesta confirma únicamente la cobertura, la zona y los datos del destino, sin costo, sin plazo y sin `tipoCotizacion`.
-  - La cotización no crea un pedido ni un despacho y no requiere `Idempotency-Key`, porque solo calcula y no modifica recursos.
-  - Errores propios: `DESP_ERROR_DESTINO_REQUERIDO` (`400`), `DESP_ERROR_LINEAS_VACIAS` (`400`), `DESP_ERROR_CANTIDAD_INVALIDA` (`400`), `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` (`422`), `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS` (`422`), `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE` (`503`) y `DESP_ERROR_LIMITE_COTIZACION` (`429`).
+  - Cada cálculo exacto exitoso se guarda en `cotizaciones` antes de responder, aunque no exista pedido, con vínculos nulos a pedido/despacho. No se guardan cobertura sin productos, resultados sin tarifa ni rechazos.
+  - La cotización no crea un pedido ni un despacho ni requiere `Idempotency-Key`: una repetición puede generar otra instantánea del cálculo vigente.
+  - El límite de SKU, la integridad del lote, la elegibilidad y los errores se rigen por [contrato externo §§5.1 y 5.2](../../integraciones/api-contract.md#51-solicitar-cotización); la homologación externa sigue pendiente en [§11.1](../../integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6) [cite: 1].
   - Rendimiento: tiempo de respuesta menor a 100 ms.
-- **Entidades de datos involucradas:** `zonas`, `tarifas_zona` (lectura, ver [arquitectura/modelo-datos.md](../../arquitectura/modelo-datos.md)).
+- **Entidades de datos involucradas:** `zonas`, `zonas_distritos`, `zonas_codigos_postales` y `tarifas_zona` (lectura); `cotizaciones` (inserción exacta exitosa, ver [modelo de datos](../../arquitectura/modelo-datos.md)) [cite: 2].
 
 ---
 
@@ -62,7 +63,7 @@
   - **ENTONCES** el sistema rechaza la petición con `400 Bad Request` y el código `DESP_ERROR_LINEAS_VACIAS` o `DESP_ERROR_CANTIDAD_INVALIDA`, sin calcular el costo.
 
 - [ ] **CA-09: Cotización con datos físicos inválidos**
-  - **DADO** una solicitud cuyo producto no tiene peso mayor a cero o dimensiones válidas en Productos y Ofertas.
+  - **DADO** que G6 comunica mediante el error de negocio acordado un SKU sin peso mayor a cero, dimensiones válidas o marca de actualización.
   - **CUANDO** se envía al endpoint de cotización.
   - **ENTONCES** el sistema rechaza la petición con `422 Unprocessable Entity` y el código `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`, identificando el producto, sin devolver costo.
 
@@ -71,6 +72,9 @@
   - **CUANDO** se envía al endpoint de cotización.
   - **ENTONCES** el sistema retorna código `200 OK` con `coberturaDisponible: false`, `nombreZona: null`, sin costo de envío ni plazo estimado, y con el mensaje "La dirección se encuentra fuera de nuestra zona de cobertura", sin consultar a Productos y Ofertas.
 
+- [ ] **CA-24 a CA-29: Persistencia e integridad ampliadas**
+  - Los escenarios DADO/CUANDO/ENTONCES se mantienen en [F-01 RF-03](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md#rf-03-cotización-en-tiempo-real-para-canales-de-venta) y se concretan en [ES-F01-06 CA-11 a CA-16](../../especificaciones/ES-F01-06-CotizarEnvioConProductos/spec.md#ca-11-instantánea-exacta-exitosa-sin-pedido): instantánea antes de confirmar venta, exclusión de cobertura/rechazos, fallo de escritura, lote inválido, elegibilidad y límite de SKU. Todos pendientes de implementación/verificación; estados de G6 pendientes de homologación [cite: 1].
+
 ---
 
 ## 4. Definición de Terminado (Definition of Done - DoD)
@@ -78,6 +82,9 @@
 - [ ] Motor de cotización implementado en Spring Boot sobre sus propias tablas de zonas y tarifas, con consulta en lote a Productos y Ofertas usando el token de servicio de `modulo-despacho`.
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) de cálculo tarifario y validación de cobertura geográfica.
 - [ ] Prueba de integración del endpoint `POST /api/v1/cotizaciones` validando las tres modalidades de la sección 5.1 y los códigos `DESP_ERROR_*` según [integraciones/api-contract.md](../../integraciones/api-contract.md).
+- [ ] Escritor de `cotizaciones` probado con PostgreSQL: correspondencia fila/respuesta, tarifa histórica, vínculos nulos, repetición y rollback; cobertura y rechazos sin filas nuevas.
 - [ ] Prueba de seguridad: `401` sin token o con token inválido y `403` con token sin el scope `cotizaciones:calcular`.
 - [ ] Verificación automatizada del tiempo de respuesta menor a 100 ms.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.
+
+Referencias: [cite: 1] [contrato externo](../../integraciones/api-contract.md), §§5 y 11.1; [cite: 2] [modelo de datos §3.1](../../arquitectura/modelo-datos.md#31-zonas-y-tarifas-gestión-de-despachos-escribe-f-01), DDL comunicado y escritor pendiente.

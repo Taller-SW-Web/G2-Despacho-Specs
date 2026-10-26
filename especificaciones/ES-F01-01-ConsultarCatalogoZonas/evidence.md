@@ -99,7 +99,7 @@ Este registro describe asistencia en documentación; no acredita ejecución de T
 | DT-02: origen exacto de la última modificación. | CA-01 | Presentación de la columna | Acordar con Arquitectura |
 | DT-03: base compartida de JWT, errores, conexión de datos y rutas del Gateway. | CA-01 a CA-04 | Bloquea la ejecución real del backend | Coordinar con Arquitectura y DevOps |
 | DT-04: componentes, tema y herramientas de pruebas. | CUI-01 a CUI-05 | Bloquea la composición de la página | Coordinar con los responsables de CR |
-| DT-05: `zona_distritos` frente a `zonas_distritos` en el modelo. | CA-01/02 | Resolución de filtros por distrito | Conciliar con Arquitectura |
+| DT-05: esquema real y lectura de `zonas_distritos`/`zonas_codigos_postales` pendientes de verificar. | CA-01/02 | Filtros por distrito y proyección postal sin duplicar zonas | Contrastar lector con Arquitectura; datos postales comunicados no acreditan ejecución |
 
 Sin hallazgos de implementación porque no se ha ejecutado aún ninguna tarea.
 

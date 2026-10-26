@@ -14,6 +14,8 @@
 
 Documentos SDD: [plan](./plan.md), [tareas](./tasks.md), [evidencia](./evidence.md). Preparación del 16/10/2026 sobre la especificación funcional de F-02; conservar los criterios no acredita su implementación.
 
+Actualización del 26/10/2026: ruta física canónica, lote íntegro y reglas previstas de estados H-G2-01 a H-G2-03. Se conservan CA-01 a CA-07 y se agregan CA-08 a CA-10; la homologación con G6 y las pruebas siguen pendientes [cite: 3].
+
 ## 1. Contexto y objetivo
 
 Todos los pedidos de la tienda se preparan en un único centro de despacho. Cuando un pedido ya fue pagado y su paquete está sellado y listo en ese centro, el módulo de Ventas y Postventa solicita a Despacho su entrega a domicilio. A partir de esa solicitud nace la entidad despacho en estado `PENDIENTE_ASIGNACION` ("En centro de despacho").
@@ -34,6 +36,7 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 - La llamada declara que el pedido correspondiente está pagado, preparado y listo para entrega; Despacho no consulta el estado interno del pedido en Ventas.
 - La solicitud contiene identificador de pedido (`idPedido`), datos del destinatario (`nombre`, `telefono`), destino (`direccion`, `distrito`) y un arreglo `lineas` con al menos un elemento (`sku` no vacío y `cantidad` entera positiva).
 - Ventas y Postventa no envía peso, volumen, cantidad de paquetes ni fecha comprometida.
+- No se exige cotización previa ni un identificador de cotización. `cotizaciones` es el histórico de F-01 y no sustituye la consulta vigente a G6 ni se escribe desde esta recepción.
 - El servicio de Zonas Geográficas (F-01) se encuentra disponible y el destino debe pertenecer a una zona en estado `ACTIVO`.
 - El servicio de Productos y Ofertas se encuentra disponible para la consulta en lote de los datos físicos vigentes de cada SKU (`productos:fisicos:leer`).
 
@@ -41,7 +44,7 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 
 - **Ventas y Postventa:** emite la solicitud de entrega según [api-contract.md §7.1](../../integraciones/api-contract.md#71-crear-un-despacho-para-un-pedido-listo-para-entrega).
 - **Zonas y Cotizador (F-01):** resuelve la zona de cobertura a partir del distrito o código postal.
-- **Productos y Ofertas:** provee peso y dimensiones vigentes por SKU según [api-contract.md §5.2](../../integraciones/api-contract.md#52-obtener-datos-físicos-vigentes-de-productos).
+- **Productos y Ofertas:** provee peso y dimensiones vigentes por SKU según [api-contract.md §5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas).
 - **Seguridad y Usuarios:** valida firma y claims del token entrante y emite token para consultar Productos.
 - **Cola de pendientes (ES-F02-03):** expone el despacho persistido a los gestores de despacho.
 - **Trazabilidad (ES-F02-08 / RT-02):** persiste el registro inicial de creación.
@@ -59,23 +62,27 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 1. Ventas y Postventa invoca `POST /api/v1/despachos` enviando el pedido listo para entrega con encabezados de autorización e `Idempotency-Key`.
 2. Gestión de Despachos valida el token JWT, el scope `despachos:crear` y la presencia de `Idempotency-Key`.
 3. Valida la estructura del payload (datos obligatorios de destinatario, destino y líneas válidas).
-4. Verifica de forma atómica en base de datos si ya existe un despacho registrado con ese `idPedido` o `Idempotency-Key`.
+4. Resuelve la repetición según el contrato de idempotencia antes de consultar a G6; la escritura posterior conserva las restricciones únicas y el control transaccional para una recepción nueva concurrente.
 5. Si no existe, invoca la resolución de cobertura de F-01 a partir del distrito o código postal.
-6. Con zona activa confirmada, agrupa los SKU de las líneas y consulta en lote a Productos y Ofertas los datos físicos vigentes (`pesoKg`, `dimensiones`).
-7. Calcula `pesoTotalKg` como la suma de `pesoUnitario * cantidad` y `volumenTotalM3` como la suma de `volumenUnitario * cantidad`.
-8. Registra internamente `cantidadPaquetes = 1` y calcula `fechaProgramada` a partir de la zona, el plazo aplicable y el calendario operativo.
-9. Genera el código interno (`DSP-XXXXXX`) y el código de rastreo (`TRK-XXXXX`).
-10. Persiste el despacho y su registro de auditoría inicial de forma transaccional.
-11. Responde `201 Created` con el recurso creado.
+6. Con zona activa confirmada, agrupa los SKU conservando cantidades, verifica el máximo de 100 únicos y consulta los datos físicos por la ruta canónica del contrato.
+7. Valida estructura, perfil y clasificación completa del lote; aplica existencia y la regla comercial prevista para pedidos pagados. Un SKU `INACTIVO` no se rechaza solo por ese estado; `BORRADOR` requiere la homologación expresa de §11.1 del contrato.
+8. Calcula `pesoTotalKg` como la suma de `pesoUnitario * cantidad` y `volumenTotalM3` como la suma de `volumenUnitario * cantidad`.
+9. Registra internamente `cantidadPaquetes = 1` y calcula `fechaProgramada` a partir de la zona, el plazo aplicable y el calendario operativo.
+10. Genera el código interno (`DSP-XXXXXX`) y el código de rastreo (`TRK-XXXXX`).
+11. Persiste el despacho y su registro de auditoría inicial de forma transaccional, después de las consultas HTTP.
+12. Responde `201 Created` con el recurso creado.
 
 | Alternativa | Condición | Comportamiento esperado | Criterio |
 |---|---|---|---|
 | Reintento idempotente | Ya existe despacho con el mismo `idPedido` | Devuelve `200 OK` con el despacho persistido sin crear duplicado ni mutar estado | CA-04 |
 | Sin cobertura | El destino no pertenece a una zona activa de F-01 | Responde `422 Unprocessable Entity` con `DESP_ERROR_SIN_COBERTURA` | CA-02 |
 | Datos incompletos | Faltan campos obligatorios o `cantidad <= 0` | Responde `400 Bad Request` detallando errores de validación | CA-03 |
-| SKU inválido o sin datos | SKU desconocido o dimensiones nulas en Productos | Responde `422 Unprocessable Entity` (`DESP_ERROR_PRODUCTO_NO_ENCONTRADO` / `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`) | CA-05 |
+| SKU inexistente o datos incompletos | Inexistencia clasificada en un lote íntegro o error de negocio físico de G6 | Responde `422 Unprocessable Entity` según la traducción contractual, sin despacho | CA-05 |
 | Caída de Productos | Productos y Ofertas responde error 5xx o timeout | Responde `503 Service Unavailable` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE` | CA-06 |
 | Sin autorización | Token ausente, expirado o sin scope | Responde `401 Unauthorized` o `403 Forbidden` | CA-07 |
+| Lote inválido | Omisiones, duplicados, inesperados o perfil malformado en `200` | Aplica el error contractual sin despacho parcial | CA-08 |
+| Cambio comercial | SKU existente con perfil válido que pasa a `INACTIVO` | Continúa otras validaciones según homologación | CA-09 |
+| Más de 100 SKU únicos | Límite excedido tras agrupar cantidades | Rechaza antes de llamar a G6 | CA-10 |
 
 ## 5. Reglas, datos e integraciones
 
@@ -87,12 +94,14 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 | RN-04 | Peso y volumen no se reciben de Ventas; se calculan en lote consultando Productos y Ofertas. | F-02 RF-05, CA-21 |
 | RN-05 | Fecha programada se calcula internamente con base en zona y calendario; no se acepta fecha externa. | F-02 RF-01, api-contract §7.1 |
 | RN-06 | Requiere encabezado `Idempotency-Key` (UUID v4 de hasta 128 caracteres). | F-02 RNF Idempotencia, api-contract §7.1 |
+| RN-07 | El lote debe estar completo y clasificado una sola vez por SKU; no hay cálculos ni persistencia parciales. | Contrato externo §5.2.1 |
+| RN-08 | La elegibilidad de venta de F-01 no se aplica automáticamente al pedido pagado; extensión a `BORRADOR` pendiente de aceptación. | Contrato externo §§5.2.2 y 11.1 |
 
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|
 | `POST /api/v1/despachos` | Endpoint canónico de recepción externa. | [api-contract.md §7.1](../../integraciones/api-contract.md#71-crear-un-despacho-para-un-pedido-listo-para-entrega) |
 | Resolución de zona (F-01) | Obtener zona activa y plazo estimado. | [F-01-Gestor_ZonasGeograficas.md](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md) |
-| `POST /api/v1/productos/lote-datos-fisicos` | Obtener peso y dimensiones en lote. | [api-contract.md §5.2](../../integraciones/api-contract.md#52-obtener-datos-físicos-vigentes-de-productos) |
+| Consulta física de Productos | Obtener peso y dimensiones en lote por la ruta canónica. | [api-contract.md §5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas) |
 | Auditoría transaccional (RT-02) | Registrar creación con usuario de servicio. | [api-contract-gestion-despachos.md §3.2](../../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación) |
 
 ## 6. Criterios de aceptación
@@ -123,7 +132,7 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 
 ### CA-05. Rechazo por SKU inexistente o sin datos físicos válidos
 
-- **DADO** una solicitud que incluye un `sku` que Productos y Ofertas no reconoce o cuyo peso o dimensiones son nulos o menores o iguales a cero.
+- **DADO** un SKU clasificado como inexistente en una respuesta íntegra o un error de negocio de G6 que identifica datos físicos incompletos, incluida su marca de actualización.
 - **CUANDO** el backend intenta obtener los datos físicos antes de la persistencia.
 - **ENTONCES** el sistema responde `422 Unprocessable Entity` con `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` o `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS` y no crea el despacho.
 
@@ -139,8 +148,26 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 - **CUANDO** es evaluada por la capa de seguridad.
 - **ENTONCES** el sistema responde `401 Unauthorized` o `403 Forbidden` y no procesa la creación.
 
+### CA-08. Respuesta física inválida
+
+- **DADO** un `200` de G6 con SKU omitidos, duplicados, inesperados o perfil malformado.
+- **CUANDO** se valida el lote completo.
+- **ENTONCES** se aplica el error contractual de respuesta inválida sin inventar datos, calcular una carga parcial, crear despacho ni escribir cotización.
+
+### CA-09. Producto inactivo después de la compra
+
+- **DADO** una solicitud autenticada de Ventas para un pedido pagado y preparado, con SKU existente `INACTIVO` y perfil físico válido.
+- **CUANDO** F-02 aplica la regla de H-G2-02 homologada.
+- **ENTONCES** continúa las demás validaciones sin rechazar solo por el estado comercial ni exigir cotización previa. El caso `BORRADOR` se prepara como propuesta y no se declara aceptado externamente.
+
+### CA-10. Límite y cantidades del lote
+
+- **DADO** una recepción nueva con líneas repetidas.
+- **CUANDO** F-02 agrupa los SKU.
+- **ENTONCES** conserva todas las unidades y consulta una sola vez cada SKU hasta 100 únicos; más de 100 se rechazan antes de llamar a G6 o persistir el despacho.
+
 ## 7. Referencias
 
 1. [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md): especificación funcional padre.
 2. [api-contract.md §7.1](../../integraciones/api-contract.md#71-crear-un-despacho-para-un-pedido-listo-para-entrega): contrato canónico de recepción externa.
-3. [api-contract.md §5.2](../../integraciones/api-contract.md#52-obtener-datos-físicos-vigentes-de-productos): contrato de consulta de datos físicos en lote.
+3. [cite: 3] [api-contract.md §5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas) y [§11.1](../../integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6): operación física y estado de la homologación externa.

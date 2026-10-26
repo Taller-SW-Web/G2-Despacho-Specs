@@ -82,7 +82,7 @@ Comandos previstos: desde el frontend, `npm run typecheck` y `npm run build`; de
 | ID | Decisión o pregunta | Justificación y fuente | Responsable | Bloquea qué incremento |
 |---|---|---|---|---|
 | DT-01 | Formato del `409 Conflict` para solapamiento y para versión concurrente; uso de `Idempotency-Key` | Gestión §3.1 (rutas) y contrato externo §9 (idempotencia y concurrencia) | Valqui con Backend/Frontend y Arquitectura | Adaptadores HTTP de I-02/03; no los fixtures de I-01 |
-| DT-02 | Conciliación entre `zona_distritos` (modelo §6) y `zonas_distritos` (modelo §3.1) y su efecto en la detección de solapamiento | Modelo de datos §3.1 y §6 | Arquitectura | CA-02 e integración real |
+| DT-02 | Verificar solapamiento por distrito en `zonas_distritos` y por postal en `zonas_codigos_postales` antes de activar; la terna única no garantiza exclusividad activa | Modelo §3.1 actualizado; datos postales comunicados y validador pendiente | Arquitectura | CA-02 e integración real |
 | DT-03 | Esquema/migraciones necesarios y base compartida de JWT, errores, conexión de datos y rutas del Gateway | Inicialización actual del backend y modelo | Valqui coordina con Arquitectura y DevOps | Ejecución real de I-02/03 |
 | DT-04 | Disponibilidad y verificación de componentes, tema y herramientas de pruebas | Componentes React §§4.5–4.6 | Valqui para los CR consumidos; coordinación con los responsables del resto | Composición y aceptación de I-01 según sus dependencias |
 | DT-05 | Mecanismo de control de versión de `zonas`, cuya tabla no define una columna de versión en el modelo | Modelo de datos §3.1 (solo `despachos` declara `version`) | Valqui con Arquitectura | CA-05 e integración real |
