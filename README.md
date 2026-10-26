@@ -73,7 +73,7 @@ El módulo se divide en repositorios independientes que comparten las especifica
 
 | Repositorio | Propósito | Estado |
 |---|---|---|
-| [despacho-docs](https://github.com/Taller-SW-Web/despacho-docs) | Documentación, especificaciones y contrato de integración. | Disponible |
+| [G2-Despacho-Specs](https://github.com/Taller-SW-Web/G2-Despacho-Specs) | Documentación, especificaciones y contrato de integración. | Disponible |
 | [G2-Despacho-Frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend) | Interfaz web para gestores y repartidores. | Disponible; integración por PR a `develop` |
 | [G2-Despacho-Backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend) | Servicios, reglas de negocio, persistencia e integraciones. | Disponible; integración por PR a `develop` |
 
