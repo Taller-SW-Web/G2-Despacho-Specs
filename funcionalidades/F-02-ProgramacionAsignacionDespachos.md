@@ -248,7 +248,7 @@ La interfaz debe deshabilitar acciones inválidas, pero todas las reglas se vali
 | Receptor de solicitudes | Validar la solicitud, controlar duplicados por pedido, resolver la zona con F-01, consultar los datos físicos de las líneas ante Productos y Ofertas, calcular peso, volumen y fecha programada y crear el despacho. |
 | Generador de simulaciones | Autogenerar despachos de prueba con datos físicos consistentes en zonas activas (`POST /api/v1/despachos/simulaciones`). |
 | Consulta de cola | Recuperar despachos pendientes con filtros, orden por fecha programada y paginación. |
-| Caso de uso de asignación | Validar estado, fecha programada, habilitación y capacidad remanente de forma transaccional. |
+| Caso de uso de asignación | Validar estado, fecha programada, habilitación y capacidad; coordinar la reserva con intención durable y confirmación local. |
 | Gestión de secuencia | Asignar la siguiente posición y aplicar reordenamientos sin huecos ni duplicados. |
 | Caso de uso de reasignación | Mover un despacho `ASIGNADO` entre repartidores validando capacidad y motivo. |
 | Caso de uso de cancelación | Aplicar las reglas de cancelación según el estado del despacho y liberar reservas. |
@@ -261,7 +261,7 @@ Las rutas administrativas, cuerpos, respuestas y códigos se definen en el [cont
 
 - **Seguridad:** el panel requiere JWT con rol `GESTOR_DESPACHO`; la recepción y la cancelación requieren los scopes de servicio `despachos:crear` y `despachos:cancelar`.
 - **Aislamiento:** el módulo no accede a bases de datos de otros módulos.
-- **Concurrencia:** la asignación, el reordenamiento, la reasignación y la cancelación usan bloqueo optimista para impedir operaciones simultáneas sobre el mismo despacho.
+- **Concurrencia:** las mutaciones comparan la versión canónica y usan bloqueos locales compartidos. Reasignación y cancelación conservan un cerco durable mientras se resuelven los efectos remotos de capacidad; no mantienen transacciones durante HTTP ni prometen atomicidad distribuida. Detalles en Gestión §3.2.2 y Común §7.2.1.
 - **Idempotencia:** la recepción exige `Idempotency-Key` como UUID v4 de hasta 128 caracteres y es además idempotente por identificador de pedido: un reintento con la misma clave o el mismo pedido devuelve el despacho existente sin crear otro.
 - **Rendimiento:** la cola responde en menos de 250 ms para páginas de hasta 100 registros; la recepción responde en menos de 500 ms.
 - **Trazabilidad:** cada operación registra marca temporal en UTC y usuario o sistema origen.

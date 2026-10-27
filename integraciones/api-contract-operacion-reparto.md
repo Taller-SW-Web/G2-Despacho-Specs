@@ -283,7 +283,7 @@ Valida origen activo perteneciente al despacho, destino distinto y habilitado pa
 
 Misma clave/contenido recupera resultado original incluso si la nueva reserva se liberó después; otro contenido: `409 DESP_ERROR_CLAVE_REUTILIZADA`. `400` por entrada inválida o mismo destino; `409` por origen incompatible o destino inhabilitado; `422 DESP_ERROR_CAPACIDAD_EXCEDIDA` sin efectos; credenciales `401/403` según Común §3.5.
 
-**Límite:** garantiza atomicidad en F-06, no confirma la reasignación canónica en Gestión. ES-F02-06 deberá conservar intención durable, impedir traslado mientras se resuelve el cambio, recuperar con la misma clave tras timeout/reinicio y consolidar resultado/proyección. No invocar esta primitiva antes de una escritura local no recuperable. Esta iteración no habilita el comando público ni modal de reasignación. La secuencia antigua «reservar otra vez y después liberar» no es válida: §5.1 la rechaza.
+**Límite:** garantiza atomicidad en F-06, no una transacción distribuida. Gestión coordina la reasignación mediante el cerco, intención durable y recuperación hacia adelante definidos en Gestión §3.2.2; no llama a esta primitiva antes de una escritura local no recuperable. La secuencia antigua «reservar otra vez y después liberar» no es válida: §5.1 la rechaza. Un destino `SATURADO` responde `409`; si dispone de capacidad positiva pero no suficiente para esta carga responde `422`.
 
 ### 5.4. Gestión consulta repartidores y jornadas de incidencias
 

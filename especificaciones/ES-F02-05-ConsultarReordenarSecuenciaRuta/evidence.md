@@ -55,8 +55,8 @@
 
 ## 4. Límites y pendientes
 
-- No se implementan reasignación pública, cancelación, optimización de rutas ni una segunda tabla de auditoría.
-- La primitiva F-06 es localmente atómica; falta su orquestación durable en Gestión. Ver ES-F02-06 y Operación §5.3.1.
+- Este incremento de reordenamiento no incluía reasignación pública; su coordinación durable y modal se verificaron posteriormente en [ES-F02-06](../ES-F02-06-ReasignarDespachoRepartidor/evidence.md). Cancelación, optimización y una segunda tabla de auditoría siguen fuera de alcance.
+- La primitiva F-06 es localmente atómica; la coordinación de Gestión usa intención y cerco durables, no una transacción distribuida. Ver Gestión §3.2.2 y Operación §5.3.1.
 - Se conserva la evidencia histórica del frontend inicial en su guía F-02. Los archivos ES-F02-01 a 04 ya tenían cambios locales del usuario: esta iteración no los sobrescribe. El índice distingue implementación de aceptación pendiente.
 - Las proyecciones son eventualmente consistentes. Cada parada movida se entrega por separado; esta iteración no promete una fotografía distribuida atómica entre servicios.
 - Aprobación humana, lector de pantalla y validación con Seguridad real siguen pendientes. Las suites generales de frontend no se declaran verdes por los fallos base reproducidos.

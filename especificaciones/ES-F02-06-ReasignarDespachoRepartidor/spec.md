@@ -4,7 +4,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Coordinación durable y UI implementadas y verificadas localmente; aceptación humana y Seguridad real pendientes. Consultar evidence.md.
 
 **Actor principal:** Gestor de Despacho (aplicación web administrativa).
 
@@ -12,7 +12,7 @@
 
 **UI:** Aplica; modal interactivo de reasignación invocado desde la vista de Rutas por Repartidor, documentado en [ui.md](./ui.md).
 
-Documentos SDD: [plan](./plan.md), [tareas](./tasks.md), [evidencia](./evidence.md) y [UI](./ui.md). Preparación del 16/10/2026; conservar los criterios no acredita su implementación.
+Documentos SDD: [plan](./plan.md), [tareas](./tasks.md), [evidencia](./evidence.md) y [UI](./ui.md). La solicitud versionada, idempotencia, cerco y recuperación se definen en [Gestión §3.2.2](../../integraciones/api-contract-gestion-despachos.md#322-reasignación-recuperable--es-f02-06); no se confunde atomicidad local de F-06 con una transacción distribuida.
 
 ## 1. Contexto y objetivo
 

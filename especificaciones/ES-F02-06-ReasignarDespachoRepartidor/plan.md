@@ -2,13 +2,15 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Primitiva F-06 en implementación; orquestación canónica y UI de reasignación pendientes.
+**Estado:** Coordinación durable y modal implementados; regresión e integración G2 verificadas localmente. Aceptación humana pendiente.
 
 ## Corrección de integración — 26/10/2026
 
 Las rutas y el orden de llamadas propuestos abajo son históricos. Prevalece [Operación §5.3.1](../../integraciones/api-contract-operacion-reparto.md#531-transferencia-atómica-de-reserva--primitiva-para-es-f02-06): transferencia local atómica con clave durable, no reserva duplicada y liberación separada. El origen se conserva ante rechazo/fallo; la carga proviene de su reserva.
 
-Esto no completa T-02/CA-01: falta en Gestión la intención durable y el control que impida traslado mientras se recupera o consolida la transferencia. No se habilita endpoint público ni modal hasta resolver esa coordinación. No prometer atomicidad distribuida con `@Transactional` ni una compensación que pierda el origen. La norma de motivo es no vacío tras trim; el mínimo de cinco caracteres de la propuesta histórica no es un requisito aprobado.
+La coordinación se concreta en [Gestión §3.2.2](../../integraciones/api-contract-gestion-despachos.md#322-reasignación-recuperable--es-f02-06). `ReasignarDespacho` prepara una intención en `ReasignacionesPersistencia` (Flyway V6), consulta F-06 fuera de transacción y confirma localmente con historial/outbox/resultado. El cerco durable impide traslado y cambios de posición del despacho mientras la transferencia sea desconocida. No se compensan reservas transferidas: se recupera hacia adelante con la misma clave técnica. Solo un rechazo remoto definitivo retira el cerco sin cambiar la asignación.
+
+La preparación usa el bloqueo `asignacion:<despacho>` compartido con F-03 y la fila/version original. La confirmación adquiere las jornadas origen/destino en orden determinista, compartido con asignación/reordenamiento, y coloca al final del destino sin renumerar el origen. El mismo procesador de programación recupera pendientes; un arrendamiento técnico vencido permite retomar trabajo, pero nunca retira el cerco por sí solo.
 
 **UI:** Aplica; modal interactivo de reasignación en `/programacion`.
 
@@ -24,37 +26,37 @@ Esto no completa T-02/CA-01: falta en Gestión la intención durable y el contro
 
 ## 2. Estrategia y responsabilidades
 
-La reasignación requiere orquestar con Operación (F-06) la transferencia de la reserva de capacidad vehicular: liberar la reserva en la furgoneta saliente y registrar una nueva reserva en la furgoneta entrante. Para evitar inconsistencias ante fallos intermedios, se utiliza el patrón de reserva previa con clave técnica y posterior confirmación o compensación. En Gestión, la mutación actualiza el repartidor y ubica el despacho al final de la ruta del nuevo conductor de forma atómica bajo bloqueo optimista.
+La transferencia es atómica dentro de F-06. Gestión conserva intención y resultado durables, usa un cerco frente a F-03/reordenamiento y recupera hacia adelante ante timeout, respuesta inválida, reinicio o rollback local. No mantiene transacciones durante HTTP ni declara atomicidad distribuida.
 
 | Capa | Responsabilidad | Elementos previstos |
 |---|---|---|
-| Frontend | Modal de reasignación, validación de motivo y llamada React Query. | `ModalReasignacionDespacho.tsx`, `useReasignarDespacho`. |
-| API / Web | Endpoint `POST /api/v1/despachos/{idDespacho}/reasignacion`. | `ReasignacionController`, `ReasignarDespachoRequestDTO`. |
-| Aplicación | Coordinación con F-06, validación de estado `ASIGNADO` y recálculo de secuencia. | `ReasignarDespachoUseCase`. |
+| Frontend | Modal, motivo, métricas reales, recuperación exacta y recarga de rutas. | `ModalReasignacionDespacho.tsx`, `reasignacionApi.ts`, hooks existentes. |
+| API / Web | Operación pública de Gestión §3.2.2 con versión y clave. | `ControladorReasignacion`, `SolicitudesProgramacion`. |
+| Aplicación | Orquestación fuera de transacción y recuperación durable. | `ReasignarDespacho`, `AlmacenReasignaciones`, `PuertoTransferencia`. |
 | Dominio | Reglas de reasignación y preservación de inmutabilidad en estados posteriores. | `Despacho`, `MotivoReasignacionValidador`. |
-| Infraestructura | Cliente interno hacia Operación §5.1 y persistencia JPA en PostgreSQL. | `OperacionCapacidadClient`, `DespachoRepository`, `AuditoriaRepository`. |
+| Infraestructura | F-06 §5.3.1, cerco, PostgreSQL/JPA e historial/outbox existentes. | `CapacidadProgramacionHttp`, `ReasignacionesPersistencia`, `GuardiaReasignacion`. |
 
 ## 3. Frontend y componentes React
 
 - El modal se renderiza condicionalmente cuando se activa el botón "Reasignar" de una parada `ASIGNADO`.
-- Consume la lista de repartidores en turno mediante el hook `useRepartidoresDisponibles`, filtrando localmente para excluir al conductor actual.
-- Valida en tiempo real que el campo `motivo` contenga al menos 5 caracteres no vacíos antes de habilitar el botón primario.
+- Reutiliza la disponibilidad validada de F-06 y los hooks existentes. Excluye el conductor/jornada actual y utiliza límites, ocupación y remanente reales para CR-20/CR-11.
+- Exige motivo no vacío tras trim, máximo 500; sin mínimo artificial de cinco caracteres. Tras resultado incierto conserva clave, versión y cuerpo y bloquea el descarte/cambio de destino.
 
 ## 4. Backend, persistencia e integraciones
 
 - **Endpoint:** `POST /api/v1/despachos/{idDespacho}/reasignacion`.
-- **Payload:** `{ "idNuevoRepartidor": "REP-0018", "idNuevaJornada": "JOR-20260923-0018", "motivo": "Falla de la furgoneta" }`.
+- **Solicitud/respuesta, permisos y recuperación:** definición única en Gestión §3.2.2.
 - **Validaciones en backend:**
   - Despacho en base de datos debe estar en estado estricto `ASIGNADO`. Si está en `EN_CAMINO`, `ENTREGADO` o `FALLIDO`, responder `409 Conflict`.
   - `idNuevoRepartidor != idRepartidorActual`.
   - `motivo != null && !motivo.trim().isEmpty()`.
 - **Interacción con Operación (F-06):**
-  - Reserva nueva: `POST /internal/v1/operacion/capacidad/reserva` (evalúa espacio libre tridimensional).
-  - Liberación anterior: `POST /internal/v1/operacion/capacidad/liberacion` con la clave de reserva del conductor saliente.
+  - Transferencia atómica y repetible de Operación §5.3.1; la clave técnica es el ID persistido de la intención.
+  - No ejecutar una segunda reserva inicial ni una liberación/compensación separada.
 - **Persistencia en Gestión:**
-  - Actualizar `id_repartidor = :idNuevoRepartidor`, `id_jornada = :idNuevaJornada`.
-  - Posición en secuencia: `SELECT COALESCE(MAX(posicion_secuencia), 0) + 1 FROM despachos WHERE id_jornada = :idNuevaJornada`.
-  - Registro de auditoría `REASIGNACION_DESPACHO` con `repartidor_anterior`, `nuevo_repartidor` y `motivo`.
+  - Referencias reales `repartidor_id_externo`, `asignacion_diaria_id_externa`, `reserva_capacidad_id_externa` y `secuencia_ruta`, con `@Version`.
+  - `MAX(secuencia_ruta)+1` serializado por jornada; mantener los espacios históricos del origen.
+  - Historial `REASIGNACION` con ambos repartidores/jornadas/reservas, posiciones, motivo, carga, remanente confirmado y UTC; proyección versionada sin evento comercial de cambio de estado.
 
 ## 5. Orden de implementación
 
@@ -66,7 +68,7 @@ La reasignación requiere orquestar con Operación (F-06) la transferencia de la
 
 ## 6. Estrategia de verificación
 
-- Pruebas unitarias de `ReasignarDespachoUseCase` verificando transiciones válidas y rechazos ante despachos `EN_CAMINO`.
+- `ReasignacionHttpTests` con PostgreSQL y HTTP de proveedor controlado: estados, idempotencia, cerco, concurrencia, rollback, timeout y recuperación con una instancia nueva del coordinador.
 - Pruebas de integración con MockMvc evaluando validaciones de motivo y respuestas 400, 409 y 422.
-- Verificación de compensación ante error en la liberación o en el guardado de base de datos.
+- Verificación de recuperación hacia adelante tras una transferencia aceptada y fallo local, sin liberar/recrear reservas.
 - Pruebas de UI con Testing Library comprobando que el chofer actual no aparece en la lista de candidatos.

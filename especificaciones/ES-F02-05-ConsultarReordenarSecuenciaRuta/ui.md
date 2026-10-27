@@ -12,6 +12,8 @@
 
 ## 1. Usuario, contexto y objetivo
 
+Una parada con `reasignacionEnProceso=true` conserva su posición y no muestra acciones de orden/reasignación. Se identifica como operación en proceso y se renueva mediante la consulta periódica. El backend aplica el cerco definido en Gestión §3.2.2; el bloqueo visual no sustituye esa validación.
+
 - **Usuario:** Gestor de Despacho con rol `GESTOR_DESPACHO`.
 - **Contexto:** Panel de control de rutas en centro de distribución. El Gestor supervisa a los repartidores en turno y ajusta el orden óptimo de entrega antes de que inicien sus traslados.
 - **Objetivo:** Consultar la lista secuencial de paradas de una jornada, reordenar despachos `ASIGNADO` mediante arrastre o botones subir/bajar, contar con confirmación clara mediante barra fija inferior y disponer de acción "Reasignar" para derivar un paquete a otro conductor (ES-F02-06).

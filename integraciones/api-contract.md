@@ -531,6 +531,20 @@ Registrar la anulación en `FALLIDO` incrementa la versión del despacho y compi
 }
 ```
 
+#### 7.2.1. Coordinación durable y recuperación de cancelaciones — ES-F02-07
+
+El cuerpo de §7.2 admite únicamente `motivo` (cadena obligatoria, no vacía tras trim, máximo 128 caracteres) y `observacion` (opcional, máximo 500; vacío equivale a omitido). No admite parámetros de consulta. `idPedido` es una cadena no vacía de hasta 128 caracteres sin espacios exteriores. No se exige `If-Match`: Gestión toma la versión canónica bajo bloqueo. Entrada inválida responde `400`; pedido inexistente, `404`; sin JWT, `401`; identidad distinta de `modulo-ventas`, token humano o scope insuficiente, `403`. Se valida autorización antes de revelar existencia o resultados idempotentes.
+
+La identidad de operación comprende servicio emisor, clave, pedido y cuerpo normalizado. Misma clave/contenido recupera el código y cuerpo **originales**, incluso después de cambios posteriores del despacho o reinicio. Otra solicitud con esa clave responde `409 DESP_ERROR_OPERACION_REUTILIZADA`. Una clave nueva sobre `CANCELADO` responde `409` con `estadoActual`; no se convierte en una nueva cancelación exitosa. En `FALLIDO` ya anulado, otra clave devuelve `202` con la fecha original de la marca sin volver a versionar ni auditarla. Los conflictos anteriores a registrar una intención no consumen la clave: el reintento puede evaluar el estado vigente.
+
+Para `PENDIENTE_ASIGNACION` y `FALLIDO`, Gestión guarda decisión, auditoría y resultado en una transacción local. La marca se almacena como `pedido_anulado_en`; el booleano público se deriva de ella. Anular en `FALLIDO` no libera una reserva: la recepción física F-04 conserva esa responsabilidad, tampoco genera `DESPACHO_CANCELADO` porque no hay transición a `CANCELADO`.
+
+Para `ASIGNADO`, Gestión persiste primero intención y cerco durables con versión, jornada y reserva originales. Fuera de transacción invoca [Operación §5.2](./api-contract-operacion-reparto.md#52-gestión-libera-una-reserva-en-operación) con motivo `CANCELACION`, sin sustituir referencias. Solo después de una respuesta válida (misma reserva/despacho, `LIBERADA`, motivo `CANCELACION` y fecha) confirma en una transacción local el estado `CANCELADO`, la marca de anulación, incremento de versión, historial, resultado y outbox. Conserva posición/referencias históricas; la ruta administrativa excluye los cancelados sin renumerar otras paradas. La proyección versionada retira el despacho de F-03 de forma eventualmente consistente. Los despachos reales generan `DESPACHO_CANCELADO`; los simulados no generan eventos externos.
+
+`200` en `ASIGNADO` significa liberación y confirmación local completadas; no que Ventas o todas las proyecciones hayan recibido ya los eventos. Un timeout, respuesta inválida, referencia/motivo remoto incompatible o fallo de persistencia conserva intención y cerco: `503 DESP_ERROR_CANCELACION_NO_DISPONIBLE`. Se reintenta hacia adelante sobre la misma reserva; nunca se recrea como compensación ni se elimina el cerco por tiempo. El procesador existente retoma pendientes tras vencer el arrendamiento de 60 segundos. Una inconsistencia persistente requiere revisión operativa, sin habilitar el despacho por defecto.
+
+Mientras una cancelación está pendiente, otro comando de traslado/reasignación o movimiento de esa parada responde `409 DESP_ERROR_CANCELACION_EN_PROCESO`; la misma operación también puede responder ese código si está siendo procesada. Recuperar con la **misma clave y contenido**, no emitir una nueva orden. Una asignación/compensación o reasignación pendiente impide preparar cancelación (`409 DESP_ERROR_ASIGNACION_EN_PROCESO` o `DESP_ERROR_REASIGNACION_EN_PROCESO`): reintentar cuando se resuelva para tomar las referencias vigentes. Los conflictos de estado incluyen `estadoActual`. Las vistas de ruta incluyen por parada `cancelacionEnProceso`, también incorporado a su huella de versión.
+
 ### 7.3. Eventos salientes hacia Ventas y Postventa
 
 Despacho registra el evento en una bandeja de salida dentro de la misma transacción del cambio. La entrega inicial se realizará por webhook HTTPS. La URL pertenece a Ventas y debe configurarse mediante una variable segura.
@@ -742,4 +756,3 @@ El contrato funcional con Ventas y Postventa está cerrado: se confirmaron el mo
 | Productos y Ofertas | Registrar en Seguridad la concesión de `productos:fisicos:leer` a `modulo-despacho` para `api-productos` y ejecutar las pruebas de contrato entre ambos backends |
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
 | Equipo de Despacho | Tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
-

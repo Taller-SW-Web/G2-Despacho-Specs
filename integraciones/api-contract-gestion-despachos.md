@@ -106,6 +106,24 @@ Responde `200` con el esquema de ruta y ETag nuevo. Repetir actor, clave, jornad
 
 Cada parada modificada registra `REORDENAMIENTO`, posiciones anterior/nueva, secuencias completas, jornada, usuario y UTC. Falla de historial revierte el lote. El outbox publica proyecciones versionadas para F-03; no genera evento comercial de cambio de estado a Ventas. El repartidor ve el orden tras procesar las proyecciones, no necesariamente en la primera consulta anterior a su entrega.
 
+#### 3.2.2. Reasignación recuperable — ES-F02-06
+
+`POST /api/v1/despachos/{idDespacho}/reasignacion` requiere JWT humano `GESTOR_DESPACHO`, `Idempotency-Key` UUID v4 e `If-Match` con la **versión del despacho** entre comillas (por ejemplo, `"3"`, no la huella de ruta). Mantiene el cuerpo de §3.2: `idNuevoRepartidor`, `idNuevaJornada` (cadenas no vacías, máximo 128) y `motivo` (texto no vacío tras trim, máximo 500). No admite campos adicionales ni parámetros. Los encabezados, cuerpos o motivos inválidos y elegir el mismo repartidor/jornada producen `400`; desconocido `404`; estado/versión incompatibles `409`; capacidad insuficiente `422`; sin token `401`; sin rol humano `403`.
+
+Gestión registra una intención inmutable y un cerco durable en `reasignaciones_despacho` mientras el despacho sigue `ASIGNADO`. Usa el mismo bloqueo que F-03 y compara versión/referencias antes de tomar el cerco. Mientras está pendiente, nuevos comandos de traslado/entrega/fallo y reordenamiento que modifique ese despacho reciben `409 DESP_ERROR_REASIGNACION_EN_PROCESO`. La ruta agrega por parada `idPedido`, `idRepartidor` y `reasignacionEnProceso`; su huella incluye este último indicador, por lo que una edición anterior al cerco no se aplica silenciosamente.
+
+Fuera de transacción, Gestión llama a Operación §5.3.1 con el identificador **durable** de la intención como clave técnica. Tras confirmación válida, una transacción local cambia repartidor, jornada, reserva y posición al final de la ruta destino, incrementa versión, registra historial `REASIGNACION`, guarda resultado original y publica la proyección versionada. Conserva posiciones históricas de la ruta origen; no genera una transición comercial a Ventas porque el estado sigue `ASIGNADO`. La nueva proyección retira el despacho de la ruta móvil anterior y lo incorpora a la nueva con consistencia eventual.
+
+`200`: `idDespacho`, `estado=ASIGNADO`, `version`, `idRepartidorAnterior`, `idJornadaAnterior`, `idRepartidor`, `idJornada`, `idReserva`, `posicionSecuencia`, `motivo` y `actualizadoEn` UTC. Misma identidad humana, clave, despacho, versión y cuerpo normalizado recupera exactamente ese resultado, aunque el despacho avance después. Otra solicitud con esa clave recibe `409 DESP_ERROR_OPERACION_REUTILIZADA`.
+
+Un rechazo definitivo de F-06 (`400/409/422`) se conserva y libera el cerco, sin cambiar la asignación. Un timeout, respuesta inválida, caída de credenciales/proveedor o fallo de persistencia deja la intención pendiente: **no** se libera/recrea ninguna reserva para compensar ni se elimina el cerco por un reloj. Gestión reintenta hacia adelante con la misma clave; un rechazo repetido o confirmación ya conocida también es durable. El procesador de programación recupera pendientes tras reinicio cuando vence el arrendamiento técnico de 60 segundos, sin retirar el cerco. No mantiene transacciones abiertas durante HTTP.
+
+Si otro proceso tiene la intención reclamada: `409 DESP_ERROR_REASIGNACION_EN_PROCESO`. Un resultado desconocido responde `503` (`DESP_ERROR_REASIGNACION_NO_DISPONIBLE` o `DESP_ERROR_OPERACION_NO_DISPONIBLE`). Estos casos **no** autorizan un comando nuevo: el cliente conserva clave, versión y cuerpo y ofrece recuperar exactamente la misma solicitud, bloqueando cambios de destino/motivo y descarte. Tras `200` actualiza rutas; tras conflicto definitivo vuelve a consultar antes de otra edición. Pérdida de permisos retira los datos protegidos; no cancela el trabajo durable del servidor.
+
+#### 3.2.3. Impacto operativo de la cancelación — ES-F02-07
+
+La operación externa se define únicamente en [Común §7.2 y §7.2.1](./api-contract.md#72-cancelar-por-anulación-del-pedido). Las paradas agregan `cancelacionEnProceso` (booleano obligatorio); la huella de ruta incluye ese cerco y los cancelados dejan de formar parte de la lista operativa, conservando posiciones históricas. Mientras el cerco esté vigente no se permite mover ni reasignar el despacho. El bloqueo compartido con F-03 impide iniciar traslado aunque la liberación remota ya haya ocurrido y aún falte confirmación local.
+
 ## 4. Catálogo único de motivos de fallo
 
 - **Método y ruta:** `GET /api/v1/catalogos/motivos-fallo`.

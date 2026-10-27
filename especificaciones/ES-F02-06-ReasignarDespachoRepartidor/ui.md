@@ -2,7 +2,9 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Especificación de UI preparada el 16/10/2026; implementación pendiente.
+**Estado:** Modal implementado y verificado con React y navegador contra G2 real; aceptación humana pendiente.
+
+**Recuperación:** se conservan clave, versión original y cuerpo tras timeout, `503` o `DESP_ERROR_REASIGNACION_EN_PROCESO`. No se permite cambiar destino/motivo, cerrar por Escape ni descartar; se ofrece «Recuperar reasignación». Un rechazo definitivo libera esa edición; un conflicto recarga la ruta. Las barras usan las métricas reales de F-06, sin fabricar límites. No se añaden bibliotecas de estado o UI.
 
 **Aplicabilidad:** Modal interactivo de reasignación invocado desde la pestaña "Rutas por repartidor" (`/programacion`).
 

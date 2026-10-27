@@ -4,7 +4,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Implementada y verificada localmente con G2 real y Seguridad temporal; aceptación humana y proveedores externos reales pendientes.
 
 **Actor principal:** Módulo de Ventas y Postventa (token de servicio).
 
@@ -12,13 +12,13 @@
 
 **UI:** No aplica una interfaz web ni formulario directo. Es una integración externa invocada por Ventas y Postventa vía API REST; su impacto visual se manifiesta en el retiro del despacho de la cola de pendientes o de la ruta del repartidor, justificado también en [plan.md](./plan.md).
 
-Documentos SDD: [plan](./plan.md), [tareas](./tasks.md), [evidencia](./evidence.md). Preparación del 16/10/2026; conservar los criterios no acredita su implementación.
+Documentos SDD: [plan](./plan.md), [tareas](./tasks.md), [evidencia](./evidence.md). La coordinación durable, validación e idempotencia se precisan en [Común §7.2.1](../../integraciones/api-contract.md#721-coordinación-durable-y-recuperación-de-cancelaciones--es-f02-07). No se promete atomicidad distribuida: el cerco mantiene el despacho no trasladable hasta consolidar su cancelación.
 
 ## 1. Contexto y objetivo
 
 Cuando un cliente anula su compra en los canales comerciales de la tienda, el módulo de Ventas y Postventa es responsable de notificar a Despacho para detener la entrega física del pedido.
 
-El objetivo es atender y procesar de forma segura, atómica e idempotente las solicitudes de cancelación que emite Ventas y Postventa. El sistema evalúa el estado del despacho en su ciclo de vida operativo: si aún permanece físicamente en el centro de despacho (`PENDIENTE_ASIGNACION` o `ASIGNADO`), cancela de inmediato la entrega liberando la reserva de capacidad en la furgoneta si correspondía; si se encuentra en `FALLIDO`, registra la anulación (`pedidoAnulado = true`) para obligar a que en F-04 solo pueda cerrarse como `DEVUELTO_A_ORIGEN`; y si el paquete ya está en traslado (`EN_CAMINO`) o en un estado terminal, rechaza la cancelación informando el estado actual [cite: 1].
+El objetivo es atender de forma segura, recuperable e idempotente las solicitudes de cancelación que emite Ventas y Postventa. El sistema evalúa el estado del despacho en su ciclo de vida operativo: si permanece en el centro (`PENDIENTE_ASIGNACION` o `ASIGNADO`), cancela la entrega liberando la reserva si corresponde, con confirmación local atómica y coordinación durable del efecto remoto; si está en `FALLIDO`, registra la anulación (`pedidoAnulado = true`) para obligar a que F-04 solo permita cerrarlo como `DEVUELTO_A_ORIGEN`; y si ya está en traslado (`EN_CAMINO`) o terminal, rechaza informando el estado actual [cite: 1].
 
 ## 2. Alcance
 
@@ -57,10 +57,10 @@ El objetivo es atender y procesar de forma segura, atómica e idempotente las so
 4. Verifica si la clave de idempotencia ya fue procesada: si ya existe respuesta previa registrada, devuelve el resultado original (HTTP 200/202).
 5. Evalúa el estado actual del despacho:
    - **Caso A (`PENDIENTE_ASIGNACION`):** transiciona a `CANCELADO`, registra auditoría y devuelve `200 OK`.
-   - **Caso B (`ASIGNADO`):** transiciona a `CANCELADO`, retira de la ruta, invoca liberación de capacidad en F-06, registra auditoría y devuelve `200 OK`.
+   - **Caso B (`ASIGNADO`):** registra intención/cerco, solicita liberación en F-06 fuera de transacción y confirma localmente `CANCELADO`, auditoría, outbox y resultado; retira de la ruta y devuelve `200 OK`. Si no se conoce el resultado, conserva el cerco y recupera la misma operación.
    - **Caso C (`FALLIDO`):** setea `pedidoAnulado = true`, incrementa versión para control de concurrencia con F-04, registra auditoría y devuelve `202 Accepted`.
    - **Caso D (`EN_CAMINO`, `ENTREGADO`, `DEVUELTO_A_ORIGEN`):** rechaza con `409 Conflict` detallando el estado actual sin modificar el despacho.
-6. Notifica el resultado y persiste el cambio atómicamente.
+6. En `ASIGNADO`, preparar intención y cerco durables antes de liberar por Operación §5.2; confirmar resultado, historial y outbox localmente después. Ante resultado desconocido, recuperar la misma reserva sin recrearla. En los otros casos aceptados, decisión y resultado son una sola transacción local. El flujo no mantiene transacciones durante HTTP.
 
 | Alternativa | Condición | Comportamiento esperado | Criterio |
 |---|---|---|---|
@@ -83,7 +83,7 @@ El objetivo es atender y procesar de forma segura, atómica e idempotente las so
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|
 | `POST /api/v1/despachos/pedidos/{idPedido}/cancelacion` | Endpoint canónico de cancelación por anulación. | [api-contract.md §7.2](../../integraciones/api-contract.md#72-cancelar-por-anulación-del-pedido) |
-| Liberación de capacidad (F-06) | Liberar cupo de furgoneta cuando estaba asignado. | [api-contract-operacion-reparto.md §5.1](../../integraciones/api-contract-operacion-reparto.md#51-gestión-consulta-y-reserva-capacidad-en-operación) |
+| Liberación de capacidad (F-06) | Liberar cupo de furgoneta cuando estaba asignado. | [api-contract-operacion-reparto.md §5.2](../../integraciones/api-contract-operacion-reparto.md#52-gestión-libera-una-reserva-en-operación) |
 | Auditoría (RT-02) | Registro de la cancelación con usuario de servicio. | [ES-F02-08](../ES-F02-08-RegistrarTrazabilidadOperaciones/spec.md) |
 
 ## 6. Criterios de aceptación
@@ -120,7 +120,7 @@ El objetivo es atender y procesar de forma segura, atómica e idempotente las so
 
 ### CA-06. Idempotencia en solicitudes repetidas de cancelación
 
-- **DADO** que una solicitud de cancelación con clave de idempotencia `IDEM-12345` ya fue procesada y aceptada.
+- **DADO** que una solicitud de cancelación con clave de idempotencia UUID v4 ya fue procesada y aceptada.
 - **CUANDO** se reenvía la petición con la misma clave de idempotencia y el mismo cuerpo.
 - **ENTONCES** el sistema no duplica la transición, no altera la capacidad ni registra doble auditoría, y responde con el mismo código (`200 OK` o `202 Accepted`) y cuerpo previo.
 
