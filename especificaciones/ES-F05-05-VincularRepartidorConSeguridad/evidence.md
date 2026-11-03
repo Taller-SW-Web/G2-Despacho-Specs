@@ -1,6 +1,6 @@
 # Evidencia de ES-F05-05: Vincular repartidor con Seguridad y Usuarios
 
-**Estado:** Parcial documental; aceptación funcional pendiente por criterio.
+**Estado:** Automatización verificada en CI; integración con Seguridad real y aceptación humana pendientes.
 
 **Responsable de verificación:** Rhamses; revisión humana pendiente.
 
@@ -111,3 +111,15 @@ La herramienta organiza y contrasta documentos; no se atribuye a una persona una
 1. [Especificación](./spec.md) y [UI](./ui.md), criterios esperados [cite: 1].
 2. [Plan](./plan.md) y [tareas](./tasks.md), incrementos y comprobaciones [cite: 2].
 3. [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas) y [Seguridad §8.4](../../integraciones/api-contract.md#84-creación-y-vinculación-de-un-usuario-repartidor) [cite: 3].
+
+
+<a id="ev-05-revision-f05-f06"></a>
+
+## EV-05. Revisión de F-05 y F-06 (26/10/2026)
+
+- Responsable actual: Kevin Rhamses Bohorquez. Base documental `03343ce`; frontend `39a361b`; cambio funcional backend `4163b80`, con conservación adicional de mediciones en `b81fc39`.
+- Criterios contrastados: CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07. Casos de `GestionFlotaHttpTests`: impideDuplicadosYVinculosCruzadosSinCrearCuentasGlobales; validaVinculacionManualSinAceptarCredencialesYConservaEstadoPendiente; exigeGestorEnTodasLasOperacionesDeCatalogo. Frontend: `PaginasFlota.test.tsx`, `SesionFlota.test.tsx` y los recorridos de repartidores/furgonetas en `pruebas/flota/flota.spec.ts`.
+- Resultado: [CI backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend/actions/runs/40419989916) aprobado, incluidas 119 pruebas de Operación con PostgreSQL temporal; [CI frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/actions/runs/40419367650) aprobado: 165 pruebas administrativas (Zonas excluida), 208 compartidas, 13 de repartidor, cuatro E2E F-02 y seis E2E F-05/F-06, además de tipos y compilación.
+- Correcciones: invalidación de datos y formularios de F-05/F-06 al cambiar sesión; descarte de respuestas tardías. Los cierres de jornadas vacías por baja o retiro conservan auditoría propia, actor y estados anterior/nuevo, con reversión conjunta ante error y sin duplicación al repetir.
+- Entorno y límites: PostgreSQL desechable en GitHub Actions; JWT identificados como dobles o emisor temporal. El navegador usa APIs simuladas. Docker Desktop local falló al iniciar; la ejecución completa local no se presenta como aprobada. No se modificaron Supabase, Render, Vercel ni migraciones aplicadas. Seguridad real, permisos de cuentas reales, SLA desplegado y aceptación humana siguen pendientes.
+- Entrega: [PR frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/pull/17) y [PR backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/19); [reporte común y trazabilidad](../ES-F06-01-AbrirJornada/evidencia/validacion.md#revision-f05-f06-2026-10-26). No se ha realizado el merge.

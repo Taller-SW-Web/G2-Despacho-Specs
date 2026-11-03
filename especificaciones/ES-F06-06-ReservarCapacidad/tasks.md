@@ -78,3 +78,8 @@
 1. [Especificación](./spec.md) [cite: 1].
 2. [Plan](./plan.md) [cite: 2].
 3. [Evidencia](./evidence.md) [cite: 3].
+
+
+## Revisión automatizada del 26/10/2026
+
+Ver [EV-02](./evidence.md#ev-02-revision-f05-f06) y el [reporte común](../ES-F06-01-AbrirJornada/evidencia/validacion.md#revision-f05-f06-2026-10-26). Las suites de código y navegador aprobaron en CI; esto no completa la revisión humana ni la integración con Seguridad real. No se aplicaron migraciones sobre bases compartidas.

@@ -2,7 +2,7 @@
 
 **Responsable:** Rhamses.
 
-**Estado:** Pendiente de verificación por criterio; existe código de referencia, pero esta migración no certifica su aceptación.
+**Estado:** Contraste técnico y backend verificados; automatización frontend aprobada; integración real y revisión humana pendientes.
 
 **Plan de origen:** [plan.md](./plan.md); fuente histórica `f3849d9` y alineación contractual registrada en EV-04.
 
@@ -10,9 +10,9 @@
 
 | ID | Resultado de la tarea | Área | Depende de | Criterios | Estado |
 |---|---|---|---|---|---|
-| T-01 | Conciliar fuentes y verificar dependencias compartidas | Contrato y preparación | Fuentes del plan; responsables de contrato y CR | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07; CUI-01 a CUI-06 | Pendiente |
-| T-02 | Verificar y ajustar el comportamiento backend | Backend y datos | T-01 y PostgreSQL de prueba | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07 | Pendiente |
-| T-03 | Verificar la interacción y los componentes frontend | Frontend y UI | T-01; contrato revisado o simulación identificada | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07; CUI-01 a CUI-06 | Pendiente |
+| T-01 | Conciliar fuentes y verificar dependencias compartidas | Contrato y preparación | Fuentes del plan; responsables de contrato y CR | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07; CUI-01 a CUI-06 | Completada |
+| T-02 | Verificar y ajustar el comportamiento backend | Backend y datos | T-01 y PostgreSQL de prueba | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07 | Completada |
+| T-03 | Verificar la interacción y los componentes frontend | Frontend y UI | T-01; contrato revisado o simulación identificada | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07; CUI-01 a CUI-06 | En curso |
 | T-04 | Comprobar el recorrido integrado y registrar la aceptación | Integración y calidad | T-02, T-03 y dependencias reales | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07; CUI-01 a CUI-06 | Pendiente |
 
 Los estados son Pendiente, En curso, Bloqueada y Completada. Una tarea de comprobación de código existente sigue pendiente hasta tener un resultado enlazado por criterio; no significa que ese código no exista. Los cambios de CR compartidos se coordinan con sus responsables [cite: 1, 2].
@@ -21,7 +21,7 @@ Los estados son Pendiente, En curso, Bloqueada y Completada. Una tarea de compro
 
 ### T-01. Conciliar fuentes y verificar dependencias compartidas
 
-- [ ] Implementada o contrastada, y verificada.
+- [x] Implementada o contrastada, y verificada en el alcance local/CI indicado en EV-05.
 - Incremento del plan: I-01.
 - Responsable: Rhamses en coordinación con Arquitectura y los responsables de CR.
 - Objetivo y alcance: Revisar los acuerdos que afectan este comportamiento y comprobar la disponibilidad de los CR antes de aceptar su pantalla.
@@ -34,7 +34,7 @@ Los estados son Pendiente, En curso, Bloqueada y Completada. Una tarea de compro
 
 ### T-02. Verificar y ajustar el comportamiento backend
 
-- [ ] Implementada o contrastada, y verificada.
+- [x] Implementada o contrastada, y verificada en el alcance local/CI indicado en EV-05.
 - Incremento del plan: I-02.
 - Responsable: Rhamses.
 - Objetivo y alcance: La implementación existente asocia un UUID único al perfil y audita el cambio; no crea cuentas globales, no conserva contraseñas y no demuestra activación remota.
@@ -102,3 +102,8 @@ Los estados son Pendiente, En curso, Bloqueada y Completada. Una tarea de compro
 1. [Especificación funcional](./spec.md) y [UI](./ui.md) [cite: 1].
 2. [Plan](./plan.md), incrementos y dependencias [cite: 2].
 3. [Evidencia](./evidence.md), resultados y límites [cite: 3].
+
+
+## Revisión automatizada del 26/10/2026
+
+Ver [EV-05](./evidence.md#ev-05-revision-f05-f06) y el [reporte común](../ES-F06-01-AbrirJornada/evidencia/validacion.md#revision-f05-f06-2026-10-26). Las suites de código y navegador aprobaron en CI; esto no completa la revisión humana ni la integración con Seguridad real. No se aplicaron migraciones sobre bases compartidas.
