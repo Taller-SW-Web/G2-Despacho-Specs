@@ -14,7 +14,9 @@
 
 **Origen:** Especificación de la revisión `91db8f8`, migrada al flujo SDD el 16/10/2026; conserva los criterios CA-01 a CA-10.
 
-**Actualización 26/10/2026:** persistencia exacta acordada con la persona responsable y preparación de H-G2-01 a H-G2-03. Se conservan CA-01 a CA-10 y se agregan CA-11 a CA-16. El escritor y la homologación externa continúan pendientes [cite: 2, 3].
+**Antecedente 26/10/2026:** persistencia exacta acordada y preparación inicial de H-G2-01/02/03; se agregaron CA-11 a CA-16.
+
+**Actualización 04/11/2026:** H-G2-01/02/03 cerrados en la línea base `0.6.0-rc.3`; D-G2-01 cerrado el 03/11 y D-G2-02 cerrado semánticamente el 04/11, con afectados, orden y precedencia aceptados. Se conservan CA-01 a CA-19. Sincronización normativa G6 e implementación/verificación G2 pendientes [cite: 2, 3].
 
 ## 1. Contexto y objetivo
 
@@ -41,7 +43,7 @@ Calcular el costo de envío y el plazo estimado de un pedido a partir del destin
 2. El backend valida el token y el destino, y aplica el límite de solicitudes.
 3. El sistema evalúa la cobertura del destino y, si existe zona activa, la identifica.
 4. Con cobertura, valida las líneas, agrupa los SKU repetidos conservando sus cantidades y verifica el límite de 100 SKU únicos antes de consultar a Productos con su propio token.
-5. Valida la estructura e integridad de todo el lote, la existencia, el perfil físico y la elegibilidad comercial de cada SKU conforme al contrato y su homologación pendiente.
+5. Valida la estructura e integridad de todo el lote o del error contractual, la existencia, el perfil físico y la elegibilidad por estado efectivo. Aplica la traducción y precedencia D-G2-02 acordadas según contrato §5.2.4, contrastando la revisión exigible del proveedor.
 6. Calcula los totales, el peso cotizable y el costo con la tarifa capturada de la zona, y obtiene plazo y fecha estimada.
 7. Confirma en `cotizaciones` la instantánea completa del cálculo, con vínculos nulos a pedido y despacho; no mantiene una transacción de escritura abierta durante la llamada a G6.
 8. Responde con `tipoCotizacion=EXACTA` y los valores del mismo cálculo confirmado.
@@ -59,6 +61,9 @@ Calcular el costo de envío y el plazo estimado de un pedido a partir del destin
 | Lote no conforme | SKU omitidos/duplicados/inesperados o perfil malformado | Rechaza todo el resultado | CA-14 |
 | Estado no elegible | Estado comercial no habilitado por H-G2-02 | Rechaza sin confundirlo con inexistencia | CA-15 |
 | Exceso de SKU | Más de 100 SKU únicos con cobertura | Rechaza antes de llamar a G6 | CA-16 |
+| SKU padre no físico | Error de negocio para un padre con variantes, según revisión D-G2-02 homologada | Rechaza todo e identifica los SKU causantes | CA-17 |
+| Error no conforme | Detalle obligatorio ausente o incoherente bajo esa revisión | Respuesta de Productos inválida, sin inferir afectados | CA-18 |
+| Errores mixtos | Varias clases de error en el lote | Aplica la precedencia bilateral aceptada el 04/11 según contrato §5.2.4 | CA-19 |
 
 ## 5. Reglas, datos e integraciones
 
@@ -90,7 +95,8 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 - Solo se inserta una fila cuando el resultado completo es exacto y exitoso. La respuesta y la persistencia proceden del mismo cálculo y tarifa capturada; los rechazos y la cobertura sin costo no crean filas.
 - `pedido_id` y `despacho_id` quedan nulos. La persistencia sucede antes de una venta confirmada, no porque Ventas invoque esta API. F-02 sigue consultando a Productos y no depende del registro histórico.
 - La correspondencia de columnas, el valor físico inicial de estado y el contenido de `detalle` se definen en el modelo de datos §3.1. No se habilitan transiciones de cotización por la mera existencia de columnas [cite: 3].
-- La propuesta comercial H-G2-02 y los campos del error G6 siguen pendientes de aceptación bilateral; no se consideran implementados por aparecer en esta especificación [cite: 2].
+- H-G2-01/02/03 están cerrados: `BORRADOR` está admitido y los datos físicos incompletos identifican los SKU. G6 calcula el estado efectivo de variantes conforme a D-G2-01; F-01 consume esa proyección sin reconstruir el padre y rechaza estados no elegibles. La publicación normativa y las regresiones se siguen por separado [cite: 2].
+- D-G2-02 exige un rechazo íntegro por SKU padre con variantes y afectados obligatorios preservados en el error público: todos y únicamente los causantes, literalmente, sin duplicados y en orden de solicitud. No se confunde con inexistencia ni con el SKU de un producto simple. Campo, traducción y precedencia están acordados en contrato §5.2.4; la sincronización normativa se sigue en §11.1 y no se atribuye la ampliación a la línea base rc.3 anterior [cite: 2].
 - Ventas y Postventa puede conservar la fecha estimada como referencia, pero no debe enviarla al crear el despacho; las promociones y el envío gratuito pertenecen a Ventas y Postventa y no alteran el costo logístico.
 - El límite de solicitudes se aplica por `sub` del token de servicio e IP; al excederlo, la respuesta es `429 Too Many Requests` con `DESP_ERROR_LIMITE_COTIZACION`.
 - La cotización no expone la configuración interna de zonas ni de tarifas.
@@ -106,7 +112,7 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 - `tipoCotizacion=EXACTA`, disponibilidad de cobertura y nombre de la zona.
 - Peso total, volumen total, costo, moneda, plazo estimado en días hábiles y fecha estimada de entrega.
 - Marca temporal de la cotización.
-- Error normalizado ante líneas, cantidades o datos físicos inválidos, producto inexistente, productos no disponible o exceso de límite.
+- Error normalizado ante líneas, cantidades o datos físicos inválidos, producto inexistente/no elegible, productos no disponible o exceso de límite. Los rechazos de productos identifican los SKU causantes por el campo contractual; un error de dependencia no conforme no inventa esa identificación.
 
 ### Integraciones
 
@@ -203,15 +209,33 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 
 ### CA-15. Estado comercial no elegible
 
-- **DADO** un SKU existente con perfil válido pero estado no elegible conforme a H-G2-02.
+- **DADO** una unidad física existente con perfil válido y estado efectivo `INACTIVO` o `BORRADOR`, incluida una variante activa bajo padre inactivo/borrador conforme a D-G2-01.
 - **CUANDO** F-01 valida la cotización.
-- **ENTONCES** rechaza por elegibilidad sin presentarlo como inexistente, sin costo ni registro. El escenario de `BORRADOR` está pendiente de homologación externa.
+- **ENTONCES** rechaza por elegibilidad e identifica los SKU causantes sin presentarlos como inexistentes, sin costo ni registro. Las nueve combinaciones padre/variante se contrastan con el proveedor; G2 interpreta el valor proyectado.
 
 ### CA-16. Límite y cantidades del lote
 
 - **DADO** líneas repetidas y destino cubierto.
 - **CUANDO** F-01 agrupa los SKU.
 - **ENTONCES** conserva la suma de unidades, consulta una sola vez cada SKU hasta 100 únicos y rechaza 101 o más antes de llamar a G6 o insertar una fila. El límite no se aplica a las unidades de un mismo SKU.
+
+### CA-17. SKU padre no físico y afectados exactos
+
+- **DADO** destino cubierto, tarifa vigente y uno o varios SKU padre de productos con variantes, solos o mezclados con unidades válidas, bajo D-G2-02 homologado.
+- **CUANDO** G6 devuelve el rechazo de esa condición y F-01 valida el problema contractual.
+- **ENTONCES** rechaza todo con el error público de no elegibilidad y preserva todos y únicamente los SKU causantes exactos en el campo contractual, sin duplicados y en orden de solicitud. No calcula ni persiste cotización. Un producto simple con perfil válido conserva el recorrido exitoso.
+
+### CA-18. Detalle obligatorio de error inválido
+
+- **DADO** un rechazo de SKU padre cuya revisión exige identificación de afectados y el campo está ausente, vacío, malformado, duplicado o contiene SKU no solicitados.
+- **CUANDO** F-01 valida el error.
+- **ENTONCES** aplica el error contractual de respuesta inválida, sin extraer SKU del texto ni atribuir la causa al lote entero, sin costo ni fila nueva.
+
+### CA-19. Precedencia bilateral en errores mixtos
+
+- **DADO** un lote con SKU padre no físicos y errores de otras clases, y la precedencia aceptada el 04/11 en contrato §5.2.4.
+- **CUANDO** se consulta el mismo conjunto en órdenes diferentes.
+- **ENTONCES** se traduce el mismo error prioritario y se conserva el mismo conjunto de afectados, con la lista ordenada según cada solicitud. Las bases no físicas prevalecen sobre perfiles incompletos y únicamente se informan los afectados de la condición seleccionada. Sin éxito parcial ni persistencia; la lista no acredita que los otros SKU sean válidos.
 
 ## 7. UI, backend y requisitos no funcionales
 
@@ -238,10 +262,13 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 | CA-12 | Integración PostgreSQL | Comparación de filas antes/después de cobertura y de cada rechazo |
 | CA-13 | Integración de fallos | Error en inserción y en commit; rollback y respuesta interna sin costo |
 | CA-14 | Contrato e integración | Duplicados en cada arreglo y entre ambos, omisiones, inesperados, JSON/perfil inválido |
-| CA-15 | Contrato e integración | Estados homologados, con escenario `BORRADOR` pendiente de aceptación |
+| CA-15 | Contrato e integración | Estados efectivos homologados; nueve combinaciones padre/variante y estados de producto simple |
 | CA-16 | Unitaria e integración | 1, 100 y 101 SKU únicos; más de 100 líneas con pocos SKU y cantidades conservadas |
+| CA-17 | Contrato e integración PostgreSQL | Padres solos/múltiples/mixtos, afectados exactos y producto simple válido |
+| CA-18 | Contrato e integración | Detalle obligatorio ausente/vacío/malformado/duplicado/ajeno, con revisión D-G2-02 homologada |
+| CA-19 | Contrato proveedor-consumidor | Lote con distintas clases de error y permutaciones, según precedencia aceptada y orden de cada solicitud |
 
-- [ ] CA-01 a CA-16 cuentan con resultados reproducibles en [evidence.md](./evidence.md).
+- [ ] CA-01 a CA-19 cuentan con resultados reproducibles en [evidence.md](./evidence.md).
 - [ ] El contrato y los pendientes bloqueantes están resueltos para el alcance implementado.
 - [ ] Se verifican agrupación, integridad de SKU, persistencia solo exacta, rollback, ausencia de pedidos/despachos/cobros, seguridad y rendimiento.
 - [ ] Los commits y la revisión funcional y técnica están enlazados.
@@ -250,7 +277,7 @@ La ejecución se descompone en [tasks.md](./tasks.md). La migración documental 
 
 ## 9. Referencias
 
-- [cite: 1] [Funcionalidad F-01](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md), RF-02 y RF-03, CA-07 a CA-11, CA-14 y CA-19 a CA-29; §8.
+- [cite: 1] [Funcionalidad F-01](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md), RF-02 y RF-03, CA-07 a CA-11, CA-14 y CA-19 a CA-32; §8.
 - [cite: 2] [Contrato externo](../../integraciones/api-contract.md), §§3.4, 3.5, 5.1, 5.2, 10.1 y 11.1.
 - [cite: 3] [Modelo de datos](../../arquitectura/modelo-datos.md), §§1.2 y 3.1, tablas `tarifas_zona`, `zonas_codigos_postales` y `cotizaciones`.
 - [cite: 4] [Visión general](../../overview.md), sección 7 sobre integración con Productos y Ofertas.

@@ -102,6 +102,10 @@ La integración con Ventas utiliza permisos distintos según la dirección de la
 
 Las respuestas de error usan `Content-Type: application/problem+json`, siguiendo el mismo enfoque RFC 7807 adoptado por Seguridad y Usuarios. Los consumidores deben tomar decisiones por `status` y `code`, no comparando el texto de `detail`.
 
+Los errores públicos `DESP_ERROR_PRODUCTO_NO_ENCONTRADO`, `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS` y `DESP_ERROR_PRODUCTO_NO_ELEGIBLE` identifican los SKU causantes mediante `details.skusAfectados`: arreglo no vacío, de hasta 100 cadenas no vacías, sin duplicados y pertenecientes a la solicitud. Se conservan literalmente sus caracteres, mayúsculas y ceros iniciales. G2 conserva la identificación válida del proveedor o la obtiene de la respuesta íntegra que originó su propia validación; no atribuye el error a todos los SKU del lote por defecto. `correlationId` permite rastrear la petición y complementa esa identificación.
+
+Esta extensión del error público de G2 no obliga a todos los problemas HTTP a incluir `details`. En G6, el campo está homologado para `DATOS_FISICOS_INCOMPLETOS` y, por el acuerdo D-G2-02 cerrado el 04/11/2026, para el rechazo por SKU padre con variantes de §5.2.4. La sincronización de esta ampliación con el OpenAPI del proveedor se sigue en §11.1. Las respuestas de error no contienen resultados físicos parciales.
+
 ```json
 {
   "type": "https://despacho.example.com/problemas/sin-cobertura",
@@ -248,7 +252,7 @@ Reglas:
 - Con `lineas`, Despacho agrupa los SKU repetidos, consulta a Productos en lote y calcula el peso y volumen totales; el canal no envía esos totales.
 - La cotización no crea un pedido ni un despacho.
 - Después de resolver cobertura y validar las líneas, se admiten como máximo 100 SKU únicos. Superar ese límite se rechaza antes de llamar a Productos; no se particiona la consulta en este alcance.
-- Solo se emite una cotización exacta cuando todos los SKU existen, son comercialmente elegibles y tienen perfil físico válido. La regla prevista para `BORRADOR` depende de la homologación de §11.1.
+- Solo se emite una cotización exacta cuando todos los SKU existen, son comercialmente elegibles y tienen perfil físico válido. `INACTIVO` y `BORRADOR` impiden cotizar conforme a H-G2-02, cerrado el 02/11/2026; el estado efectivo de variantes se precisa en §5.2.3.
 - Antes de devolver `200 OK` con `tipoCotizacion=EXACTA`, Gestión guarda en `cotizaciones` el resultado y la instantánea de la tarifa aplicada. Se registra en F-01, aunque todavía no exista un pedido: `pedido_id` y `despacho_id` quedan nulos. La respuesta pública mantiene su esquema y no agrega un identificador de cotización obligatorio.
 - La consulta de solo cobertura, los destinos sin cobertura, las zonas sin tarifa y cualquier rechazo no generan una fila en `cotizaciones`. No se inventan importes para satisfacer las columnas obligatorias.
 - Un fallo al confirmar la escritura responde `500 DESP_ERROR_PERSISTENCIA_COTIZACION`, sin costo ni registro parcial. No se interpreta como indisponibilidad de Productos.
@@ -308,7 +312,7 @@ Errores propios:
 | `DESP_ERROR_CANTIDAD_INVALIDA` | `400` | Cantidad menor o igual a cero |
 | `DESP_ERROR_LIMITE_SKUS_EXCEDIDO` | `400` | Más de 100 SKU únicos, después de agrupar las líneas |
 | `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` | `422` | Productos no reconoce un SKU |
-| `DESP_ERROR_PRODUCTO_NO_ELEGIBLE` | `422` | SKU existente no elegible para F-01; tratamiento de estados previsto en §5.2 y pendiente de homologación H-G2-02 |
+| `DESP_ERROR_PRODUCTO_NO_ELEGIBLE` | `422` | En F-01, SKU existente con estado efectivo `INACTIVO` o `BORRADOR`; en F-01/F-02, SKU padre no físico conforme al acuerdo D-G2-02 de §5.2.4 |
 | `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS` | `422` | Productos comunica datos físicos incompletos o inválidos mediante el error de negocio acordado |
 | `DESP_ERROR_RESPUESTA_PRODUCTOS_INVALIDA` | `502` | Respuesta malformada, incoherente o que incumple la integridad del lote |
 | `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE` | `503` | No fue posible consultar Productos |
@@ -381,33 +385,82 @@ Despacho no reenvía a Productos el token recibido de Marketplace o Chatbot. Obt
 
 - Se envían entre 1 y 100 SKU únicos por petición. Los SKU son identificadores opacos: no se cambian mayúsculas, ceros iniciales ni su identidad al agruparlos. G2 conserva la suma de cantidades por SKU y la usa en todos los cálculos.
 - En una respuesta `200`, `productos` y `noEncontrados` son obligatorios. Cada SKU solicitado debe aparecer exactamente una vez en uno de esos arreglos. Se rechazan duplicados dentro de cada arreglo o entre ambos, omisiones y SKU inesperados.
-- Cada producto debe contener `sku`, `estado`, `pesoKg` positivo, `dimensionesCm` con tres magnitudes positivas y `actualizadoEn` válido en ISO 8601. Un estado desconocido, JSON ilegible o un campo obligatorio inválido hace inválida la respuesta.
+- Cada producto debe contener `sku`, `estado` en `ACTIVO`, `INACTIVO` o `BORRADOR`, `pesoKg` positivo, `dimensionesCm` con tres magnitudes positivas y `actualizadoEn` válido en ISO 8601. Un estado desconocido, JSON ilegible o un campo obligatorio inválido hace inválida la respuesta.
 - Primero se valida la integridad de toda la respuesta; después se interpretan los SKU inexistentes y las reglas comerciales. Un SKU correctamente clasificado en `noEncontrados` es un resultado de negocio, no una omisión del proveedor.
 - Una respuesta inválida produce `502 DESP_ERROR_RESPUESTA_PRODUCTOS_INVALIDA`. G2 no completa datos, no calcula costos parciales y no persiste una cotización ni crea un despacho con una parte del lote.
 - En el alcance inicial G2 rechaza más de 100 SKU únicos con el error de §5.1, tanto en F-01 como en F-02. Las consultas de solo cobertura y las respuestas sin cobertura de F-01 conservan su precedencia: no consultan Productos.
 
 #### 5.2.2. Traducción de errores y estado comercial
 
-Las siguientes reglas constituyen la decisión y propuesta de implementación de G2; su homologación bilateral está pendiente en §11.1. No acreditan cambios desplegados por G6.
+Las reglas H-G2-01/02/03 quedaron homologadas el 02/11/2026 en OpenAPI G6 `0.6.0-rc.3`. Su aceptación, las precisiones D-G2-01/02 y las verificaciones de implementación se registran por separado en §11.1 [cite: 1, 3].
 
 | Resultado de Productos | Tratamiento de G2 |
 |---|---|
-| `422 DATOS_FISICOS_INCOMPLETOS`, con SKU afectados identificados | `422 DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`, preservando esos SKU en el error público |
-| `200` íntegro con `noEncontrados` no vacío | `422 DESP_ERROR_PRODUCTO_NO_ENCONTRADO` |
+| `422 DATOS_FISICOS_INCOMPLETOS`, con `details.skusAfectados` contractual | `422 DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`, preservando esos SKU en el error público |
+| `200` íntegro con `noEncontrados` no vacío | `422 DESP_ERROR_PRODUCTO_NO_ENCONTRADO`, identificando esos SKU |
+| `422 SKU_INVALIDO` por SKU padre con variantes, con identificación contractual de los afectados | `422 DESP_ERROR_PRODUCTO_NO_ELEGIBLE` en F-01/F-02, conservando `details.skusAfectados`, conforme al acuerdo de §5.2.4 y su revisión exigible |
 | Timeout, fallo de conexión o error técnico `5xx` de Productos, incluida su indisponibilidad/PostgreSQL | `503 DESP_ERROR_PRODUCTOS_NO_DISPONIBLE` |
-| `200` malformado o incoherente, incluido un perfil físico que no cumple el esquema | `502 DESP_ERROR_RESPUESTA_PRODUCTOS_INVALIDA` |
+| `200` malformado o incoherente, o error que incumple el esquema exigible de su revisión acordada | `502 DESP_ERROR_RESPUESTA_PRODUCTOS_INVALIDA` |
 
 Un `422` distinto no se traduce automáticamente como producto inexistente ni como datos incompletos: se contrasta su código con el contrato de G6. Un error no contemplado se trata como respuesta no conforme. Un `401`/`403` de G6 corresponde a la credencial saliente de G2, no a la del canal; G2 informa dependencia no disponible, registra el diagnóstico técnico y no reenvía ese rechazo como si el consumidor hubiera fallado su autenticación. No se reintenta un rechazo de permiso de forma indiscriminada.
 
-La regla comercial propuesta es:
+La regla comercial homologada es:
 
 | Estado del SKU existente y con perfil válido | F-01: cotización | F-02: pedido pagado y preparado |
 |---|---|---|
 | `ACTIVO` | Puede continuar el cálculo | Puede continuar la recepción |
 | `INACTIVO` | `422 DESP_ERROR_PRODUCTO_NO_ELEGIBLE` | No se rechaza solo por este estado |
-| `BORRADOR` — incorporación propuesta al esquema de G6 | `422 DESP_ERROR_PRODUCTO_NO_ELEGIBLE` | Se propone no rechazar solo por este estado; requiere aceptación expresa de G6 |
+| `BORRADOR` | `422 DESP_ERROR_PRODUCTO_NO_ELEGIBLE` | No se rechaza solo por este estado |
 
 Un SKU existente no pasa a `noEncontrados` por su estado comercial. La elegibilidad de venta de F-01 se aplica después de validar el perfil y el lote; F-02 conserva las demás validaciones de cobertura, identidad, existencia e integridad física. Si G6 comunica datos incompletos, se aplica ese error antes de cualquier cálculo.
+
+#### 5.2.3. D-G2-01 — Estado efectivo de variantes
+
+G2 aceptó el 03/11/2026 que `estado` sea la proyección efectiva del SKU en esta consulta y G6 ratificó ese mismo día el cierre D-G2-01. La implementación y regresiones del proveedor están fusionadas en el PR backend #162, merge `eeaf39ad666d7bc5a11c0b2a80d9c8c4b0016414`. La sincronización normativa y las regresiones del consumidor se siguen en §11.1 [cite: 5, 6, 7].
+
+| Estado propio de variante en G6 | Estado del producto padre | `estado` de la consulta |
+|---|---|---|
+| `ACTIVA` | `ACTIVO` | `ACTIVO` |
+| `ACTIVA` | `INACTIVO` | `INACTIVO` |
+| `ACTIVA` | `BORRADOR` | `BORRADOR` |
+| `INACTIVA` | Cualquiera de los tres estados | `INACTIVO` |
+| `BORRADOR` | Cualquiera de los tres estados | `BORRADOR` |
+
+Un producto simple conserva su estado comercial en la consulta. G6 calcula esta proyección sin cambiar estados persistidos, versiones ni reglas de activación. G2 utiliza el estado recibido; no solicita ni reconstruye la jerarquía padre/variante. F-01 aplica la elegibilidad de §5.2.2; F-02 no rechaza automáticamente un pedido declarado pagado, preparado y listo para entrega por `INACTIVO` o `BORRADOR`. Un estado admitido no garantiza perfil físico completo.
+
+#### 5.2.4. D-G2-02 — SKU padre e identificación del rechazo
+
+**Estado:** acuerdo semántico bilateral cerrado el 04/11/2026, tras la aceptación de G6 del 03/11 y la confirmación final de G2 del 04/11. Campo, afectados, orden, traducción y precedencia están acordados; queda pendiente sincronizarlos con la revisión normativa de G6 [cite: 7, 8, 9]. La línea base `0.6.0-rc.3` exige `details.skusAfectados` para `DATOS_FISICOS_INCOMPLETOS`, no para todo `SKU_INVALIDO`.
+
+El `sku_base` de un producto con variantes existe, pero no representa una unidad física vendible. G2 acepta que su consulta provoque `422 SKU_INVALIDO` y rechazo íntegro: no clasificarlo como inexistente en `noEncontrados`, inventarle medidas ni devolver perfiles parciales. El SKU base de un producto simple sin variantes sigue siendo consultable si tiene un perfil físico válido.
+
+Para esta condición, G6 debe incluir `details.skusAfectados` obligatorio, no vacío y sin duplicados, con las restricciones de identificación de §3.5. Contiene todos y únicamente los SKU padre del lote que cumplen esa condición, preservados literalmente y en orden de primera aparición en la solicitud. Esta obligación no se extiende a las otras causas de `SKU_INVALIDO` sin acuerdo.
+
+Fragmento acordado del problema de G6, complementado con los demás campos de su Problem contractual:
+
+```json
+{
+  "status": 422,
+  "code": "SKU_INVALIDO",
+  "details": {
+    "skusAfectados": ["ZAP-BASE", "POL-BASE"]
+  }
+}
+```
+
+G2 responde en F-01 y F-02 con `422 DESP_ERROR_PRODUCTO_NO_ELEGIBLE`, preservando la lista validada en el mismo campo. En F-02 este rechazo se debe a un identificador no válido como unidad física, no al estado comercial. Se rechaza el lote completo sin costo, nueva cotización ni despacho parcial.
+
+La traducción se aplica al caso expresamente acordado, contrastando la revisión exigible del proveedor. El acuerdo y el merge están enlazados en §11.1; la publicación del OpenAPI que los incorpora sigue pendiente y no se atribuye esta ampliación a la línea base rc.3 anterior. No se interpreta cualquier `422 SKU_INVALIDO` como SKU padre: G6 también utiliza ese código para otras validaciones. No se extraen identificadores del texto libre de `detail` ni se inventan a partir del lote completo. Bajo la revisión que exige esta ampliación, un detalle ausente, vacío, con tipos incorrectos, duplicados o SKU ajenos produce `502 DESP_ERROR_RESPUESTA_PRODUCTOS_INVALIDA`.
+
+La precedencia de G6 para lotes mixtos, aceptada por G2 el 04/11/2026, es [cite: 7, 8]:
+
+1. Solicitud estructuralmente inválida: aplicar las validaciones existentes.
+2. Fallo técnico: `503 SERVICIO_NO_DISPONIBLE`.
+3. Al menos un SKU padre no físico: `422 SKU_INVALIDO`, con todos los afectados de esa clase.
+4. En ausencia de esas bases, perfiles físicos incompletos: `422 DATOS_FISICOS_INCOMPLETOS`, con los afectados correspondientes.
+5. Sin esos errores: `200` con clasificación íntegra entre `productos` y `noEncontrados`.
+
+El código y el conjunto de afectados de la condición seleccionada no dependen del orden de los SKU; la lista conserva el orden de cada solicitud. Informar esos afectados no certifica que las demás líneas sean válidas. El `200` puede incluir SKU inexistentes: G2 valida primero la integridad y aplica la traducción de `noEncontrados` de §5.2.2 antes de la elegibilidad comercial. Esta precedencia rige la consulta física del proveedor; las validaciones previas de G2, incluida cobertura e idempotencia, conservan su recorrido. No se calculan ni persisten resultados parciales.
 
 ## 6. RT-04: seguimiento para Marketplace y Chatbot
 
@@ -522,7 +575,7 @@ La llamada autenticada con `sub=modulo-ventas` declara que el pedido está pagad
 
 Antes de persistir el despacho, Despacho consulta en lote a Productos los datos físicos de las líneas y calcula `pesoTotalKg` y `volumenTotalM3` conforme a la sección 5.2. Esos valores se guardan para la asignación y el control de capacidad de la furgoneta. `cantidadPaquetes` no se recibe de Ventas: se registra internamente con valor `1`. Esta consulta obtiene únicamente datos físicos; Despacho no consulta, reserva ni modifica stock.
 
-F-02 no exige una cotización previa ni recibe un identificador de cotización. No usa una instantánea histórica de `cotizaciones` como fuente física y no escribe en esa tabla al recibir el pedido. Para un pedido ya registrado, la respuesta idempotente se resuelve antes de repetir la consulta a Productos. Para uno nuevo se aplican el límite, la integridad del lote y la regla comercial prevista en §5.2; un cambio posterior a `INACTIVO` no constituye por sí solo un motivo de rechazo. La extensión a `BORRADOR` sigue pendiente de homologación.
+F-02 no exige una cotización previa ni recibe un identificador de cotización. No usa una instantánea histórica de `cotizaciones` como fuente física y no escribe en esa tabla al recibir el pedido. Para un pedido ya registrado, la respuesta idempotente se resuelve antes de repetir la consulta a Productos. Para uno nuevo se aplican el límite, la integridad del lote y la regla comercial homologada en §5.2: `INACTIVO` o `BORRADOR` no constituyen por sí solos un motivo de rechazo. D-G2-01 precisa el estado efectivo recibido; D-G2-02, cerrado semánticamente el 04/11/2026, exige el rechazo por SKU padre no físico con los afectados identificados y la precedencia de §5.2.4. Su sincronización normativa se sigue en §11.1.
 
 Despacho calcula `fechaProgramada` al crear el despacho a partir de la zona, el plazo aplicable y el calendario operativo.
 
@@ -799,25 +852,43 @@ El contrato funcional con Ventas y Postventa está cerrado: se confirmaron el mo
 | Equipo | Acuerdo pendiente |
 |---|---|
 | Seguridad y Usuarios | Confirmar el acceso humano propuesto en §8.6 (ruta, cuentas de prueba, renovación del token); registrar `gestion:despachos:transicionar` y `gestion:catalogos:leer` para `modulo-despacho`; registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
-| Productos y Ofertas | Homologar H-G2-01 a H-G2-03 de §11.1; fijar revisión de OpenAPI; coordinar con Seguridad la concesión de `productos:fisicos:leer` a `modulo-despacho` para `api-productos` y ejecutar las pruebas de contrato entre ambos backends |
+| Productos y Ofertas | H-G2-01/02/03 y semántica D-G2-01/02 cerrados. Sincronizar el OpenAPI con el acuerdo y fijar su revisión; verificar el consumidor G2, coordinar con Seguridad la concesión efectiva y ejecutar las pruebas de contrato y el recorrido real de §11.1 |
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
 | Equipo de Despacho | Tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
 
-### 11.1. Respuesta propuesta y plan de homologación física G2–G6
+<a id="111-respuesta-propuesta-y-plan-de-homologación-física-g2g6"></a>
 
-Preparación del 26/10/2026 sobre el issue comunicado por G6 el 20/10/2026. Estas respuestas son la propuesta de G2 para publicar en el issue; no constituyen evidencia de un comentario publicado ni de aceptación bilateral [cite: 1, 2].
+### 11.1. Homologación física G2–G6 y precisiones de seguimiento
 
-| Punto | Respuesta propuesta de G2 | Precisión para el cierre |
+**Actualización documental:** 04/11/2026. **Hito 4 oficial:** 07/11/2026. H-G2-01/02/03 quedaron cerrados por aceptación final de G6 el 02/11/2026, después de la respuesta G2 del 26/10/2026. El PR documental G6 #108 incorporó la línea base OpenAPI `0.6.0-rc.3`, commit `40b566976fb94d924116dcd01d41b3276c2bc9e3` [cite: 1, 3].
+
+El issue #15 se cerró el 02/11 y se reabrió el 03/11 para comunicar las precisiones siguientes; esto no reabre los acuerdos H. En ese mismo hilo, G6 ratificó D-G2-01 y aceptó el detalle D-G2-02 el 03/11; G2 confirmó precedencia y orden el 04/11, cerrando el acuerdo semántico D-G2-02. El cierre se acredita mediante esos comentarios, independientemente del estado administrativo del issue [cite: 7, 8].
+
+| Punto | Estado contractual | Alcance y siguiente acción |
 |---|---|---|
-| H-G2-01 — Datos físicos incompletos | **ACEPTAMOS** | G6 distingue `422 DATOS_FISICOS_INCOMPLETOS` de fallos técnicos; G2 aplica §5.2.2. Se propone concretar la lista de SKU afectados en `details.skusAfectados` del problema G6; debe incorporarse expresamente a su esquema. |
-| H-G2-02 — Estados comerciales | **PROPONEMOS CAMBIO** | Aceptar la distinción F-01/F-02 y añadir `BORRADOR` explícitamente al perfil físico; nunca confundir estado no elegible con inexistencia. G2 propone el código público de §5.1 y extender a `BORRADOR` la no exclusión comercial de pedidos pagados en F-02. Esa extensión requiere aceptación expresa. |
-| H-G2-03 — Integridad por lote | **ACEPTAMOS** | Validar la partición completa y exclusiva del lote. G2 decide rechazar más de 100 SKU únicos antes de llamar a G6; códigos públicos y tratamiento de respuestas inválidas en §§5.1 y 5.2.1. |
+| H-G2-01 — Datos físicos incompletos | Cerrado el 02/11/2026 | `422 DATOS_FISICOS_INCOMPLETOS` con `details.skusAfectados` obligatorio para ese error; `503` técnico diferenciado. Traducción en §5.2.2. |
+| H-G2-02 — Estados comerciales | Cerrado el 02/11/2026 | Enum `ACTIVO`/`INACTIVO`/`BORRADOR`, distinción de inexistencia y políticas diferentes de F-01/F-02. Un borrador no garantiza perfil válido. |
+| H-G2-03 — Integridad por lote | Cerrado el 02/11/2026 | 1–100 SKU únicos/opacos, clasificación íntegra y exclusiva en `200`, cantidades conservadas y errores propios de G2. |
+| D-G2-01 — Estado efectivo | Cerrado bilateralmente el 03/11/2026 | Semántica en §5.2.3; implementación del proveedor fusionada. Sincronización normativa y regresiones G2 por acreditar. |
+| D-G2-02 — SKU padre no físico | Acuerdo semántico cerrado el 04/11/2026 | Campo obligatorio, afectados, orden, traducción pública y precedencia en §5.2.4. Implementación del proveedor fusionada; sincronización normativa y verificación G2 pendientes. |
 
 Se mantienen sin renegociación la ruta de §5.2, unidades, propiedad de los datos, consulta HTTP sin mutaciones de inventario, identidad `modulo-despacho`, audiencia `api-productos` y scope `productos:fisicos:leer`.
 
-Orden de cierre:
+Estados de verificación al preparar esta actualización:
 
-1. Publicar las respuestas y enlazar la aceptación de ambos equipos. Fijar el commit/revisión contractual de G6 que incorpora errores, estados y clasificación del lote; un enum global de errores no sustituye su declaración en la operación.
+| Dimensión | Estado y evidencia |
+|---|---|
+| Homologación H-G2-01/02/03 | Cerrada; aceptación y revisión fija enlazadas [cite: 1, 3]. |
+| Homologación D-G2-01/02 | Semántica cerrada por aceptación final G6 del 03/11 y confirmación G2 del 04/11 [cite: 7, 8]. |
+| Publicación normativa G6 | Pendiente de sincronización. OpenAPI inspeccionado en `6fcd81f9151649b94ecd736f8976630b39e97dc2`, versión `0.6.0-rc.3`: aún deja pendiente el rechazo específico del padre y solo exige el detalle para `DATOS_FISICOS_INCOMPLETOS` [cite: 9]. |
+| Implementación G6 | PR backend #162 fusionado el 03/11, merge `eeaf39ad666d7bc5a11c0b2a80d9c8c4b0016414`. Código e informe del proveedor incorporan estado efectivo, todas las bases afectadas en orden de solicitud y precedencia; regresiones reportadas por G6, no ejecutadas desde este repositorio [cite: 6]. |
+| Implementación G2 | Pendiente de inspección y verificación del backend para este alcance; este repositorio es documental. |
+| Autorización G7 | Grant, credencial y audiencia/scope efectivos por acreditar. |
+| Despliegue y E2E G2 → G6 | Pendientes de evidencia propia; las pruebas de proveedor con emisor local no los sustituyen. |
+
+Orden de seguimiento:
+
+1. Sincronizar los contratos con D-G2-01/02 ya cerrados y fijar el commit/revisión normativa G6 que declara estado efectivo, campo y precedencia en la operación. El merge backend ya está identificado; un código en enum global no sustituye su declaración contractual. Contrastar las regresiones afectadas con la revisión exigible; no atribuir la ampliación D a la línea base rc.3 anterior.
 2. En el backend de G2, revisar `CatalogoProductosStub`, su `@Primary` y los perfiles para que F-01 utilice el cliente HTTP normal. Revisar también el adaptador de F-02 seleccionado por `@Qualifier("productosProgramacion")`; compartir transporte y validación, conservando reglas comerciales por caso de uso.
 3. Implementar agrupación, validación integral, traducción de errores y persistencia exacta de F-01. La tabla creada no acredita el escritor ni sus pruebas; los planes y tareas de [ES-F01-06](../especificaciones/ES-F01-06-CotizarEnvioConProductos/plan.md) y [ES-F02-01](../especificaciones/ES-F02-01-RecepcionSolicitudDespacho/plan.md) detallan los incrementos.
 4. Con G7, acreditar concesión y provisión efectiva de la credencial. Verificar token ausente, inválido/vencido, audiencia incorrecta, scope ausente y correcto.
@@ -825,5 +896,12 @@ Orden de cierre:
 
 Fuentes de contraste:
 
-- [cite: 1] [OpenAPI de G6](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-docs/blob/master/contratos/http/openapi.yaml), operación `consultarDatosFisicos`; la revisión contrastada durante la preparación publica `0.6.0-rc.1` y mantiene la operación provisional. El enlace de rama no fija una revisión bilateral.
-- [cite: 2] [DEC-F-011 y DEC-F-012 de G6](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-docs/blob/master/arquitectura/decisiones/REGISTRO_DEC_F.md), propiedad del perfil físico y distinción entre contrato, concesión de permisos e implementación.
+- [cite: 1] [Aceptación final G6 del 02/11/2026](https://github.com/Taller-SW-Web/G2-Despacho-Specs/issues/15#issuecomment-6590605235), posterior a la [respuesta inicial G2 del 26/10/2026](https://github.com/Taller-SW-Web/G2-Despacho-Specs/issues/15#issuecomment-6422095659).
+- [cite: 2] [DEC-F-011 y DEC-F-012 de G6](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-docs/blob/40b566976fb94d924116dcd01d41b3276c2bc9e3/arquitectura/decisiones/REGISTRO_DEC_F.md), propiedad del perfil físico y distinción entre contrato, concesión de permisos e implementación.
+- [cite: 3] [PR documental G6 #108](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-docs/pull/108), fusionado el 02/11/2026; [OpenAPI `0.6.0-rc.3` fijo](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-docs/blob/40b566976fb94d924116dcd01d41b3276c2bc9e3/contratos/http/openapi.yaml) y [registro del acuerdo](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-docs/blob/40b566976fb94d924116dcd01d41b3276c2bc9e3/integraciones/ACUERDO_G2_G6_H4_2026-11-02.md).
+- [cite: 4] [Propuestas D-G2-01/02 de G6 del 03/11/2026](https://github.com/Taller-SW-Web/G2-Despacho-Specs/issues/15#issuecomment-6608328544).
+- [cite: 5] [Respuesta publicada de G2 del 03/11/2026](https://github.com/Taller-SW-Web/G2-Despacho-Specs/issues/15#issuecomment-6612661159), aceptación de estado efectivo y solicitud de SKU afectados.
+- [cite: 6] [PR backend G6 #162](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-backend/pull/162), fusionado el 03/11/2026; [código físico](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-backend/blob/eeaf39ad666d7bc5a11c0b2a80d9c8c4b0016414/apps/catalog-svc/src/catalog-query.repository.ts) e [informe del proveedor](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-backend/blob/eeaf39ad666d7bc5a11c0b2a80d9c8c4b0016414/apps/catalog-svc/CONSULTA-FISICA-H4.md) fijados al merge `eeaf39a`. Código inspeccionado y pruebas reportadas por G6, no ejecutadas desde este repositorio.
+- [cite: 7] [Aceptación G6 del 03/11/2026](https://github.com/Taller-SW-Web/G2-Despacho-Specs/issues/15#issuecomment-6616780174), ratificación D-G2-01, aceptación del detalle D-G2-02 y propuesta final de precedencia.
+- [cite: 8] [Confirmación final G2 del 04/11/2026](https://github.com/Taller-SW-Web/G2-Despacho-Specs/issues/15#issuecomment-6632557247), aceptación de precedencia y orden, traducción y cierre semántico D-G2-02.
+- [cite: 9] [OpenAPI G6 inspeccionado el 04/11/2026](https://github.com/Taller-SW-Web/G6-Productos-Ofertas-docs/blob/6fcd81f9151649b94ecd736f8976630b39e97dc2/contratos/http/openapi.yaml), operación `consultarDatosFisicos` y esquema `DatosFisicosSku`; versión publicada `0.6.0-rc.3`, pendiente de sincronización D-G2-01/02.

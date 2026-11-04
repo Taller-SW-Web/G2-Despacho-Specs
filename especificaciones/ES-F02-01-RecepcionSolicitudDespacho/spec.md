@@ -14,7 +14,9 @@
 
 Documentos SDD: [plan](./plan.md), [tareas](./tasks.md), [evidencia](./evidence.md). Preparación del 16/10/2026 sobre la especificación funcional de F-02; conservar los criterios no acredita su implementación.
 
-Actualización del 26/10/2026: ruta física canónica, lote íntegro y reglas previstas de estados H-G2-01 a H-G2-03. Se conservan CA-01 a CA-07 y se agregan CA-08 a CA-10; la homologación con G6 y las pruebas siguen pendientes [cite: 3].
+Antecedente del 26/10/2026: ruta física canónica, lote íntegro y preparación de CA-08 a CA-10.
+
+Actualización del 04/11/2026: H-G2-01/02/03 cerrados, D-G2-01 cerrado el 03/11 y D-G2-02 cerrado semánticamente el 04/11. Afectados, orden y precedencia aceptados; se conservan CA-01 a CA-13. Sincronización normativa G6 e implementación/pruebas G2 pendientes [cite: 3].
 
 ## 1. Contexto y objetivo
 
@@ -55,6 +57,7 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 - Solicitud repetida para el mismo `idPedido`: respuesta `200 OK` con el despacho existente, sin duplicar registros.
 - Destino sin zona activa: respuesta `422 Unprocessable Entity` con código `DESP_ERROR_SIN_COBERTURA`.
 - SKU desconocido o sin datos físicos válidos: respuesta `422 Unprocessable Entity` con `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` o `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`.
+- SKU padre no físico: rechazo íntegro con el error público de no elegibilidad e identificación de todos y únicamente los causantes, literalmente, sin duplicados y en orden de solicitud, conforme al acuerdo D-G2-02 del contrato §5.2.4. La causa es la identidad no física; no se aplica la restricción comercial de F-01.
 - Productos y Ofertas no disponible: respuesta `503 Service Unavailable` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE`.
 
 ## 4. Flujo principal y alternativas
@@ -65,7 +68,7 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 4. Resuelve la repetición según el contrato de idempotencia antes de consultar a G6; la escritura posterior conserva las restricciones únicas y el control transaccional para una recepción nueva concurrente.
 5. Si no existe, invoca la resolución de cobertura de F-01 a partir del distrito o código postal.
 6. Con zona activa confirmada, agrupa los SKU conservando cantidades, verifica el máximo de 100 únicos y consulta los datos físicos por la ruta canónica del contrato.
-7. Valida estructura, perfil y clasificación completa del lote; aplica existencia y la regla comercial prevista para pedidos pagados. Un SKU `INACTIVO` no se rechaza solo por ese estado; `BORRADOR` requiere la homologación expresa de §11.1 del contrato.
+7. Valida estructura, perfil y clasificación completa del lote o del error contractual. Una unidad física con estado efectivo `INACTIVO` o `BORRADOR` no se rechaza solo por ese estado según H-G2-02 y D-G2-01. Aplica la traducción y precedencia D-G2-02 acordadas según contrato §5.2.4, contrastando la revisión exigible del proveedor.
 8. Calcula `pesoTotalKg` como la suma de `pesoUnitario * cantidad` y `volumenTotalM3` como la suma de `volumenUnitario * cantidad`.
 9. Registra internamente `cantidadPaquetes = 1` y calcula `fechaProgramada` a partir de la zona, el plazo aplicable y el calendario operativo.
 10. Genera el código interno (`DSP-XXXXXX`) y el código de rastreo (`TRK-XXXXX`).
@@ -81,8 +84,11 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 | Caída de Productos | Productos y Ofertas responde error 5xx o timeout | Responde `503 Service Unavailable` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE` | CA-06 |
 | Sin autorización | Token ausente, expirado o sin scope | Responde `401 Unauthorized` o `403 Forbidden` | CA-07 |
 | Lote inválido | Omisiones, duplicados, inesperados o perfil malformado en `200` | Aplica el error contractual sin despacho parcial | CA-08 |
-| Cambio comercial | SKU existente con perfil válido que pasa a `INACTIVO` | Continúa otras validaciones según homologación | CA-09 |
+| Cambio comercial | Unidad física con perfil válido y estado efectivo `INACTIVO` o `BORRADOR` | Continúa otras validaciones según H-G2-02 y D-G2-01 | CA-09 |
 | Más de 100 SKU únicos | Límite excedido tras agrupar cantidades | Rechaza antes de llamar a G6 | CA-10 |
+| SKU padre no físico | Identificador de padre con variantes bajo D-G2-02 homologado | Rechaza todo e informa los afectados exactos | CA-11 |
+| Error no conforme | Detalle obligatorio inválido en esa revisión | Aplica respuesta de Productos inválida, sin inferir afectados | CA-12 |
+| Errores mixtos | Diferentes clases de error en el lote | Precedencia bilateral aceptada el 04/11 según contrato §5.2.4, sin resultados parciales | CA-13 |
 
 ## 5. Reglas, datos e integraciones
 
@@ -95,7 +101,9 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 | RN-05 | Fecha programada se calcula internamente con base en zona y calendario; no se acepta fecha externa. | F-02 RF-01, api-contract §7.1 |
 | RN-06 | Requiere encabezado `Idempotency-Key` (UUID v4 de hasta 128 caracteres). | F-02 RNF Idempotencia, api-contract §7.1 |
 | RN-07 | El lote debe estar completo y clasificado una sola vez por SKU; no hay cálculos ni persistencia parciales. | Contrato externo §5.2.1 |
-| RN-08 | La elegibilidad de venta de F-01 no se aplica automáticamente al pedido pagado; extensión a `BORRADOR` pendiente de aceptación. | Contrato externo §§5.2.2 y 11.1 |
+| RN-08 | La elegibilidad de venta de F-01 no se aplica automáticamente al pedido pagado; `INACTIVO`/`BORRADOR` no bastan para rechazar. G6 calcula el estado efectivo y G2 lo consume. | Contrato externo §§5.2.2, 5.2.3 y 11.1 |
+| RN-09 | Un SKU padre de producto con variantes no representa unidad física. Su rechazo identificado está acordado en D-G2-02; la revisión exigible se sigue en §11.1. Un producto simple válido conserva su tratamiento normal. | Contrato externo §5.2.4 |
+| RN-10 | Se conservan todos y únicamente los afectados del error seleccionado, literalmente, sin duplicados y en orden de solicitud. No se extraen del texto ni se sustituyen por todo el lote. Precedencia aceptada el 04/11. | Contrato externo §§3.5 y 5.2.4 |
 
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|
@@ -154,11 +162,11 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 - **CUANDO** se valida el lote completo.
 - **ENTONCES** se aplica el error contractual de respuesta inválida sin inventar datos, calcular una carga parcial, crear despacho ni escribir cotización.
 
-### CA-09. Producto inactivo después de la compra
+### CA-09. Estado efectivo después de la compra
 
-- **DADO** una solicitud autenticada de Ventas para un pedido pagado y preparado, con SKU existente `INACTIVO` y perfil físico válido.
-- **CUANDO** F-02 aplica la regla de H-G2-02 homologada.
-- **ENTONCES** continúa las demás validaciones sin rechazar solo por el estado comercial ni exigir cotización previa. El caso `BORRADOR` se prepara como propuesta y no se declara aceptado externamente.
+- **DADO** una solicitud autenticada de Ventas para un pedido pagado, preparado y listo para entrega, con unidad física existente de estado efectivo `INACTIVO` o `BORRADOR` y perfil válido, incluidas las combinaciones de variante/padre de D-G2-01.
+- **CUANDO** F-02 aplica H-G2-02, cerrado el 02/11/2026.
+- **ENTONCES** continúa las demás validaciones sin rechazar solo por el estado comercial ni exigir cotización previa. La proyección corresponde a G6; G2 no reconstruye los estados del padre y la variante.
 
 ### CA-10. Límite y cantidades del lote
 
@@ -166,8 +174,26 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 - **CUANDO** F-02 agrupa los SKU.
 - **ENTONCES** conserva todas las unidades y consulta una sola vez cada SKU hasta 100 únicos; más de 100 se rechazan antes de llamar a G6 o persistir el despacho.
 
+### CA-11. SKU padre no físico con afectados exactos
+
+- **DADO** una recepción nueva con uno o varios SKU padre de productos con variantes, solos o mezclados con unidades válidas, conforme al acuerdo D-G2-02 y la revisión exigible del proveedor.
+- **CUANDO** G6 devuelve el rechazo correspondiente y F-02 valida el problema.
+- **ENTONCES** rechaza todo con el error público de no elegibilidad como unidad física y conserva todos y únicamente los SKU causantes exactos, sin duplicados y en orden de solicitud. No crea despacho, historial inicial ni cotización. CA-09 no habilita ese SKU; un producto simple válido sí puede continuar.
+
+### CA-12. Detalle obligatorio del error inválido
+
+- **DADO** la revisión D-G2-02 homologada y un rechazo de SKU padre con afectados obligatorios ausentes, vacíos, malformados, duplicados o ajenos al lote.
+- **CUANDO** F-02 valida el problema recibido.
+- **ENTONCES** aplica el error contractual de respuesta inválida, sin inferir SKU desde texto libre ni atribuir la causa al lote entero, sin persistencia parcial.
+
+### CA-13. Precedencia bilateral de errores mixtos
+
+- **DADO** una recepción nueva con SKU padre no físicos y errores de otras clases, y la precedencia aceptada el 04/11 en contrato §5.2.4.
+- **CUANDO** se prueba el mismo conjunto en órdenes diferentes.
+- **ENTONCES** F-02 traduce el mismo error prioritario y conserva el mismo conjunto de afectados, ordenado según cada solicitud. Las bases no físicas prevalecen sobre perfiles incompletos y únicamente se identifican los causantes de la condición seleccionada. Rechaza íntegramente sin escrituras y sin afirmar que las demás líneas sean válidas.
+
 ## 7. Referencias
 
-1. [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md): especificación funcional padre.
-2. [api-contract.md §7.1](../../integraciones/api-contract.md#71-crear-un-despacho-para-un-pedido-listo-para-entrega): contrato canónico de recepción externa.
-3. [cite: 3] [api-contract.md §5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas) y [§11.1](../../integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6): operación física y estado de la homologación externa.
+1. [cite: 1] [F-02-ProgramacionAsignacionDespachos.md](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md): especificación funcional padre.
+2. [cite: 2] [api-contract.md §7.1](../../integraciones/api-contract.md#71-crear-un-despacho-para-un-pedido-listo-para-entrega): contrato canónico de recepción externa.
+3. [cite: 3] [api-contract.md §5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas) y [§11.1](../../integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento): operación física, H cerrados y precisiones D con estado y fuentes independientes.
