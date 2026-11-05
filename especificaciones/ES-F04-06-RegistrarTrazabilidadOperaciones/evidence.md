@@ -1,110 +1,83 @@
 # Evidencia de ES-F04-06: Registrar la trazabilidad de las operaciones
 
-**Estado:** Pendiente de implementación y verificación funcional.
+**Estado:** Verificación local aprobada en Gestión. Aceptación conjunta y revisión humana pendientes.
 
-**Responsable de verificación:** Gerardo.
+**Responsable de verificación:** Gerardo. Ejecución y registro asistidos por Codex.
 
-**Última verificación funcional:** No ejecutada.
+**Última ejecución:** 04/11/2026, America/Lima.
 
 ## 1. Versión y entorno verificados
 
-- Documentación preparada: [spec.md](./spec.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), migración SDD del 16/10/2026.
-- Origen funcional: base documental `c8e6e29`; se conservan CA-01 a CA-12.
-- Bases de código inspeccionadas: frontend `d2bc27d` y backend `1e7834b`; lectura estática, sin compilaciones ni pruebas funcionales ejecutadas.
-- Commits de implementación, despliegue funcional, datos ejecutados y servicios realmente comprobados: pendientes.
-- Esta entrega prepara documentos y referencias. La validación documental no acredita los comandos, las migraciones ni sus integraciones [cite: 1, 2].
+- Backend: rama `feature/f04-es06-trazabilidad-operaciones`, base `6af187c`, commit de pruebas `cb2872b`. Los tres productores ya comparten `HistorialIncidenciasJdbc` en la base revisada.
+- Specs: rama `docs/f04-es06-trazabilidad-operaciones`, base `1356151`. Se conservan CA-01 a CA-12 de [spec.md](./spec.md).
+- Windows, Java 21, Docker 29.4.0 y PostgreSQL 17.11/PostGIS desechable de Testcontainers. Flyway aplica V1 a V7 en las bases de prueba. Fixtures y credenciales sintéticos.
+- Comando desde `servicio-gestion-despachos`: `./mvnw.cmd -B -ntp -Dpruebas.postgres.externo=false clean verify`. Resultado `BUILD SUCCESS`, 189 pruebas, cero fallos, errores u omitidas.
+- Informes locales de la ejecución en `servicio-gestion-despachos/target/surefire-reports/TEST-*.xml`. Las suites HTTP de recepción, reprogramación y cierre ejecutaron 14, 21 y 18 pruebas respectivamente, todas aprobadas.
 
 ## 2. Cobertura de criterios
 
-| Criterio | Tareas | Comprobación prevista | Registro previsto | Resultado |
-|---|---|---|---|---|
-| CA-01 | T-02/03/04; T-08 | Recepción, reserva/sello y transacción conjunta sin evento externo. | EV-01 | No ejecutado |
-| CA-02 | T-02/03/04; T-08 | Reprogramación con fecha civil y conjunto atómico. | EV-01 | No ejecutado |
-| CA-03 | T-02/03/04; T-08 | Cierre, motivo separado y resultado durable en historial. | EV-01 | No ejecutado |
-| CA-04 | T-03/04/05; T-08 | Rechazos conservan historial previo sin auditoría aceptada nueva. | EV-01/02 | No ejecutado |
-| CA-05 | T-02/03/04/05/07; T-08 | Replay tras reinicio/cambio de incidencia conserva la entrada original. | EV-01/02/04 | No ejecutado |
-| CA-06 | T-02/06; T-08 | Historial completo, varios ciclos y desempate estable en detalle. | EV-03 | No ejecutado |
-| CA-07 | T-01/03/05; T-08 | Rollback de historial y cualquier escritura del comando. | EV-01/02 | No ejecutado |
-| CA-08 | T-05; T-08 | Concurrencia e identidad incompatible sin doble captura. | EV-02 | No ejecutado |
-| CA-09 | T-01/02/03/04/05/06; T-08 | Inmutabilidad, sub del JWT, hora del servidor y origen MANUAL. | EV-01/02/03 | No ejecutado |
-| CA-10 | T-07; T-08 | Reintentos/liberación/envío no modifican historial. | EV-04 | No ejecutado |
-| CA-11 | T-02/06; T-08 | Proyección pública sin controlCierre/huellas ni lectura no autorizada. | EV-03 | No ejecutado |
-| CA-12 | T-02/03/04/07; T-08 | Simulado conserva la auditoría aplicable sin evento externo. | EV-01/04 | No ejecutado |
-
-Resultados permitidos: `Pendiente`, `Aprobado`, `Fallido`, `No ejecutado`. Ningún criterio está aprobado por generar esta carpeta. Un fixture o doble acredita solo lo observado en ese entorno.
+| Criterio | Qué quedó comprobado | Registro | Resultado |
+|---|---|---|---|
+| CA-01 | Recepción con sello y reserva original, un historial y solicitud de liberación sin evento a Ventas. | EV-01 | Aprobado local |
+| CA-02 | Reprogramación con fecha civil y conjunto transaccional de historial, resultado y evento. | EV-01 | Aprobado local |
+| CA-03 | Cierre con motivo propio y resultado durable, separado del catálogo de fallos. | EV-01 | Aprobado local |
+| CA-04 | Solicitudes inválidas, no autorizadas o incompatibles sin otra decisión aceptada. | EV-02 | Aprobado local |
+| CA-05 | Recuperación del resultado original tras repetir y recrear el servicio o cambiar la incidencia. | EV-02, EV-04 | Aprobado local |
+| CA-06 | Consulta después del cierre con entradas de F-02, F-03 y F-04 de dos ciclos, con desempate por ID y sin escrituras. | EV-03 | Aprobado local |
+| CA-07 | Fallo inyectado en las escrituras requeridas y reversión de la operación completa. | EV-02 | Aprobado local |
+| CA-08 | Duplicados concurrentes, contenido o actor incompatible y competencia sobre la versión vigente. | EV-02 | Aprobado local |
+| CA-09 | Autoría del JWT de prueba y fecha del servidor, origen MANUAL e historial anterior preservado. | EV-01, EV-02, EV-03 | Aprobado local |
+| CA-10 | Liberación y envío con contrapartes controladas, comparando todas las filas antes y después. | EV-04 | Aprobado local; integración real pendiente |
+| CA-11 | Lectura con autorización, rechazo 401/403 y proyección sin metadatos internos. | EV-03 | Aprobado local |
+| CA-12 | Los casos simulados conservan su historial aplicable y omiten eventos externos. | EV-01, EV-04 | Aprobado local |
 
 ## 3. Registros de verificación
 
 ### EV-01. Captura y transacciones de los productores
 
-- Fecha/persona, commit de implementación y entorno exacto: pendientes de ejecución.
-- Tareas: T-01/02/03/04/08; criterios asociados en la matriz anterior.
-- Preparación y pasos previstos: Migrar datos sintéticos y ejecutar cada comando; comparar historial, estados, autoría, datos propios y conjunto atómico.
-- Resultado esperado: cumplir los criterios vinculados y conservar sus invariantes.
-- Resultado observado: pendiente; no se ejecutó esta comprobación.
-- Resultado de la comprobación: No ejecutado.
-- Artefactos de prueba, salida, captura o reporte: pendientes; se enlazarán al ejecutar.
-- Dependencias y límites: PostgreSQL/Testcontainers real; registrar versiones exactas de los tres productores.
+- **Resultado observado:** `RecepcionCentroHttpTests`, `ReprogramacionDespachoHttpTests` y `CierreDespachoHttpTests` ejecutaron los comandos de Gestión con Flyway y PostgreSQL real. Verificaron las filas de historial, estado, versión y escrituras relacionadas. Las suites de reprogramación y cierre también verificaron migraciones con datos históricos sintéticos.
+- **Alcance:** T-01 a T-04. La infraestructura y el escritor existentes cubren la captura común. La prueba HTTP usa identidades de prueba.
+- **Resultado:** Aprobado local.
 
 ### EV-02. Rechazos, rollback y concurrencia
 
-- Fecha/persona, commit de implementación y entorno exacto: pendientes de ejecución.
-- Tareas: T-05/08; criterios asociados en la matriz anterior.
-- Preparación y pasos previstos: Forzar errores antes/después de capturar; dos decisiones concurrentes, replay y otro ejecutor/contenido; comparar filas y resultados.
-- Resultado esperado: cumplir los criterios vinculados y conservar sus invariantes.
-- Resultado observado: pendiente; no se ejecutó esta comprobación.
-- Resultado de la comprobación: No ejecutado.
-- Artefactos de prueba, salida, captura o reporte: pendientes; se enlazarán al ejecutar.
-- Dependencias y límites: Transacciones reales; los dobles no acreditan carreras ni rollback de base.
+- **Resultado observado:** Las suites HTTP de los tres comandos inyectaron fallos en escrituras de PostgreSQL, probaron repeticiones exactas y confrontaron decisiones con otro actor, contenido o versión. En reprogramación, `historialComunExigeTransaccionYParticipaEnSuRollback` comprueba el rechazo fuera de una transacción y la reversión dentro de ella.
+- **Alcance:** T-05. Transacciones reales de Gestión sobre datos desechables.
+- **Resultado:** Aprobado local.
 
 ### EV-03. Historial público y autorización
 
-- Fecha/persona, commit de implementación y entorno exacto: pendientes de ejecución.
-- Tareas: T-06/08; criterios asociados en la matriz anterior.
-- Preparación y pasos previstos: Consultar varios ciclos y marcas iguales con distintos permisos; contrastar orden, datos propios y exclusión de metadatos internos.
-- Resultado esperado: cumplir los criterios vinculados y conservar sus invariantes.
-- Resultado observado: pendiente; no se ejecutó esta comprobación.
-- Resultado de la comprobación: No ejecutado.
-- Artefactos de prueba, salida, captura o reporte: pendientes; se enlazarán al ejecutar.
-- Dependencias y límites: GET real de ES-F04-02, con datos sintéticos y tokens de prueba sin exponerlos.
+- **Resultado observado:** La prueba `consultaCiclosAnterioresConDesempateEstableSinAlterarElHistorial` de `CierreDespachoHttpTests` consultó el detalle tras cerrar el segundo ciclo. El GET devolvió las seis entradas, aplicó el desempate por identificador en dos marcas iguales y conservó los datos de cada incidencia. Las llamadas sin sesión o sin rol recibieron 401 y 403 sin historial. Dos lecturas autorizadas dejaron intactos el historial, la versión y los conteos de escrituras relacionadas. La proyección excluyó `controlCierre`; la prueba de cierre existente también comprueba que se excluyen huellas y respuestas internas.
+- **Alcance:** T-06. Endpoint HTTP existente de ES-F04-02, JWT controlados y PostgreSQL real de Gestión.
+- **Resultado:** Aprobado local.
 
 ### EV-04. Reintentos técnicos y simulados
 
-- Fecha/persona, commit de implementación y entorno exacto: pendientes de ejecución.
-- Tareas: T-07/08; criterios asociados en la matriz anterior.
-- Preparación y pasos previstos: Ejecutar/reiniciar procesadores, perder respuestas, reenviar evento y confirmar reserva; comparar historial antes/después.
-- Resultado esperado: cumplir los criterios vinculados y conservar sus invariantes.
-- Resultado observado: pendiente; no se ejecutó esta comprobación.
-- Resultado de la comprobación: No ejecutado.
-- Artefactos de prueba, salida, captura o reporte: pendientes; se enlazarán al ejecutar.
-- Dependencias y límites: Liberación/envío reales al acreditar integración; fixtures aislados se distinguen.
+- **Resultado observado:** `liberacionPendienteContinuaDespuesDelCierreSinCambiarSuVersion` confirmó la liberación mediante el procesador real de Gestión y un puerto controlado. `eventoReintentaPorHttpConElMismoPayloadSinRevertirLaDecision` usó el emisor real de Gestión contra un receptor HTTP local controlado. Tras seis respuestas 503 y un reenvío controlado con 204, el payload y el historial persistido completo se conservaron. Las pruebas existentes cubren también recuperación de una respuesta de liberación perdida y simulados sin envío externo.
+- **Alcance:** T-07 local. El puerto de liberación es un doble y el receptor de Ventas es un servidor local de prueba. El reenvío se provoca en la prueba sobre el mismo evento.
+- **Resultado:** Aprobado local. Falta comprobar la liberación contra Operación y el envío y reenvío contra Ventas con credenciales y servicios autorizados, comparando las mismas filas antes y después.
 
 ## 4. Uso de IA
 
 | Trabajo | Herramienta y fecha | Entradas | Instrucción conservada | Revisión humana |
 |---|---|---|---|---|
-| Preparación documental SDD; ninguna T-NN de implementación completada. | Codex, 16/10/2026. | Revisión funcional `c8e6e29`, plantillas SDD, contratos, modelo, diseño y bases de código citadas en el plan. | Conversación de esta entrega: completar carpetas SDD de ES-F04-04/05/06, conservar reglas y dejar pruebas pendientes. | Gerardo; revisión de esta entrega pendiente. |
+| Preparación documental SDD | Codex, 16/10/2026 | Revisión funcional `c8e6e29`, plantillas SDD, contratos y modelo | Completar carpetas SDD y conservar criterios. | Pendiente |
+| Verificación y cobertura de ES-F04-06 | Codex, 04/11/2026 | Carpeta SDD, Gestión §5.2/§5.3 y repositorios actualizados | Completar la especificación conforme al contrato en ramas descriptivas. Reutilizar el historial existente y registrar resultados reales. | Pendiente |
 
-Se generaron organización, plan, tareas, matrices de verificación. Las comprobaciones documentales y el commit de esta entrega son trazabilidad de preparación, no evidencia de aceptación funcional. Al ejecutar tareas con IA se añadirán herramienta, instrucciones, cambios y revisión humana reales.
+## 5. Diferencias y pendientes
 
-## 5. Diferencias, fallos y pendientes
-
-| Hallazgo | Criterios afectados | Impacto | Siguiente acción y responsable |
-|---|---|---|---|
-| Comportamiento todavía por implementar/verificar. | Todos los CA. | No se acredita aceptación funcional. | Gerardo ejecuta tareas del plan y registra resultados. |
-| Dependencias técnicas/servicios pendientes de disponibilidad real, DT-01 a DT-03. | Los de cada incremento dependiente. | Mocks no cierran el recorrido integrado. | Coordinación de Gerardo con responsables indicados en el plan. |
-| Revisión humana y entorno reproducible de pruebas pendientes. | Cierre del alcance. | No declarar verificado. | Registrar commits, datos sintéticos, reportes y revisión al ejecutar. |
+| Pendiente | Criterios afectados | Acción |
+|---|---|---|
+| Aceptación conjunta de la liberación y la comunicación con Ventas. | CA-10; T-07. | Gerardo coordina con Operación, Ventas y DevOps la prueba autorizada con un despacho sintético y guarda el historial antes y después. |
+| Revisión humana y cierre de cobertura. | T-08. | Revisar los commits y actualizar la evidencia al completar EV-04 en el entorno integrado. |
 
 ## 6. Entrega y revisión
 
-- Commits/PR de implementación: pendientes; el commit que incorpora esta carpeta es solo documental.
-- Revisor, fecha y resultado de revisión funcional/técnica de la implementación: pendientes.
-- Estado del alcance implementado: Pendiente.
-- Integraciones reales pendientes: las identificadas en EV-04 y en el plan.
-- Verificación de criterios: No ejecutada; no hay capturas, reportes o resultados funcionales ficticios.
+- Commit de backend `cb2872b`. Suites y entorno identificados en EV-01 a EV-04.
+- T-01 a T-06 verificadas en Gestión. T-07 y T-08 en curso.
+- El alcance conserva el contrato, las migraciones y el consumidor frontend existentes.
 
 ## 7. Referencias
 
-- [cite: 1] [Especificación](./spec.md): comportamiento y aceptación.
-- [cite: 2] [Plan](./plan.md) y [tareas](./tasks.md): fuentes, incrementos y preparación reproducible.
-- [cite: 3] [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02), [modelo](../../arquitectura/modelo-datos.md) y [guía SDD](../../plantillas/sdd/README.md).
+- [cite: 1] [Especificación](./spec.md), [plan](./plan.md) y [tareas](./tasks.md).
+- [cite: 2] [Gestión §5.2 y §5.3](../../integraciones/api-contract-gestion-despachos.md#52-comandos-de-recepción-reprogramación-y-cierre), [modelo](../../arquitectura/modelo-datos.md) y [guía SDD](../../plantillas/sdd/README.md).
