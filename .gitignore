@@ -30,6 +30,8 @@ logs/
 scratch/
 temp/
 tmp/
+__pycache__/
+*.py[cod]
 
 # Documentos de trabajo personal
 trabajo-jerson/

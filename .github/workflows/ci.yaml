@@ -1,0 +1,45 @@
+name: CI documentación
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validar-documentacion:
+    name: Validar Markdown y enlaces locales
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Comprobar espacios y conflictos sin resolver
+        run: git diff --check HEAD^ HEAD
+
+      - name: Validar estructura y enlaces locales modificados
+        shell: bash
+        run: |
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [[ -z "$base" || "$base" == "0000000000000000000000000000000000000000" ]]; then
+            base="HEAD^"
+          fi
+          git diff --name-only --diff-filter=ACMR "$base" HEAD -- '*.md' > "$RUNNER_TEMP/markdown-modificado.txt"
+          if [[ -s "$RUNNER_TEMP/markdown-modificado.txt" ]]; then
+            mapfile -t archivos < "$RUNNER_TEMP/markdown-modificado.txt"
+            python3 .github/scripts/validar_documentacion.py "${archivos[@]}"
+          else
+            echo "No hay archivos Markdown modificados."
+          fi
