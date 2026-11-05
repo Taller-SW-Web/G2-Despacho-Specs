@@ -18,6 +18,10 @@ La implementación se divide en los microservicios **Gestión de Despachos** y *
 
 Este repositorio centraliza las especificaciones funcionales, decisiones generales y contratos necesarios para que el frontend, el backend y los demás módulos puedan desarrollarse de manera coordinada.
 
+## Integración continua documental
+
+El workflow [CI documentación](.github/workflows/ci.yaml) se ejecuta en cada PR y push a `main`, además de poder iniciarse manualmente. Revisa espacios y conflictos sin resolver, exige un único H1 por archivo Markdown modificado y valida sus enlaces y anclas locales. No consulta enlaces externos ni despliega servicios. La validación es incremental para no bloquear cambios por enlaces históricos ajenos al PR; esa deuda debe corregirse en tareas específicas. Para que bloquee merges, la comprobación `Validar Markdown y enlaces locales modificados` debe configurarse como obligatoria en la protección de `main`.
+
 ## 🎯 Capacidades principales
 
 | ID | Área funcional | Descripción |
@@ -65,6 +69,8 @@ F-01 cuenta con sus ocho carpetas SDD preparadas. Las últimas migraciones son [
 Actualización del 26/10/2026: F-01 guardará únicamente cotizaciones exactas exitosas antes de responder al canal, sin exigir un pedido. El [modelo](./arquitectura/modelo-datos.md#12-persistencia-exacta-y-estado-comunicado-del-esquema) recoge `cotizaciones` creada y `zonas_codigos_postales` con datos como antecedentes comunicados. El [plan de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/plan.md) y su [tarea T-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/tasks.md#t-06-implementar-la-persistencia-de-cotizaciones-exactas) mantienen pendientes el escritor, la verificación del esquema/lector y las pruebas. La preparación documental y la existencia de tablas no acreditan esos resultados [cite: 1].
 
 [cite: 1] [Evidencia de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md), antecedentes y límites de la actualización; [contrato externo §11.1](./integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6), homologación con G6 aún pendiente.
+
+Preparación del 03/11/2026: [integración F-05/F-06 con Seguridad](./docs/integracion-seguridad-f05-f06.md), con fuentes A5/A6, responsabilidades, solicitud de aprovisionamiento y matriz de aceptación. La cuenta global, su activación y la entrega de credenciales pertenecen a G7; no se declara aceptación conjunta.
 
 ## 🗂️ Repositorios del módulo
 

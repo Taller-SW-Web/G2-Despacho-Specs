@@ -48,3 +48,7 @@ Los seis CUI concretan los CA de spec.md; JSDOM no acredita revisión visual hum
 1. [Especificación](./spec.md) [cite: 1].
 2. [Componentes compartidos](../../disenio/componentes-react.md) [cite: 2].
 3. [Plan](./plan.md) y [evidencia](./evidence.md) [cite: 3].
+
+## 9. Precondición global de la cuenta
+
+El formulario de apertura informa que el repartidor debe activar su cuenta en Seguridad. Seleccionar un perfil local activo/vinculado no demuestra activación ni ausencia de bloqueo global. La interfaz no ofrece activar cuentas ni establece contraseñas; los rechazos locales mantienen sus códigos y comportamiento.

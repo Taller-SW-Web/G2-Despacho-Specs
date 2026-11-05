@@ -268,6 +268,8 @@ La vinculación recibe exclusivamente:
 
 La cuenta debe haber sido creada por el canal administrativo de Seguridad, conforme al [contrato externo §8.4](./api-contract.md#84-creación-y-vinculación-de-un-usuario-repartidor). El módulo asocia el UUID localmente y no prueba por sí mismo la activación remota de la cuenta.
 
+El titular activa la cuenta y define su contraseña en Seguridad; el Gestor no las introduce en F-05. El formulario de vinculación explica esa precondición, que la cuenta puede no tener roles globales y que el vínculo ya registrado no se puede sustituir. Los criterios de preparación y aceptación se registran en [§8.7](./api-contract.md#87-preparación-y-aceptación-de-f-05f-06).
+
 - Perfil activo y pendiente: guarda el identificador único y cambia a `VINCULADO`, con auditoría.
 - Mismo identificador ya asociado al mismo perfil activo: `204` sin duplicar auditoría.
 - Cuenta ya asociada a otro perfil, cambio de cuenta sobre un perfil vinculado o perfil inactivo: `409`.
@@ -319,6 +321,8 @@ El frontend confirma el resultado con la respuesta válida y la consulta posteri
 ### 4.2. Jornadas y monitoreo
 
 Proveedor F-06: Operación. Las rutas administrativas requieren JWT `tipo=acceso`, rol `GESTOR_DESPACHO` y `sub` UUID para mutaciones. Los identificadores del proveedor son UUID. El Gateway enruta `/api/v1/jornadas/**`, `/api/v1/flota/**` y `/api/v1/repartidores/disponibles` a Operación.
+
+La apertura comprueba el perfil local activo/vinculado; su formulario informa que la activación de la cuenta pertenece a Seguridad. Estas comprobaciones no demuestran el estado global actual. La sincronización de bloqueos y reactivaciones sigue el [contrato externo §8.5](./api-contract.md#85-eventos-de-usuarios-publicados-por-seguridad); no cierra jornadas ni libera reservas automáticamente y no se anuncia como disponible sin evidencia de su consumidor.
 
 | Método | Ruta | Resultado |
 |---|---|---|

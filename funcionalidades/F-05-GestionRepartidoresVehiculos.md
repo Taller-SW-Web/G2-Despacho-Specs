@@ -44,7 +44,7 @@ Esta funcionalidad incluye:
 
 | Dependencia | Responsabilidad |
 |---|---|
-| Seguridad y Usuarios | Crear y activar la cuenta por su canal administrativo y comunicar su UUID; no existe un rol global `REPARTIDOR`. |
+| Seguridad y Usuarios | Alta administrativa por `ADMIN_SISTEMA`, activación por enlace al titular y comunicación del UUID, conforme a A5/A6 y al [contrato externo §8.4](../integraciones/api-contract.md#84-creación-y-vinculación-de-un-usuario-repartidor); no existe un rol global `REPARTIDOR` y la cuenta puede tener `roles: []`. |
 | Disponibilidad y Capacidad Diaria (F-06) | Consumir los repartidores activos y vinculados y las furgonetas disponibles para crear asignaciones diarias. |
 | Web del Repartidor (F-03) | Identificar al repartidor desde el token vinculado por esta funcionalidad. |
 
@@ -52,6 +52,7 @@ Esta funcionalidad incluye:
 
 - Un repartidor registrado queda en estado de registro `ACTIVO` y con vinculación `PENDIENTE` hasta que el Gestor asocie el UUID comunicado por Seguridad.
 - La vinculación cambia de `PENDIENTE` a `VINCULADO` mediante asociación manual. El registro local no invoca creación remota ni depende de su disponibilidad.
+- El vínculo no acredita activación ni ausencia de bloqueo global. La [preparación con Seguridad](../docs/integracion-seguridad-f05-f06.md) distingue las comprobaciones locales, la coordinación administrativa y los eventos/reconciliación todavía pendientes.
 - Una baja lógica cambia el estado a `INACTIVO`, conserva el historial y excluye al repartidor de nuevas asignaciones.
 - Una furgoneta registrada queda en `DISPONIBLE` con sus límites de carga definidos.
 

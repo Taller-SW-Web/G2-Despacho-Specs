@@ -102,3 +102,15 @@ Los estados son Pendiente, En curso, Bloqueada y Completada. Una tarea de compro
 1. [Especificación funcional](./spec.md) y [UI](./ui.md) [cite: 1].
 2. [Plan](./plan.md), incrementos y dependencias [cite: 2].
 3. [Evidencia](./evidence.md), resultados y límites [cite: 3].
+
+## 6. Incremento de integración G7 del 03/11/2026
+
+| ID | Resultado | Dependencia | Estado |
+|---|---|---|---|
+| T-G7-01 | Conciliar contrato y precondiciones con A5/A6 | Fuentes suministradas G7 | Verificado documentalmente; sin aceptación externa |
+| T-G7-02 | Ajustar perfil JWT de Operación y mensajes de vinculación/apertura | T-G7-01 | Implementado y verificado localmente; ver EV-G7 |
+| T-G7-03 | Registrar comprobaciones criptográficas y regresión F-05/F-06 | T-G7-02 | Verificado localmente: 75 pruebas frontend, 34 backend, typecheck y build; ver EV-G7 |
+| T-G7-04 | Acreditar cuentas, concesiones y flujo integrado | Seguridad y responsables de sesión | Pendiente externo |
+| T-G7-05 | Acordar y consumir eventos/reconciliación | Broker, permisos y revisión G7 | Pendiente; no implementado |
+
+Estas tareas no sustituyen la evidencia histórica ni completan la aceptación conjunta de los criterios.

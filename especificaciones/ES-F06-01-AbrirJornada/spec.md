@@ -37,6 +37,13 @@ Crear la jornada de hoy en America/Bogota con repartidor activo/vinculado, furgo
 
 Los DTO, encabezados, scopes, rutas y errores se definen una sola vez en Operación §4.2 [cite: 2]. Los identificadores reales son UUID. Las credenciales no pertenecen a los documentos ni a las capturas.
 
+
+### Alineación con Seguridad del 03/11/2026
+
+La fuente de identidad es G7: [contrato externo §8](../../integraciones/api-contract.md#8-integración-con-seguridad-y-usuarios) y [preparación operativa](../../docs/integracion-seguridad-f05-f06.md) [cite: 2]. El repartidor puede recibir `roles: []`; el permiso de campo procede del perfil local activo/vinculado. Operación exige UUID en `sub`, `iat`, `exp`, `jti` y arreglo de roles para acceso, y perfil de servicio con audiencia y scope para comunicaciones internas.
+
+El selector usa perfiles locales activos/vinculados; no acredita activación ni ausencia de bloqueo global. La interfaz informa esa precondición. Apertura, reserva y transferencia conservan sus comprobaciones locales; no se impone un rol global de repartidor. El consumidor de eventos/reconciliación sigue pendiente: no se promete bloqueo global inmediato, cierre automático, liberación de reservas ni reactivación local.
+
 ## 6. Criterios de aceptación
 
 ### CA-01. Apertura válida
@@ -81,7 +88,7 @@ Los DTO, encabezados, scopes, rutas y errores se definen una sola vez en Operaci
 - Backend: jornadas, reservas y proyecciones locales; consistencia con F-05 y contratos F-02/F-04.
 - Rendimiento: disponibilidad objetivo menor de 200 ms, pendiente de medir con carga y entorno identificados; no se acredita por compilar.
 - Seguridad: sin SQL, credenciales o datos personales en errores; autorización obligatoria también en servidor.
-- Integración externa: Seguridad real pendiente de despliegue y concesión de scopes.
+- Integración externa: Seguridad publica un entorno H3; cuentas, concesiones reales y aceptación conjunta siguen pendientes. Salud y JWKS disponibles no acreditan el recorrido autenticado.
 
 ## 8. Verificación y completitud
 

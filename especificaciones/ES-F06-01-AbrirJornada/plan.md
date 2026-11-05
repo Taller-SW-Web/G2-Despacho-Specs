@@ -64,3 +64,12 @@ Frontend: tipos, pruebas de interacción y construcción. Backend: unitarias, HT
 2. [Contrato de Operación](../../integraciones/api-contract-operacion-reparto.md#42-jornadas-y-monitoreo) [cite: 2].
 3. [Modelo de datos](../../arquitectura/modelo-datos.md) y [componentes](../../disenio/componentes-react.md) [cite: 3].
 4. [Tareas](./tasks.md) y [evidencia](./evidence.md).
+
+## 10. Incremento de integración G7 del 03/11/2026
+
+- Fuente y alcance: [preparación operativa](../../docs/integracion-seguridad-f05-f06.md); G7 permanece de solo lectura.
+- Mantener el contrato de vinculación manual; no añadir consultas remotas dentro de su transacción ni inferir activación del UUID guardado.
+- Ajustar el validador JWT de Operación al perfil de G7 y exigir iat antes de la conversión automática de Spring. Probar firma RS256/JWKS y perfiles con roles vacíos, claims omitidos y audiencia ajena.
+- Explicar en las interfaces F-05/F-06 la activación externa y el alcance local de sus comprobaciones.
+- Verificar suites focalizadas, typecheck y build; backend clean verify requiere Docker para sus bases desechables. No iniciar migraciones sobre bases compartidas.
+- Registrar resultados y límites en evidence.md. Cliente/secreto, scopes, broker y aceptación conjunta permanecen pendientes; no marcar el consumidor de eventos como implementado.

@@ -39,6 +39,8 @@ Esta funcionalidad incluye:
 
 ### 4.2. Dependencias
 
+La activación de la cuenta global pertenece a Seguridad y la vinculación local a F-05, conforme al [contrato externo §8](../integraciones/api-contract.md#8-integración-con-seguridad-y-usuarios). El perfil puede tener `roles: []`. Las comprobaciones locales de F-06 no demuestran el estado global actual; el [plan de integración](../docs/integracion-seguridad-f05-f06.md) mantiene pendientes el consumidor de eventos/reconciliación y su aceptación conjunta. Un bloqueo global no cierra jornadas ni libera reservas automáticamente.
+
 | Dependencia | Responsabilidad |
 |---|---|
 | Gestión de Repartidores y Vehículos (F-05) | Proveer los repartidores activos y vinculados, y las furgonetas disponibles con sus límites de carga. |

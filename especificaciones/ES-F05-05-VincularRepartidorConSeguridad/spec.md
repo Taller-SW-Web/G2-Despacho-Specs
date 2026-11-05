@@ -53,6 +53,13 @@ Asociar un perfil local al `usuario_id` de una cuenta creada previamente por el 
 - Estados locales: `PENDIENTE` y `VINCULADO`; no hay rol global `REPARTIDOR` ni estados de provisión remota.
 - Fuente única de formato y códigos: [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas) y [Seguridad §8.4](../../integraciones/api-contract.md#84-creación-y-vinculación-de-un-usuario-repartidor).
 
+
+### Alineación con Seguridad del 03/11/2026
+
+La fuente de identidad es G7: [contrato externo §8](../../integraciones/api-contract.md#8-integración-con-seguridad-y-usuarios) y [preparación operativa](../../docs/integracion-seguridad-f05-f06.md) [cite: 2]. El repartidor puede recibir `roles: []`; el permiso de campo procede del perfil local activo/vinculado. Operación exige UUID en `sub`, `iat`, `exp`, `jti` y arreglo de roles para acceso, y perfil de servicio con audiencia y scope para comunicaciones internas.
+
+A5/A6 ya definen alta por `ADMIN_SISTEMA`, cuenta sin rol y activación por enlace al titular. La vinculación local no valida existencia/activación/bloqueo global y no habilita sustitución de cuentas. No se solicitan ni conservan contraseñas. La UI debe explicar esa precondición y que el Gestor confirma la activación antes de una jornada. El canal humano y las cuentas reales siguen pendientes.
+
 ## 6. Criterios de aceptación
 
 ### CA-01. Vinculación manual exitosa

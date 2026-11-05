@@ -625,7 +625,7 @@ Despacho valida los JWT localmente, sin consultar a Seguridad en cada solicitud:
 
 1. Obtiene la configuración desde `GET /api/v1/auth/.well-known/openid-configuration`.
 2. Obtiene las claves públicas desde `GET /api/v1/auth/.well-known/jwks.json` y las mantiene en caché.
-3. Verifica firma, algoritmo permitido, vencimiento y emisor.
+3. Verifica firma RS256, vencimiento, emisor exacto, `iat` y `jti`. Un token humano exige `sub` UUID y `roles` como arreglo de textos, incluso vacío; un token de servicio exige `sub` técnico y `scope` como texto separado por espacios.
 4. Para una persona gestora, exige `tipo=acceso` y el rol `GESTOR_DESPACHO`.
 5. Para un repartidor, exige `tipo=acceso` y resuelve mediante `sub` un perfil local activo vinculado al usuario.
 6. Para un módulo, exige `tipo=servicio`, que `aud` contenga `api-despacho` y el scope propio de la operación.
@@ -708,17 +708,19 @@ Seguridad todavía no ha concedido `tokens:introspeccion` a `modulo-despacho`; n
 
 Seguridad confirmó que `REPARTIDOR` no será un rol global, que no incluirá un claim `idRepartidor` y que no expondrá un endpoint para crear cuentas de repartidores mediante el token de servicio de Despacho. Una persona con rol `ADMIN_SISTEMA` crea cada cuenta en Seguridad y Despacho mantiene el perfil operativo en su propia base de datos.
 
-El flujo de vinculación esperado, pendiente de confirmación operativa por Seguridad, es el siguiente:
+El flujo se alinea con los acuerdos A5/A6 de Seguridad. La operación administrativa entre equipos sigue pendiente de coordinar; el comportamiento de identidad ya está definido:
 
 1. F-05 registra al repartidor local con `vinculacion=PENDIENTE`.
-2. Un `ADMIN_SISTEMA` crea su cuenta en Seguridad mediante el procedimiento administrativo que ese módulo defina.
-3. Despacho recibe el `usuario_id` generado por Seguridad y lo asocia al repartidor local.
+2. Un `ADMIN_SISTEMA` crea su cuenta con `POST /api/v1/usuarios` de Seguridad; puede tener `roles: []`. No define una contraseña ni utiliza el token de servicio de Despacho.
+3. Seguridad envía al titular el enlace de activación de 72 horas. La cuenta nace `PENDIENTE_VERIFICACION`; el titular establece su contraseña y acepta los términos. Sin activación en 30 días, Seguridad elimina la cuenta. Despacho recibe el UUID visible en el panel administrativo y lo asocia al repartidor local.
 4. Cuando llega un token humano, el backend utiliza su claim `sub` para localizar al repartidor vinculado.
 5. El acceso a rutas y operaciones de campo depende del estado local del repartidor y de la propiedad del recurso.
 
 Despacho almacena solamente el `usuario_id`, el vínculo y los estados operativos; nunca almacena ni transporta la contraseña definitiva. La entrega o activación de las credenciales pertenece a Seguridad. No se abre una jornada mientras el repartidor no esté vinculado y habilitado.
 
-La baja lógica local impide nuevas jornadas, asignaciones y operaciones, pero no desactiva por sí sola la cuenta global. La desactivación o el bloqueo global corresponde a Seguridad. Todavía deben confirmar el canal administrativo para solicitar el alta o la baja global, cómo se comunicará el `usuario_id`, cómo se entregarán las credenciales iniciales y qué valor llevará `roles` en el token de una cuenta vinculada como repartidor.
+La baja lógica local impide nuevas jornadas, asignaciones y operaciones, pero no desactiva por sí sola la cuenta global. La desactivación o el bloqueo global corresponde a Seguridad. Falta acordar quién recibe las solicitudes de alta/baja y cómo comunica el UUID al Gestor. La activación por enlace y `roles: []` ya están definidos por A6: no se vuelven a solicitar como decisiones abiertas. La vinculación local no comprueba existencia, activación ni bloqueo remoto; no debe presentarse como una verificación global.
+
+F-05 no permite sustituir una cuenta vinculada ni reactivar un perfil dado de baja. Una corrección de identidad requiere coordinación y un cambio de alcance explícito; no se corrige con SQL manual sobre datos compartidos ni reutilizando otro perfil. F-06 comprueba el estado local antes de abrir jornada o admitir carga; una reactivación global nunca revierte una baja local ni cierra, libera o reasigna por sí sola una jornada o sus despachos.
 
 ### 8.5. Eventos de usuarios publicados por Seguridad
 
@@ -728,18 +730,26 @@ Despacho prevé consumir los eventos `usuario.desactivado`, `usuario.bloqueado`,
 - `usuario.reactivado` y `usuario.desbloqueado` actualizan el estado global, pero no revierten automáticamente una baja local.
 - `usuario.roles_cambiados` actualiza oportunamente el acceso administrativo de quienes ejercen como `GESTOR_DESPACHO`.
 
-Seguridad ha previsto publicar estos cambios mediante RabbitMQ, pero el contrato asíncrono todavía debe definir disponibilidad, exchange, routing keys, payloads, credenciales, permisos de consumo y política de reentrega. Hasta que ese contrato esté disponible, Despacho no asume que los eventos puedan consumirse en producción.
+La fuente es el [catálogo de eventos de Seguridad](https://github.com/Taller-SW-Web/Modulo-de-Seguridad/blob/main/specs/catalogo-eventos.md), actualmente borrador en la copia suministrada. Ya propone exchange `seguridad.usuarios`, routing key igual al tipo de evento, cola durable por consumidor y descarte tras tres reintentos; no corresponde inventar otro transporte ni otro sobre. Falta confirmar la revisión publicada, la conexión del broker, credenciales/permisos y la suscripción de Despacho a `usuario.roles_cambiados`, además de acreditar la entrega real.
 
-### 8.6. Acceso humano de la app del repartidor (propuesto)
+El consumidor de Operación deberá deduplicar por `eventoId`, comparar `fecha` por usuario y aceptar campos adicionales. El bloqueo con `hasta` vence sin evento de desbloqueo. La proyección global se mantiene separada de la baja local. Tras una pérdida de eventos debe reconciliar con la API de Seguridad; consultar el estado de cuenta no equivale a introspeccionar una sesión ni acredita todos sus bloqueos. No se declara invalidación inmediata mientras ese recorrido no esté implementado y probado; la validación JWT local conserva la ventana de vigencia del token.
 
-La app móvil del repartidor necesita que la persona ingrese con su usuario y contraseña. Mientras Seguridad y Usuarios publica su flujo de acceso, Despacho propone esta forma, implementada por la herramienta `seguridad-local` y consumida desde un único adaptador de la app:
+### 8.6. Acceso humano de la app del repartidor
+
+La fuente es el [OpenAPI de Seguridad](https://github.com/Taller-SW-Web/Modulo-de-Seguridad/blob/main/specs/contrato-api/openapi.yaml), SPEC-05/06/09 y su implementación suministrada. El formulario histórico de `seguridad-local` no gobierna la integración real:
 
 - **Método y ruta:** `POST /api/v1/auth/login` en el origen de Seguridad; en local, el Gateway la enruta a `seguridad-local` sin exigir JWT.
-- **Content-Type:** `application/x-www-form-urlencoded`, campos `usuario` (usuario o correo) y `clave`.
-- **Respuesta `200`:** `{ "accessToken": "<jwt>", "tokenType": "Bearer", "expiresIn": 900 }`. El JWT es el mismo token humano de §8.1: `tipo=acceso`, `sub` igual al `usuario_id` vinculado en F-05 y sin rol obligatorio de repartidor.
+- **Content-Type:** `application/json`, campos `correo` y `contrasena`.
+- **Respuesta:** sesión con `accessToken`, `refreshToken`, `tokenType`, `expiresIn` y `usuario`, o desafío MFA que se completa mediante el flujo OTP de Seguridad. El JWT es el mismo token humano de §8.1: `tipo=acceso`, `sub` igual al `usuario_id` vinculado en F-05 y sin rol obligatorio de repartidor.
 - **Errores:** `401` con credenciales inválidas, sin indicar si falló el usuario o la contraseña.
 
-Pendiente de confirmar con Seguridad: ruta y formato definitivos, cuentas de prueba, renovación (un token de 15 minutos obliga a reingresar durante la jornada) y cierre de sesión. Si el contrato definitivo difiere, solo cambian `VITE_SEGURIDAD_URL` y el adaptador `servicioAcceso.ts` del frontend; Operación sigue validando el JWT por §8.1.
+Renovación y cierre ya existen en Seguridad como `/api/v1/auth/refresh` y `/api/v1/auth/logout`; no son decisiones contractuales pendientes. Los contratos dueños definen sus cuerpos, MFA y errores. Integrar las pantallas de acceso, sesión en memoria, renovación y cierre corresponde a los responsables de sesión/F-03/Gateway; requiere coordinación y pruebas propias, no queda implementado por actualizar esta sección. F-05/F-06 consumen esa identidad y no piden contraseñas para crear o vincular repartidores.
+
+### 8.7. Preparación y aceptación de F-05/F-06
+
+El [plan operativo de integración](../docs/integracion-seguridad-f05-f06.md) registra fuentes, responsables, concesiones requeridas y pruebas pendientes; no crea un contrato paralelo. En los tres servicios de Despacho se configura `SEGURIDAD_URL` con el origen HTTPS, sin `/api/v1`. El entorno H3 comunicado por Seguridad usa `https://g7-auth-service.onrender.com`; issuer y JWKS se obtienen del descubrimiento de ese origen. No confundir la disponibilidad pública de metadatos con la entrega de credenciales o una prueba autenticada.
+
+La aceptación de F-05/F-06 exige cuenta creada/activada, vínculo único, acceso de campo sin rol global, rechazo de perfiles pendientes/inactivos, apertura y reserva autorizadas, repetición idempotente y validación criptográfica real. Bloqueos globales, recuperación de eventos y rotación de claves requieren evidencia específica; permanecen pendientes hasta disponer de las dependencias correspondientes.
 
 ## 9. Reglas de idempotencia y concurrencia
 
@@ -798,7 +808,7 @@ El contrato funcional con Ventas y Postventa está cerrado: se confirmaron el mo
 
 | Equipo | Acuerdo pendiente |
 |---|---|
-| Seguridad y Usuarios | Confirmar el acceso humano propuesto en §8.6 (ruta, cuentas de prueba, renovación del token); registrar `gestion:despachos:transicionar` y `gestion:catalogos:leer` para `modulo-despacho`; registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
+| Seguridad y Usuarios | Proveer cuentas de prueba y credenciales por ambiente; registrar y conceder los seis scopes internos de §8.2 para `modulo-despacho`; verificar concesiones externas por `client_id` y audiencia; acordar responsables del canal administrativo de alta/baja y entrega del UUID; confirmar broker, suscripciones y entrega del catálogo de eventos de §8.5. Login JSON, refresh/logout, activación por enlace y `roles: []` ya están definidos; corresponde adaptar los consumidores. |
 | Productos y Ofertas | Homologar H-G2-01 a H-G2-03 de §11.1; fijar revisión de OpenAPI; coordinar con Seguridad la concesión de `productos:fisicos:leer` a `modulo-despacho` para `api-productos` y ejecutar las pruebas de contrato entre ambos backends |
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
 | Equipo de Despacho | Tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |

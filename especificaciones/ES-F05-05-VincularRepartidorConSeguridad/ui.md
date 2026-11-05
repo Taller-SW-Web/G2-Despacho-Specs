@@ -99,3 +99,7 @@ El formulario recibe el UUID comunicado por Seguridad. No solicita contraseñas 
 2. [Componentes compartidos](../../disenio/componentes-react.md), [diseño transversal](../../disenio/SYSTEM-DESIGN.md) y [diseño F-05](../../disenio/funcionalidades/f-05.md) [cite: 2].
 3. [Operación §4.1](../../integraciones/api-contract-operacion-reparto.md#41-repartidores-y-furgonetas) y [Seguridad §8.4](../../integraciones/api-contract.md#84-creación-y-vinculación-de-un-usuario-repartidor) [cite: 3].
 4. [Plan](./plan.md), [tareas](./tasks.md) y [evidencia](./evidence.md).
+
+## 9. Alineación del flujo administrativo con G7
+
+El formulario explica que el administrador de Seguridad crea la cuenta y comunica el UUID; el titular activa y define su contraseña por enlace. Una cuenta de repartidor puede no tener roles globales. Guardar el UUID no verifica la activación global ni permite sustituir una cuenta ya vinculada. No se añaden campos de contraseña ni comandos remotos de alta. Esta aclaración forma parte del contexto de CUI-01; los demás criterios conservan su alcance.
