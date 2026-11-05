@@ -42,7 +42,7 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Visión general](./overview.md) | Problema, objetivos, alcance, actores y flujo general del módulo. |
 | [Índice de funcionalidades](./funcionalidades/funcionalidad.md) | Listado y estado de las especificaciones funcionales. |
 | [Integraciones externas](./integraciones/api-contract.md) | Comunicaciones con otros módulos y convenciones compartidas. |
-| [Homologación física G2–G6](./integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6) | Respuestas propuestas a H-G2-01/02/03, revisión contractual, credencial G7 y recorrido real pendientes. |
+| [Homologación física G2–G6](./integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento) | H cerrados en la línea base rc.3; semántica D-G2-01/02 cerrada al 04/11 y proveedor fusionado. Publicación normativa G6, consumidor G2, credencial G7 y recorrido real tienen seguimiento propio. |
 | [API de Gestión de Despachos](./integraciones/api-contract-gestion-despachos.md) | Zonas, programación, catálogo, incidencias y API interna provista por Gestión. |
 | [API de Operación de Reparto y Flota](./integraciones/api-contract-operacion-reparto.md) | Repartidor, flota, jornadas, evidencias, capacidad y API interna provista por Operación. |
 | [Modelo de datos](./arquitectura/modelo-datos.md) | Base evolutiva de entidades, relaciones y decisiones de persistencia. |
@@ -65,7 +65,9 @@ F-01 cuenta con sus ocho carpetas SDD preparadas. Las últimas migraciones son [
 
 Actualización del 26/10/2026: F-01 guardará únicamente cotizaciones exactas exitosas antes de responder al canal, sin exigir un pedido. El [modelo](./arquitectura/modelo-datos.md#12-persistencia-exacta-y-estado-comunicado-del-esquema) recoge `cotizaciones` creada y `zonas_codigos_postales` con datos como antecedentes comunicados. El [plan de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/plan.md) y su [tarea T-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/tasks.md#t-06-implementar-la-persistencia-de-cotizaciones-exactas) mantienen pendientes el escritor, la verificación del esquema/lector y las pruebas. La preparación documental y la existencia de tablas no acreditan esos resultados [cite: 1].
 
-[cite: 1] [Evidencia de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md), antecedentes y límites de la actualización; [contrato externo §11.1](./integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6), homologación con G6 aún pendiente.
+[cite: 1] [Evidencia de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md), antecedentes y límites de la actualización; [contrato externo §11.1](./integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento), con el cierre H del 02/11 y semántico D del 03–04/11/2026.
+
+Actualización del 04/11/2026: el estado efectivo D-G2-01 y el rechazo identificado del SKU padre D-G2-02 están cerrados semánticamente, incluidos campo obligatorio, orden y precedencia. El PR backend G6 #162 está fusionado; su OpenAPI publicado aún requiere sincronización normativa. [ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/spec.md) conserva CA-01 a CA-19 y T-07/T-08; [ES-F02-01](./especificaciones/ES-F02-01-RecepcionSolicitudDespacho/spec.md), CA-01 a CA-13 y T-09/T-10. Implementación y pruebas G2 permanecen pendientes. Hito 4 oficial: **07/11/2026** [cite: 1].
 
 ## 🗂️ Repositorios del módulo
 

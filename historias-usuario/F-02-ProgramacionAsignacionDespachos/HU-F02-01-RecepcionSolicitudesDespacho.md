@@ -36,7 +36,8 @@
   - Genera código operativo único (`DSP-XXXXXX`) y código de rastreo público (`TRK-XXXXX`).
   - Idempotencia: una solicitud repetida para el mismo `idPedido` o con la misma clave devuelve el despacho existente con HTTP `200 OK` sin duplicarlo.
   - No exige cotización previa ni lee o escribe `cotizaciones` para recibir el pedido; consulta el perfil físico vigente por la operación canónica del [contrato externo §5.2](../../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas).
-  - Agrupa cantidades, limita a 100 SKU únicos y valida el lote íntegro. La regla prevista para `INACTIVO` no rechaza automáticamente pedidos pagados; `BORRADOR` y demás precisiones siguen pendientes de homologación en §11.1 [cite: 1].
+   - Agrupa cantidades, limita a 100 SKU únicos y valida el lote íntegro. H-G2-01/02/03 están cerrados: `INACTIVO` y `BORRADOR` no causan rechazo automático de un pedido declarado pagado, preparado y listo para entrega, con perfil válido. G6 proyecta el estado efectivo conforme a D-G2-01, cerrado el 03/11 [cite: 1].
+   - El SKU padre con variantes no es una unidad física; D-G2-02, cerrado semánticamente el 04/11, acuerda su rechazo con todos y únicamente los causantes identificados en el error público, literalmente, sin duplicados y en orden de solicitud. Campo, traducción y precedencia constan en contrato §5.2.4; publicación normativa y verificación del consumidor se siguen en §11.1. La excepción comercial no habilita ese identificador; el producto simple válido conserva su tratamiento.
 
 ---
 
@@ -68,7 +69,10 @@
   - **ENTONCES** el sistema responde `422 Unprocessable Entity` con `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` o `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`, o `503 Service Unavailable` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE`, respectivamente, y no crea el despacho.
 
 - [ ] **CA-22 a CA-24: Lote, estado comercial y límite físico**
-  - Escenarios en [F-02 RF-05](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md#rf-05-integridad-de-la-recepción), concretados por ES-F02-01 CA-08 a CA-10; pendientes de implementación, homologación y verificación [cite: 1].
+  - Escenarios en [F-02 RF-05](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md#rf-05-integridad-de-la-recepción), concretados por ES-F02-01 CA-08 a CA-10; implementación/verificación pendientes y acuerdos H cerrados [cite: 1].
+
+- [ ] **CA-25 a CA-27: SKU padre y error identificado**
+   - Escenarios en F-02 RF-05 y [ES-F02-01 CA-11 a CA-13](../../especificaciones/ES-F02-01-RecepcionSolicitudDespacho/spec.md#ca-11-sku-padre-no-físico-con-afectados-exactos): afectados exactos, detalle no conforme y precedencia aceptada el 04/11. Las permutaciones conservan código/conjunto de afectados y ordenan la lista según cada solicitud. Publicación normativa e implementación/verificación G2 pendientes, sin despacho, historial ni cotización parciales.
 
 ---
 
@@ -78,7 +82,7 @@
 - [ ] Seguridad implementada exigiendo token de servicio y scope `despachos:crear`.
 - [ ] Cliente REST hacia Productos y Ofertas integrado con manejo de errores y timeouts.
 - [ ] Mecanismo de idempotencia verificado ante reintentos simultáneos con el mismo `idPedido`.
-- [ ] Pruebas unitarias y de integración con `JUnit 5 + Mockito` y `Testcontainers` cubriendo `CA-01`, `CA-02`, `CA-11`, `CA-12` y `CA-21` a `CA-24`, con idempotencia previa a G6 y sin escritura en `cotizaciones`.
+- [ ] Pruebas unitarias y de integración con `JUnit 5 + Mockito` y `Testcontainers` cubriendo `CA-01`, `CA-02`, `CA-11`, `CA-12` y `CA-21` a `CA-27`, con idempotencia previa a G6 y sin escritura en `cotizaciones`; las regresiones D usan la revisión exigible y verifican afectados, orden y precedencia aceptados.
 - [ ] Documentación y trazabilidad sincronizadas con [ES-F02-01](../../especificaciones/ES-F02-01-RecepcionSolicitudDespacho/spec.md).
 
-[cite: 1] [Contrato externo §§5.2, 7.1 y 11.1](../../integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6). La actualización documental no acredita aceptación bilateral ni pruebas ejecutadas.
+[cite: 1] [Contrato externo §§5.2, 7.1 y 11.1](../../integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento). Fuentes del 02–04/11/2026: H y semántica D cerrados, proveedor fusionado; publicación normativa, implementación G2, autorización y E2E tienen verificación independiente.

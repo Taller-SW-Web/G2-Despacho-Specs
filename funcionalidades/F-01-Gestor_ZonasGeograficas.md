@@ -5,6 +5,8 @@
 **Actor principal:** Gestor de Despacho / Administrador
 **Lineamiento del curso:** Gestión de zonas y tarifas de entrega
 
+**Actualización 04/11/2026:** H-G2-01/02/03 cerrados; D-G2-01 cerrado el 03/11 y D-G2-02 cerrado semánticamente el 04/11. CA-30 a CA-32 recogen el rechazo identificado del SKU padre y la precedencia aceptada. Sincronización normativa G6 e implementación/verificación G2 pendientes [cite: 1].
+
 ## 1. Contexto
 
 Todos los envíos de la tienda salen de un único centro de despacho. La determinación de la cobertura y del costo de envío desde ese centro es el primer paso del ciclo de despacho. Antes de que un pedido se confirme, los canales de venta necesitan saber si la dirección del cliente está dentro de la cobertura y cuánto cuesta el envío.
@@ -39,7 +41,7 @@ Quedan fuera de la cotización la resolución por geometría o por polígonos, l
 - La cotización requiere un token de servicio con `tipo=servicio` y scope `cotizaciones:calcular`; no requiere token de usuario humano.
 - Una solicitud de cotización debe identificar el destino con `distrito`; `direccion` y `codigoPostal` son opcionales.
 - `lineas` es opcional. Si se omite, la operación solo confirma cobertura y zona. Si se envía, debe contener al menos un elemento con `sku` y `cantidad` mayor que cero.
-- Cada producto cotizable debe tener identificador, peso mayor a cero, dimensiones válidas y marca de actualización en Productos y Ofertas. La elegibilidad comercial y el cierre bilateral de estados se rigen por el contrato externo §§5.2 y 11.1 [cite: 1].
+- Cada producto cotizable debe identificar una unidad física, tener peso mayor a cero, dimensiones válidas, marca de actualización y estado efectivo elegible. La línea base H-G2-01/02/03 y las precisiones D-G2-01/02 se distinguen en el contrato externo §§5.2 y 11.1 [cite: 1].
 - Solo se cotiza contra zonas en estado `ACTIVO`.
 - Un distrito o código postal no puede pertenecer a más de una zona activa.
 - Los límites de cotización por consumidor y el tiempo de caché de los datos físicos de productos son acuerdos pendientes de cierre en el contrato.
@@ -156,7 +158,8 @@ Reglas de cálculo y de integración:
 - La cobertura se evalúa primero. Si el destino no tiene cobertura, el sistema responde sin consultar a Productos y Ofertas ni validar las líneas.
 - Con `lineas`, el sistema agrupa los SKU repetidos, consulta a Productos y Ofertas en lote y calcula los totales; el canal no envía peso ni volumen.
 - Después de confirmar cobertura se admiten como máximo 100 SKU únicos; se conservan las cantidades acumuladas por SKU. Una respuesta por lote debe clasificar todos los SKU una sola vez, sin omisiones, duplicados ni elementos inesperados.
-- Las reglas comerciales previstas y la diferencia entre error de negocio, fallo técnico y respuesta inválida se referencian desde el contrato externo §§5.1 y 5.2. La aceptación de G6 para H-G2-01 a H-G2-03 continúa pendiente en §11.1 [cite: 1].
+- Las reglas comerciales homologadas y la diferencia entre error de negocio, fallo técnico y respuesta inválida se referencian desde el contrato externo §§5.1 y 5.2. H-G2-01/02/03 y la semántica D-G2-01/02 están cerrados; estado efectivo, detalle de SKU padre y precedencia están acordados. La revisión normativa exigible y la verificación del consumidor se siguen en §11.1 [cite: 1].
+- G6 proyecta el estado efectivo de la variante; F-01 utiliza ese valor sin reconstruir su jerarquía. La identificación estructurada de SKU causantes y el rechazo íntegro se rigen por el contrato, conservando los identificadores opacos.
 - El sistema utiliza su propio token de servicio (`modulo-despacho`) y no reenvía a Productos el token recibido del canal.
 - El cálculo de los totales por línea es el siguiente:
 
@@ -268,15 +271,33 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 
 #### CA-28. Producto existente no elegible
 
-- **DADO** un SKU existente con perfil físico válido y estado comercial no elegible conforme al acuerdo H-G2-02 de §11.1 del contrato externo.
+- **DADO** un SKU existente con perfil físico válido y estado efectivo `INACTIVO` o `BORRADOR`, incluido el caso de una variante activa bajo un padre en esos estados conforme a D-G2-01.
 - **CUANDO** F-01 evalúa una cotización.
-- **ENTONCES** aplica el rechazo de elegibilidad, identifica el SKU y no lo presenta como inexistente, sin costo ni nueva cotización. El escenario con `BORRADOR` queda pendiente de homologación externa.
+- **ENTONCES** aplica el rechazo de elegibilidad, identifica los SKU causantes mediante el campo contractual y no los presenta como inexistentes, sin costo ni nueva cotización. `BORRADOR` forma parte del acuerdo H-G2-02 cerrado.
 
 #### CA-29. Límite de SKU y conservación de cantidades
 
 - **DADO** líneas repetidas cuya agrupación conserva la suma de cantidades por SKU.
 - **CUANDO** F-01 confirma cobertura y valida el lote.
 - **ENTONCES** hasta 100 SKU únicos se consultan una sola vez por SKU y se calculan con todas sus unidades; más de 100 se rechazan con el error contractual antes de llamar a G6 o guardar una cotización.
+
+#### CA-30. SKU padre no físico con afectados identificados
+
+- **DADO** un destino cubierto y un lote que incluye uno o varios SKU padre de productos con variantes, conforme al acuerdo D-G2-02 cerrado y la revisión exigible del contrato externo §5.2.4.
+- **CUANDO** G6 rechaza la consulta por esa condición y F-01 valida el error contractual.
+- **ENTONCES** F-01 rechaza el lote completo con el error público de no elegibilidad, conserva todos y únicamente los SKU causantes en el campo contractual, literalmente, sin duplicados y en orden de solicitud, y no devuelve costo ni guarda cotización, aunque otras líneas sean válidas. Un producto simple con perfil válido conserva su tratamiento cotizable.
+
+#### CA-31. Identificación del rechazo no conforme
+
+- **DADO** la revisión D-G2-02 homologada y un error de SKU padre cuyo detalle obligatorio está ausente, vacío, malformado, duplicado o contiene SKU ajenos a la solicitud.
+- **CUANDO** F-01 valida el problema recibido.
+- **ENTONCES** responde con el error contractual de respuesta de Productos inválida, sin extraer identificadores del texto libre, atribuir la causa a todos los SKU ni guardar cotización.
+
+#### CA-32. Precedencia de errores mixtos
+
+- **DADO** un lote con SKU padre no físicos y otros errores de negocio, y la precedencia aceptada el 04/11/2026 en el contrato externo §5.2.4.
+- **CUANDO** se consulta el mismo conjunto en órdenes diferentes.
+- **ENTONCES** F-01 traduce el mismo error prioritario conforme a esa regla y conserva el mismo conjunto de afectados, ordenado según cada solicitud. Las bases no físicas prevalecen sobre perfiles incompletos; únicamente se identifican los causantes de la condición seleccionada. Rechaza íntegramente sin costo ni cotización, sin certificar la validez de las demás líneas.
 
 ### RF-04. Resolución de zona para el módulo
 
@@ -363,7 +384,8 @@ Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendien
 | CA-22 | Cotizar con Productos y Ofertas no disponible. | Integración | `503` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE`. |
 | CA-23 | Cotizar con `lineas` en una zona activa sin tarifa vigente. | Integración | Cobertura confirmada sin costo ni plazo y sin regla implícita. |
 | CA-24 a CA-26 | Confirmar cálculo y fila, cambiar la tarifa después, repetir la solicitud e inyectar fallos de escritura; comparar ausencia de filas en cobertura/rechazos. | Integración PostgreSQL | Instantáneas independientes y coherentes con las respuestas; rollback y error interno al fallar la escritura. |
-| CA-27 a CA-29 | Lotes incompletos/duplicados/inesperados, perfil malformado, estados comerciales, 100/101 SKU únicos y líneas repetidas. | Contrato e integración | Rechazos sin filas; cantidades conservadas y cero llamadas al superar el límite; estados según homologación pendiente. |
+| CA-27 a CA-29 | Lotes incompletos/duplicados/inesperados, perfil malformado, estados efectivos, 100/101 SKU únicos y líneas repetidas. | Contrato e integración | Rechazos sin filas; cantidades conservadas y cero llamadas al superar el límite; estados según H-G2-02 y D-G2-01. |
+| CA-30 a CA-32 | SKU padre solos/múltiples/mixtos, producto simple válido, detalles de error inválidos y permutaciones de errores de distintas clases. | Contrato e integración PostgreSQL | Afectados exactos en orden de solicitud y rechazo íntegro; respuesta inválida si el error incumple la revisión exigible; precedencia D-G2-02 aceptada el 04/11. |
 | CA-12 | Resolver zona para un destino cubierto y otro sin cobertura. | Integración | Zona asociada al despacho y ausencia de cobertura declarada. |
 
 Además, se ejecutarán dos recorridos funcionales completos:
@@ -375,7 +397,7 @@ Además, se ejecutarán dos recorridos funcionales completos:
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-29` están implementados y cuentan con pruebas automatizadas exitosas, con la homologación externa de estados y errores enlazada.
+- Los criterios `CA-01` a `CA-32` están implementados y cuentan con pruebas automatizadas exitosas, con H-G2-01/02/03 y el cierre/revisión de las precisiones D-G2-01/02 enlazados.
 - Los dos recorridos funcionales han sido verificados de extremo a extremo.
 - La cotización y la resolución de zona devuelven resultados coherentes con la configuración vigente.
 - F-02 obtiene la zona de cada despacho desde este servicio y no mantiene una lógica de cobertura propia.
@@ -383,4 +405,4 @@ La funcionalidad se considera completa cuando:
 - No se han incorporado alcances no especificados.
 - La evidencia de pruebas puede trazarse hacia cada criterio de aceptación.
 
-Referencia de la actualización del 26/10/2026: [cite: 1] [contrato externo §§5 y 11.1](../integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6), [modelo de datos](../arquitectura/modelo-datos.md#12-persistencia-exacta-y-estado-comunicado-del-esquema) y [evidencia de ES-F01-06](../especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md). La tabla creada y los datos postales son antecedentes comunicados; implementación del escritor y pruebas pendientes.
+Referencias: [cite: 1] [contrato externo §§5 y 11.1](../integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento), actualizado el 04/11/2026 con cierre semántico D, merge del proveedor y sincronización normativa pendiente; [modelo de datos](../arquitectura/modelo-datos.md#12-persistencia-exacta-y-estado-comunicado-del-esquema) y [evidencia de ES-F01-06](../especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md). Los antecedentes de tablas del 26/10/2026 no acreditan escritor ni pruebas funcionales.

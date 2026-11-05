@@ -44,7 +44,8 @@
   - Sin `lineas`, la respuesta confirma únicamente la cobertura, la zona y los datos del destino, sin costo, sin plazo y sin `tipoCotizacion`.
   - Cada cálculo exacto exitoso se guarda en `cotizaciones` antes de responder, aunque no exista pedido, con vínculos nulos a pedido/despacho. No se guardan cobertura sin productos, resultados sin tarifa ni rechazos.
   - La cotización no crea un pedido ni un despacho ni requiere `Idempotency-Key`: una repetición puede generar otra instantánea del cálculo vigente.
-  - El límite de SKU, la integridad del lote, la elegibilidad y los errores se rigen por [contrato externo §§5.1 y 5.2](../../integraciones/api-contract.md#51-solicitar-cotización); la homologación externa sigue pendiente en [§11.1](../../integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6) [cite: 1].
+   - El límite de SKU, la integridad del lote, la elegibilidad y los errores se rigen por [contrato externo §§5.1 y 5.2](../../integraciones/api-contract.md#51-solicitar-cotización). H-G2-01/02/03 y semántica D-G2-01/02 están cerrados; sincronización normativa y verificación del consumidor se siguen en [§11.1](../../integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento) [cite: 1].
+   - F-01 utiliza el estado efectivo proyectado por G6; `INACTIVO` o `BORRADOR` impiden cotizar exactamente. El rechazo por SKU padre no físico conserva todos y únicamente los causantes, literalmente, sin duplicados y en orden de solicitud. Traducción y precedencia están acordadas en §5.2.4; se contrasta la revisión exigible del proveedor.
   - Rendimiento: tiempo de respuesta menor a 100 ms.
 - **Entidades de datos involucradas:** `zonas`, `zonas_distritos`, `zonas_codigos_postales` y `tarifas_zona` (lectura); `cotizaciones` (inserción exacta exitosa, ver [modelo de datos](../../arquitectura/modelo-datos.md)) [cite: 2].
 
@@ -73,7 +74,10 @@
   - **ENTONCES** el sistema retorna código `200 OK` con `coberturaDisponible: false`, `nombreZona: null`, sin costo de envío ni plazo estimado, y con el mensaje "La dirección se encuentra fuera de nuestra zona de cobertura", sin consultar a Productos y Ofertas.
 
 - [ ] **CA-24 a CA-29: Persistencia e integridad ampliadas**
-  - Los escenarios DADO/CUANDO/ENTONCES se mantienen en [F-01 RF-03](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md#rf-03-cotización-en-tiempo-real-para-canales-de-venta) y se concretan en [ES-F01-06 CA-11 a CA-16](../../especificaciones/ES-F01-06-CotizarEnvioConProductos/spec.md#ca-11-instantánea-exacta-exitosa-sin-pedido): instantánea antes de confirmar venta, exclusión de cobertura/rechazos, fallo de escritura, lote inválido, elegibilidad y límite de SKU. Todos pendientes de implementación/verificación; estados de G6 pendientes de homologación [cite: 1].
+  - Los escenarios DADO/CUANDO/ENTONCES se mantienen en [F-01 RF-03](../../funcionalidades/F-01-Gestor_ZonasGeograficas.md#rf-03-cotización-en-tiempo-real-para-canales-de-venta) y se concretan en [ES-F01-06 CA-11 a CA-16](../../especificaciones/ES-F01-06-CotizarEnvioConProductos/spec.md#ca-11-instantánea-exacta-exitosa-sin-pedido): instantánea antes de confirmar venta, exclusión de cobertura/rechazos, fallo de escritura, lote inválido, estado efectivo y límite de SKU. Implementación/verificación pendientes; homologación H cerrada [cite: 1].
+
+- [ ] **CA-30 a CA-32: SKU padre, detalle y precedencia**
+   - Escenarios en F-01 RF-03 y [ES-F01-06 CA-17 a CA-19](../../especificaciones/ES-F01-06-CotizarEnvioConProductos/spec.md#ca-17-sku-padre-no-físico-y-afectados-exactos): rechazo íntegro con SKU exactos, error de proveedor no conforme y precedencia de errores mixtos aceptada el 04/11. Las permutaciones conservan código/conjunto de afectados y ordenan la lista según cada solicitud. Publicación normativa e implementación/pruebas G2 pendientes; el producto simple válido conserva su recorrido.
 
 ---
 
@@ -82,9 +86,10 @@
 - [ ] Motor de cotización implementado en Spring Boot sobre sus propias tablas de zonas y tarifas, con consulta en lote a Productos y Ofertas usando el token de servicio de `modulo-despacho`.
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) de cálculo tarifario y validación de cobertura geográfica.
 - [ ] Prueba de integración del endpoint `POST /api/v1/cotizaciones` validando las tres modalidades de la sección 5.1 y los códigos `DESP_ERROR_*` según [integraciones/api-contract.md](../../integraciones/api-contract.md).
+- [ ] Regresiones de estado efectivo y CA-30 a CA-32 bajo la revisión D exigible, con SKU causantes exactos, orden y precedencia aceptados y rechazo sin filas; cierre semántico del 03–04/11, publicación normativa, tareas y evidencias enlazados.
 - [ ] Escritor de `cotizaciones` probado con PostgreSQL: correspondencia fila/respuesta, tarifa histórica, vínculos nulos, repetición y rollback; cobertura y rechazos sin filas nuevas.
 - [ ] Prueba de seguridad: `401` sin token o con token inválido y `403` con token sin el scope `cotizaciones:calcular`.
 - [ ] Verificación automatizada del tiempo de respuesta menor a 100 ms.
 - [ ] Documentación y trazabilidad actualizadas en el repositorio.
 
-Referencias: [cite: 1] [contrato externo](../../integraciones/api-contract.md), §§5 y 11.1; [cite: 2] [modelo de datos §3.1](../../arquitectura/modelo-datos.md#31-zonas-y-tarifas-gestión-de-despachos-escribe-f-01), DDL comunicado y escritor pendiente.
+Referencias: [cite: 1] [contrato externo](../../integraciones/api-contract.md), §§5 y 11.1, fuentes del 02–04/11/2026, cierre semántico D y merge del proveedor; [cite: 2] [modelo de datos §3.1](../../arquitectura/modelo-datos.md#31-zonas-y-tarifas-gestión-de-despachos-escribe-f-01), DDL comunicado y escritor pendiente.
