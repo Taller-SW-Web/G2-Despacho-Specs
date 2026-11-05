@@ -6,6 +6,8 @@
 
 **UI:** Aplica; modal administrativo desde listado o detalle.
 
+**Ampliación de Calidad · 05/11/2026:** [EV-07](./evidence.md#ev-07-contrato-por-gateway-y-liberación-real-local) registra 14 casos contractuales por Gateway con Gestión y Operación reales, bases desechables y Seguridad temporal. Se reutilizan las implementaciones existentes sin cambios Java ni de contratos. Esta verificación parcial de I-04/05/07 no cierra el recorrido con frontend, G7, dos salidas o reinicios de procesos reales.
+
 ## 1. Entradas y revisiones
 
 | Documento o base | Referencia | Revisión utilizada |
