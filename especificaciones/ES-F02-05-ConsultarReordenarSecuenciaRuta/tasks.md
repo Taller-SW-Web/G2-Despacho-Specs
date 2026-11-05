@@ -2,7 +2,7 @@
 
 **Responsable de coordinación:** Tarqui.
 
-**Estado:** Pendiente de implementación.
+**Estado:** Consumidor de consulta y reordenamiento seguro implementado localmente; integración real y regla de huecos pendientes.
 
 **Plan de origen:** [plan.md](./plan.md), preparado el 16/10/2026.
 
@@ -15,8 +15,8 @@
 | T-03 | Validador de negocio `SecuenciaValidador` con comprobación de secuencia continua y estados. | Backend / Dominio | T-02 | CA-03, CA-04 | Pendiente |
 | T-04 | Caso de uso y endpoint `PUT /api/v1/jornadas/{idJornada}/secuencia` transaccional. | Backend / API | T-03 | CA-02, CA-05, CA-06 | Pendiente |
 | T-05 | Pruebas de integración de backend con MockMvc y Testcontainers. | Calidad / Backend | T-04 | CA-01 a CA-06 | Pendiente |
-| T-06 | Componente React de lista drag & drop con soporte de teclado y bloqueo de no ASIGNADO. | Frontend / UI | CR-01, CR-09, CR-16 | CUI-01, CUI-02, CUI-04 | Pendiente |
-| T-07 | Barra inferior de cambios pendientes (CR-13) con acciones "Guardar" y "Descartar". | Frontend / UI | T-06, CR-13 | CUI-03, CUI-05 | Pendiente |
+| T-06 | Componente React de lista drag & drop con soporte de teclado y bloqueo de no ASIGNADO. | Frontend / UI | CR-01, CR-09, CR-16 | CUI-01, CUI-02, CUI-04 | Implementado localmente con API simulada, limitado a rutas continuas; EV-04 |
+| T-07 | Barra inferior de cambios pendientes (CR-13) con acciones "Guardar" y "Descartar". | Frontend / UI | T-06, CR-13 | CUI-03, CUI-05 | Implementada localmente con API simulada; integración real pendiente, EV-04 |
 
 ## 2. Detalle de tareas
 
@@ -41,7 +41,7 @@
 - Comprobación: 100% de tests aprobados.
 
 ### T-06. Componente Drag & Drop
-- Alcance: lista vertical con `@hello-pangea/dnd`, botones subir/bajar y estilos visuales acordes al sistema de diseño.
+- Alcance: `RutasProgramacion.tsx` usa arrastre nativo y botones subir/bajar, sin añadir una biblioteca. Conserva paradas no `ASIGNADO` fijas y bloquea cualquier reordenamiento de rutas con huecos, jornada cerrada o comando pendiente hasta resolver sus condiciones.
 - Comprobación: tests de interacción con Testing Library.
 
 ### T-07. Barra fija de cambios

@@ -25,6 +25,8 @@ El objetivo es presentar **las dos aplicaciones web y los tres componentes del b
 
 ### Tarqui · Producto y F-02
 
+Desglose de ejecución en los tres repositorios: [Plan de F-02 para el Hito 4](./Plan_Hito_4_F02.md). Separa la demo prioritaria, la verificación del backend existente y los incrementos pendientes de interfaz.
+
 - [ ] Acordar el alcance y la secuencia de la demo. Confirmar con el profesor las preguntas de la sección 1 y comunicar la decisión al equipo.
 - [ ] Verificar en el ambiente publicado la cola y la asignación a una jornada activa con capacidad. Probar que el despacho asignado aparece en la ruta que consume F-03.
 - [ ] Revisar qué cambios de rutas y cancelación ya entraron al backend. Actualizar el estado y la evidencia de las operaciones que se prueben para el hito.

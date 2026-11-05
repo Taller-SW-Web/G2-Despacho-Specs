@@ -2,7 +2,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Especificación de UI preparada el 16/10/2026; implementación pendiente.
+**Estado:** Modal implementado y verificado localmente con API simulada; integración real y aceptación pendientes (EV-04 de evidencia).
 
 **Aplicabilidad:** Modal interactivo de reasignación invocado desde la pestaña "Rutas por repartidor" (`/programacion`).
 

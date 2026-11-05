@@ -33,3 +33,6 @@ tmp/
 
 # Documentos de trabajo personal
 trabajo-jerson/
+
+# Resultados locales de Graphify
+graphify-out/

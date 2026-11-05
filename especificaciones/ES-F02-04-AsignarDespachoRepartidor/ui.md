@@ -2,7 +2,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Especificación de UI preparada el 16/10/2026; implementación pendiente.
+**Estado:** Modal y barras implementados y verificados localmente con API simulada el 05/11/2026 (EV-04 de `evidence.md`); proveedor real y aceptación pendientes.
 
 **Aplicabilidad:** Modal interactivo de asignación invocado desde la cola de pendientes (`/programacion`).
 

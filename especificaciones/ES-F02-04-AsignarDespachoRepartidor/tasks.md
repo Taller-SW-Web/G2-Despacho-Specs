@@ -2,7 +2,7 @@
 
 **Responsable de coordinación:** Tarqui.
 
-**Estado:** Pendiente de implementación.
+**Estado:** Ejecución parcial; modal con barras verificado localmente, integración backend/nube y aceptación pendientes.
 
 **Plan de origen:** [plan.md](./plan.md), preparado el 16/10/2026.
 
@@ -16,7 +16,7 @@
 | T-04 | Mecanismo de compensación de reserva ante fallos transaccionales locales. | Backend / Resiliencia | T-02, T-03 | CA-01 | Pendiente |
 | T-05 | Controlador REST `AsignacionController` con autorización `@PreAuthorize`. | Backend / API | T-03 | CA-07 | Pendiente |
 | T-06 | Pruebas de integración de backend con WireMock y Testcontainers. | Calidad / Backend | T-05 | CA-01 a CA-07 | Pendiente |
-| T-07 | Componente React `ModalAsignacionDespacho` con barras Mantine (CR-11, CR-20). | Frontend / UI | CR-11, CR-12, CR-20 | CUI-01 a CUI-05 | Pendiente |
+| T-07 | Componente React `ModalAsignacion` con barras Mantine (CR-11, CR-20). | Frontend / UI | CR-11, CR-12, CR-20 | CUI-01 a CUI-05 | Implementada localmente; verificación con API simulada en EV-04; aceptación real pendiente |
 | T-08 | Conexión con React Query, invalidación de cola y feedback toast. | Integración UI | T-05, T-07 | CUI-06 | Pendiente |
 
 ## 2. Detalle de tareas
@@ -26,7 +26,7 @@
 - Comprobación: contratos verificados.
 
 ### T-02. Cliente REST de Operación
-- Alcance: `OperacionCapacidadClient` con llamadas POST y DELETE de reserva, manejando 200, 409 y 422.
+- Alcance: `CapacidadProgramacionHttp` para reserva y liberación según las operaciones canónicas de Operación §§5.1/5.2, manejando 200, 409 y 422. No utilizar el DELETE previsto históricamente.
 - Comprobación: pruebas con WireMock.
 
 ### T-03. Caso de uso AsignarDespachoUseCase
@@ -34,8 +34,8 @@
 - Comprobación: tests unitarios con JUnit 5.
 
 ### T-04. Servicio de compensación
-- Alcance: capturar excepciones posteriores a la reserva en Operación para invocar la liberación inmediata.
-- Comprobación: test de compensación simulando fallo en `saveAndFlush`.
+- Alcance: `AsignarDespacho` conserva la intención y compensación durables; consulta si hubo confirmación antes de liberar y aplaza los fallos recuperables. HTTP fuera de transacciones locales.
+- Comprobación: `ProgramacionHttpTests` incluye fallos posteriores a reserva y recuperación; requiere PostgreSQL desechable. Su ejecución completa en esta sesión quedó bloqueada por Docker; no se declara aprobada.
 
 ### T-05. Controlador REST
 - Alcance: `POST /api/v1/despachos/{idDespacho}/asignacion` exigiendo rol `GESTOR_DESPACHO`.

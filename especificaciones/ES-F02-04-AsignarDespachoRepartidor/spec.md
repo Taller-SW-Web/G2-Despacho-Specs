@@ -4,7 +4,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Implementación local del modal y barras verificada con API simulada el 05/11/2026; integración real y aceptación pendientes (EV-04).
 
 **Actor principal:** Gestor de Despacho (aplicación web administrativa).
 
@@ -56,10 +56,10 @@ El objetivo es ejecutar la asignación validando de forma transaccional y en tie
 2. La interfaz abre el modal de asignación mostrando los datos del despacho y cargando los repartidores en jornada agrupados (primero los de la zona del despacho).
 3. El Gestor selecciona un repartidor cuyas barras de capacidad en kg, m³ y paquetes admitan la carga proyectada.
 4. Ingresa opcionalmente instrucciones o una observación de entrega y pulsa "Confirmar asignación".
-5. El backend inicia la transacción:
+5. El backend prepara una intención durable y coordina transacciones locales separadas de las llamadas HTTP:
    - Verifica que el despacho siga en `PENDIENTE_ASIGNACION` y que su versión coincida (bloqueo optimista).
    - Valida que `fechaProgramada <= hoy`.
-   - Consulta a F-06 y ejecuta la reserva de capacidad en las tres dimensiones.
+   - Fuera de la transacción local, consulta a F-06 y ejecuta la reserva de capacidad en las tres dimensiones.
    - Determina la siguiente posición de la secuencia (`MAX(posicion) + 1` en la ruta del repartidor).
    - Transiciona el estado a `ASIGNADO` e incrementa la versión.
    - Persiste el registro de auditoría con la ocupación resultante.
@@ -73,7 +73,7 @@ El objetivo es ejecutar la asignación validando de forma transaccional y en tie
 | Conflicto concurrente | El despacho ya fue asignado o cancelado concurrentemente | Responde `409 Conflict` indicando que el despacho ya fue procesado | CA-04 |
 | Fecha programada a futuro | Se intenta forzar asignación en `fechaProgramada > hoy` | Responde `409 Conflict` ("Despacho programado para fecha futura") | CA-05 |
 | Reserva previa no liberada | Reprogramado con reserva de salida anterior activa | Responde `409 Conflict` hasta confirmar liberación en F-06 | CA-06 |
-| Sin rol Gestor | Token sin rol `GESTOR_DESPACHO` o petición anónima | Responde `403 Forbidden` | CA-07 |
+| Sin rol Gestor | Token sin rol `GESTOR_DESPACHO` o petición anónima | Responde `403 Forbidden` con identidad sin permiso o `401 Unauthorized` sin token aceptado, conforme a las convenciones comunes | CA-07 |
 
 ## 5. Reglas, datos e integraciones
 
@@ -88,7 +88,7 @@ El objetivo es ejecutar la asignación validando de forma transaccional y en tie
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|
 | `POST /api/v1/despachos/{idDespacho}/asignacion` | Endpoint canónico de asignación. | [api-contract-gestion-despachos.md §3.2](../../integraciones/api-contract-gestion-despachos.md#32-programación-y-asignación) |
-| `POST /internal/v1/operacion/capacidad/reserva` | Reserva tridimensional en Operación. | [api-contract-operacion-reparto.md §5.1](../../integraciones/api-contract-operacion-reparto.md#51-gestión-consulta-y-reserva-capacidad-en-operación) |
+| Reserva de capacidad de Operación | Reserva tridimensional mediante la operación canónica, sin duplicar su contrato. | [api-contract-operacion-reparto.md §5.1](../../integraciones/api-contract-operacion-reparto.md#51-gestión-consulta-y-reserva-capacidad-en-operación) |
 | Auditoría (RT-02) | Registro de la asignación en auditoría. | [ES-F02-08](../ES-F02-08-RegistrarTrazabilidadOperaciones/spec.md) |
 
 ## 6. Criterios de aceptación
@@ -133,7 +133,7 @@ El objetivo es ejecutar la asignación validando de forma transaccional y en tie
 
 - **DADO** un usuario autenticado sin el rol `GESTOR_DESPACHO` o una petición anónima.
 - **CUANDO** intenta invocar el endpoint de asignación.
-- **ENTONCES** el backend responde `403 Forbidden` y no efectúa ninguna reserva ni cambio de estado.
+- **ENTONCES** el backend responde `403 Forbidden` a una identidad sin permiso o `401 Unauthorized` si falta un token aceptado, conforme al contrato externo §3.5, y no efectúa ninguna reserva ni cambio de estado.
 
 ## 7. Referencias
 

@@ -1,11 +1,15 @@
 # Especificación F-02: Programación y Asignación de Despachos
 
 **Responsable:** Tarqui  
-**Estado:** En especificación  
+**Estado:** Implementación local parcial; integración real y aceptación pendientes
 **Actor principal:** Gestor de Despacho  
 **Lineamientos del curso:** Generación de solicitud de despacho a partir de un pedido; Asignación de despacho a operador/repartidor  
 
 **Actualización 04/11/2026:** H-G2-01/02/03 cerrados; D-G2-01 cerrado el 03/11 y D-G2-02 cerrado semánticamente el 04/11. CA-25 a CA-27 recogen el rechazo por identificador no físico, afectados y precedencia aceptados. Sincronización normativa G6 e implementación/verificación G2 pendientes [cite: 1].
+
+**Actualización 05/11/2026:** el [registro de ejecución del Hito 4](../hitos/Plan_Hito_4_F02.md#7-registro-de-ejecución-del-05112026) y [EV-04 de asignación](../especificaciones/ES-F02-04-AsignarDespachoRepartidor/evidence.md#ev-04-incremento-local-del-hito-4--05112026) recogen barras tridimensionales verificadas con API simulada, regresiones y bloqueos de Docker/G7. No se acredita la integración real ni se cierran los criterios de completitud de F-02.
+
+**Continuación del 05/11/2026:** se habilitan consulta de rutas, reordenamiento limitado a fotografías continuas y reasignación con recuperación del comando original; se corrige el enrutamiento de programación en el perfil publicado del Gateway. El [registro de continuación](../hitos/Plan_Hito_4_F02.md#8-continuación-rutas-y-reasignación-seguras) conserva explícitamente pendientes G6, identidad interna, huecos históricos y aceptación en nube.
 
 ## 1. Contexto
 
