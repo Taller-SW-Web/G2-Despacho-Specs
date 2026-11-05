@@ -1,12 +1,22 @@
 # Evidencia de ES-F02-01: Recepción de solicitudes de despacho
 
-**Estado:** Pendiente de implementación y verificación funcional.
+**Estado:** Recepción y validación estricta de lote implementadas en `feature/f02-cierre-criterios`; regresión local con PostgreSQL aprobada. Homologación bilateral y aceptación pendientes.
 
 **Responsable de verificación:** Tarqui.
 
 **Última verificación funcional:** No ejecutada.
 
 ## 1. Versión y entorno verificados
+
+### Incremento del 30/10/2026
+
+- Verificación posterior con Docker iniciado por el usuario: `./mvnw -q clean verify` con Java 21 terminó correctamente en Gestión (**194 pruebas**), Operación (**124**) y Gateway (**28**), sin fallos, errores ni omitidas. Incluye la migración V8 y pruebas de protección del historial. El bloqueo Docker descrito más abajo corresponde al intento anterior y quedó resuelto; no acredita homologación externa ni medición de rendimiento.
+
+- Backend parte de `develop` `e4f8ee1`; se conserva el trabajo de grafo existente. Cambios sin commit/push atribuidos a esta ejecución.
+- `ProductosProgramacionHttp` valida clasificación exhaustiva y única, tipos numéricos positivos, estado y fecha. Un lote malformado responde 502 antes de interpretar inexistentes; error técnico o rechazo de credencial saliente, 503. `INACTIVO` válido se admite para pedidos pagados; `BORRADOR` no se habilita mientras no se homologue.
+- Recepción agrupa cantidades y rechaza más de 100 SKU únicos antes de consultar. La traducción de errores incompletos usa la propuesta `details.skusAfectados` y conserva afectados en errores públicos; no se atribuye aceptación de ese formato a G6.
+- `./mvnw -q -Dtest=ProductosLoteTests test`: **5 pruebas aprobadas**, con HTTP JDK controlado y caso de uso con dobles. `./mvnw clean verify` intentado con Java 21: bloqueado porque no existe `/var/run/docker.sock`. No se deshabilitaron pruebas de persistencia ni se usaron bases compartidas.
+- Rendimiento comprometido, homologación con G6, grants G7 y aceptación humana continúan pendientes. La evidencia histórica «No ejecutado» de las matrices siguientes no se convierte en aprobación integral por estos cambios.
 
 - Documentación preparada: [spec.md](./spec.md), [plan.md](./plan.md) y [tasks.md](./tasks.md).
 - Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-01, RF-05).

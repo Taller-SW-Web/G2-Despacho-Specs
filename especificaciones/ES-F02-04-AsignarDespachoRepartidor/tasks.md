@@ -2,7 +2,9 @@
 
 **Responsable de coordinación:** Tarqui.
 
-**Estado:** Pendiente de implementación.
+**Estado:** Implementación local; barras/placa/proyección verificadas con APIs simuladas. Integración y aceptación pendientes.
+
+**Avance 30/10/2026:** el modal consume ocupación y límites obligatorios de F-06 y reutiliza CR-20/CR-11, sin calcular límites ficticios. Búsqueda por placa y rechazo tridimensional conservados. La tabla histórica inferior requiere reconciliación por criterio al ejecutar la integración real; no se atribuye aceptación externa a fixtures. Ver [evidence.md](./evidence.md).
 
 **Plan de origen:** [plan.md](./plan.md), preparado el 16/10/2026.
 

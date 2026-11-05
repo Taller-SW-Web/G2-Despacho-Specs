@@ -2,7 +2,9 @@
 
 **Responsable de coordinación:** Tarqui.
 
-**Estado:** Pendiente de implementación.
+**Estado:** Auditoría existente; protección SQL V8 implementada, pendiente de verificación PostgreSQL y privilegios reales.
+
+**Avance 30/10/2026:** se reutiliza el historial y los escritores transaccionales existentes, sin crear un segundo `AuditoriaService` ni repositorio redundante. V8 prohíbe UPDATE/DELETE y revoca mutación/TRUNCATE públicos. La prueba JDBC y las regresiones de rollback requieren Docker disponible; no se cierra CA-06 por revisión estática. Ver [evidence.md](./evidence.md).
 
 **Plan de origen:** [plan.md](./plan.md), preparado el 16/10/2026.
 
