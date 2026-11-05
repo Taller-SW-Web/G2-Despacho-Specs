@@ -1,12 +1,16 @@
 # Evidencia de ES-F01-01: Consultar el catálogo de zonas de cobertura
 
-**Estado:** Pendiente; esta plantilla no acredita una implementación.
+**Estado:** Comprobaciones backend locales ejecutadas; UI y aceptación integral pendientes.
 
 **Responsable de verificación:** Valqui.
 
-**Última verificación:** Pendiente.
+**Última verificación:** 05/11/2026, suite de Gestión aprobada.
 
 ## 1. Versión y entorno verificados
+
+### Incremento backend del 05/11/2026
+
+`FlujoF01Tests` comprueba catálogo autorizado, filtro distrital, detalle con códigos postales, cobertura exclusivamente postal y restricciones de acceso. La suite completa de Gestión aprobó 231 pruebas con PostgreSQL desechable. Revisión, rama, comando y reportes se registran en la [evidencia de ejecución de ES-F01-06](../ES-F01-06-CotizarEnvioConProductos/evidence.md#ejecución-local-del-consumidor--05112026). UI, filtros combinados/paginación de aceptación y revisión humana conservan comprobaciones pendientes; la matriz inferior mantiene ese alcance integral. Los antecedentes siguientes corresponden a la preparación documental original.
 
 - Especificación y plan utilizados: [spec.md](./spec.md), [ui.md](./ui.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), en la misma revisión de esta carpeta.
 - Repositorios y commits de código: pendientes (frontend y Gestión de Despachos).

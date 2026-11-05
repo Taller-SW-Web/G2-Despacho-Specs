@@ -1,12 +1,46 @@
 # Evidencia de ES-F01-06: Cotizar el envío con datos físicos de productos
 
-**Estado:** Pendiente; la preparación documental no acredita implementación.
+**Estado:** Implementación y automatización local verificadas el 05/11/2026; integración real y aceptación pendientes.
 
 **Responsable de verificación:** Valqui.
 
-**Última verificación funcional:** Pendiente.
+**Última verificación funcional:** 05/11/2026, Gestión, 231 pruebas aprobadas; proveedor G6 simulado explícitamente.
 
 ## 1. Versión y entorno verificados
+
+### Ejecución local del consumidor — 05/11/2026
+
+- Backend: `G2-Despacho-Backend`, rama `feature/f01-integracion-g6-cotizaciones`, cambios de trabajo sobre `6af187c`. Documentación: `docs/f01-integracion-g6-redondeo`, sobre `637fa8d`. Cambios sin commit de entrega en esta sesión.
+- Java Temurin 21.0.9, Maven Wrapper, Docker 29.9.2 y PostgreSQL 17/PostGIS en contenedores desechables. No se aplicaron migraciones a Supabase ni a la base local de trabajo.
+- Comando final, ejecutado dentro de `servicio-gestion-despachos`:
+
+```bash
+JAVA_TOOL_OPTIONS="-Dspringdotenv.enabled=false -Dpruebas.postgres.externo=false -Dlogging.level.root=ERROR -Dlogging.level.com.modulodespacho=OFF" ./mvnw clean verify
+```
+
+- Resultado final: **BUILD SUCCESS**, 231 pruebas, 0 fallos, 0 errores, 0 omitidas; finalizó el 05/11/2026 a las 13:08:46 UTC−05. Artefactos locales: `target/surefire-reports` y JAR verificado de Gestión. Las propiedades fuerzan contenedores, deshabilitan dotenv y reducen logs; no omiten pruebas. La ejecución anterior aprobó 230 pruebas; la última añade validación estricta de tipos sin alterar la precedencia de cobertura.
+- Se corrigieron durante el incremento: enlace JDBC de `Instant`, valor opcional postal al deserializar, reloj fijo de pruebas, construcción del manejador en cortes MVC y expectativas de versión final de migración (ahora V10). Se conservaron aserciones de regresión y de datos previos; la primera ejecución completa falló y la repetición final aprobó.
+- Pruebas relevantes: `CotizacionG6HttpTests` (12), `ClienteDatosFisicosHttpTests` (7), `RedondeoCotizacionTests` (16), `FlujoF01Tests` (13), `LimiteCotizacionesHttpTests` (2), `CalculadoraCotizacionTests` (3) y `ControladorCotizacionTests` (6). El resto corresponde a regresión de Gestión, incluidas Programación e Incidencias.
+- Comprobaciones auxiliares: `docker compose --env-file .env.example config --quiet` y `git diff --check` de ambos repositorios, aprobados. Verificador documental temporal `python3 /tmp/opencode/validar_f01_20261105.py`: 17 Markdown, 433 enlaces locales/anclas, 31 ejemplos JSON y 20 criterios de ES-F01-06, sin errores. La primera pasada del verificador se corrigió para reconocer las anclas HTML explícitas existentes.
+- Perfil normal: cliente HTTP real de G2 contra servidor de prueba en loopback, ruta canónica, token propio distinto del canal y ausencia de transacción durante la llamada. El catálogo local requiere `productos-simulados` explícito.
+- Persistencia real: correspondencia de respuesta y tarifa capturada, precisión de peso, volumen/costo redondeados, perfiles y cantidades en `detalle`, vínculos nulos, repetición con instantáneas independientes y conservación tras sustituir tarifa. Fallos tanto de inserción como de commit produjeron `500` contractual y cero filas parciales. V8–V10 se aplicaron en contenedores; se verificó también migración desde V2/V3 con datos previos.
+- Configuración: reintentos administrativos durables, rechazo de reutilización, cobertura exclusivamente postal y filtro distrital, colisiones concurrentes `409`, conservación de zona en despacho previo, histórico tarifario y rollback si falla auditoría.
+- Referencia externa inspeccionada: informe G6 fijado al merge `eeaf39ad666d7bc5a11c0b2a80d9c8c4b0016414`. El intento de consultar el OpenAPI en la rama `main` de su repositorio devolvió `404`; no se acreditó una publicación normativa posterior a la ya enlazada en el contrato.
+- Límites: G6 y los JWT entrantes de las pruebas F-01 son dobles; la regresión incluye además criptografía con emisor controlado. No se ejecutaron G6/G7 reales, recorrido con canales/Gateway, UI, matriz padre/variante en el proveedor ni medición de 100 ms. Feriados/horas de corte y consumo remoto de cobertura desde Operación conservan coordinación pendiente.
+
+| Criterios | Evidencia ejecutada | Resultado y límite |
+|---|---|---|
+| CA-01, CA-03 y CA-10 | Flujo zona/tarifa/cotización, cálculo, líneas y omisión de totales del canal | Aprobado local; proveedor controlado |
+| CA-02 y CA-07 | Sin cobertura incluso con líneas inválidas; cobertura sin tarifa | Aprobado local, cero llamadas y filas |
+| CA-04 a CA-06 | Inexistentes identificados, error físico contractual y errores técnicos/de credencial saliente | Aprobado local; disponibilidad real pendiente |
+| CA-08 y CA-09 | Token técnico/rol, autorización previa al negocio y tasa por consumidor/IP | Aprobado local; grant G7 pendiente |
+| CA-11 a CA-13 | Instantáneas, precisión, sustitución, repetición, fallo de inserción y commit | Aprobado con PostgreSQL desechable |
+| CA-14 y CA-16 | Integridad, tipos, fechas, estados desconocidos, 100/101 únicos, 150 líneas repetidas y overflow de cantidades | Aprobado local |
+| CA-15 | Estado efectivo y rechazo de `INACTIVO`/`BORRADOR` | Aprobado consumidor; nueve combinaciones del proveedor no ejecutadas aquí |
+| CA-17 a CA-19 | Afectados, detalle ausente/vacío/duplicado/ajeno/mal ordenado y permutaciones mixtas | Aprobado con doble D; normativa y recorrido real pendientes |
+| CA-20 | Ejemplos, límites de medio sol y milésimos, acumulación y costo sobre volumen exacto | Aprobado unitario y PostgreSQL |
+
+### Antecedentes de preparación documental
 
 - Entradas: [spec.md](./spec.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), preparación del 16/10/2026 a partir de `91db8f8`.
 - Repositorios y commits de código: pendientes, Gestión de Despachos y Gateway.

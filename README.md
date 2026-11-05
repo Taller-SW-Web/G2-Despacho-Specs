@@ -72,6 +72,8 @@ Actualización del 04/11/2026: el estado efectivo D-G2-01 y el rechazo identific
 
 ## 🗂️ Repositorios del módulo
 
+Actualización del 05/11/2026: F-01 cuenta con implementación backend local de cliente G6, validación del lote, estados/errores identificados, persistencia exacta y redondeos confirmados. Gestión aprobó 231 pruebas con bases desechables y proveedor controlado. La [evidencia de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md#ejecución-local-del-consumidor--05112026) registra el comando, revisiones, escenarios y límites. El [índice funcional](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-01) distingue backend local, UI e integración externa; G6/G7 reales, publicación normativa, calendario y E2E siguen pendientes.
+
 El módulo se divide en repositorios independientes que comparten las especificaciones de este proyecto.
 
 | Repositorio | Propósito | Estado |

@@ -2,7 +2,9 @@
 
 **Responsable:** Valqui.
 
-**Estado:** Borrador; pendiente de revisión técnica e implementación.
+**Estado:** Implementación y automatización local verificadas; revisión técnica e integración real pendientes.
+
+**Incremento consumidor 05/11/2026:** backend local `feature/f01-integracion-g6-cotizaciones`, base `6af187c`. Se implementan cliente HTTP compartido, validación H/D, cálculo y escritor transaccional. La decisión del usuario fija costo elevado a múltiplos de `0.50 PEN` a dos decimales y volumen informado elevado a tres decimales, conservando exactos para la fórmula. DT-01 se concreta en Gestión §3.1 con cobertura `200` sin costo cuando falta tarifa; DT-02 cierra redondeos y términos derivados en el modelo, manteniendo calendario operativo por acordar. Las pruebas y límites efectivamente ejecutados se registran en evidencia; la publicación normativa G6, grant G7, UI consumidora y recorrido real mantienen su seguimiento independiente.
 
 **Actualización:** 04/11/2026. Se conserva la preparación de persistencia del 26/10 y se registra H cerrado, D-G2-01 cerrado el 03/11 y D-G2-02 cerrado semánticamente el 04/11. La sincronización normativa G6 y la verificación del consumidor tienen seguimiento propio. Implementación y pruebas funcionales se realizarán en el backend identificado al iniciar las tareas.
 
@@ -87,19 +89,19 @@ No aplica. No se requieren componentes React ni mock visual del módulo. El dobl
 | CA-18 | Detalle ausente, vacío, tipos incorrectos, duplicados y SKU no solicitados | Contrato e integración | Problemas controlados; `502`, sin costo ni fila |
 | CA-19 | Permutar lote: mismo código/conjunto de afectados y lista en orden de cada solicitud | Contrato proveedor-consumidor | Precedencia y orden aceptados; revisión exigible fijada en DT-08 |
 
-Verificar además selección del cliente HTTP con perfil normal, token ausente/inválido/vencido, audiencia incorrecta, scope ausente/correcto, token saliente propio y distrito ausente. Comparar ausencia de escrituras solo en cobertura/rechazos; los cálculos exactos deben persistirse. Para CA-01, el ejemplo suma `0.02126 m³` antes de redondear y el criterio conserva `0.021 m³`: DT-02 debe conciliar cálculo, salida y escalas del DDL sin redondeo intermedio. Ejecutar los tests afectados con el Maven Wrapper del backend y registrar comando exacto, revisión, reportes y latencias. La prueba con proveedor simulado no acredita E2E.
+Verificar además selección del cliente HTTP con perfil normal, token ausente/inválido/vencido, audiencia incorrecta, scope ausente/correcto, token saliente propio y distrito ausente. Comparar ausencia de escrituras solo en cobertura/rechazos; los cálculos exactos deben persistirse. Para CA-01, el ejemplo suma `0.02126 m³` exactos e informa `0.022 m³` desde la decisión del 05/11, sin redondeo intermedio en la fórmula. Ejecutar los tests afectados con el Maven Wrapper del backend y registrar comando exacto, revisión, reportes y latencias. La prueba con proveedor simulado no acredita E2E.
 
 ## 7. Decisiones y pendientes
 
 | ID | Decisión o pregunta | Fuente y motivo | Responsable | Bloquea |
 |---|---|---|---|---|
-| DT-01 | Completar respuesta para zona activa sin tarifa, sin inventar HTTP o código | F-01 CA-23; contrato §5.1 | Valqui con Backend y consumidores | CA-07 e I-02 |
-| DT-02 | Precisar redondeo, escalas del DDL, calendario y correspondencia de peso volumétrico/cobrable con la fórmula existente | F-01 RF-03; modelo de `cotizaciones`; ejemplo y CA-01 | Valqui con Arquitectura y canales | I-01 y aceptación de cálculo/instantánea |
-| DT-03 | Verificar lector distrital/postal y campos de tarifa contra esquema real; acordar precedencia con ES-F01-07 | Modelo §§1.2/3.1 y ES-F01-04/05/07 | Valqui con Arquitectura | Lectura local e I-01/02 |
+| DT-01 | Resuelto localmente: cobertura `200` sin tipo/costo/plazo ni llamada a Productos cuando falta tarifa | Gestión §3.1, precisión del 05/11 | Valqui con Backend y consumidores | Verificación de canales reales pendiente |
+| DT-02 | Redondeo y términos derivados resueltos por decisión del usuario y modelo; calendario operativo pendiente | F-01 RF-03; V8 y detalle histórico | Valqui con Arquitectura y canales | Aceptación del calendario; cálculo y escritor locales verificados |
+| DT-03 | Lector y tarifa verificados en PostgreSQL desechable; prioridad distrital y alternativa postal documentadas | Gestión §3.1 y pruebas de F-01 | Valqui con Arquitectura | Consumo remoto de Operación y entorno persistente pendientes |
 | DT-04 | Acordar tasa, timeout, caché y medición de menos de 100 ms con Productos | F-01 §§4.1 y 8; contrato §11 | Valqui con DevOps y Productos | I-03 y rendimiento |
 | DT-05 | Disponer de tokens, permisos y entorno de Productos; verificar consumo de canales | Contrato §§5.2, 8 y 11 | Valqui con Seguridad, Productos y canales | I-02 real e I-03 |
 | DT-06 | Contrastar consumidor y matriz de errores contra H-G2-01/02/03 ya cerrados y la revisión fija `0.6.0-rc.3` | Contrato §11.1: aceptación del 02/11 y PR #108 enlazados; implementación G2 por verificar | Valqui con Productos y Calidad | Compatibilidad de I-02 e I-03; cierre contractual H ya acreditado |
-| DT-07 | Verificar tabla creada, repositorio backend y mapeo del escritor; no habilitar vínculos o ciclo de vida no acordados | DDL comunicado y decisión de persistir solo exactas; modelo §§1.2 y 3.1 | Valqui con Backend y Arquitectura | Escritor real y CA-11 a CA-13 |
+| DT-07 | Escritor y rollback de inserción/commit verificados con V8–V10 sobre bases desechables | Evidencia del 05/11; modelo §§1.2 y 3.1 | Valqui con Backend y Arquitectura | Preparación de despliegue persistente pendiente |
 | DT-08 | Aceptación semántica resuelta; enlazar publicación normativa D-G2-01/02 y contrastar compatibilidad del consumidor | Aceptación G6 del 03/11 y final G2 del 04/11, contrato §11.1; merge `eeaf39a`. OpenAPI `6fcd81f` aún sin sincronización D | Valqui con Productos y Calidad; coordinar F-02 con Tarqui | Cierre de I-04 y regresiones D; preparar dobles del acuerdo cerrado y fijar revisión exigible antes de acreditar conformidad integral |
 
 ## 8. Condiciones para iniciar y cerrar

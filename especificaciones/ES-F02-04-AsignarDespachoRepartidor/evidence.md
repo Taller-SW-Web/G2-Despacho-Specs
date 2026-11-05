@@ -8,6 +8,14 @@
 
 ## 1. Versión y entorno verificados
 
+### Incremento del 30/10/2026
+
+- Frontend `feature/f02-cierre-criterios` desde `develop` `6520f8f`. Se exigieron placa, límites positivos y ocupación de F-06; sin esos campos la consulta falla, no se fabrican porcentajes. Se mantienen selección por zona, rechazo tridimensional y verificación final del backend.
+- Pruebas F-02: 13 aprobadas. Chromium: 4 recorridos con APIs simuladas aprobados. Tipos y build correctos. La prueba de asignación comprueba tres barras por candidato, placa y búsqueda por placa antes de confirmar.
+- Suite administrativa serial: 167 aprobadas y dos fallos previos de `Zonas.test.tsx`, sin modificar sus aserciones. No equivale a suite general verde.
+- No se pudo actualizar frontend desde GitHub (autenticación SSH rechazada). El checkout local no incluye todavía las rutas/reasignación de la rama funcional. El backend sí parte del develop integrado `e4f8ee1`. La verificación conjunta requiere actualizar ese checkout y Docker disponible; no se repitió el runner G2 real.
+- La evidencia histórica siguiente conserva su alcance; no se declaran aprobados los criterios de integración real por las pruebas con fixtures.
+
 - Documentación preparada: [spec.md](./spec.md), [ui.md](./ui.md), [plan.md](./plan.md) y [tasks.md](./tasks.md).
 - Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-03, RF-06; CA-06 a CA-09).
 - Contratos asociados: `integraciones/api-contract-gestion-despachos.md` (§3.2) y `integraciones/api-contract-operacion-reparto.md` (§5.1).

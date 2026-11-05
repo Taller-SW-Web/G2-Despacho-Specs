@@ -1,12 +1,16 @@
 # Evidencia de ES-F01-05: Consultar la cobertura de un destino
 
-**Estado:** Pendiente; esta plantilla no acredita una implementación.
+**Estado:** Backend y tasa locales verificados; recorrido con canales/Gateway reales pendiente.
 
 **Responsable de verificación:** Valqui.
 
-**Última verificación:** Pendiente.
+**Última verificación:** 05/11/2026, suite de Gestión aprobada.
 
 ## 1. Versión y entorno verificados
+
+### Incremento backend del 05/11/2026
+
+`FlujoF01Tests`, `CotizacionG6HttpTests`, `ControladorCotizacionTests` y `LimiteCotizacionesHttpTests` verifican cobertura sin costo/fila, destino ausente, autenticación/autorización y rechazo `429` antes de calcular con aislamiento por consumidor/IP. Revisión, comando y reportes en la [evidencia de ejecución de ES-F01-06](../ES-F01-06-CotizarEnvioConProductos/evidence.md#ejecución-local-del-consumidor--05112026). La prioridad distrital y alternativa postal se definen en Gestión §3.1. Los antecedentes siguientes describen la preparación original; el recorrido real de canales no se acredita por estas pruebas.
 
 - Especificación y plan utilizados: [spec.md](./spec.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), en la misma revisión de esta carpeta.
 - Repositorios y commits de código: pendientes (Gestión de Despachos).

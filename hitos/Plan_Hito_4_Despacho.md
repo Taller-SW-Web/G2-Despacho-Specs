@@ -80,6 +80,14 @@ Desglose de ejecución en los tres repositorios: [Plan de F-02 para el Hito 4](.
 
 **Entregable** — Paso de Calidad visible en CI/CD, reporte de contrato de F-04 y evidencia del ensayo en la versión publicada.
 
+**Avance de la prueba de humo · 05/11/2026.** La rama de backend `test/f04-humo-gateway`, commit `57f3465`, incorpora `pruebas/verificar_humo_f04.py`. Se ejecuta desde la raíz del backend con `python pruebas/verificar_humo_f04.py --local` para levantar y retirar un entorno desechable, o con `--gateway-url` y tokens de usuario en variables de entorno para consultar un despliegue existente. Comprueba salud del Gateway, `401` sin token, `403` sin rol de gestor y `200` con gestor. Un resultado incorrecto termina el proceso con código `1`. El informe de cada ejecución queda en `pruebas/resultados/humo-f04.json`, fuera de Git y sin tokens ni datos de despachos.
+
+**Verificación local realizada.** Las cuatro comprobaciones aprobaron contra Gateway, Gestión y Operación reales, con PostgreSQL desechable y tokens del emisor temporal de Seguridad local. El entorno temporal se retiró al finalizar. También aprobaron las seis pruebas del verificador y `clean verify` de los tres servicios, con 28 pruebas de Gateway, 189 de Gestión y 131 de Operación, sin fallos ni pruebas omitidas. Este resultado acredita salud y autorización del listado de F-04 en ese entorno; quedan pendientes la conexión al pipeline y la repetición con sesiones reales de G7 en nube, coordinadas con Kevin cuando esté listo el despliegue.
+
+**Cobertura general pendiente.** La prueba de humo actual cubre Gateway y una consulta de F-04. Falta incorporar la carga de ambas aplicaciones y operaciones representativas de las demás funcionalidades. Gerardo coordina la suite común con cada responsable, que aporta su caso y datos mínimos; Kevin conecta su ejecución al pipeline.
+
+**Contrato de recepción verificado localmente · 05/11/2026.** En la misma rama de backend, commits `12f5a88` y `24b57d1`, se añadió `python pruebas/verificar_contrato_recepcion_f04.py`. Aprobaron 14 casos por Gateway: autorización, datos inválidos, incidencia/versión obsoletas, recepción `202`, liberación real de la reserva original, repetición exacta sin duplicados y conflicto por contenido diferente. La jornada sintética pasó de 2 kg, 0,01 m³ y un paquete ocupados a cero. También aprobaron las 15 pruebas de ambos verificadores. El informe queda en `pruebas/resultados/contrato-recepcion-f04.json`, fuera de Git. Se usaron bases desechables y Seguridad temporal; el frontend y G7 real no participaron. Evidencia y límites en [EV-07 de ES-F04-03](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/evidence.md#ev-07-contrato-por-gateway-y-liberación-real-local).
+
 ## 4. Dependencias y orden de ejecución
 
 | Momento | Trabajo en paralelo | Condición para avanzar |
