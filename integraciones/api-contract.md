@@ -251,6 +251,8 @@ Reglas:
 - Despacho evalúa primero la cobertura. Si el destino no tiene cobertura, responde sin consultar a Productos ni validar las líneas.
 - Con `lineas`, Despacho agrupa los SKU repetidos, consulta a Productos en lote y calcula el peso y volumen totales; el canal no envía esos totales.
 - La cotización no crea un pedido ni un despacho.
+- Decisión de redondeo confirmada el 05/11/2026: el cálculo utiliza aritmética decimal y peso/volumen exactos acumulados, sin redondeos por unidad o línea. `costoEnvio` se eleva directamente al siguiente múltiplo de `0.50 PEN` y se representa con dos decimales; un múltiplo exacto se conserva. Ejemplos: `8.12 → 8.50`, `8.78 → 9.00`, `15.13 → 15.50`, `8.5001 → 9.00`.
+- `volumenTotalM3` se eleva a tres decimales únicamente al elaborar el resultado: `0.021112 → 0.022`, `0.025822 → 0.026`, `0.025135 → 0.026`. La fórmula tarifaria utiliza el volumen exacto, no ese valor presentado. El histórico conserva ambos valores y el ajuste monetario de redondeo; respuesta y columnas de resultado coinciden.
 - Después de resolver cobertura y validar las líneas, se admiten como máximo 100 SKU únicos. Superar ese límite se rechaza antes de llamar a Productos; no se particiona la consulta en este alcance.
 - Solo se emite una cotización exacta cuando todos los SKU existen, son comercialmente elegibles y tienen perfil físico válido. `INACTIVO` y `BORRADOR` impiden cotizar conforme a H-G2-02, cerrado el 02/11/2026; el estado efectivo de variantes se precisa en §5.2.3.
 - Antes de devolver `200 OK` con `tipoCotizacion=EXACTA`, Gestión guarda en `cotizaciones` el resultado y la instantánea de la tarifa aplicada. Se registra en F-01, aunque todavía no exista un pedido: `pedido_id` y `despacho_id` quedan nulos. La respuesta pública mantiene su esquema y no agrega un identificador de cotización obligatorio.
@@ -280,8 +282,8 @@ Respuesta con cobertura, con productos (`200 OK`):
   "distrito": "San Borja",
   "codigoPostal": "15036",
   "pesoTotalKg": 2.65,
-  "volumenTotalM3": 0.021,
-  "costoEnvio": 10.0,
+  "volumenTotalM3": 0.022,
+  "costoEnvio": 10.00,
   "moneda": "PEN",
   "plazoEstimadoDiasHabiles": 2,
   "fechaEstimadaEntrega": "2026-09-25",
@@ -882,7 +884,7 @@ Estados de verificación al preparar esta actualización:
 | Homologación D-G2-01/02 | Semántica cerrada por aceptación final G6 del 03/11 y confirmación G2 del 04/11 [cite: 7, 8]. |
 | Publicación normativa G6 | Pendiente de sincronización. OpenAPI inspeccionado en `6fcd81f9151649b94ecd736f8976630b39e97dc2`, versión `0.6.0-rc.3`: aún deja pendiente el rechazo específico del padre y solo exige el detalle para `DATOS_FISICOS_INCOMPLETOS` [cite: 9]. |
 | Implementación G6 | PR backend #162 fusionado el 03/11, merge `eeaf39ad666d7bc5a11c0b2a80d9c8c4b0016414`. Código e informe del proveedor incorporan estado efectivo, todas las bases afectadas en orden de solicitud y precedencia; regresiones reportadas por G6, no ejecutadas desde este repositorio [cite: 6]. |
-| Implementación G2 | Pendiente de inspección y verificación del backend para este alcance; este repositorio es documental. |
+| Implementación G2 | Actualización del 05/11: cliente HTTP compartido, validación H/D, redondeos y escritor verificados localmente. La evidencia de ES-F01-06 distingue dobles, PostgreSQL y dependencias externas. |
 | Autorización G7 | Grant, credencial y audiencia/scope efectivos por acreditar. |
 | Despliegue y E2E G2 → G6 | Pendientes de evidencia propia; las pruebas de proveedor con emisor local no los sustituyen. |
 

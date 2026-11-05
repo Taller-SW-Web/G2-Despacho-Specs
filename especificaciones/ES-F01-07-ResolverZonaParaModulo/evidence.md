@@ -1,12 +1,16 @@
 # Evidencia de ES-F01-07: Resolver la zona de un destino para el módulo
 
-**Estado:** Pendiente; la preparación documental no acredita implementación.
+**Estado:** Resolución local comprobada; consumo remoto de Operación y aceptación integral pendientes.
 
 **Responsable de verificación:** Valqui.
 
-**Última verificación funcional:** Pendiente.
+**Última verificación funcional:** 05/11/2026, suite de Gestión aprobada.
 
 ## 1. Versión y entorno verificados
+
+### Incremento backend del 05/11/2026
+
+`FlujoF01Tests` comprueba lectura de códigos de la relación canónica, retirada de cobertura y conservación de la zona del despacho previo. La regresión `ProgramacionHttpTests` utiliza el mismo repositorio de resolución en Gestión y aprobó sus 24 pruebas. Revisión y comando de las 231 pruebas están en la [evidencia de ejecución de ES-F01-06](../ES-F01-06-CotizarEnvioConProductos/evidence.md#ejecución-local-del-consumidor--05112026). Gestión §3.1 documenta prioridad distrital y alternativa postal; el contrato de consumo remoto desde Operación y la medición de 100 ms mantienen su coordinación pendiente. Los antecedentes siguientes son históricos.
 
 - Entradas: [spec.md](./spec.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), preparación del 16/10/2026 a partir de `91db8f8`.
 - Repositorios y commits de código: pendientes, Gestión y Operación.

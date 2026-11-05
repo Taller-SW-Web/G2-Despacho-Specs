@@ -1,12 +1,16 @@
 # Evidencia de ES-F01-08: Registrar la trazabilidad de la configuración
 
-**Estado:** Pendiente; la preparación documental no acredita implementación.
+**Estado:** Auditoría y reintentos identificados verificados localmente; aceptación integral pendiente.
 
 **Responsable de verificación:** Valqui.
 
-**Última verificación funcional:** Pendiente.
+**Última verificación funcional:** 05/11/2026, suite de Gestión aprobada.
 
 ## 1. Versión y entorno verificados
+
+### Incremento backend del 05/11/2026
+
+`FlujoF01Tests` comprueba auditoría de creación/edición/estado, repetición identificada sin duplicados, rechazo de reutilización de clave, sustitución tarifaria con identidades/ejecutor y rollback de negocio y comando al fallar auditoría. V10 conserva la identidad durable; el contrato de Gestión §3.1 concreta la precondición de repetición y el histórico consultable. Revisión, comando y reportes en la [evidencia de ejecución de ES-F01-06](../ES-F01-06-CotizarEnvioConProductos/evidence.md#ejecución-local-del-consumidor--05112026). Revisión humana y comprobaciones exhaustivas de integridad/aceptación continúan pendientes. Los antecedentes siguientes corresponden a la preparación original.
 
 - Entradas: [spec.md](./spec.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), preparación del 16/10/2026 a partir de `91db8f8`.
 - Repositorios y commits de código: pendientes, Gestión de Despachos.

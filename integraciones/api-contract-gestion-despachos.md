@@ -23,6 +23,17 @@ El contrato de [Operación de Reparto y Flota](./api-contract-operacion-reparto.
 | `PATCH` | `/api/v1/zonas/{idZona}/estado` | `GESTOR_DESPACHO` | Activar o desactivar |
 | `GET` | `/api/v1/zonas/{idZona}/tarifa` | `GESTOR_DESPACHO` | Consultar tarifa vigente |
 | `PUT` | `/api/v1/zonas/{idZona}/tarifa` | `GESTOR_DESPACHO` | Crear o reemplazar tarifa |
+| `GET` | `/api/v1/zonas/{idZona}/tarifa/historial` | `GESTOR_DESPACHO` | Consultar tarifas vigentes e históricas |
+
+#### Precisiones de configuración de F-01 — 05/11/2026
+
+- Las escrituras de zonas y tarifas admiten `Idempotency-Key` opcional, UUID v4. La identidad durable es ejecutor autenticado y clave; se comparan además operación/recurso y contenido deserializado normalizado (espacios extremos de textos y escala decimal; el orden de los arreglos se conserva). Repetir devuelve el resultado original sin negocio ni auditoría nuevos; reutilizar con otro contenido/recurso responde `409 DESP_ERROR_OPERACION_REUTILIZADA`. Sin clave, cada invocación es una decisión nueva, excepto el cambio de estado que ya coincide. La identidad se confirma en la misma transacción que configuración y auditoría.
+- La delimitación se envía en `distritos`, arreglo de objetos con `distrito`, `codigosPostales` opcional y `soloCodigosPostales` opcional (por defecto `false`). Con `true` se exige al menos un código y se cubren únicamente esos códigos, manteniendo el distrito como referencia; no se inserta cobertura distrital completa. Las respuestas incluyen ese indicador para preservar la delimitación al editar. Catálogo, detalle y filtro distrital incluyen estas zonas.
+- La resolución compartida prioriza una cobertura distrital completa activa; solo si no existe utiliza `zonas_codigos_postales`. No usa la columna postal heredada como segunda fuente. Se mantienen las reglas particulares de obligatoriedad del destino por consumidor.
+- Las respuestas de zona incluyen `versionZona` (entero no negativo). El cambio de estado admite ese valor como precondición opcional para consumidores existentes. Una versión obsoleta con cambio efectivo responde `409 DESP_ERROR_ZONA_DESACTUALIZADA`, con `estadoActual`; las colisiones optimistas incluyen también `versionZona` vigente. Repetir el estado que ya coincide no modifica ni audita. El backend protege además las escrituras concurrentes y serializa la comprobación de exclusividad entre zonas.
+- Las tarifas nuevas de F-01 utilizan `PEN`; otra moneda responde `400 DESP_ERROR_TARIFA_INVALIDA`. El peso incluido corresponde a `peso_base_kg`; el plazo único se captura en ambos extremos de plazo. Una sustitución conserva la tarifa anterior y registra en una auditoría ambas identidades, estados, ejecutor y momento de desactivación.
+- El histórico devuelve un arreglo ordenado por `creadoEn` descendente y `id` descendente como desempate. Cada elemento contiene `id`, `vigente`, `condiciones` (la vista de tarifa vigente), `creadoPor`, `creadoEn` y `actualizadoEn`. Zona inexistente: `404 DESP_ERROR_ZONA_NO_ENCONTRADA`; zona sin reglas: arreglo vacío. Esta consulta no modifica el histórico.
+- Una zona activa sin tarifa confirma cobertura y zona con `200`, sin costo, tipo ni plazo; no consulta Productos ni guarda cotización. Esta precisión cierra el tratamiento pendiente de ese caso en ES-F01-06.
 
 Ejemplo de tarifa:
 
