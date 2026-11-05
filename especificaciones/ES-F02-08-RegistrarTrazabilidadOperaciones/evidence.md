@@ -1,12 +1,21 @@
 # Evidencia de ES-F02-08: Registrar la trazabilidad de las operaciones
 
-**Estado:** Pendiente de implementación y verificación funcional.
+**Estado:** Auditoría y protección UPDATE/DELETE de Flyway V8 verificadas con PostgreSQL desechable. Revisión de privilegios reales de despliegue pendiente.
 
 **Responsable de verificación:** Tarqui.
 
 **Última verificación funcional:** No ejecutada.
 
 ## 1. Versión y entorno verificados
+
+### Incremento del 30/10/2026
+
+- Reejecución posterior con Docker disponible: Gestión `clean verify` **194 pruebas aprobadas**, sin fallos/errores/omitidas. Se verificaron V8, rechazo JDBC de UPDATE/DELETE, conservación del contenido y regresiones de rollback/cierre. El bloqueo de Docker del primer intento quedó resuelto; CA-06 conserva pendiente la comprobación del rol real de ejecución sin propiedad, DDL/TRUNCATE ni superusuario.
+
+- `feature/f02-cierre-criterios`, desde backend `develop` `e4f8ee1`, sin commit/push de esta ejecución. V8 agrega trigger contra UPDATE/DELETE y revoca mutación/TRUNCATE públicos.
+- `ProgramacionHttpTests.historialRechazaUpdateYDeleteInclusoDesdeJdbc` comprueba escrituras directas rechazadas y contenido intacto. Las pruebas previas de corrupción de metadatos se conservan: solo su preparación en PostgreSQL desechable desactiva temporalmente el trigger con privilegio de DBA, restableciéndolo en `finally`.
+- `clean verify` no pudo verificar PostgreSQL por ausencia de daemon Docker. CA-06 no se cierra: falta ejecutar esta regresión y comprobar rol real de aplicación no propietario, sin DDL/TRUNCATE/superusuario. Un DBA puede alterar triggers; no se promete protección contra ese actor.
+- Las auditorías de rutas, reasignación y cancelación están implementadas en backend integrado; no es necesario crear un segundo servicio/tabla para volver a registrarlas. La matriz histórica siguiente requiere reconciliación con los reportes al ejecutar la regresión completa.
 
 - Documentación preparada: [spec.md](./spec.md), [plan.md](./plan.md) y [tasks.md](./tasks.md).
 - Funcionalidad padre: `funcionalidades/F-02-ProgramacionAsignacionDespachos.md` (RF-04, CA-10; RT-02).

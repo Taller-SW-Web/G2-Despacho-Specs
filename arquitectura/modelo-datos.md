@@ -253,6 +253,10 @@ La unicidad de la terna no impide por sí sola que un distrito o código postal 
 
 Escribe F-01 al completar un cálculo exacto exitoso. La tabla creada se describe conforme al DDL comunicado; las validaciones funcionales del escritor no deben confundirse con restricciones SQL que ese DDL no tiene [cite: 1].
 
+Implementación del 05/11/2026: V8 de Gestión amplía `peso_kg`, `peso_volumetrico_kg` y `peso_cobrable_kg` a `NUMERIC` sin escala fija para conservar las medidas exactas. `volumen_m3` conserva tres decimales y recibe el volumen total elevado; `total` recibe el costo elevado al siguiente múltiplo de `0.50 PEN`. `recargo_total = total − tarifa_base`, incluyendo el ajuste final. `detalle` diferencia `recargoPorPeso`, `costoExacto`, `ajusteRedondeo`, `totalesExactos`, líneas/perfiles, tarifa capturada, consumidor y resultado. El componente volumétrico es `volumenExacto × factor`; el cobrable es la suma con peso físico. No hay redondeos intermedios. El escritor confirma antes de responder, con nulos de pedido/despacho/vencimiento y estado inicial `vigente`.
+
+V9 añade `zonas.version BIGINT NOT NULL DEFAULT 0` para control optimista. V10 crea `comandos_configuracion`, con clave primaria `(ejecutor_id TEXT, clave UUID)`, `operacion`, `huella`, `respuesta JSONB` y `creado_en TIMESTAMPTZ`. Reconoce reintentos de configuración y se confirma atómicamente con negocio y auditoría; no deduplica cotizaciones. Las migraciones se verifican exclusivamente con bases desechables antes de preparar un despliegue.
+
 | Columna | Tipo | Restricciones comunicadas | Uso previsto en F-01 |
 |---|---|---|---|
 | `id` | `UUID` | PK, DEFAULT `gen_random_uuid()` | Identificador interno; no agrega un campo obligatorio al contrato público. |
@@ -289,7 +293,7 @@ Reglas del escritor pendiente:
 - Insertar la instantánea completa después de validar y calcular, y confirmar la transacción antes de responder con costo. No mantener una transacción de escritura abierta durante la llamada HTTP a G6. Respuesta y fila se construyen desde el mismo cálculo y la misma tarifa capturada; una sustitución posterior no altera el histórico.
 - Solo las cotizaciones exactas exitosas generan fila: cobertura sin productos, destino sin cobertura, zona sin tarifa y todos los rechazos dejan la tabla sin nuevas cotizaciones. Un fallo de escritura revierte la inserción y se traduce conforme al contrato externo.
 - Una repetición de la solicitud puede generar otra instantánea. No hay unicidad por contenido ni garantía de reutilización del precio anterior; no se crea un pedido, cobro o despacho.
-- Usar aritmética decimal sin redondear antes de calcular. Las escalas físicas del DDL y los términos derivados se deben conciliar con precisión, redondeo y fórmula en DT-02 de ES-F01-06; `detalle` conserva el desglose necesario. La creación de columnas no cambia la fórmula funcional.
+- Usar aritmética decimal sin redondear antes de calcular. La decisión del 05/11 y V8 concretan las escalas y términos derivados descritos arriba; `detalle` conserva exactos y ajuste final. La creación de columnas no cambia la fórmula funcional.
 - Mantener `pedido_id` y `despacho_id` nulos. La futura vinculación con un pedido textual requerirá una decisión de contrato y, si procede, migración incremental del campo UUID; no bloquea el registro inicial sin pedido.
 - El comentario del DDL menciona `aceptada`, `vencida` y `cancelada`, pero no define transiciones ni aporta un CHECK. Este alcance solo usa el valor físico inicial `vigente`; no habilita comandos de ciclo de vida ni una fecha de expiración inventada.
 

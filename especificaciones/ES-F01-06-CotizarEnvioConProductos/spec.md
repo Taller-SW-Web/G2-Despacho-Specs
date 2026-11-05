@@ -4,7 +4,7 @@
 
 **Responsable:** Valqui
 
-**Estado:** Borrador
+**Estado:** Implementación local verificada; integración real y aceptación pendientes.
 
 **Actor principal:** Canal de venta
 
@@ -17,6 +17,8 @@
 **Antecedente 26/10/2026:** persistencia exacta acordada y preparación inicial de H-G2-01/02/03; se agregaron CA-11 a CA-16.
 
 **Actualización 04/11/2026:** H-G2-01/02/03 cerrados en la línea base `0.6.0-rc.3`; D-G2-01 cerrado el 03/11 y D-G2-02 cerrado semánticamente el 04/11, con afectados, orden y precedencia aceptados. Se conservan CA-01 a CA-19. Sincronización normativa G6 e implementación/verificación G2 pendientes [cite: 2, 3].
+
+**Actualización 05/11/2026:** se añade CA-20 por redondeo confirmado y se verifica el consumidor local, incluido escritor y cliente HTTP. La evidencia distingue proveedor controlado, normativa pendiente y recorrido real.
 
 ## 1. Contexto y objetivo
 
@@ -53,7 +55,7 @@ Calcular el costo de envío y el plazo estimado de un pedido a partir del destin
 | Sin cobertura | No existe zona activa | Responde sin costo, plazo ni consulta a Productos | CA-02 |
 | Líneas inválidas | Lista vacía o cantidad no positiva, con cobertura | Rechaza sin calcular costo | CA-03 |
 | Productos inválidos o no disponibles | SKU inexistente, datos incompletos o fallo de consulta | Error normalizado sin estimar costo | CA-04 a CA-06 |
-| Sin tarifa | Zona activa sin regla vigente | Confirma cobertura sin costo ni plazo; detalle contractual pendiente | CA-07 |
+| Sin tarifa | Zona activa sin regla vigente | `200` con cobertura sin costo ni plazo, según Gestión §3.1 | CA-07 |
 | Exceso de solicitudes | Se supera el límite por `sub` e IP | Rechaza sin procesar el cálculo | CA-09 |
 | Persistencia | Cálculo exacto válido, aunque no exista pedido | Confirma la instantánea antes de responder | CA-11 |
 | Cobertura o rechazo | Sin productos, sin cobertura, sin tarifa o cualquier error | No inserta cotizaciones | CA-12 |
@@ -89,8 +91,9 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 - `lineas` vacía produce `400 Bad Request` con `DESP_ERROR_LINEAS_VACIAS`; una `cantidad` menor o igual a cero produce `400 Bad Request` con `DESP_ERROR_CANTIDAD_INVALIDA`.
 - Un `sku` correctamente clasificado como inexistente y un error de negocio de datos físicos incompletos se traducen según el contrato externo §5.2.2. Una respuesta `200` que incumple el esquema o el lote se trata como respuesta inválida, no como inexistencia ni como un cálculo parcial.
 - Si no es posible consultar a Productos y Ofertas, el sistema responde `503 Service Unavailable` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE` y no estima un costo.
-- Una zona activa sin tarifa vigente no produce costo ni plazo; el sistema no asume una regla implícita y el tratamiento exacto de este caso permanece como acuerdo pendiente en el contrato.
+- Una zona activa sin tarifa vigente confirma cobertura mediante `200`, sin costo, tipo ni plazo, sin consultar Productos ni guardar cotización, según Gestión §3.1.
 - El sistema calcula el plazo estimado en días hábiles y la fecha estimada de entrega a partir de la tarifa vigente y del calendario operativo.
+- Decisión confirmada el 05/11/2026: costo final elevado al siguiente múltiplo de `0.50 PEN` y volumen informado elevado a tres decimales, según contrato §5.1. La fórmula usa totales exactos, sin redondeos intermedios. Respuesta y persistencia comparten los resultados; `detalle` conserva el volumen exacto, costo exacto, recargo por peso y ajuste de redondeo.
 - La cotización no crea un pedido ni un despacho y no requiere `Idempotency-Key`: cada ejecución exacta exitosa conserva una instantánea independiente. Repetir puede recalcular y guardar otra fila; no se garantiza deduplicación por contenido ni una tarifa anterior.
 - Solo se inserta una fila cuando el resultado completo es exacto y exitoso. La respuesta y la persistencia proceden del mismo cálculo y tarifa capturada; los rechazos y la cobertura sin costo no crean filas.
 - `pedido_id` y `despacho_id` quedan nulos. La persistencia sucede antes de una venta confirmada, no porque Ventas invoque esta API. F-02 sigue consultando a Productos y no depende del registro histórico.
@@ -127,7 +130,7 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 
 - **DADO** un destino en un distrito de "Lima Centro" y las líneas `POL-NEG-M` por 5 y `ZAP-RUN-42` por 1, cuyos datos físicos provienen de Productos y Ofertas.
 - **CUANDO** un canal de venta solicita la cotización.
-- **ENTONCES** el sistema devuelve `tipoCotizacion=EXACTA`, 2.65 kg y 0.021 m³ totales, un costo de 10.00 PEN según la tarifa vigente de la zona (10.00 PEN hasta 3 kg, 2.00 PEN por kg adicional y factor volumétrico 1.25) y un plazo estimado de 2 días hábiles.
+- **ENTONCES** el sistema devuelve `tipoCotizacion=EXACTA`, 2.65 kg y 0.022 m³ informados (0.02126 m³ exactos), un costo de 10.00 PEN según la tarifa vigente de la zona (10.00 PEN hasta 3 kg, 2.00 PEN por kg adicional y factor volumétrico 1.25) y un plazo estimado de 2 días hábiles.
 
 ### CA-02. Cotización sin cobertura
 
@@ -237,12 +240,19 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 - **CUANDO** se consulta el mismo conjunto en órdenes diferentes.
 - **ENTONCES** se traduce el mismo error prioritario y se conserva el mismo conjunto de afectados, con la lista ordenada según cada solicitud. Las bases no físicas prevalecen sobre perfiles incompletos y únicamente se informan los afectados de la condición seleccionada. Sin éxito parcial ni persistencia; la lista no acredita que los otros SKU sean válidos.
 
+### CA-20. Redondeo de resultados sin alterar los totales exactos
+
+- **DADO** un cálculo válido con costo exacto `8.12`, `8.78`, `15.13` o `8.5001` PEN.
+- **CUANDO** F-01 construye y guarda el resultado.
+- **ENTONCES** responde y persiste respectivamente `8.50`, `9.00`, `15.50` o `9.00`, conservando un múltiplo exacto sin incremento.
+- **Y** eleva el volumen total a tres decimales únicamente para respuesta y columna de resultado; conserva exactos y ajuste en el detalle. Los casos `0.025822` y `0.025135` producen `0.026`; no se redondea cada línea ni se utiliza el volumen elevado para calcular el recargo.
+
 ## 7. UI, backend y requisitos no funcionales
 
 - UI: no aplica; la presentación del resultado pertenece al canal consumidor. No se incluye `ui.md`.
 - Backend: Gestión evalúa cobertura y tarifa, consulta y valida los datos físicos mediante API, calcula y confirma la instantánea exacta en su propia persistencia antes de responder.
 - Requisitos no funcionales: token técnico y scopes acordados; datos de Productos obtenidos sin compartir persistencia; sin exposición de configuración interna; indisponibilidad explícita sin costo estimado. F-01 §8 exige respuesta en menos de 100 ms; el entorno, carga y medición con la dependencia externa se concretarán en el plan [cite: 1].
-- Pendientes: tratamiento contractual de zona sin tarifa, precisión y redondeo, calendario operativo, configuración de tasa/caché y preparación de la integración real; responsables e impacto en [plan.md §7](./plan.md#7-decisiones-y-pendientes).
+- Pendientes: calendario operativo, acuerdo/medición de tasa, caché y rendimiento, publicación normativa G6 y preparación de la integración real; responsables e impacto en [plan.md §7](./plan.md#7-decisiones-y-pendientes).
 
 ## 8. Verificación y completitud
 
@@ -254,7 +264,7 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 | CA-04 | Contrato e integración | SKU no reconocido por Productos |
 | CA-05 | Contrato e integración | Peso o dimensiones ausentes/no positivos |
 | CA-06 | Integración de fallos | Indisponibilidad y timeout del proveedor |
-| CA-07 | Integración | Zona activa sin regla vigente; respuesta según acuerdo pendiente |
+| CA-07 | Integración | Zona activa sin regla vigente; cobertura `200` sin costo, llamada a G6 ni fila |
 | CA-08 | Seguridad e integración | Token técnico válido y ausencia de escrituras de pedido/despacho |
 | CA-09 | Integración de tasa | Mismo `sub` e IP por encima del límite |
 | CA-10 | Integración | Peso y volumen del cliente distintos de los del proveedor |
@@ -267,8 +277,9 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 | CA-17 | Contrato e integración PostgreSQL | Padres solos/múltiples/mixtos, afectados exactos y producto simple válido |
 | CA-18 | Contrato e integración | Detalle obligatorio ausente/vacío/malformado/duplicado/ajeno, con revisión D-G2-02 homologada |
 | CA-19 | Contrato proveedor-consumidor | Lote con distintas clases de error y permutaciones, según precedencia aceptada y orden de cada solicitud |
+| CA-20 | Unitaria e integración PostgreSQL | Medio sol, milésimos, acumulación exacta y correspondencia de respuesta/instantánea |
 
-- [ ] CA-01 a CA-19 cuentan con resultados reproducibles en [evidence.md](./evidence.md).
+- [ ] CA-01 a CA-20 cuentan con resultados reproducibles en [evidence.md](./evidence.md).
 - [ ] El contrato y los pendientes bloqueantes están resueltos para el alcance implementado.
 - [ ] Se verifican agrupación, integridad de SKU, persistencia solo exacta, rollback, ausencia de pedidos/despachos/cobros, seguridad y rendimiento.
 - [ ] Los commits y la revisión funcional y técnica están enlazados.

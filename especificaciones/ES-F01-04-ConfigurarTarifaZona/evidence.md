@@ -1,12 +1,16 @@
 # Evidencia de ES-F01-04: Configurar la tarifa vigente de una zona
 
-**Estado:** Pendiente; esta plantilla no acredita una implementación.
+**Estado:** Comprobaciones backend locales ejecutadas; UI y aceptación integral pendientes.
 
 **Responsable de verificación:** Valqui.
 
-**Última verificación:** Pendiente.
+**Última verificación:** 05/11/2026, suite de Gestión aprobada.
 
 ## 1. Versión y entorno verificados
+
+### Incremento backend del 05/11/2026
+
+`FlujoF01Tests` y `CotizacionG6HttpTests` comprueban tarifa aplicada, reintento identificado sin duplicación, sustitución con una sola vigente, histórico consultable y preservación de instantáneas previas. La auditoría conserva ambas identidades y ejecutor de desactivación. Contrato en Gestión §3.1; revisión y reportes en la [evidencia de ejecución de ES-F01-06](../ES-F01-06-CotizarEnvioConProductos/evidence.md#ejecución-local-del-consumidor--05112026). UI y matriz exhaustiva de validaciones de aceptación siguen pendientes. Los antecedentes siguientes son de preparación documental.
 
 - Especificación y plan utilizados: [spec.md](./spec.md), [ui.md](./ui.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), en la misma revisión de esta carpeta.
 - Repositorios y commits de código: pendientes (frontend y Gestión de Despachos).
