@@ -2,7 +2,9 @@
 
 **Responsable de coordinación:** Valqui.
 
-**Estado:** Pendiente de implementación.
+**Estado:** Implementación y automatización local verificadas; cierre externo y revisión pendientes.
+
+**Actualización 05/11/2026:** incremento local del consumidor en `feature/f01-integracion-g6-cotizaciones` (base `6af187c`), con CA-20 para redondeo confirmado. T-02, T-03, T-06, T-07 y T-08 tienen implementación local; la verificación reproducible y el alcance de dobles se registran en `evidence.md`. T-01 conserva calendario y revisión normativa externa; T-04 y T-05 requieren recorrido real/revisión. Esta nota no acredita despliegue ni aceptación integral.
 
 **Plan de origen:** [plan.md](./plan.md), preparación documental del 16/10/2026, misma revisión de esta carpeta.
 
@@ -16,14 +18,15 @@ Actualización del 04/11/2026: D-G2-01/02 cerrados semánticamente; afectados, o
 
 | ID | Resultado de la tarea | Área | Depende de | Criterios | Estado |
 |---|---|---|---|---|---|
-| T-01 | Contrato, precisión, calendario y datos conciliados; H cerrados y seguimiento D enlazados | Contrato/Datos | DT-01 a DT-03, DT-06/07/08 para su incremento | CA-01 a CA-19 | Pendiente |
-| T-02 | Motor, agrupación, validación integral y elegibilidad probados | Backend, I-01 | T-01 para las decisiones del incremento | CA-01 a CA-05, CA-10, CA-14 a CA-16 | Pendiente |
-| T-03 | Endpoint autorizado y cliente HTTP real de Productos integrados | Backend/Integración, I-02 | T-02 y DT-05/06 | CA-01 a CA-10, CA-14 a CA-16 | Pendiente |
-| T-06 | Escritor exacto, instantánea y rollback verificados | Backend/Persistencia, I-02 | T-02, T-03 y DT-02/07 | CA-11 a CA-13 | Pendiente |
-| T-07 | Rechazo de SKU padre y afectados contractuales integrados en el consumidor | Backend/Integración, I-04 | T-03 y revisión exigible enlazada en DT-08; aceptación resuelta | CA-17 a CA-19 | Pendiente |
-| T-08 | Regresiones de estado, detalle y precedencia verificadas | Calidad/Integración, I-04 | T-02, T-06, T-07 y revisión D acordada | CA-15, CA-17 a CA-19 | Pendiente |
+| T-01 | Contrato, precisión, calendario y datos conciliados; H cerrados y seguimiento D enlazados | Contrato/Datos | DT-01 a DT-03, DT-06/07/08 para su incremento | CA-01 a CA-20 | En curso |
+| T-02 | Motor, agrupación, validación integral y elegibilidad probados | Backend, I-01 | T-01 para las decisiones del incremento | CA-01 a CA-05, CA-10, CA-14 a CA-16 | Completada |
+| T-03 | Endpoint autorizado y cliente HTTP real de Productos integrados | Backend/Integración, I-02 | T-02 y DT-05/06 | CA-01 a CA-10, CA-14 a CA-16 | En curso |
+| T-06 | Escritor exacto, instantánea y rollback verificados | Backend/Persistencia, I-02 | T-02, T-03 y DT-02/07 | CA-11 a CA-13 | Completada |
+| T-07 | Rechazo de SKU padre y afectados contractuales integrados en el consumidor | Backend/Integración, I-04 | T-03 y revisión exigible enlazada en DT-08; aceptación resuelta | CA-17 a CA-19 | En curso |
+| T-08 | Regresiones de estado, detalle y precedencia verificadas | Calidad/Integración, I-04 | T-02, T-06, T-07 y revisión D acordada | CA-15, CA-17 a CA-19 | En curso |
 | T-04 | Tasa y recorrido real con canales y G6 verificados | Gateway/Integración, I-03 | T-03, T-06, T-08 y DT-04/05/06/08 | CA-01 a CA-19 | Pendiente |
 | T-05 | Evidencia y revisión final registradas | Calidad | T-01 a T-04 y T-06 a T-08 | Todos | Pendiente |
+| T-09 | Redondeos confirmados y correspondencia histórica verificados | Backend/Calidad | T-02 y T-06 | CA-20 | Completada |
 
 Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Registrar causa y responsable al iniciar una tarea bloqueada. Todas las comprobaciones siguientes son previstas.
 
@@ -41,7 +44,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Registra
 
 ### T-02. Implementar el motor y la resolución previa de cobertura
 
-- [ ] Implementada y verificada.
+- [x] Implementada y verificada localmente con proveedor controlado; evidencia del 05/11/2026.
 - Incremento: I-01. Responsable: Valqui con Backend.
 - Objetivo y entradas: cobertura compartida con ES-F01-05/07, agrupación conservando unidades, límite de 100 SKU únicos, validación del lote y fórmula F-01 con aritmética decimal/reloj controlable. Aplicar elegibilidad en F-01 sin trasladarla automáticamente a F-02.
 - Dependencias: T-01 y fuentes locales de cobertura/tarifa disponibles.
@@ -81,7 +84,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Registra
 
 ### T-06. Implementar la persistencia de cotizaciones exactas
 
-- [ ] Implementada y verificada.
+- [x] Implementada y verificada con PostgreSQL desechable; inserción, commit y rollback comprobados el 05/11/2026.
 - Incremento: I-02, antes del recorrido I-03. Responsable: Valqui con Backend y Arquitectura.
 - Objetivo y entradas: escritor de la tabla existente `cotizaciones` según modelo §3.1 y CA-11 a CA-13; mapear instantánea y respuesta desde el mismo cálculo. Mantener pedido/despacho/vencimiento nulos y el estado físico del DDL. El detalle conserva las entradas físicas usadas, su actualización y el desglose; no es caché ni maestro de catálogo.
 - Dependencias: T-02/T-03 y cierre DT-02/07; tablas verificadas en entorno y repositorio backend identificado.
@@ -109,6 +112,13 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Registra
 
 ## 3. Cobertura de criterios
 
+### T-09. Redondear resultados y conservar la precisión exacta
+
+- Alcance: CA-20; usar `BigDecimal`, costo al siguiente múltiplo de `0.50` y volumen informado hacia arriba a tres decimales.
+- Dependencias: T-02 y T-06; decisión del usuario del 05/11/2026.
+- Verificación: ejemplos, múltiplos exactos, valores apenas superiores a un múltiplo, acumulación previa al redondeo, costo calculado con volumen exacto y correspondencia con la fila histórica.
+- Estado: Completada localmente; resultados reproducibles en la actualización de evidencia del 05/11/2026. El cierre integral conserva las dependencias externas.
+
 | Criterio | Tareas que lo implementan | Verificación | Evidencia prevista |
 |---|---|---|---|
 | CA-01 | T-02, T-03, T-06 | T-02 a T-05, T-06 | EV-02, EV-03, EV-04, EV-05 |
@@ -130,6 +140,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Registra
 | CA-17 | T-07 | T-07, T-08, T-04, T-05 | EV-07, EV-06 |
 | CA-18 | T-07 | T-07, T-08, T-05 | EV-07 |
 | CA-19 | T-07 | T-08, T-04, T-05 | EV-07, EV-06 |
+| CA-20 | T-02, T-06, T-09 | Pruebas de redondeo y PostgreSQL | Actualización de evidencia del 05/11/2026 |
 
 ## 4. Cierre de la especificación
 

@@ -1,11 +1,13 @@
 # Especificación F-01: Gestor de Zonas Geográficas y Cotizador de Envíos
 
 **Responsable:** Valqui
-**Estado:** En especificación
+**Estado:** Backend local implementado y verificado; UI, integración real y aceptación pendientes.
 **Actor principal:** Gestor de Despacho / Administrador
 **Lineamiento del curso:** Gestión de zonas y tarifas de entrega
 
 **Actualización 04/11/2026:** H-G2-01/02/03 cerrados; D-G2-01 cerrado el 03/11 y D-G2-02 cerrado semánticamente el 04/11. CA-30 a CA-32 recogen el rechazo identificado del SKU padre y la precedencia aceptada. Sincronización normativa G6 e implementación/verificación G2 pendientes [cite: 1].
+
+**Actualización 05/11/2026:** se implementan y verifican localmente cliente G6, validación, redondeos confirmados, instantáneas y configuración concurrente/auditable. Los resultados y límites están en la evidencia de ES-F01-06; las notas de fechas anteriores conservan su carácter histórico.
 
 ## 1. Contexto
 
@@ -173,6 +175,8 @@ pesoCotizableKg = pesoTotalKg + (volumenTotalM3 × factorVolumetrico)
 costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − pesoIncluidoKg))
 ```
 
+Decisión del 05/11/2026: la fórmula anterior obtiene el costo exacto; el costo final se eleva al siguiente múltiplo de `0.50 PEN`, a escala de dos decimales. El volumen informado se eleva a tres decimales después de acumular todas las líneas. El cálculo tarifario utiliza siempre el volumen exacto; el histórico conserva exactos, resultados y ajuste conforme al contrato externo §5.1.
+
 - El sistema calcula el plazo estimado en días hábiles y la fecha estimada de entrega. Ventas y Postventa pueden conservar la fecha estimada como referencia, pero no debe enviarla al crear el despacho.
 - La cotización no crea un pedido ni un despacho. No requiere `Idempotency-Key`: cada ejecución exacta exitosa registra una instantánea nueva y una repetición puede volver a calcular y guardar otro resultado, sin prometer la tarifa anterior.
 - Se confirma la escritura en `cotizaciones` antes de responder con costo. Si falla, no se devuelve una cotización exitosa ni quedan registros parciales. El registro histórico no sustituye las consultas vigentes de Productos ni es requisito para crear un despacho en F-02.
@@ -183,7 +187,7 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 
 - **DADO** una solicitud con destino en un distrito de "Lima Centro" y las líneas `POL-NEG-M` por 5 y `ZAP-RUN-42` por 1, cuyos datos físicos fueron obtenidos de Productos y Ofertas.
 - **CUANDO** un canal de venta solicita la cotización.
-- **ENTONCES** el sistema calcula 2.65 kg y 0.021 m³ totales, aplica la tarifa vigente de la zona (10.00 PEN hasta 3 kg, 2.00 PEN por kg adicional, factor volumétrico 1.25) y retorna `tipoCotizacion=EXACTA`, costo de 10.00 PEN, moneda `PEN` y un plazo estimado de 2 días hábiles.
+- **ENTONCES** el sistema calcula 2.65 kg y 0.02126 m³ exactos, informa 0.022 m³, aplica la tarifa vigente de la zona (10.00 PEN hasta 3 kg, 2.00 PEN por kg adicional, factor volumétrico 1.25) y retorna `tipoCotizacion=EXACTA`, costo de 10.00 PEN, moneda `PEN` y un plazo estimado de 2 días hábiles.
 
 #### CA-08. Cotización con línea o cantidad inválida
 
@@ -243,7 +247,7 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 
 - **DADO** una zona en `ACTIVO` que no tiene tarifa vigente y una solicitud de cotización con `lineas`.
 - **CUANDO** se procesa la solicitud.
-- **ENTONCES** el sistema confirma la cobertura y la zona, no devuelve costo ni plazo y no inventa una regla tarifaria; el tratamiento exacto de esta situación permanece como acuerdo pendiente en el contrato de integración.
+- **ENTONCES** el sistema confirma la cobertura y la zona con `200`, sin costo, tipo ni plazo, sin consultar Productos ni guardar cotización, conforme a Gestión §3.1.
 
 #### CA-24. Persistencia exacta antes de confirmar la venta
 

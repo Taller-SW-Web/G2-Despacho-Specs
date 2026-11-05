@@ -1,12 +1,16 @@
 # Evidencia de ES-F01-03: Activar y desactivar una zona de cobertura
 
-**Estado:** Pendiente; esta plantilla no acredita una implementación.
+**Estado:** Comprobaciones backend locales ejecutadas; UI y aceptación integral pendientes.
 
 **Responsable de verificación:** Valqui.
 
-**Última verificación:** Pendiente.
+**Última verificación:** 05/11/2026, suite de Gestión aprobada.
 
 ## 1. Versión y entorno verificados
+
+### Incremento backend del 05/11/2026
+
+`FlujoF01Tests` comprueba desactivación, repetición sin auditoría nueva, rechazo de versión obsoleta, conservación de la zona del despacho previo y colisiones optimistas en configuración. V9 incorpora la versión; la respuesta `409` y el campo opcional `versionZona` se definen en Gestión §3.1. Revisión, comando y reportes se registran en la [evidencia de ejecución de ES-F01-06](../ES-F01-06-CotizarEnvioConProductos/evidence.md#ejecución-local-del-consumidor--05112026). Modal, activación con todas sus variantes de aceptación e impacto completo sobre reprogramaciones conservan comprobaciones pendientes. Los antecedentes siguientes corresponden a la preparación original.
 
 - Especificación y plan utilizados: [spec.md](./spec.md), [ui.md](./ui.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), en la misma revisión de esta carpeta.
 - Repositorios y commits de código: pendientes (frontend y Gestión de Despachos).
