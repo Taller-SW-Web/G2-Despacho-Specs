@@ -4,7 +4,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Implementación existente verificada localmente; aceptación conjunta de las integraciones y revisión humana pendientes.
 
 **Actor principal:** Gestor de Despacho, mediante la operación de negocio que confirma. **Servicio propietario:** Gestión de Despachos.
 
@@ -200,7 +200,7 @@ No crea ni modifica UI propia. El historial y sus estados de consulta ya pertene
 La definición funcional y los documentos SDD están preparados. La implementación se considera completa cuando:
 
 - [ ] CA-01 a CA-12 tienen resultados reales verificables.
-- [ ] Las tres operaciones productoras y el detalle consumen el mismo historial, con transacciones y concurrencia comprobadas.
+- [x] Las tres operaciones productoras y el detalle consumen el mismo historial, con transacciones y concurrencia comprobadas en Gestión.
 - [ ] La evidencia demuestra inmutabilidad, privacidad de metadatos y ausencia de duplicados por procesos técnicos.
 - [ ] Plan y tareas ejecutados; documentación, código y evidencia revisados conservando criterios e identificadores.
 

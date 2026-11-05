@@ -302,6 +302,8 @@ La API usa `FUERA_DE_SERVICIO`. Su valor persistido es `INACTIVA`, conforme al m
 
 Las mutaciones y su auditoría se confirman o revierten juntas, con identidad del JWT, estados anterior/nuevo e instante UTC. No se duplica auditoría ante la repetición idempotente del estado o vínculo. La comprobación de carga se serializa con los escritores de jornadas/reservas/proyecciones; los fallos de acceso a datos no se interpretan como ausencia de carga.
 
+Si la baja de un repartidor o el retiro de una furgoneta cierran jornadas vacías, cada jornada conserva una auditoría `CIERRE_JORNADA` con el mismo actor y sus estados anterior/nuevo. Esa auditoría pertenece a la misma transacción que el cambio de F-05. Repetir una baja o estado ya aplicado no vuelve a cerrar ni auditar las jornadas; si falla cualquiera de las auditorías, se revierten también el cierre y el cambio del recurso.
+
 Se usa [Problem Details del contrato externo §3.5](./api-contract.md#35-errores). La validación de campos puede incluir `errores` con `campo` y `motivo`; no se devuelve SQL ni información privada en los errores.
 
 | HTTP | Código | Situación |

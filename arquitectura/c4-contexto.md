@@ -65,7 +65,7 @@ flowchart LR
 
 ## 5. Acuerdos externos y aspectos operativos pendientes
 
-Ya están confirmados el consumo directo de Marketplace y Chatbot, la integración bidireccional con Ventas y Postventa, la consulta física a Productos y la estructura de los tokens de servicio. No quedan decisiones funcionales abiertas en esas relaciones.
+Están confirmados el consumo directo de Marketplace y Chatbot, la integración bidireccional con Ventas y Postventa, la consulta física a Productos y la estructura de los tokens de servicio. H-G2-01/02/03 quedaron cerrados el 02/11/2026; D-G2-01, el 03/11, y la semántica D-G2-02, el 04/11. Campo de afectados, orden y precedencia están aceptados, con implementación G6 fusionada. La sincronización normativa del OpenAPI y la verificación del consumidor G2 siguen pendientes. Las fuentes y estados se definen en [contrato externo §11.1](../integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento) [cite: 1].
 
 Permanecen como actividades operativas:
 
@@ -77,3 +77,5 @@ Permanecen como actividades operativas:
 ## 6. Regla de lectura
 
 Este diagrama responde únicamente a las preguntas **quién usa el sistema** y **con qué otros sistemas se comunica**. Vercel, Render, Supabase, las aplicaciones frontend, el API Gateway y los microservicios pertenecen al nivel de contenedores y se muestran en `c4-contenedores.md`.
+
+[cite: 1] [Contrato externo: homologación y precisiones físicas](../integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento). Los acuerdos, su implementación, autorización y E2E tienen estados independientes.

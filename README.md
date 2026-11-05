@@ -42,7 +42,7 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Visión general](./overview.md) | Problema, objetivos, alcance, actores y flujo general del módulo. |
 | [Índice de funcionalidades](./funcionalidades/funcionalidad.md) | Listado y estado de las especificaciones funcionales. |
 | [Integraciones externas](./integraciones/api-contract.md) | Comunicaciones con otros módulos y convenciones compartidas. |
-| [Homologación física G2–G6](./integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6) | Respuestas propuestas a H-G2-01/02/03, revisión contractual, credencial G7 y recorrido real pendientes. |
+| [Homologación física G2–G6](./integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento) | H cerrados en la línea base rc.3; semántica D-G2-01/02 cerrada al 04/11 y proveedor fusionado. Publicación normativa G6, consumidor G2, credencial G7 y recorrido real tienen seguimiento propio. |
 | [API de Gestión de Despachos](./integraciones/api-contract-gestion-despachos.md) | Zonas, programación, catálogo, incidencias y API interna provista por Gestión. |
 | [API de Operación de Reparto y Flota](./integraciones/api-contract-operacion-reparto.md) | Repartidor, flota, jornadas, evidencias, capacidad y API interna provista por Operación. |
 | [Modelo de datos](./arquitectura/modelo-datos.md) | Base evolutiva de entidades, relaciones y decisiones de persistencia. |
@@ -56,6 +56,7 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 | [Especificaciones atómicas](./especificaciones/) | F-02 cuenta con sus ocho carpetas SDD preparadas: [recepción](./especificaciones/ES-F02-01-RecepcionSolicitudDespacho/spec.md), [simulación](./especificaciones/ES-F02-02-GenerarDespachoPrueba/spec.md), [cola de pendientes](./especificaciones/ES-F02-03-ConsultarColaPendientes/spec.md), [asignación](./especificaciones/ES-F02-04-AsignarDespachoRepartidor/spec.md), [secuencia de ruta](./especificaciones/ES-F02-05-ConsultarReordenarSecuenciaRuta/spec.md), [reasignación](./especificaciones/ES-F02-06-ReasignarDespachoRepartidor/spec.md), [cancelación](./especificaciones/ES-F02-07-CancelarDespachoPorAnulacion/spec.md) y [trazabilidad](./especificaciones/ES-F02-08-RegistrarTrazabilidadOperaciones/spec.md). F-04 tiene sus seis carpetas SDD preparadas: [listado](./especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md), [detalle](./especificaciones/ES-F04-02-ConsultarDetalleIncidencia/spec.md), [recepción](./especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/spec.md), [reprogramación](./especificaciones/ES-F04-04-ReprogramarDespachoFallido/spec.md), [cierre](./especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen/spec.md) y [trazabilidad](./especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones/spec.md). Incluyen plan, tareas, evidencia y UI cuando aplica. El avance implementado y sus verificaciones se registran en la evidencia de cada carpeta. |
 | [Especificaciones F-05](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-05) | Las nueve especificaciones de Rhamses en SDD: [ES-F05-01](./especificaciones/ES-F05-01-RegistrarRepartidor/spec.md), [ES-F05-02](./especificaciones/ES-F05-02-ConsultarRepartidores/spec.md), [ES-F05-03](./especificaciones/ES-F05-03-EditarRepartidor/spec.md), [ES-F05-04](./especificaciones/ES-F05-04-DarDeBajaRepartidor/spec.md), [ES-F05-05](./especificaciones/ES-F05-05-VincularRepartidorConSeguridad/spec.md), [ES-F05-06](./especificaciones/ES-F05-06-RegistrarFurgoneta/spec.md), [ES-F05-07](./especificaciones/ES-F05-07-ConsultarFurgonetas/spec.md), [ES-F05-08](./especificaciones/ES-F05-08-EditarFurgoneta/spec.md), [ES-F05-09](./especificaciones/ES-F05-09-CambiarEstadoFurgoneta/spec.md). Cada carpeta incluye especificación, UI, plan, tareas y evidencia; se conservan los 47 IDs de criterios de aceptación, con el flujo de vinculación alineado al contrato de Seguridad. La verificación documental y los pendientes funcionales están separados de la aceptación del producto. |
 | [Plantillas y flujo SDD](./plantillas/sdd/README.md) | Organización aprobada por especificación, con adopción progresiva: comportamiento, UI opcional, plan, tareas y evidencia; componentes React compartidos. |
+| [Especificaciones F-06](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-06) | Ocho especificaciones de jornadas, monitoreo, disponibilidad, ocupación, cierre, reservas, liberaciones y proyecciones. Kevin Rhamses es responsable actual de F-05 y F-06. La [revisión conjunta](./especificaciones/ES-F06-01-AbrirJornada/evidencia/validacion.md#revision-f05-f06-2026-10-26) registra los PR, los pipelines aprobados y los pendientes con Seguridad real. |
 | [Historias de usuario](./historias-usuario/) | Historias en formato Jira (COMO/QUIERO/PARA) con criterios de aceptación Gherkin y DoD. |
 | [Reglas del repositorio](./AGENTS.md) | Convenciones para crear y mantener la documentación. |
 | [Guía de contribución](./CONTRIBUTING.md) | Integración de código en `develop`, documentación en `main`, revisión de PR y entregas con changelog y tags manuales. |
@@ -64,7 +65,9 @@ F-01 cuenta con sus ocho carpetas SDD preparadas. Las últimas migraciones son [
 
 Actualización del 26/10/2026: F-01 guardará únicamente cotizaciones exactas exitosas antes de responder al canal, sin exigir un pedido. El [modelo](./arquitectura/modelo-datos.md#12-persistencia-exacta-y-estado-comunicado-del-esquema) recoge `cotizaciones` creada y `zonas_codigos_postales` con datos como antecedentes comunicados. El [plan de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/plan.md) y su [tarea T-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/tasks.md#t-06-implementar-la-persistencia-de-cotizaciones-exactas) mantienen pendientes el escritor, la verificación del esquema/lector y las pruebas. La preparación documental y la existencia de tablas no acreditan esos resultados [cite: 1].
 
-[cite: 1] [Evidencia de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md), antecedentes y límites de la actualización; [contrato externo §11.1](./integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6), homologación con G6 aún pendiente.
+[cite: 1] [Evidencia de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md), antecedentes y límites de la actualización; [contrato externo §11.1](./integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento), con el cierre H del 02/11 y semántico D del 03–04/11/2026.
+
+Actualización del 04/11/2026: el estado efectivo D-G2-01 y el rechazo identificado del SKU padre D-G2-02 están cerrados semánticamente, incluidos campo obligatorio, orden y precedencia. El PR backend G6 #162 está fusionado; su OpenAPI publicado aún requiere sincronización normativa. [ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/spec.md) conserva CA-01 a CA-19 y T-07/T-08; [ES-F02-01](./especificaciones/ES-F02-01-RecepcionSolicitudDespacho/spec.md), CA-01 a CA-13 y T-09/T-10. Implementación y pruebas G2 permanecen pendientes. Hito 4 oficial: **07/11/2026** [cite: 1].
 
 ## 🗂️ Repositorios del módulo
 
@@ -72,11 +75,11 @@ El módulo se divide en repositorios independientes que comparten las especifica
 
 | Repositorio | Propósito | Estado |
 |---|---|---|
-| [despacho-docs](https://github.com/Taller-SW-Web/despacho-docs) | Documentación, especificaciones y contrato de integración. | Disponible |
-| Frontend | Interfaz web para gestores y repartidores. | En creación |
-| Backend | Servicios, reglas de negocio, persistencia e integraciones. | En creación |
+| [G2-Despacho-Specs](https://github.com/Taller-SW-Web/G2-Despacho-Specs) | Documentación, especificaciones y contrato de integración. | Disponible |
+| [G2-Despacho-Frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend) | Interfaz web para gestores y repartidores. | Disponible; integración por PR a `develop` |
+| [G2-Despacho-Backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend) | Servicios, reglas de negocio, persistencia e integraciones. | Disponible; integración por PR a `develop` |
 
-Los enlaces del frontend y backend se incorporarán cuando sus repositorios estén disponibles.
+La documentación utiliza `main` como base y recibe cambios por PR; los repositorios de código integran en `develop`, conforme a CONTRIBUTING.
 
 ## 🔗 Integraciones
 

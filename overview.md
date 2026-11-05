@@ -256,10 +256,12 @@ Según la matriz cruzada del curso, Despacho y Entrega se integra con Marketplac
 | Canal Chatbot | Entrante | Cotizar el envío y consultar el estado del pedido. | F-01, RT-04 |
 | Ventas y Postventa | Entrante | Solicitar el despacho de un pedido pagado con paquete sellado mediante `despachos:crear`, cancelarlo mediante `despachos:cancelar` y consultar sus hitos mediante `seguimientos:leer`. | F-02, RT-04 |
 | Ventas y Postventa | Saliente | Recibir en `/api/v1/integraciones/despachos/eventos` los cambios de estado enviados por `modulo-despacho` con `aud=api-ventas` y `ventas:pedidos:estado`. | RT-03 |
-| Productos y Ofertas | Saliente | Proveer a F-01 el peso y las dimensiones vigentes por SKU para calcular la cotización. El stock y los productos continúan fuera del módulo. | F-01 |
+| Productos y Ofertas | Saliente | Proveer el perfil físico y estado del SKU para cotizar y recibir un pedido listo para entrega. El catálogo y stock permanecen en G6. | F-01, F-02 |
 | Seguridad y Usuarios | Bidireccional | Emitir JWT y tokens de servicio; crear los usuarios de los repartidores. | Todas, F-05 |
 
 Ventas se autentica ante Despacho como `sub=modulo-ventas`, `tipo=servicio` y `aud=api-despacho`. En la solicitud de creación envía destinatario, destino y líneas con `sku` y `cantidad`; no envía peso, volumen ni `cantidadPaquetes`. Despacho obtiene los datos físicos desde Productos y registra internamente un paquete lógico por pedido.
+
+Actualización G2–G6 del 04/11/2026: H-G2-01/02/03 están homologados desde el 02/11 y D-G2-01/02 están cerrados semánticamente desde el 03–04/11. G6 proyecta el estado efectivo; F-01 aplica elegibilidad comercial y F-02 no rechaza solo por `INACTIVO`/`BORRADOR` un pedido pagado/preparado con perfil válido. El rechazo del SKU padre, afectados, orden y precedencia están acordados; el proveedor está fusionado y la sincronización normativa de su OpenAPI sigue pendiente. Definiciones y fuentes en [contrato externo §§5.2 y 11.1](./integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento); implementación/verificación G2, grant G7 y E2E se acreditan independientemente [cite: 1].
 
 ---
 
@@ -307,6 +309,7 @@ Ventas se autentica ante Despacho como `sub=modulo-ventas`, `tipo=servicio` y `a
 |---|---|
 | Seguridad y Usuarios | Publicar formalmente la revisión que establece el alta por `ADMIN_SISTEMA` y `roles: []`; registrar y conceder los scopes de `api-despacho`, incluido `despachos:cancelar` para `modulo-ventas` si aún está pendiente; verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; definir cómo se solicita el alta o baja global, cómo se comunica el `usuario_id` a Despacho y publicar el contrato RabbitMQ de eventos de usuario. |
 | Canal Marketplace y Canal Chatbot | Obtener tokens de servicio con `cotizaciones:calcular` y `seguimientos:leer`. |
+| Productos y Ofertas | Sincronizar el OpenAPI con D-G2-01/02 ya cerrados semánticamente y fijar su revisión. H-G2-01/02/03 permanecen cerrados; proveedor fusionado, consumidor G2, grant y E2E con seguimiento propio. |
 
 No quedan decisiones funcionales pendientes con Ventas y Postventa. El acuerdo confirmó el paquete lógico interno con `cantidadPaquetes=1`, la creación y cancelación, el mapeo de eventos, la ruta y autorización del webhook y la convención de idempotencia; quedan únicamente configuración por ambiente y pruebas de contrato.
 
@@ -330,3 +333,5 @@ No quedan decisiones funcionales pendientes con Ventas y Postventa. El acuerdo c
 - **Rastreo GPS en tiempo real:** el seguimiento se basa en los cambios de estado.
 - **Operación sin conexión:** la web del repartidor requiere red activa.
 - **Mantenimiento, seguros y costos de la flota:** se gestionan fuera del sistema.
+
+[cite: 1] [Contrato externo: homologación física y precisiones](./integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento), con aceptación H del 02/11, cierre semántico D del 03–04/11/2026, merge G6 #162 y revisión normativa inspeccionada.

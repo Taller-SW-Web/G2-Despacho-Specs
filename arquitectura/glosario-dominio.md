@@ -10,7 +10,10 @@ Este documento unifica el significado de los términos utilizados en las funcion
 | **Despacho** | Entidad operativa propiedad del módulo de Despacho. Representa el proceso de llevar un pedido preparado desde el centro de despacho hasta su destino o devolverlo al centro si no se entrega. |
 | **Línea de pedido** | Par formado por `sku` y `cantidad`. Sirve para consultar a Productos y Ofertas los datos físicos necesarios, pero no representa un paquete independiente. |
 | **Paquete o bulto físico** | Unidad sellada que ocupa espacio en una furgoneta. Para el alcance inicial, cada pedido genera un despacho con `cantidadPaquetes=1`. |
-| **SKU** | Identificador de una presentación concreta de producto, propiedad de Productos y Ofertas. |
+| **SKU** | Identificador opaco propiedad de Productos y Ofertas. Para cálculos físicos se requiere que identifique una unidad física consultable; su existencia no garantiza elegibilidad ni perfil completo. |
+| **Variante** | Presentación concreta de un producto padre, con SKU e identidad física propios. |
+| **SKU padre con variantes** | `sku_base` que identifica el producto agrupador, no una unidad física vendible. Su rechazo identificado se precisa en D-G2-02; un producto simple sin variantes sí puede tener su unidad física identificada por su SKU base. |
+| **Estado efectivo del SKU** | Proyección que G6 comunica en la consulta física considerando el estado propio de la variante y el de su padre. G2 consume ese valor y aplica la política de F-01 o F-02; no replica ni modifica los estados del catálogo. |
 | **Centro de despacho** | Único punto operativo desde el que salen los paquetes y al que regresan los no entregados. |
 
 Un pedido puede contener varias líneas y unidades de producto sin dejar de representar un solo paquete dentro del alcance inicial.
@@ -69,9 +72,14 @@ La tarifa base es una regla almacenada; la consulta de cobertura no devuelve un 
 | **Outbox o bandeja de salida** | Registro transaccional de eventos pendientes que permite enviar y reintentar el webhook sin revertir el cambio de estado. |
 | **Proyección de despacho** | Copia mínima y versionada que Operación de Reparto utiliza para mostrar la ruta sin compartir la base de datos de Gestión. |
 | **Seguimiento** | Vista resumida del estado y de los hitos del despacho consultada por `idPedido`, sin exponer evidencia, coordenadas ni datos personales. |
+| **SKU afectado por un rechazo** | Identificador solicitado que causa la condición de error devuelta. Para el padre no físico, se conservan todos y únicamente los causantes, literalmente, sin duplicados y en orden de solicitud, conforme al contrato. La correlación identifica la petición y no sustituye al SKU causante. |
+
+Estado efectivo, SKU padre y afectados se rigen por [contrato externo §§3.5, 5.2.3 y 5.2.4](../integraciones/api-contract.md#523-d-g2-01--estado-efectivo-de-variantes). H-G2-01/02/03 y semántica D-G2-01/02 están cerrados al 04/11; la sincronización normativa G6 y la compatibilidad del consumidor se siguen en §11.1. Este glosario explica términos, no amplía el esquema de G6 [cite: 2].
 
 ## 6. Estados del despacho
 
 Los significados, transiciones, precondiciones y transiciones prohibidas se definen en [Diagrama de estados del despacho](./diagrama-estados-despacho.md).
 
 [cite: 1] [F-01 RF-03](../funcionalidades/F-01-Gestor_ZonasGeograficas.md#rf-03-cotización-en-tiempo-real-para-canales-de-venta), actualización del 26/10/2026; persistencia exacta acordada e implementación pendiente.
+
+[cite: 2] [Homologación y seguimiento G2–G6](../integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento), fuentes del 02–04/11/2026.

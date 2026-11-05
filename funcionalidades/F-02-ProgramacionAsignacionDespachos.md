@@ -5,6 +5,8 @@
 **Actor principal:** Gestor de Despacho  
 **Lineamientos del curso:** Generación de solicitud de despacho a partir de un pedido; Asignación de despacho a operador/repartidor  
 
+**Actualización 04/11/2026:** H-G2-01/02/03 cerrados; D-G2-01 cerrado el 03/11 y D-G2-02 cerrado semánticamente el 04/11. CA-25 a CA-27 recogen el rechazo por identificador no físico, afectados y precedencia aceptados. Sincronización normativa G6 e implementación/verificación G2 pendientes [cite: 1].
+
 ## 1. Contexto
 
 Todos los pedidos de la tienda se preparan en un único centro de despacho. Cuando un pedido ya fue pagado y su paquete está sellado en ese centro, el módulo de Ventas y Postventa, dueño de la entidad pedido, solicita a Despacho su entrega a domicilio. A partir de esa solicitud nace el despacho, entidad cuyo dueño es este módulo, en estado `PENDIENTE_ASIGNACION` ("En centro de despacho").
@@ -35,7 +37,7 @@ Esta funcionalidad incluye:
 - Las operaciones del panel requieren un token JWT con rol `GESTOR_DESPACHO`.
 - La recepción y la cancelación desde Ventas y Postventa requieren un token de servicio de `modulo-ventas` con `despachos:crear` o `despachos:cancelar`, respectivamente.
 - Una solicitud de despacho corresponde a un pedido pagado, preparado y listo para entrega, e incluye: identificador de pedido, destinatario, destino y las líneas del pedido con `sku` y `cantidad`. Las coordenadas y el código postal son opcionales. Ventas y Postventa no envía peso, volumen, cantidad de paquetes ni fecha comprometida: antes de persistir el despacho, Despacho consulta los datos físicos vigentes de cada SKU ante Productos y Ofertas, calcula `pesoTotalKg` y `volumenTotalM3`, registra internamente `cantidadPaquetes = 1` y calcula `fechaProgramada` a partir de la zona, el plazo aplicable y el calendario operativo. Si Productos y Ofertas no está disponible o faltan datos físicos válidos, no se crea el despacho.
-- No se exige cotización previa ni se usa `cotizaciones` como fuente física. Las reglas previstas de lote, límite de 100 SKU únicos y estado comercial se definen en el [contrato externo §§5.2 y 7.1](../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas); su homologación con G6 está pendiente en §11.1 [cite: 1].
+- No se exige cotización previa ni se usa `cotizaciones` como fuente física. Las reglas homologadas de lote, límite de 100 SKU únicos y estados se definen en el [contrato externo §§5.2 y 7.1](../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas); §11.1 registra H-G2-01/02/03 cerrados y las precisiones D-G2-01/02 [cite: 1].
 - Al crear un despacho nuevo, el destino debe estar cubierto por una zona activa de F-01. Los despachos existentes conservan la zona registrada y pueden continuar su ciclo o ser reprogramados aunque posteriormente esa zona sea desactivada.
 - Solo se asignan despachos en `PENDIENTE_ASIGNACION` cuya fecha de entrega programada sea igual o anterior a la fecha actual. Los despachos reprogramados a futuro permanecen en cola en modo solo lectura hasta su fecha programada.
 - El repartidor debe tener una asignación operativa diaria activa provista por F-06 y encontrarse en estado operativo `DISPONIBLE` o `EN_RUTA`.
@@ -173,15 +175,33 @@ El sistema DEBE impedir despachos duplicados, despachos sin cobertura y despacho
 
 #### CA-23. Estado comercial posterior a la compra
 
-- **DADO** una solicitud autenticada de Ventas para un pedido pagado, preparado y listo para entrega, con SKU existente `INACTIVO` y perfil físico válido.
-- **CUANDO** F-02 valida la recepción conforme a la homologación H-G2-02.
-- **ENTONCES** no rechaza únicamente por el estado comercial y continúa las demás validaciones; no exige cotización previa. La propuesta de extender este comportamiento a `BORRADOR` requiere aceptación externa expresa [cite: 1].
+- **DADO** una solicitud autenticada de Ventas para un pedido pagado, preparado y listo para entrega, con unidad física existente de estado efectivo `INACTIVO` o `BORRADOR` y perfil físico válido, incluida la proyección del padre conforme a D-G2-01.
+- **CUANDO** F-02 valida la recepción conforme a H-G2-02, cerrado el 02/11/2026.
+- **ENTONCES** no rechaza únicamente por el estado comercial y continúa las demás validaciones; no exige cotización previa. Esto no convierte un SKU padre con variantes en unidad física válida [cite: 1].
 
 #### CA-24. Límite físico y cantidades originales
 
 - **DADO** líneas de un pedido con SKU repetidos.
 - **CUANDO** F-02 agrupa las líneas para una recepción nueva.
 - **ENTONCES** conserva la suma de cantidades y consulta una vez cada SKU, hasta 100 únicos; si supera ese máximo, aplica el rechazo contractual antes de llamar a G6 o crear el despacho.
+
+#### CA-25. Rechazo identificado de SKU padre no físico
+
+- **DADO** una recepción nueva con uno o varios SKU padre de productos con variantes, conforme al acuerdo D-G2-02 cerrado y la revisión exigible del contrato externo §5.2.4.
+- **CUANDO** G6 rechaza el lote por esa condición y F-02 valida el error.
+- **ENTONCES** rechaza todo el pedido con el error público de no elegibilidad como unidad física y conserva todos y únicamente los SKU causantes, literalmente, sin duplicados y en orden de solicitud. No crea despacho, historial inicial ni cotización. La excepción comercial de CA-23 no habilita ese identificador; un producto simple con perfil válido sí puede continuar.
+
+#### CA-26. Detalle del rechazo no conforme
+
+- **DADO** un error de SKU padre bajo D-G2-02 homologado con identificación obligatoria ausente, vacía, malformada, duplicada o con SKU ajenos al lote.
+- **CUANDO** F-02 valida el problema recibido.
+- **ENTONCES** aplica el error contractual de respuesta de Productos inválida, sin inferir afectados desde el texto o el lote completo ni persistir un despacho parcial.
+
+#### CA-27. Precedencia del error de lote
+
+- **DADO** una recepción nueva con SKU padre no físicos y otros errores, y la precedencia aceptada el 04/11/2026 en el contrato externo §5.2.4.
+- **CUANDO** se prueba el mismo conjunto en órdenes diferentes.
+- **ENTONCES** F-02 traduce el mismo error prioritario y conserva el mismo conjunto de afectados, ordenado según cada solicitud. Las bases no físicas prevalecen sobre perfiles incompletos; únicamente se identifican los causantes de la condición seleccionada. Rechaza íntegramente sin nuevas escrituras y sin certificar la validez de las demás líneas.
 
 ### RF-06. Programación de la jornada y secuencia de ruta
 
@@ -310,6 +330,7 @@ Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendien
 | CA-11 y CA-12 | Repetir una solicitud y enviar un destino sin cobertura. | Integración | Un único despacho por pedido y `422` sin persistencia. |
 | CA-21 | Enviar una solicitud con SKU desconocido, datos físicos incompletos y con Productos no disponible. | Integración | `422` o `503` sin creación del despacho. |
 | CA-22 a CA-24 | Inyectar lotes inválidos, verificar estados homologados, agrupar cantidades y probar 100/101 SKU únicos. | Contrato e integración | Sin carga parcial ni cotización escrita; límite previo a G6 y estados según acuerdo bilateral. |
+| CA-25 a CA-27 | SKU padre solos/múltiples/mixtos, producto simple válido, detalle obligatorio inválido y permutaciones de errores de distintas clases. | Contrato e integración PostgreSQL | SKU causantes preservados en orden de solicitud, rechazo completo y `502` ante error no conforme con la revisión exigible; precedencia D-G2-02 aceptada el 04/11. |
 | CA-13 y CA-14 | Asignar un despacho programado a futuro y reordenar una ruta. | Unitaria e integración | `409` para fecha futura; secuencia continua y reflejada en F-03. |
 | CA-15 y CA-16 | Reasignar un despacho `ASIGNADO` y otro `EN_CAMINO`. | Integración | Cambio de repartidor en el primer caso y `409` en el segundo. |
 | CA-17 a CA-19 | Cancelar despachos en cada estado. | Unitaria e integración | `CANCELADO`, `409` o anulación registrada según el estado. |
@@ -325,7 +346,7 @@ Además, se ejecutarán tres recorridos funcionales completos:
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-24` están implementados y cuentan con pruebas automatizadas exitosas, con la homologación física externa enlazada.
+- Los criterios `CA-01` a `CA-27` están implementados y cuentan con pruebas automatizadas exitosas, con H-G2-01/02/03 y el cierre/revisión D-G2-01/02 enlazados.
 - Los tres recorridos funcionales han sido verificados de extremo a extremo.
 - No existe más de un despacho por pedido.
 - Ninguna asignación supera la capacidad en kg, m³ o paquetes informada por F-06.
@@ -334,4 +355,4 @@ La funcionalidad se considera completa cuando:
 - No se han incorporado capacidades declaradas fuera de alcance.
 - La evidencia de pruebas puede trazarse hacia cada criterio de aceptación.
 
-[cite: 1] [Contrato externo: homologación H-G2-01 a H-G2-03](../integraciones/api-contract.md#111-respuesta-propuesta-y-plan-de-homologación-física-g2g6). Actualización documental del 26/10/2026; no acredita aceptación de G6 ni ejecución del backend.
+[cite: 1] [Contrato externo: homologación y precisiones G2–G6](../integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento). Actualización documental del 04/11/2026: H y semántica D cerrados, proveedor fusionado; sincronización normativa, implementación G2, autorización G7 y E2E tienen seguimiento independiente.
