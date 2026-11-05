@@ -36,17 +36,18 @@ El objetivo es presentar **las dos aplicaciones web y los tres componentes del b
 ### Valqui · Arquitectura, APIs y F-01
 
 - [ ] Preparar y verificar una zona de cobertura que sirva para el despacho de prueba. Si la cotización exacta entra en la demo, registrar qué falta de F-01 o de la integración con Productos y confirmar los datos y permisos con los responsables.
-- [ ] Diagnosticar la exclusión temporal de Zonas de la suite administrativa. Corregir los mensajes esperados o los datos de prueba con Max según corresponda. Coordinar con Kevin la reincorporación después de comprobar que pasa.
+- [ ] Verificar en la versión del hito que se ejecuta la suite administrativa completa, incluida Zonas. La corrección de pruebas y la reincorporación a CI se prepararon en el [PR de Frontend #19](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/pull/19).
 - [ ] Consolidar un **inventario enlazado a los tres contratos vigentes**. Separar integraciones con otros módulos, APIs consumidas por los dos frontends y llamadas privadas entre Gestión y Operación. Por operación del hito registrar proveedor, consumidor, método, ruta, datos, autenticación, errores y estado de verificación.
 - [ ] Revisar con cada dueño sus operaciones en Swagger/OpenAPI y contrastarlas con el contrato y la respuesta real. Verificar especialmente permisos, códigos HTTP, formato de errores e idempotencia donde aplique.
+- [ ] Alinear con Kevin el contrato de las llamadas internas con la decisión de autorizar por identidad de servicio. Retirar la solicitud de los seis scopes internos de la documentación de G2 y conservar los permisos acordados para las integraciones externas. Registrar el mecanismo de emisión y validación cuando quede definido.
 - [ ] Apoyar a Kevin en la comparación de nube con compatibilidad de PostgreSQL/PostGIS, migraciones, conectividad entre servicios, CORS y almacenamiento de evidencias. Revisar el esquema y el historial de Flyway antes de plantear una migración sobre una base existente.
 
 **Entregable** — Inventario y Swagger de Gestión y Operación listos para mostrar, más la prueba de F-01 que sustenta el escenario.
 
 ### Max Rojas · Frontend, sesiones y F-03
 
-- [ ] Identificar con quien ya está avanzando Seguridad la rama o PR, sus cambios y lo que falta. Repartir cualquier ajuste de sesión antes de implementar en paralelo.
-- [ ] Integrar o completar el inicio de sesión real en ambas apps conforme al contrato de G7. Verificar el flujo de MFA del gestor, la sesión del repartidor, el comportamiento al vencer la sesión y el cierre de sesión.
+- [ ] Revisar con quien lleva la sesión el estado de su rama o PR. El PR de Frontend #19 aclara la vinculación en F-05 y la apertura de jornada en F-06. El acceso real de ambas apps se verifica por separado.
+- [ ] Completar la sesión real en ambas apps según el contrato de G7. En el acceso del repartidor, reemplazar el formulario antiguo por JSON con `correo` y `contrasena`. Verificar MFA del gestor, renovación al vencer la sesión y cierre de sesión. Usar cuentas reales para el ensayo y mantener el probador y la demo de datos en memoria en el entorno de desarrollo.
 - [ ] Coordinar con Kevin si las apps llaman directamente a G7 o pasan por el Gateway. Validar orígenes, rutas y configuración de las versiones publicadas según la decisión.
 - [ ] Conectar la ruta, el inicio de traslado, la carga de evidencia y el reporte de fallo a las APIs reales de F-03. Mostrar errores accionables si la sesión, la jornada o la evidencia impiden continuar.
 - [ ] Verificar con Tarqui que la ruta recibe la asignación y con Gerardo que el fallo reportado aparece en Administración. Conservar el ID y la respuesta de la operación para repetir la demo.
@@ -57,7 +58,9 @@ El objetivo es presentar **las dos aplicaciones web y los tres componentes del b
 
 - [ ] Liderar el **ADR de nube**. Comparar el alojamiento actual con al menos otra alternativa por costo total, región y latencia, esfuerzo operativo, portabilidad, acceso a dependencias y comportamiento de tareas programadas. Registrar qué componentes se migran y justificar la elección.
 - [ ] Justificar **GitHub Actions** frente a otra herramienta vista en clase. Aprovechar los workflows existentes de frontend y backend. Enlazar compilación y pruebas con el despliegue de una versión aprobada y definir cuándo se promueve de pruebas al ambiente de entrega.
-- [ ] Verificar que estén publicados y conectados los dos frontends, Gateway, Gestión y Operación. Configurar variables y secretos por ambiente, rutas internas, persistencia y acceso a evidencias. Coordinar con G7 la configuración de orígenes o proxy y las credenciales técnicas necesarias para el recorrido.
+- [ ] Verificar que estén publicados y conectados los dos frontends, Gateway, Gestión y Operación. Configurar variables y secretos por ambiente, rutas internas, persistencia y acceso a evidencias. Confirmar que los modos de acceso sin autenticación del backend y la demo del frontend estén desactivados en el ambiente publicado. Conservar `seguridad-local` para Compose y pruebas.
+- [ ] Verificar el estado del [PR de Backend #22](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/22) y su presencia en la versión del hito. El PR prepara la validación JWT de Operación con pruebas locales. Comprobar después un token de G7 con un repartidor activo y vinculado.
+- [ ] Acordar con Valqui y los responsables de Gestión y Operación qué identidad puede llamar a cada ruta interna y cómo obtendrá su credencial. Confirmar la audiencia del token antes de sustituir en el backend los seis scopes internos. Coordinar por canal privado las credenciales de integraciones externas que entren en la demo.
 - [ ] Identificar cada despliegue por commit, tag cuando corresponda y revisión o imagen. Ordenar la salida por etapas y conservar reportes. Acordar cómo volver a una revisión anterior y qué hacer si hay migraciones de datos.
 - [ ] Integrar con Gerardo el paso de verificación posterior al despliegue. Si falla una comprobación crítica, la versión queda pendiente de promoción y el reporte identifica el paso que falló.
 - [ ] Preparar vehículo, perfiles de repartidor vinculados a Seguridad y jornada para la demo. Comprobar la reserva y la liberación de capacidad con valores antes y después. Verificar que el procesador de liberaciones funciona en el entorno elegido.
@@ -67,10 +70,10 @@ El objetivo es presentar **las dos aplicaciones web y los tres componentes del b
 ### Gerardo · Calidad, CI/CD y F-04
 
 - [ ] Acordar con Kevin qué resultados bloquean la promoción de una versión. Revisar con Valqui la reincorporación de las pruebas de Zonas y con cada responsable la evidencia de sus pruebas.
-- [ ] Preparar y, con Kevin, incorporar la **prueba de humo posterior al despliegue**. Automatizar la salud del Gateway y una consulta protegida si hay una identidad técnica de prueba autorizada para esa operación. El acceso humano a F-04 se comprueba con una sesión real y MFA durante el ensayo. Guardar entorno, SHA y resultado de cada comprobación.
+- [ ] Preparar y, con Kevin, incorporar la **prueba de humo posterior al despliegue**. Comprobar la salud del Gateway y que una consulta protegida de F-04 sin token devuelve `401`. Probar la misma consulta con un JWT de gestor del emisor local y repetirla en el ensayo con una sesión real de G7. Guardar entorno, SHA y resultado de cada comprobación.
 - [ ] Probar el contrato de recepción de F-04. Incluir gestor autorizado con `202`, campos inválidos con `400`, token ausente o permiso insuficiente y repetición exacta sin duplicar historial ni liberación.
 - [ ] Verificar F-04 con los servicios reales. Confirmar que la incidencia se puede consultar, que la recepción deja constancia, que Operación libera la reserva y que la reprogramación queda guardada. Coordinar con Kevin y Tarqui la comprobación de capacidad antes de una nueva asignación.
-- [ ] Preparar con Max los casos de seguridad de la demo. Verificar MFA del gestor, acceso a la ruta propia y rechazo al consultar un despacho ajeno. Pedir a otro integrante que revise los cambios de F-04.
+- [ ] Preparar con Max los casos de seguridad de la demo. Verificar MFA del gestor, acceso a la ruta propia, rechazo al consultar un despacho ajeno, sesión vencida y cierre de sesión. Con Kevin, comprobar la llamada interna desde el servicio autorizado y el rechazo de un token humano o de otro servicio. Pedir a otro integrante que revise los cambios de F-04.
 - [ ] Coordinar el ensayo y registrar por cada caso el resultado, las incidencias y los pendientes de integración. Separar evidencia local, simulada y ejecutada en nube.
 
 **Entregable** — Paso de Calidad visible en CI/CD, reporte de contrato de F-04 y evidencia del ensayo en la versión publicada.
@@ -79,11 +82,19 @@ El objetivo es presentar **las dos aplicaciones web y los tres componentes del b
 
 | Momento | Trabajo en paralelo | Condición para avanzar |
 |---|---|---|
-| **Primero** | Tarqui confirma alcance. Kevin compara plataformas y prepara el ambiente. Valqui inventaría APIs y datos. Max ubica la rama de Seguridad. Gerardo prepara los casos y el reporte. | Cada persona tiene un tramo, un criterio de cierre y un entorno acordado. |
-| **Integración** | Kevin conecta servicios y verifica CI/CD. Max conecta sesión y F-03. Tarqui verifica asignación. Valqui prepara cobertura y contrasta los contratos. Gerardo verifica F-04 y prepara la prueba posterior al despliegue. | La versión publicada pasa la prueba básica. G7 confirma las cuentas y, si aplica, los orígenes y permisos. Kevin verifica los vínculos de repartidor en F-05. |
+| **Primero** | Tarqui confirma alcance. Kevin compara plataformas y prepara el ambiente. Valqui inventaría APIs y datos. Max revisa el contrato de sesión. Gerardo prepara los casos y el reporte. | Cada persona tiene un tramo, un criterio de cierre y un entorno acordado. Las pruebas locales pueden empezar mientras G7 confirma las cuentas. |
+| **Integración** | Kevin conecta servicios y verifica CI/CD. Max conecta sesión y F-03. Tarqui verifica asignación. Valqui prepara cobertura y contrasta los contratos. Gerardo verifica F-04 y prepara la prueba posterior al despliegue. | La versión publicada responde y rechaza el acceso anónimo a F-04. G7 confirma las cuentas y, si aplica, los orígenes. Kevin verifica los vínculos de F-05 y la comunicación interna para reservar y liberar capacidad. |
 | **Ensayo y cierre** | Los cinco recorren el mismo despacho. Gerardo registra resultados, Tarqui valida el alcance y Kevin identifica la revisión ejecutada. | Cada paso tiene evidencia asociada al mismo caso. Los fallos y dependencias pendientes quedan identificados con responsable. |
 
-**Coordinación con G7** — Tarqui y Gerardo acuerdan el horario de la prueba. Max aporta las URLs de las apps y valida el flujo humano. Kevin coordina la configuración de ambiente y las credenciales técnicas por un canal privado. Para probar permisos de usuario, preparar un gestor con MFA y dos repartidores activos vinculados por UUID. Los tokens de servicio de integraciones se gestionan por separado de las sesiones humanas.
+### 4.1 Pedido inicial a Seguridad
+
+Tarqui y Gerardo confirman con G7 el ambiente y la fecha de prueba. Pedir **un gestor con MFA y dos repartidores sin rol global**, con sus enlaces de activación si faltan. G7 comunica los UUID de los repartidores y Kevin los vincula en F-05. Max aporta las URLs exactas de ambas apps si el navegador llama directamente a G7, para confirmar los orígenes permitidos.
+
+### 4.2 Comunicación entre servicios
+
+G2 acordó autorizar las llamadas entre Gestión y Operación por **identidad del servicio autorizado para la operación**. Los seis scopes internos quedan fuera del pedido a G7. El contrato y el backend actuales todavía los exigen. Antes de cambiar el código, Kevin y Valqui deben definir con los responsables cómo emitir una credencial interna con la audiencia esperada. G7 deriva la audiencia de los scopes concedidos, así que una credencial emitida para Ventas o Seguridad puede tener otra audiencia.
+
+El login de las aplicaciones y la preparación de pruebas pueden avanzar en paralelo. La **demo completa** requiere además que Gestión y Operación puedan reservar y liberar capacidad en el ambiente publicado. Las credenciales de integraciones externas se coordinan por separado, según lo que se vaya a demostrar.
 
 ## 5. Evidencia para la sustentación
 
@@ -91,7 +102,7 @@ El objetivo es presentar **las dos aplicaciones web y los tres componentes del b
 |---|---|
 | **CI/CD** | PR y SHA → ejecución del pipeline → reportes de build, compilación y pruebas → revisión publicada → resultado de la prueba de humo. |
 | **Diseño de APIs** | Inventario y Swagger → operación y contrato → petición real con éxito y con error → controlador o prueba que lo respalda. |
-| **Seguridad en pantallas y APIs** | Login con G7, MFA del gestor, ruta del repartidor y llamadas permitidas y rechazadas. Mostrar códigos HTTP y ocultar tokens y secretos. Explicar quién emite el JWT y qué verifica Despacho. |
+| **Seguridad en pantallas y APIs** | Login con G7, MFA del gestor, ruta propia del repartidor, rechazo al despacho ajeno y `401` sin token en una API protegida. Mostrar códigos HTTP y ocultar tokens y secretos. Registrar aparte la comprobación de identidad de servicio entre Gestión y Operación. |
 | **Demo funcional** | Asignación → traslado → fallo con evidencia → recepción → liberación de capacidad y reprogramación. Mostrar los mismos IDs y los estados antes y después. |
 | **Prácticas DevOps y versionado** | ADR de nube, comparación de herramientas, rama y revisión por pares, changelog, tag o SHA y revisión publicada. Cada integrante puede explicar su aporte con evidencia del equipo. |
 | **Webhook** | Contrato Despacho → Ventas/Postventa, registro del evento en la bandeja de salida y código de envío. Explicar reintentos y deduplicación por `idEvento`. Si se ejecuta con Ventas, guardar la confirmación de recepción aparte. |
@@ -103,9 +114,9 @@ El objetivo es presentar **las dos aplicaciones web y los tres componentes del b
 
 ## 7. Referencias de trabajo
 
-- [Teoría de despliegue y CI/CD](../TEO_08_Despliegue_Nube_CICD_DevOps.pdf) · [Teoría de APIs REST](../TEO_09_APIs.pdf)
-- [Índice de funcionalidades](G2-Despacho-Specs/funcionalidades/funcionalidad.md) · [Flujo de contribución y versiones](G2-Despacho-Specs/CONTRIBUTING.md)
-- [Contratos de integraciones externas](G2-Despacho-Specs/integraciones/api-contract.md) · [API de Gestión](G2-Despacho-Specs/integraciones/api-contract-gestion-despachos.md) · [API de Operación](G2-Despacho-Specs/integraciones/api-contract-operacion-reparto.md)
-- [Workflow de backend](G2-Despacho-Backend/.github/workflows/ci.yaml) · [Workflow de frontend](G2-Despacho-Frontend/.github/workflows/ci.yaml)
-- [Avance y contrato de Seguridad](seguridad-avance-equipo.md) · [Pendientes de coordinación con G7](solicitud-integracion-seguridad.md)
-- [Evidencia y pendientes de F-04](G2-Despacho-Specs/especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/evidence.md) · [Validación de F-05/F-06](G2-Despacho-Specs/especificaciones/ES-F06-01-AbrirJornada/evidencia/validacion.md)
+- Material del curso — TEO 08 Despliegue en Nube y CI/CD y TEO 09 Diseño de APIs y API REST.
+- [Índice de funcionalidades](../funcionalidades/funcionalidad.md) · [Flujo de contribución y versiones](../CONTRIBUTING.md)
+- [Contratos de integraciones externas](../integraciones/api-contract.md) · [API de Gestión](../integraciones/api-contract-gestion-despachos.md) · [API de Operación](../integraciones/api-contract-operacion-reparto.md)
+- [Workflow de backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend/blob/develop/.github/workflows/ci.yaml) · [Workflow de frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/blob/develop/.github/workflows/ci.yaml)
+- Material de G7 — Kit de integración, matriz de scopes y SPEC-17 de tokens de servicio. Borrador de coordinación de G2 — `solicitud-integracion-seguridad.md`, en el espacio de trabajo compartido.
+- [Evidencia y pendientes de F-04](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/evidence.md) · [Validación de F-05/F-06](../especificaciones/ES-F06-01-AbrirJornada/evidencia/validacion.md)
