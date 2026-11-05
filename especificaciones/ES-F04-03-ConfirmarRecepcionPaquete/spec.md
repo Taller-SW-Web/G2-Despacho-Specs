@@ -6,6 +6,8 @@
 
 **Estado:** Recepción en Gestión y frontend implementados y verificados localmente; integración real y aceptación pendientes. Avance al 24/10/2026 en [evidence.md](./evidence.md).
 
+**Ampliación de Calidad · 05/11/2026:** contrato por Gateway y liberación con Operación real verificados en entorno local desechable. Resultado y límites en [EV-07](./evidence.md#ev-07-contrato-por-gateway-y-liberación-real-local); siguen pendientes el recorrido conjunto con frontend, G7 y la aceptación.
+
 **Actor principal:** Gestor de Despacho.
 
 **UI:** Aplica; modal desde listado o detalle. **Servicio propietario:** Gestión de Despachos.

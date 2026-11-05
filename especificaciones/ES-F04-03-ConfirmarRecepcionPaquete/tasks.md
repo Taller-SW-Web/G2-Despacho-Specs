@@ -6,6 +6,8 @@
 
 **Plan de origen:** [plan.md](./plan.md), preparación SDD del 15/10/2026 sobre la revisión funcional de esta conversación.
 
+**Ampliación de Calidad · 05/11/2026:** [EV-07](./evidence.md#ev-07-contrato-por-gateway-y-liberación-real-local) aprueba 14 casos por Gateway, incluidos liberación real local, ocupación y repetición sin duplicados. T-06/07/09/10 conservan pendientes G7, casos adicionales del proveedor, reinicios y recorrido conjunto con frontend; no se cierran con esta prueba API.
+
 ## 1. Orden y dependencias
 
 | ID | Resultado verificable | Área | Depende de | Criterios | Estado |
