@@ -2,7 +2,7 @@
 
 **Responsable:** Gerardo.
 
-**Estado:** Preparado documentalmente; implementación y revisión técnica pendientes.
+**Estado:** I-01 a I-05 verificados en Gestión. I-06 comprobado localmente con contrapartes controladas; integración externa y revisión humana pendientes.
 
 **UI:** No aplica UI nueva ni cambio visual propio; captura interna, consulta ya definida en ES-F04-02. No se crea `ui.md`.
 
@@ -12,12 +12,12 @@
 |---|---|---|
 | Comportamiento | [spec.md](./spec.md), CA-01 a CA-12 | Revisión funcional `c8e6e29`, migrada sin cambiar criterios en esta entrega SDD del 16/10/2026. |
 | UI | No aplica UI propia; consulta/presentación en ES-F04-02. | Misma entrega documental; no acredita interfaz implementada. |
-| API del proveedor | [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02); [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) | Contratos documentales de la base `c8e6e29`; formatos canónicos, sin copiarlos. |
-| Transversales y datos | [Overview](../../overview.md), RT-01/02/03; [modelo](../../arquitectura/modelo-datos.md), §3.4 | Misma base documental; persistencia propuesta pendiente de migrar/implementar. |
+| API del proveedor | [Gestión §5.2](../../integraciones/api-contract-gestion-despachos.md#52-comandos-de-recepción-reprogramación-y-cierre) y [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) | Comandos de origen y esquema público del historial. |
+| Transversales y datos | [Overview](../../overview.md), RT-01/02/03; [modelo](../../arquitectura/modelo-datos.md), §3.4 | Historial compartido y migraciones existentes de Gestión. |
 | Consumidores/productores | [Detalle ES-F04-02](../ES-F04-02-ConsultarDetalleIncidencia/spec.md), [recepción ES-F04-03](../ES-F04-03-ConfirmarRecepcionPaquete/spec.md) y otras carpetas F-04 | Usar sus tareas dependientes; no duplicar el trabajo común. |
-| Código inspeccionado | Frontend `d2bc27d`; backend `1e7834b` | Lectura estática local del 16/10/2026, sin compilación ni pruebas funcionales ejecutadas. |
+| Código inspeccionado | Frontend `5c42d46`; backend `6af187c` | Bases locales de `develop` para este incremento. |
 
-El frontend contiene monorepositorio, tema Mantine y una pantalla F-04 pendiente; el paquete compartido exporta el tema, no los CR completos, y no hay script de interacción. Gestión contiene seguridad y cotización inicial; los comandos y el historial de F-04 siguen pendientes. Los nombres/rutas nuevas de este plan son propuestas, ajustables al iniciar sin cambiar contratos [cite: 1, 2].
+La pantalla de detalle consume el historial existente. En Gestión, recepción, reprogramación y cierre llaman a `HistorialIncidenciasJdbc` dentro de sus transacciones. `DetalleIncidenciaJdbc` ordena y proyecta las entradas para el contrato público. El incremento reutiliza estas piezas y refuerza la comprobación conjunta de los criterios [cite: 1, 2].
 
 ## 2. Estrategia y responsabilidades
 
@@ -25,8 +25,8 @@ Reutilizar un escritor de RT-02 dentro de la transacción del comando de origen 
 
 | Capa | Responsabilidad | Ubicación prevista |
 |---|---|---|
-| Gestión | Caso de uso, persistencia y captura común conforme al contrato. | Bajo el paquete base existente; áreas propuestas `incidencias/` y `shared/historial/`. |
-| Datos | Reutilizar migraciones base y añadir solo cambios de este alcance. | Migraciones Flyway del servicio Gestión; nombres secuenciales a comprobar al implementar. |
+| Gestión | Caso de uso, persistencia y captura común conforme al contrato. | `incidencias/infrastructure` y las pruebas HTTP del servicio Gestión. |
+| Datos | Reutilizar el historial compartido y el soporte de idempotencia de los productores. | Migraciones Flyway existentes del servicio Gestión. |
 | Frontend/Gateway | Consumir el detalle ya especificado, sin nueva ruta o componente de esta captura. | ES-F04-02 conserva su implementación y controles. |
 | Operación y Ventas | Mantener contratos de capacidad/eventos que ya poseen. | APIs/procesadores existentes; sin SQL entre servicios ni nuevas reglas comerciales. |
 
@@ -79,7 +79,7 @@ Las dependencias concretas y criterios están en [tasks.md](./tasks.md). Las bas
 | CA-11 | Proyección pública sin controlCierre/huellas ni lectura no autorizada. | T-02/06; cierre T-08 | EV-03 |
 | CA-12 | Simulado conserva la auditoría aplicable sin evento externo. | T-02/03/04/07; cierre T-08 | EV-01/04 |
 
-Comandos previstos: `./mvnw.cmd test` desde Gestión y, si cambia su código en el recorrido, Operación/Gateway; PostgreSQL/Testcontainers requiere Docker. La comprobación del detalle usa sus pruebas HTTP de contrato/seguridad; no exige crear una pantalla ni otra herramienta frontend. Los pasos de recorrido real y datos antes/después se registrarán en evidencia, sin tokens ni datos personales reales. Estos comandos y recorridos no se ejecutaron al preparar documentos.
+Ejecutar `./mvnw.cmd -Dpruebas.postgres.externo=false clean verify` desde Gestión con Docker y PostgreSQL desechable. La comprobación del detalle usa sus pruebas HTTP de contrato y seguridad. El recorrido con servicios reales y los resultados locales se registran por separado en evidencia.
 
 ## 7. Decisiones y pendientes
 
@@ -101,5 +101,5 @@ Son prerrequisitos de implementación/integración, no preguntas funcionales nue
 ## 9. Referencias
 
 - [cite: 1] [Especificación](./spec.md), [tareas](./tasks.md) y [guía SDD](../../plantillas/sdd/README.md).
-- [cite: 2] [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02), [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) y [convenciones/eventos](../../integraciones/api-contract.md), §§3/7.3/9.
+- [cite: 2] [Gestión §5.2](../../integraciones/api-contract-gestion-despachos.md#52-comandos-de-recepción-reprogramación-y-cierre), [Gestión §5.3](../../integraciones/api-contract-gestion-despachos.md#53-consultar-el-detalle-de-una-incidencia--es-f04-02) y [convenciones/eventos](../../integraciones/api-contract.md), §§3/7.3/9.
 - [cite: 3] [Modelo](../../arquitectura/modelo-datos.md), [overview](../../overview.md), [componentes](../../disenio/componentes-react.md) y [evidencia](./evidence.md).
