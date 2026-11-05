@@ -2,7 +2,9 @@
 
 **Responsable de coordinación:** Tarqui.
 
-**Estado:** Pendiente de implementación.
+**Estado:** Implementación local con validación estricta incorporada; homologación y regresión PostgreSQL pendientes.
+
+**Avance 30/10/2026:** `ProductosProgramacionHttp` y recepción cubren validación del lote, clasificación, fechas/estado y límite de SKU. Cinco pruebas específicas aprobadas con HTTP controlado/dobles; la tabla histórica inferior no equivale a tareas inexistentes ni a aceptación final. CA-09 mantiene BORRADOR bloqueado hasta homologación. Detalle y bloqueo Docker en [evidence.md](./evidence.md).
 
 **Plan de origen:** [plan.md](./plan.md), preparado el 16/10/2026.
 

@@ -2,7 +2,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Especificación de UI preparada el 16/10/2026; implementación pendiente.
+**Estado:** Modal implementado; el incremento del 30/10/2026 incorpora placa, ocupación/límites y tres proyecciones reales del proveedor F-06. Verificación con APIs simuladas; aceptación e integración real pendientes.
 
 **Aplicabilidad:** Modal interactivo de asignación invocado desde la cola de pendientes (`/programacion`).
 
