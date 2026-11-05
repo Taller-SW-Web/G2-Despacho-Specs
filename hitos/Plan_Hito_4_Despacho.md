@@ -86,6 +86,8 @@ El objetivo es presentar **las dos aplicaciones web y los tres componentes del b
 
 **Contrato de recepción verificado localmente · 05/11/2026.** En la misma rama de backend, commits `12f5a88` y `24b57d1`, se añadió `python pruebas/verificar_contrato_recepcion_f04.py`. Aprobaron 14 casos por Gateway: autorización, datos inválidos, incidencia/versión obsoletas, recepción `202`, liberación real de la reserva original, repetición exacta sin duplicados y conflicto por contenido diferente. La jornada sintética pasó de 2 kg, 0,01 m³ y un paquete ocupados a cero. También aprobaron las 15 pruebas de ambos verificadores. El informe queda en `pruebas/resultados/contrato-recepcion-f04.json`, fuera de Git. Se usaron bases desechables y Seguridad temporal; el frontend y G7 real no participaron. Evidencia y límites en [EV-07 de ES-F04-03](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/evidence.md#ev-07-contrato-por-gateway-y-liberación-real-local).
 
+**Publicación para revisión.** [Backend PR #26 hacia `develop`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/26) y [Specs PR #26 hacia `main`](https://github.com/Taller-SW-Web/G2-Despacho-Specs/pull/26). Las ramas incorporan sus bases remotas recientes. Tras sincronizar F-01/G6, Gestión aprobó 232 pruebas y se repitieron los 14 casos de recepción sobre backend `7665640`; las 15 regresiones de herramientas y las cuatro comprobaciones de CI del backend aprobaron. Revisión por pares y aceptación pendientes.
+
 ## 4. Dependencias y orden de ejecución
 
 | Momento | Trabajo en paralelo | Condición para avanzar |
