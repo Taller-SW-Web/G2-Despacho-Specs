@@ -364,7 +364,7 @@ Estas rutas las implementa Operación y las consume Gestión con credencial de s
 
 ### 5.1. Gestión consulta y reserva capacidad en Operación
 
-Autorización: JWT de servicio con `sub=modulo-despacho` y audiencia `api-despacho`; no se exigen scopes internos. Los identificadores reales son UUID y las cargas positivas respetan precisión de tres decimales para peso, cuatro para volumen y paquetes enteros hasta 32767. Solo se reserva en jornada de hoy activa y perfil habilitado/vehículo disponible. La operación se serializa con F-05, aperturas, cierres y liberaciones.
+Autorización: JWT de servicio con `sub=modulo-despacho`, conforme a [Seguridad §8.2](./api-contract.md#82-obtención-de-un-token-de-servicio); esta ruta interna no exige scopes ni audiencia `api-despacho`. Los identificadores reales son UUID y las cargas positivas respetan precisión de tres decimales para peso, cuatro para volumen y paquetes enteros hasta 32767. Solo se reserva en jornada de hoy activa y perfil habilitado/vehículo disponible. La operación se serializa con F-05, aperturas, cierres y liberaciones.
 
 La repetición con la misma clave y contenido devuelve el resultado original persistido, aun si luego se liberó la reserva. Cambiar despacho, repartidor, jornada o carga con esa clave responde `409 DESP_ERROR_CLAVE_REUTILIZADA`. El resultado es durable; no se recalcula un remanente diferente para una repetición. Un perfil/jornada no habilitados responde `409 DESP_ERROR_REPARTIDOR_NO_HABILITADO`.
 
@@ -401,7 +401,7 @@ Una capacidad insuficiente responde `422` con `DESP_ERROR_CAPACIDAD_EXCEDIDA`. S
 
 ### 5.2. Gestión libera una reserva en Operación
 
-Autorización: JWT de servicio con `sub=modulo-despacho` y audiencia `api-despacho`; no se exigen scopes internos. La operación usa el mismo orden de bloqueo que las reservas y F-05.
+Autorización: JWT de servicio con `sub=modulo-despacho`, conforme a [Seguridad §8.2](./api-contract.md#82-obtención-de-un-token-de-servicio); esta ruta interna no exige scopes ni audiencia `api-despacho`. La operación usa el mismo orden de bloqueo que las reservas y F-05.
 
 - **Método:** `POST`
 - **Ruta:** `/internal/v1/capacidad/reservas/{idReserva}/liberacion`
@@ -424,7 +424,7 @@ Los motivos iniciales son `ENTREGA`, `CANCELACION`, `RECEPCION_EN_CENTRO`, `REAS
 
 ### 5.3. Gestión comunica el estado confirmado a Operación
 
-Autorización: JWT de servicio con `sub=modulo-despacho` y audiencia `api-despacho`; no se exigen scopes internos. Respuesta `204` para versión nueva, repetida o anterior; las dos últimas no sobrescriben datos. `409 DESP_ERROR_PROYECCION_INCOMPATIBLE` si reserva, jornada o despacho no coinciden. `400` por formato inválido y `503` por indisponibilidad. Una proyección terminal no libera una reserva por sí sola: se confirma §5.2.
+Autorización: JWT de servicio con `sub=modulo-despacho`, conforme a [Seguridad §8.2](./api-contract.md#82-obtención-de-un-token-de-servicio); esta ruta interna no exige scopes ni audiencia `api-despacho`. Respuesta `204` para versión nueva, repetida o anterior; las dos últimas no sobrescriben datos. `409 DESP_ERROR_PROYECCION_INCOMPATIBLE` si reserva, jornada o despacho no coinciden. `400` por formato inválido y `503` por indisponibilidad. Una proyección terminal no libera una reserva por sí sola: se confirma §5.2.
 
 - **Método:** `POST`
 - **Ruta:** `/internal/v1/proyecciones/despachos/{idDespacho}`
@@ -467,7 +467,7 @@ Al asignar o reasignar se envía la información completa necesaria para la ruta
 - **Método y ruta:** `POST /internal/v1/operacion/consulta-incidencias`.
 - **Proveedor:** Operación de Reparto y Flota; consumidor autorizado: Gestión de Despachos, con credencial de servicio conforme a Gestión §6, Operación §5. No se expone en el Gateway. Referencia: [Gestión](./api-contract-gestion-despachos.md#6-api-interna-provista-por-gestión), [Operación](./api-contract-operacion-reparto.md#5-api-interna-provista-por-operación).
 - Es una lectura por lotes; no modifica datos ni requiere clave de idempotencia.
-- Autorización interna: JWT válido con `tipo=servicio`, `sub=modulo-despacho` y audiencia `api-despacho`. No se exigen scopes internos: la comunicación interna de G2 se autoriza por la identidad del servicio y no depende de concesiones en G7.
+- Autorización interna: JWT válido en firma, emisor y vigencia con `tipo=servicio` y `sub=modulo-despacho`. No se exigen scopes ni audiencia `api-despacho` para esta ruta interna: la comunicación interna de G2 se autoriza por la identidad del servicio y no depende de concesiones en G7.
 - Cuerpo obligatorio: `idsRepartidor` e `idsJornada`, arreglos de identificadores opacos únicos, de `0` a `100` elementos cada uno; al menos uno debe contener elementos. Elementos vacíos, duplicados, límites excedidos o campos desconocidos responden `400` con el formato de Común §3.5. Referencia: [Convenciones e integración externa](./api-contract.md#35-errores).
 
 ```json
@@ -507,7 +507,7 @@ Cada lote obtenido aporta su `consultadoEn`. Una omisión o respuesta incoherent
 Precisión de la operación ya presente en `ControladorCapacidadInterna`/`GestorJornadas.transferir`, consumida por la reasignación de Gestión. No habilita una integración publicada ni resuelve el mecanismo de identidad interna pendiente del Hito 4.
 
 - **Método y ruta:** `POST /internal/v1/capacidad/transferencias`; privada, nunca publicada por el Gateway. Requiere `Idempotency-Key` UUID v4.
-- **Autorización actual del código:** token de servicio de `modulo-despacho` con audiencia `api-despacho`, sin scopes internos. No se amplía el pedido a G7.
+- **Autorización actual del código:** token de servicio válido de `modulo-despacho`, sin scopes ni audiencia `api-despacho` para esta ruta interna. No se amplía el pedido a G7.
 - **Cuerpo:** exclusivamente `idReservaOrigen`, `idDespacho`, `idNuevoRepartidor` e `idNuevaJornada`, todos UUID. El consumidor no transmite una carga nueva: se obtiene de la reserva original.
 - **Reglas:** reserva de origen activa del mismo despacho; destino distinto en repartidor y jornada; jornada destino activa de hoy, perfil habilitado y vehículo disponible; capacidad remanente suficiente en kg, m³ y paquetes. Validar el destino antes de liberar el origen.
 - **Atomicidad local:** en la misma transacción de Operación, liberar el origen con motivo `REASIGNACION`, crear otra reserva y persistir la respuesta de transferencia. Un fallo al crear el destino revierte la liberación; no hay una ventana con liberación confirmada y destino rechazado.
