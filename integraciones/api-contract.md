@@ -473,6 +473,10 @@ El código y el conjunto de afectados de la condición seleccionada no dependen 
 - **Autenticación:** token de servicio con `tipo=servicio` y scope `seguimientos:leer`.
 - **Consumidores:** Marketplace, Chatbot y Ventas y Postventa.
 
+`idPedido` conserva literalmente su identidad: no se convierte a UUID, no se cambian mayúsculas ni se eliminan ceros iniciales. Debe contener entre 1 y 128 caracteres, sin espacios al inicio o al final. Un identificador inválido produce `400 DESP_ERROR_SOLICITUD_INVALIDA`; un pedido sin despacho real disponible produce `404 DESP_ERROR_DESPACHO_NO_ENCONTRADO`. Los despachos simulados no se exponen por esta consulta. La autenticación y autorización se aplican antes de consultar la existencia del pedido, conforme a §3.5.
+
+La respuesta `200` incluye `Cache-Control: no-store`. Estado, fecha programada e hitos se leen de una misma instantánea de Gestión, sin consultar otros módulos. Los hitos contienen únicamente transiciones del historial, incluida la creación, ordenadas por `registrado_en` ascendente y por identificador de entrada en caso de empate; las reasignaciones, los reordenamientos y la recepción en el centro no crean hitos públicos adicionales. `actualizadoEn` corresponde a la última actualización del despacho.
+
 ```json
 {
   "idPedido": "PED-2026-00891",
@@ -527,6 +531,8 @@ La respuesta nunca incluye:
 - Evidencias fotográficas.
 
 Un fallo reprogramado muestra hitos con etiquetas públicas como `No entregado, regresando al centro` y `Entrega reprogramada`, sin exponer el motivo operativo.
+
+Cuando la transición de `FALLIDO` a `PENDIENTE_ASIGNACION` conserva `nuevaFechaProgramada`, su etiqueta es `Entrega reprogramada para [fecha]`, con fecha ISO `YYYY-MM-DD` tomada de esa entrada histórica. No se reemplaza por la fecha programada actual del despacho. Para entradas históricas sin ese dato se conserva la etiqueta `Entrega reprogramada`.
 
 ## 7. F-02: integración con Ventas y Postventa
 
