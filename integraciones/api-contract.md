@@ -755,7 +755,7 @@ Respuesta esperada:
 
 El arreglo `scopes` pertenece a la respuesta HTTP de emisión. Dentro del JWT emitido, el claim `scope` contiene esos valores separados por espacios. El canal utiliza después `Authorization: Bearer <jwt-de-servicio>` al llamar a Despacho. Del mismo modo, `modulo-despacho` solicita otro token con sus propias credenciales y el scope aceptado por Productos; nunca reutiliza el token del canal.
 
-`modulo-despacho` no usa scopes internos entre sus propios microservicios: Gestión y Operación autorizan las rutas `/internal` por la identidad del servicio (`tipo=servicio`, `sub=modulo-despacho`, audiencia `api-despacho`, y firma, emisor y vencimiento válidos). Los permisos externos descritos en este contrato se mantienen.
+`modulo-despacho` no usa scopes ni audiencia `api-despacho` para comunicarse entre sus propios microservicios. Gestión y Operación autentican las rutas `/internal/v1/**` verificando firma, emisor confiable, vigencia y estructura del JWT, y autorizan únicamente `tipo=servicio` con `sub=modulo-despacho`. Se aceptan las audiencias existentes de G7 o su ausencia sin pedir nuevas concesiones. Esta excepción no se aplica a rutas públicas: conservan la audiencia y los permisos externos descritos en este contrato.
 
 ### 8.3. Introspección de un usuario antes de una operación sensible
 
