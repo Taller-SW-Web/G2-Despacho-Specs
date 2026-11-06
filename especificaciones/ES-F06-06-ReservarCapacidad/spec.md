@@ -16,6 +16,8 @@ Reservar capacidad para una asignación en Operación de Reparto, como parte de 
 
 Confirmar las tres dimensiones bajo bloqueo compatible con F-05. Una clave UUID de asignación identifica contenido y resultado durable, aun después de liberar. No crear dos reservas activas del mismo despacho ni sobrepasar límites concurrentemente.
 
+Ampliación propuesta: el tipo de operación de la jornada se define en [ES-F06-09](../ES-F06-09-TipoOperacionJornada/spec.md).
+
 Fuera de alcance: login, CRUD F-05, decisiones comerciales, asignación canónica F-02 y resolución de entregas F-03.
 
 ## 3. Actor, precondiciones y resultados

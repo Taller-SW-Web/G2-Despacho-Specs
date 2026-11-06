@@ -206,7 +206,7 @@ Si no puede confirmarse la jornada, el listado informa `No se pudo confirmar el 
 
 ### RF-08. Recepción y resolución de recojos
 
-El sistema DEBE permitir al Gestor confirmar la llegada de un producto recogido y decidir qué hacer con un recojo no realizado. La ejecución en campo corresponde a [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
+El sistema DEBE permitir al Gestor confirmar la llegada de un producto recogido y decidir qué hacer con un recojo no realizado. Detalle en [ES-F04-07](../especificaciones/ES-F04-07-RecibirResolverRecojo/spec.md). La ejecución en campo corresponde a [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
 
 #### CA-19. Recepción del producto recogido
 

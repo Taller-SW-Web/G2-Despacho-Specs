@@ -18,13 +18,13 @@ El cliente puede devolver un producto que ya recibió. El repartidor va al domic
 
 ## 2. Alcance
 
-- Incluye: ver el recojo en «Mi Ruta», consultar su detalle, iniciar el traslado, registrar el recojo o el no recojo y el efecto del cierre de jornada.
-- Fuera de alcance: aprobar la devolución, reembolso o cambio (Ventas y Postventa); asignar el recojo (F-02); confirmar la recepción en el centro, reprogramar o cerrar (F-04); calcular la ocupación (F-06).
+- Incluye: ver los recojos en «Mi Ruta» cuando la jornada es de tipo `RECOJOS`, consultar su detalle, iniciar el traslado, registrar el recojo o el no recojo y el efecto del cierre de jornada.
+- Fuera de alcance: aprobar la devolución, reembolso o cambio (Ventas y Postventa); abrir la jornada y elegir su tipo ([ES-F06-09](../ES-F06-09-TipoOperacionJornada/spec.md)); asignar el recojo ([ES-F02-09](../ES-F02-09-RecibirAsignarRecojo/spec.md)); confirmar la recepción en el centro, reprogramar o cerrar ([ES-F04-07](../ES-F04-07-RecibirResolverRecojo/spec.md)); calcular la ocupación (F-06).
 
 ## 3. Actor, precondiciones y resultados
 
 - Actor y autorización: repartidor con perfil local activo y vinculado, resuelto desde el `sub` del JWT.
-- Precondiciones: el recojo está asignado al repartidor en su jornada activa de hoy y hay conexión.
+- Precondiciones: el recojo está asignado al repartidor en su jornada activa de hoy, de tipo `RECOJOS`, y hay conexión.
 - Disparador: el repartidor abre un recojo de su ruta.
 - Resultado exitoso: recojo en `RECOGIDO` o `FALLIDO`, con evidencia e historial.
 - Resultado ante rechazo: se informa el error y el recojo no cambia.
@@ -51,7 +51,7 @@ El cliente puede devolver un producto que ya recibió. El repartidor va al domic
 | Regla | Descripción comprobable | Origen |
 |---|---|---|
 | RN-01 | El recojo es una operación aparte del despacho. El despacho original permanece en `ENTREGADO`. | Overview §12; [estados §7](../../arquitectura/diagrama-estados-despacho.md#7-estados-del-recojo) |
-| RN-02 | La ruta muestra despachos y recojos en una sola secuencia, y cada recojo se identifica como tal. | Decisión de esta especificación |
+| RN-02 | El tipo de la jornada define el trabajo del repartidor: `ENTREGAS` muestra solo despachos y `RECOJOS` solo recojos. La aplicación y el acceso son los mismos, y una jornada nunca mezcla ambos. | [ES-F06-09](../ES-F06-09-TipoOperacionJornada/spec.md) |
 | RN-03 | Teléfono y dirección solo se muestran en `ASIGNADO` y `EN_CAMINO`, igual que en un despacho. | F-03, sección 8 |
 | RN-04 | `RECOGIDO` y `FALLIDO` solo se aceptan desde `EN_CAMINO`, y exigen una foto válida. | Overview §12.2 |
 | RN-05 | La foto cumple la política de evidencia de F-03: tipo, tamaño y carga verificada. | ES-F03-05 RN-01, RN-03 y RN-04 |
@@ -67,7 +67,7 @@ El cliente puede devolver un producto que ya recibió. El repartidor va al domic
 | Comandos de recojo | Detalle, inicio, recojo y no recojo | [Operación §3.7](../../integraciones/api-contract-operacion-reparto.md#37-recojo-de-una-devolución) |
 | Evidencia | Autorizar la carga y leer la foto | [Operación §3.2](../../integraciones/api-contract-operacion-reparto.md#32-autorizar-la-carga-de-evidencia) y [§3.5](../../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia) |
 | Transición en Gestión | Cambiar y registrar el estado | [Gestión §6.3](../../integraciones/api-contract-gestion-despachos.md#63-operación-solicita-una-transición-de-recojo) |
-| Asignación y recepción | Pasos previos y posteriores | [F-02 RF-10](../../funcionalidades/F-02-ProgramacionAsignacionDespachos.md#rf-10-asignación-de-recojos), [F-04 RF-08](../../funcionalidades/F-04-GestionEntregasFallidas.md#rf-08-recepción-y-resolución-de-recojos) |
+| Tipo de jornada, asignación y recepción | Pasos previos y posteriores | [ES-F06-09](../ES-F06-09-TipoOperacionJornada/spec.md), [ES-F02-09](../ES-F02-09-RecibirAsignarRecojo/spec.md) y [ES-F04-07](../ES-F04-07-RecibirResolverRecojo/spec.md) |
 
 Estas operaciones son una propuesta: deben revisarse antes de implementarlas y quedan sujetas al acuerdo con Ventas y Postventa.
 
@@ -75,9 +75,9 @@ Estas operaciones son una propuesta: deben revisarse antes de implementarlas y q
 
 ### CA-01. Recojo visible en la ruta
 
-- **DADO** un repartidor con un recojo `ASIGNADO` en su jornada activa.
+- **DADO** un repartidor con una jornada activa de tipo `RECOJOS` y un recojo `ASIGNADO`.
 - **CUANDO** abre «Mi Ruta».
-- **ENTONCES** ve el recojo en su posición de la secuencia, identificado como «Recojo», con dirección, contacto y estado.
+- **ENTONCES** ve solo recojos, en el orden de la jornada, identificados como «Recojo», con dirección, contacto y estado.
 
 ### CA-02. Inicio del traslado
 
@@ -139,6 +139,12 @@ Estas operaciones son una propuesta: deben revisarse antes de implementarlas y q
 - **CUANDO** se persiste.
 - **ENTONCES** el historial del recojo guarda ejecutor, origen, marca temporal del servidor, estados anterior y nuevo, motivo y observaciones, en la misma transacción.
 
+### CA-12. Jornada de entregas
+
+- **DADO** un repartidor con una jornada activa de tipo `ENTREGAS`.
+- **CUANDO** abre «Mi Ruta» o intenta abrir un recojo.
+- **ENTONCES** ve solo despachos, con las mismas pantallas y textos de siempre, y el recojo responde `404`.
+
 ## 7. UI, backend y requisitos no funcionales
 
 - UI: detallada en [ui.md](./ui.md).
@@ -150,7 +156,7 @@ Estas operaciones son una propuesta: deben revisarse antes de implementarlas y q
 
 | Criterio | Tipo de comprobación | Datos o escenario necesarios |
 |---|---|---|
-| CA-01 | Integración y UI | Jornada con despachos y un recojo `ASIGNADO` |
+| CA-01 | Integración y UI | Jornada `RECOJOS` con un recojo `ASIGNADO` |
 | CA-02 | Integración y UI | Recojo `ASIGNADO` |
 | CA-03 | Integración y UI | Recojo `EN_CAMINO` y foto válida |
 | CA-04 | UI | Formulario sin foto |
@@ -161,6 +167,7 @@ Estas operaciones son una propuesta: deben revisarse antes de implementarlas y q
 | CA-09 | Integración | Dos solicitudes con la misma clave |
 | CA-10 | Integración | Cierre con recojos `EN_CAMINO` y `RECOGIDO` |
 | CA-11 | Integración | Transición aceptada |
+| CA-12 | Integración y UI | Jornada `ENTREGAS` con despachos |
 
 - [ ] Todos los criterios cuentan con resultados comprobables en `evidence.md`.
 - [ ] Los documentos, el contrato y el comportamiento implementado son consistentes.

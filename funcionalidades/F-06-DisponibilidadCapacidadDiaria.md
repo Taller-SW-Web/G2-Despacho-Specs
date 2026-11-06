@@ -20,7 +20,7 @@ Proveer al Gestor de Despacho un panel para abrir y cerrar jornadas operativas y
 
 Esta funcionalidad incluye:
 
-- Asignación operativa diaria: emparejamiento repartidor – furgoneta – zona para la jornada.
+- Asignación operativa diaria: emparejamiento repartidor – furgoneta – zona para la jornada, con su tipo de operación (`ENTREGAS` o `RECOJOS`).
 - Estado operativo del repartidor calculado a partir de su jornada y sus despachos: `FUERA_DE_TURNO`, `DISPONIBLE`, `EN_RUTA`, `SATURADO`.
 - Cálculo de ocupación en kg, m³ y paquetes a partir de reservas activas locales, incluidas las de retornos cuya liberación todavía no se confirmó.
 - Panel de monitoreo con indicadores por repartidor y resumen de la flota.
@@ -183,11 +183,33 @@ El sistema DEBE mantener el estado operativo coherente con los despachos y cerra
 - **CUANDO** F-04 registra la recepción y Operación confirma liberar la reserva original.
 - **ENTONCES** la siguiente consulta reduce la ocupación en 100 kg y recalcula el estado operativo de esa jornada; si ya está cerrada no reabre el turno. Si Operación no confirmó, la reserva sigue contando y F-04 muestra sincronización pendiente.
 
+### RF-05. Tipo de operación de la jornada
+
+El sistema DEBE permitir al Gestor elegir al abrir la jornada si es de `ENTREGAS` o de `RECOJOS`. El tipo no cambia después de abrirla y la jornada nunca mezcla ambos. Una misma persona puede hacer entregas un día y recojos otro. Las jornadas existentes quedan como `ENTREGAS`. Propuesta pendiente de revisión; detalle en [ES-F06-09](../especificaciones/ES-F06-09-TipoOperacionJornada/spec.md).
+
+#### CA-16. Apertura con tipo
+
+- **DADO** recursos aptos.
+- **CUANDO** el Gestor abre la jornada y elige "Recojos".
+- **ENTONCES** la jornada queda con `tipoOperacion=RECOJOS` y se muestra así en el monitoreo.
+
+#### CA-17. Disponibilidad por tipo
+
+- **DADO** jornadas disponibles de ambos tipos.
+- **CUANDO** F-02 consulta la disponibilidad para un despacho o un recojo.
+- **ENTONCES** solo recibe jornadas del tipo pedido.
+
+#### CA-18. Reserva de otro tipo
+
+- **DADO** una jornada `ENTREGAS` y un recojo, o una jornada `RECOJOS` y un despacho.
+- **CUANDO** Gestión solicita la reserva o la transferencia.
+- **ENTONCES** Operación responde `409` con `DESP_ERROR_TIPO_JORNADA_INCOMPATIBLE`, sin reservar.
+
 ## 6. Frontend
 
 | Elemento | Responsabilidad |
 |---|---|
-| Asignación Diaria | Emparejamiento repartidor – furgoneta – zona con validación previa de requisitos. Muestra solo repartidores activos y vinculados, furgonetas disponibles y zonas activas. |
+| Asignación Diaria | Emparejamiento repartidor – furgoneta – zona, con selector obligatorio "Entregas" o "Recojos" y validación previa de requisitos. Muestra solo repartidores activos y vinculados, furgonetas disponibles y zonas activas. |
 | Dashboard de Monitoreo | Resumen de flota con totales por estado operativo y tabla por repartidor con barras de ocupación en kg, m³ y paquetes. Actualización sin recarga. |
 | Detalle del Repartidor en Jornada | Despachos asignados, ocupación actual, límites y zona de trabajo. |
 | Retroalimentación | Éxito, conflictos de asignación, furgoneta no disponible, zona inactiva y errores de red. |
@@ -232,6 +254,7 @@ La revisión del 26/10/2026 completa la retirada de datos/formularios y el desca
 | CA-09 y CA-10 | Consultar disponibilidad con y sin habilitados. | Integración | Lista filtrada con remanentes y lista vacía. |
 | CA-11 a CA-14 | Simular transiciones de despachos, cierre manual con y sin pendientes, y saturación por peso. | Unitaria e integración | Estados operativos derivados correctamente y `409` en el cierre. |
 | CA-15 | Confirmar recepción de paquete fallido y verificar liberación de ocupación. | Integración | Ocupación reducida y estado operativo recalculado. |
+| CA-16 a CA-18 | Abrir jornadas de ambos tipos, consultar disponibilidad por tipo y reservar con un tipo cruzado. | Integración y frontend | Tipo guardado, lista filtrada y `409` sin reserva. |
 
 Además, se ejecutarán dos recorridos funcionales completos:
 
@@ -242,7 +265,7 @@ Además, se ejecutarán dos recorridos funcionales completos:
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-15` están implementados y cuentan con pruebas automatizadas exitosas.
+- Los criterios `CA-01` a `CA-18` están implementados y cuentan con pruebas automatizadas exitosas.
 - Los dos recorridos funcionales han sido verificados.
 - F-02 asigna respetando los tres límites informados por F-06.
 - La consulta de disponibilidad responde en menos de 200 ms.

@@ -13,7 +13,7 @@ El repartidor recoge en el centro de despacho los paquetes sellados que F-02 le 
 
 Esta funcionalidad es el origen de las transiciones `EN_CAMINO`, `ENTREGADO` y `FALLIDO`. F-03 no crea ni asigna despachos: ejecuta y registra el resultado de los despachos que F-02 asigna al repartidor, en el orden que F-02 define. Los despachos fallidos que genera son resueltos por F-04, y la ocupación que liberan al cerrarse es recalculada por F-05 a partir del estado de los despachos.
 
-El repartidor también recoge en el domicilio los productos que el cliente devuelve y los lleva al centro de despacho (RF-12).
+Según el tipo de su jornada, el repartidor hace entregas o recoge en el domicilio los productos que el cliente devuelve y los lleva al centro de despacho (RF-12). Usa la misma aplicación en ambos casos.
 
 ## 2. Propósito
 
@@ -303,13 +303,13 @@ El sistema DEBE registrar cada transición ejecutada en campo en el historial co
 
 ### RF-12. Recojo de una devolución
 
-El sistema DEBE permitir al repartidor recoger en el domicilio un producto devuelto y registrar el resultado. El recojo es una operación aparte y el despacho original permanece en `ENTREGADO`. Detalle en [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
+El sistema DEBE permitir al repartidor con una jornada de tipo `RECOJOS` recoger en el domicilio un producto devuelto y registrar el resultado. Una jornada nunca mezcla entregas y recojos ([ES-F06-09](../especificaciones/ES-F06-09-TipoOperacionJornada/spec.md)). El recojo es una operación aparte y el despacho original permanece en `ENTREGADO`. Detalle en [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
 
 #### CA-32. Recojo en la ruta
 
-- **DADO** un recojo asignado al repartidor en su jornada activa.
+- **DADO** un recojo asignado al repartidor en su jornada activa de tipo `RECOJOS`.
 - **CUANDO** abre "Mi Ruta".
-- **ENTONCES** ve el recojo en su posición de la secuencia, identificado como "Recojo".
+- **ENTONCES** ve solo recojos, identificados como "Recojo", en el orden de la jornada.
 
 #### CA-33. Recojo exitoso con evidencia
 

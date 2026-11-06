@@ -23,6 +23,7 @@ Este documento centraliza las posibles ampliaciones y los acuerdos que todavía 
 - Simulador formal de despachos para pruebas autónomas.
 - Asignación automática inteligente de despachos.
 - Actualización en tiempo real mediante WebSockets; la versión inicial actualiza la información mediante nuevas consultas al backend.
+- Reordenar y reasignar recojos desde «Ruta por repartidor»; en la primera versión siguen el orden de asignación ([ES-F03-09 DT-04](../especificaciones/ES-F03-09-RecojoDevolucion/plan.md#7-decisiones-y-pendientes)).
 
 ## F-03: Operación del repartidor
 

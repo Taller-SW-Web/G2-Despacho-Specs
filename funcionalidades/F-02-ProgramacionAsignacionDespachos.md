@@ -274,7 +274,7 @@ El sistema DEBE permitir al Gestor generar despachos simulados con datos válido
 
 ### RF-10. Asignación de recojos
 
-El sistema DEBE recibir los recojos de devoluciones y permitir al Gestor asignarlos a un repartidor con las mismas validaciones de jornada, zona y capacidad de un despacho. La ejecución en campo corresponde a [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
+El sistema DEBE recibir los recojos de devoluciones y permitir al Gestor asignarlos a un repartidor con jornada de tipo `RECOJOS`, con las mismas validaciones de zona y capacidad de un despacho. Un despacho solo se asigna a una jornada `ENTREGAS`. Detalle en [ES-F02-09](../especificaciones/ES-F02-09-RecibirAsignarRecojo/spec.md). La ejecución en campo corresponde a [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
 
 #### CA-28. Recojo solicitado
 
@@ -290,9 +290,15 @@ El sistema DEBE recibir los recojos de devoluciones y permitir al Gestor asignar
 
 #### CA-30. Asignación del recojo
 
-- **DADO** un recojo en `PENDIENTE_ASIGNACION` y un repartidor con capacidad suficiente.
+- **DADO** un recojo en `PENDIENTE_ASIGNACION` y un repartidor con jornada `RECOJOS` y capacidad suficiente.
 - **CUANDO** el Gestor lo asigna.
-- **ENTONCES** el recojo pasa a `ASIGNADO`, se reserva la capacidad y aparece en la ruta de F-03 en la siguiente posición de la secuencia.
+- **ENTONCES** el recojo pasa a `ASIGNADO`, se reserva la capacidad y aparece en la ruta de F-03 en la siguiente posición de esa jornada.
+
+#### CA-31. Jornada de otro tipo
+
+- **DADO** un recojo y una jornada `ENTREGAS`, o un despacho y una jornada `RECOJOS`.
+- **CUANDO** se intenta asignar.
+- **ENTONCES** se responde `409` con `DESP_ERROR_TIPO_JORNADA_INCOMPATIBLE`, sin reserva ni cambios, y el modal de asignación no ofrece esa jornada.
 
 ## 6. Frontend
 
@@ -362,7 +368,7 @@ Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendien
 | CA-15 y CA-16 | Reasignar un despacho `ASIGNADO` y otro `EN_CAMINO`. | Integración | Cambio de repartidor en el primer caso y `409` en el segundo. |
 | CA-17 a CA-19 | Cancelar despachos en cada estado. | Unitaria e integración | `CANCELADO`, `409` o anulación registrada según el estado. |
 | CA-20 | Generar un despacho de prueba simulado. | Integración y API | `201 Created` con datos válidos y presencia inmediata en cola. |
-| CA-28 a CA-30 | Solicitar recojos válidos y no permitidos, y asignarlos. | Integración y frontend | Recojo en cola, `409` y reserva creada. |
+| CA-28 a CA-31 | Solicitar recojos válidos y no permitidos, asignarlos y rechazar la jornada de otro tipo. | Integración y frontend | Recojo en cola, `409` y reserva creada. |
 
 Además, se ejecutarán tres recorridos funcionales completos:
 
@@ -374,7 +380,7 @@ Además, se ejecutarán tres recorridos funcionales completos:
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-30` están implementados y cuentan con pruebas automatizadas exitosas, con H-G2-01/02/03 y el cierre/revisión D-G2-01/02 enlazados.
+- Los criterios `CA-01` a `CA-31` están implementados y cuentan con pruebas automatizadas exitosas, con H-G2-01/02/03 y el cierre/revisión D-G2-01/02 enlazados.
 - Los tres recorridos funcionales han sido verificados de extremo a extremo.
 - No existe más de un despacho por pedido.
 - Ninguna asignación supera la capacidad en kg, m³ o paquetes informada por F-06.

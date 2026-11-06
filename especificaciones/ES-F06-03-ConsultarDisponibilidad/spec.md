@@ -16,6 +16,8 @@ Consultar repartidores disponibles en Operación de Reparto, como parte de CA-09
 
 Exponer exclusivamente jornadas activas de la fecha consultada (hoy por omisión) con perfiles habilitados, vehículo disponible, estado DISPONIBLE o EN_RUTA y remanente positivo en las tres dimensiones. La consulta no reserva ni garantiza disponibilidad futura: F-02 confirma mediante la reserva transaccional.
 
+Ampliación propuesta: el tipo de operación de la jornada se define en [ES-F06-09](../ES-F06-09-TipoOperacionJornada/spec.md).
+
 Fuera de alcance: login, CRUD F-05, decisiones comerciales, asignación canónica F-02 y resolución de entregas F-03.
 
 ## 3. Actor, precondiciones y resultados

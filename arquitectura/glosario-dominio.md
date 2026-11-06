@@ -53,7 +53,7 @@ La tarifa base es una regla almacenada; la consulta de cobertura no devuelve un 
 
 | Término | Significado dentro del módulo |
 |---|---|
-| **Jornada** | Asignación diaria de un repartidor, una furgoneta y una zona de trabajo. |
+| **Jornada** | Asignación diaria de un repartidor, una furgoneta y una zona de trabajo. Es de entregas o de recojos, según lo elija el Gestor al abrirla. |
 | **Asignación de despacho** | Operación que reserva capacidad y vincula un despacho pendiente con un repartidor, una jornada y una posición de ruta. |
 | **Secuencia de ruta** | Orden operativo en el que el repartidor debe atender sus despachos. No constituye navegación GPS ni optimización automática. |
 | **Intento de entrega** | Visita real al destino que termina en entrega o fallo. Un cierre con `NO_INTENTADO` no consume un intento. |

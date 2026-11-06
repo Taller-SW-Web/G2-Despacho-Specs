@@ -116,6 +116,7 @@ erDiagram
         uuid furgoneta_id FK
         uuid zona_id_externa
         date fecha_jornada
+        varchar tipo_operacion
         varchar estado
     }
     reservas_capacidad {
@@ -352,6 +353,7 @@ Representa la jornada de un repartidor: con qué furgoneta y en qué zona trabaj
 | `furgoneta_id` | `UUID` | FK → `furgonetas`, NOT NULL | Furgoneta. |
 | `zona_id_externa` | `UUID` | NOT NULL, sin FK | Zona propiedad de Gestión de Despachos. |
 | `fecha_jornada` | `DATE` | NOT NULL | Día de la jornada. |
+| `tipo_operacion` | `VARCHAR(10)` | NOT NULL, DEFAULT `ENTREGAS`, CHECK (`ENTREGAS`, `RECOJOS`) | Propuesta (§3.6). Lo elige el Gestor al abrir y no cambia. |
 | `capacidad_max_kg`, `capacidad_max_m3`, `max_paquetes` | Igual que `furgonetas` | NOT NULL | Copia de los límites al abrir la jornada. |
 | `estado` | `VARCHAR(10)` | NOT NULL, CHECK (`ACTIVA`, `CERRADA`) | Una jornada cerrada deja al repartidor `FUERA_DE_TURNO`. |
 | `abierta_en`, `abierta_por` | — | NOT NULL | Apertura por `GESTOR_DESPACHO`. |
@@ -699,6 +701,7 @@ Copia de `proyecciones_despacho` para la ruta, con `recojo_id_externo` como PK, 
 | Tabla | Cambio |
 |---|---|
 | `motivos_fallo` | Añade `ambito` (`ENTREGA`, `RECOJO`, `AMBOS`) y los dos motivos propios del recojo. |
+| `asignaciones_diarias` | Añade `tipo_operacion`. Las jornadas existentes quedan como `ENTREGAS`. |
 | `evidencias` | Añade `recojo_id_externo` NULL, amplía `tipo` a `VARCHAR(15)` y admite `RECOJO` y `FALLO_RECOJO`; `despacho_id_externo` guarda el despacho original. |
 | `reservas_capacidad` | Añade `recojo_id_externo` NULL y admite `motivo_liberacion` `RECOJO_NO_REALIZADO`; conserva una sola reserva activa por despacho. |
 | `eventos_salientes` | Añade `recojo_id` NULL, FK → `recojos.id`; `despacho_id` guarda el despacho original. |
@@ -717,6 +720,7 @@ Copia de `proyecciones_despacho` para la ruta, con `recojo_id_externo` como PK, 
 | `repartidores.estado_vinculacion` | `PENDIENTE`, `VINCULADO` |
 | `furgonetas.estado` | `DISPONIBLE`, `EN_MANTENIMIENTO`, `INACTIVA` |
 | `asignaciones_diarias.estado` | `ACTIVA`, `CERRADA` |
+| `asignaciones_diarias.tipo_operacion` (propuesta) | `ENTREGAS`, `RECOJOS` |
 | `reservas_capacidad.estado` | `ACTIVA`, `LIBERADA` |
 | `liberaciones_capacidad.estado` | `PENDIENTE`, `CONFIRMADA` |
 | `proyecciones_despacho.estado` | Mismos valores del despacho canónico |

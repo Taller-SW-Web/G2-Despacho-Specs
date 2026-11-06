@@ -13,9 +13,9 @@
 | T-01 | Contratos y decisiones cerrados | Contrato | DT-01 a DT-04 | Todos | Pendiente |
 | T-02 | Migraciones de Gestión y Operación | Datos, I-01 | T-01 | CA-03, CA-05, CA-11 | Pendiente |
 | T-03 | Estados, historial y eventos del recojo | Backend Gestión, I-02 | T-02 | CA-05, CA-06, CA-09, CA-11 | Pendiente |
-| T-04 | Ruta, comandos, evidencia, reserva y cierre | Backend Operación, I-03 | T-03 | CA-01 a CA-03, CA-05 a CA-07, CA-09, CA-10 | Pendiente |
+| T-04 | Ruta, comandos, evidencia, reserva y cierre | Backend Operación, I-03 | T-03, ES-F06-09 | CA-01 a CA-03, CA-05 a CA-07, CA-09, CA-10, CA-12 | Pendiente |
 | T-05 | Pantallas con API simulada | Frontend, I-04 | T-01 | CUI-01 a CUI-07 | Pendiente |
-| T-06 | Frontend conectado a servicios reales | Integración, I-05 | T-04, T-05, F-02 RF-10 | CA-01 a CA-11 | Pendiente |
+| T-06 | Frontend conectado a servicios reales | Integración, I-05 | T-04, T-05, ES-F02-09, ES-F04-07 | CA-01 a CA-12 | Pendiente |
 | T-07 | Evidencia y revisión completadas | Calidad | T-06 | Todos | Pendiente |
 
 Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`.
@@ -26,7 +26,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`.
 
 - [ ] Implementada y verificada.
 - Alcance: revisar los contratos propuestos y resolver DT-01 a DT-04.
-- Verificación: solicitudes y respuestas de ejemplo para CA-01 a CA-11.
+- Verificación: solicitudes y respuestas de ejemplo para CA-01 a CA-12.
 - Evidencia: enlace a la revisión.
 
 ### T-02. Crear las migraciones
@@ -47,7 +47,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`.
 
 - [ ] Implementada y verificada.
 - Alcance: `mi-ruta`, detalle, comandos, evidencia, liberación de reserva, cierre de jornada y resumen.
-- Verificación: CA-01 a CA-03, CA-05 a CA-07, CA-09 y CA-10; el despacho original sigue `ENTREGADO`.
+- Verificación: CA-01 a CA-03, CA-05 a CA-07, CA-09, CA-10 y CA-12; el despacho original sigue `ENTREGADO`.
 - Evidencia: EV-01.
 
 ### T-05. Construir las pantallas
@@ -85,6 +85,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`.
 | CA-09 | T-03, T-04 | T-03, T-04, T-07 | EV-01 |
 | CA-10 | T-04, T-05 | T-04, T-07 | EV-01, EV-02 |
 | CA-11 | T-02, T-03 | T-03, T-07 | EV-01 |
+| CA-12 | T-04, T-05 | T-04, T-05, T-07 | EV-01, EV-02 |
 | CUI-01 a CUI-07 | T-05, T-06 | T-05, T-07 | EV-02, EV-03 |
 
 ## 4. Cierre

@@ -133,13 +133,13 @@ Todas las rutas requieren rol `GESTOR_DESPACHO`. Los comandos requieren `Idempot
 | `GET` | `/api/v1/recojos?estado=&pagina=&tamanio=` | — | — | Lista paginada |
 | `GET` | `/api/v1/recojos/{idRecojo}` | — | — | Detalle, evidencia e historial |
 | `POST` | `/api/v1/despachos/{idDespacho}/recojos/simulacion` | `lineas` | Despacho simulado `ENTREGADO` | `PENDIENTE_ASIGNACION`, sin eventos |
-| `POST` | `/api/v1/recojos/{idRecojo}/asignacion` | `idRepartidor`, `idJornada` | `PENDIENTE_ASIGNACION` | `ASIGNADO` y reserva |
-| `POST` | `/api/v1/recojos/{idRecojo}/reasignacion` | Igual que §3.2 | `ASIGNADO` | `ASIGNADO` con otro repartidor |
+| `POST` | `/api/v1/recojos/{idRecojo}/asignacion` | `idRepartidor` e `idJornada` de una jornada `RECOJOS` | `PENDIENTE_ASIGNACION` | `ASIGNADO` y reserva |
+| `POST` | `/api/v1/recojos/{idRecojo}/reasignacion` | Igual que §3.2, hacia otra jornada `RECOJOS` | `ASIGNADO` | `ASIGNADO` con otro repartidor; [incremento posterior](../funcionalidades/pendiente.md) |
 | `POST` | `/api/v1/recojos/{idRecojo}/recepcion` | `observacion` opcional | `RECOGIDO` | `RECIBIDO_EN_CENTRO` y liberación |
 | `POST` | `/api/v1/recojos/{idRecojo}/reprogramacion` | `fechaProgramada` futura, `observacion` opcional | `FALLIDO` | `PENDIENTE_ASIGNACION` |
 | `POST` | `/api/v1/recojos/{idRecojo}/cierre` | `motivoCierre` obligatorio | `FALLIDO` | `CERRADO_SIN_RECOJO` |
 
-La cola de F-02 incluye los recojos en `PENDIENTE_ASIGNACION` con `tipo=RECOJO`. El `PUT` de secuencia de §3.2 acepta un arreglo `recojos` con la misma forma que `despachos`, porque ambos comparten numeración en la jornada. Un origen distinto responde `409 DESP_ERROR_ESTADO_INCOMPATIBLE`; una versión obsoleta, `409`. La capacidad y los demás errores de asignación siguen §3.2 y [Operación §5.1](./api-contract-operacion-reparto.md#51-gestión-consulta-y-reserva-capacidad-en-operación).
+La cola de F-02 incluye los recojos en `PENDIENTE_ASIGNACION` con `tipo=RECOJO`. Una jornada `RECOJOS` numera sus recojos en el orden de asignación y no usa el `PUT` de secuencia de §3.2. Una jornada de otro tipo responde `409 DESP_ERROR_TIPO_JORNADA_INCOMPATIBLE` ([Operación §4.2.4](./api-contract-operacion-reparto.md#424-tipo-de-operación-de-la-jornada)). Un origen distinto responde `409 DESP_ERROR_ESTADO_INCOMPATIBLE`; una versión obsoleta, `409`. La capacidad y los demás errores de asignación siguen §3.2 y [Operación §5.1](./api-contract-operacion-reparto.md#51-gestión-consulta-y-reserva-capacidad-en-operación).
 
 ## 4. Catálogo único de motivos de fallo
 

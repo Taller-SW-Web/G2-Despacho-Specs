@@ -16,6 +16,8 @@ Abrir una jornada operativa en Operación de Reparto, como parte de CA-01 a CA-0
 
 Crear la jornada de hoy en America/Bogota con repartidor activo/vinculado, furgoneta disponible y zona activa comprobada en Gestión. Guardar las capacidades como instantánea; impedir dos jornadas activas del mismo recurso, incluso de fechas distintas. Rechazar carga histórica aún reservada antes de reutilizar recursos.
 
+Ampliación propuesta: el tipo de operación de la jornada se define en [ES-F06-09](../ES-F06-09-TipoOperacionJornada/spec.md).
+
 Fuera de alcance: login, CRUD F-05, decisiones comerciales, asignación canónica F-02 y resolución de entregas F-03.
 
 ## 3. Actor, precondiciones y resultados

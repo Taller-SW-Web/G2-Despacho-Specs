@@ -99,7 +99,7 @@ Después de `ENTREGADO`, el cliente puede devolver el producto. Es un proceso ap
 
 ```mermaid
 flowchart LR
-    VEN["Ventas aprueba la devolución<br/>y solicita el recojo"] --> ASIG["F-02: el Gestor asigna<br/>el recojo"]
+    VEN["Ventas aprueba la devolución<br/>y solicita el recojo"] --> ASIG["F-02: el Gestor lo asigna a<br/>una jornada de recojos"]
     ASIG --> CAMPO["F-03: el repartidor va<br/>al domicilio"]
     CAMPO -->|Recoge con foto| CENTRO["F-04: el centro confirma<br/>la recepción"]
     CAMPO -->|No recoge: motivo y foto| DEC{"F-04: el Gestor decide"}

@@ -221,10 +221,12 @@ Propuesta: el cierre también resuelve los recojos `ASIGNADO` o `EN_CAMINO` como
 
 Los comandos siguen el procedimiento y los errores de §3.1.1, y se coordinan con [Gestión §6.3](./api-contract-gestion-despachos.md#63-operación-solicita-una-transición-de-recojo). Un recojo ajeno, inexistente o de otra jornada responde `404` con `DESP_ERROR_RECOJO_NO_ENCONTRADO`.
 
-`GET /api/v1/repartidor/mi-ruta` añade `recojos`, y `secuenciaRuta` es común con `despachos`:
+`GET /api/v1/repartidor/mi-ruta` añade `tipoOperacion` (`ENTREGAS`, `RECOJOS` o `null` sin jornada activa) y `recojos`. Una jornada `ENTREGAS` devuelve `recojos: []` y una `RECOJOS`, `despachos: []`. Cada jornada numera su propia `secuenciaRuta`:
 
 ```json
 {
+  "tipoOperacion": "RECOJOS",
+  "despachos": [],
   "recojos": [{
     "idRecojo": "2b6f7a10-5c1e-4a8e-9d34-7f2c1b0e6a55",
     "idDespacho": "854e7b68-394e-4e5f-9ccf-5350d7d4e3e8",
@@ -256,7 +258,7 @@ Los comandos siguen el procedimiento y los errores de §3.1.1, y se coordinan co
 | `recogido` | `idEvidencia` obligatorio; `comentario` opcional (máx. 200) | `EN_CAMINO` | Detalle en `RECOGIDO` |
 | `fallo` | `motivo` e `idEvidencia` obligatorios; `comentario` opcional (máx. 200) | `EN_CAMINO` | Detalle en `FALLIDO` |
 
-`GET /api/v1/repartidor/motivos-fallo` admite `?ambito=RECOJO` para el formulario de no recojo. El resumen de jornada (§3.1) añade `recojosRealizados`, `recojosNoRealizados` y `productosPorEntregar`, que lista los recojos `RECOGIDO` con `idRecojo`, `codigoRastreoInterno` y `lineas`. La lectura de evidencia (§3.5) admite al repartidor propietario del recojo.
+`GET /api/v1/repartidor/motivos-fallo` admite `?ambito=RECOJO` para el formulario de no recojo. El resumen de jornada (§3.1) añade `tipoOperacion`, `recojosRealizados`, `recojosNoRealizados` y `productosPorEntregar`, que lista los recojos `RECOGIDO` con `idRecojo`, `codigoRastreoInterno` y `lineas`. La lectura de evidencia (§3.5) admite al repartidor propietario del recojo.
 
 
 ## 4. API de F-05 y F-06: perfiles, flota y jornadas
@@ -409,6 +411,16 @@ Usar Problem Details común: `400 DESP_ERROR_CAMPOS_INVALIDOS`; `401/403` de Seg
 
 El tablero actualiza cada 30 segundos mientras sea visible, cancela/descarta solicitudes obsoletas y permite actualización manual. Un fallo de refresco conserva los datos previos identificados como desactualizados y bloquea mutaciones; una pérdida de autorización los retira. Tras mutar, confirma respuesta y consulta nuevamente; una salida incierta exige reconciliar antes de repetir.
 
+#### 4.2.4. Tipo de operación de la jornada
+
+**Estado:** propuesta pendiente de revisión. Definición funcional: [ES-F06-09](../especificaciones/ES-F06-09-TipoOperacionJornada/spec.md).
+
+- **Apertura:** `POST /api/v1/jornadas` acepta `tipoOperacion` (`ENTREGAS` o `RECOJOS`). Si se omite, se usa `ENTREGAS`; otro valor responde `400 DESP_ERROR_CAMPOS_INVALIDOS`. El tipo no cambia después de abrir.
+- **Respuestas:** la jornada de §4.2.1 añade `tipoOperacion`, también en el monitoreo, el contexto propio y los candidatos. El detalle de una jornada `RECOJOS` añade `recojos` con `idRecojo`, `estado` y `secuenciaRuta`.
+- **Disponibilidad:** `GET /api/v1/repartidores/disponibles` acepta `tipoOperacion`. Si se omite, devuelve solo jornadas `ENTREGAS`.
+- **Reserva y transferencia:** §5.1 y su transferencia responden `409 DESP_ERROR_TIPO_JORNADA_INCOMPATIBLE` si un despacho va a una jornada `RECOJOS` o un recojo a una `ENTREGAS`, sin reservar ni liberar.
+- **Cierre:** el cierre administrativo rechaza también los recojos `ASIGNADO` y `EN_CAMINO`, y las reservas activas de recojos sin una proyección terminal, con el mismo `409` de §4.2.1.
+
 ## 5. API interna provista por Operación
 
 Estas rutas las implementa Operación y las consume Gestión con credencial de servicio. No se exponen mediante el Gateway.
@@ -448,7 +460,7 @@ La repetición con la misma clave y contenido devuelve el resultado original per
 }
 ```
 
-Propuesta para recojos: la solicitud añade `idRecojo` opcional, con `idDespacho` del despacho original. Como un despacho solo tiene un recojo activo, se conserva la regla de una reserva activa.
+Propuesta para recojos: la solicitud añade `idRecojo` opcional, con `idDespacho` del despacho original, y exige una jornada `RECOJOS` ([§4.2.4](#424-tipo-de-operación-de-la-jornada)). Como un despacho solo tiene un recojo activo, se conserva la regla de una reserva activa.
 
 Una capacidad insuficiente responde `422` con `DESP_ERROR_CAPACIDAD_EXCEDIDA`. Si otra operación intenta reservar un despacho cuya reserva anterior sigue activa, responde `409` con `DESP_ERROR_RESERVA_ANTERIOR_ACTIVA`, sin crear otra reserva ni reutilizarla como éxito de una asignación nueva. Una repetición reconocida por su clave se resuelve antes de esa comprobación. La cancelación, reasignación, entrega o recepción debe liberar o actualizar su reserva de manera idempotente; una reserva liberada no se reactiva para una salida nueva.
 

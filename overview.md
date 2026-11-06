@@ -344,8 +344,8 @@ El cliente puede devolver un producto que ya recibió. El repartidor va a su dom
 ### 12.1. Flujo
 
 1. Ventas y Postventa aprueba la devolución y solicita el recojo a Despacho.
-2. El Gestor asigna el recojo a un repartidor y una fecha.
-3. El repartidor ve el recojo en su ruta y va al domicilio.
+2. El Gestor asigna el recojo a un repartidor con una jornada de recojos.
+3. El repartidor ve sus recojos en la misma aplicación de entregas y va al domicilio.
 4. Recoge el producto y toma una foto como evidencia.
 5. Lleva el producto al centro y el Gestor confirma que lo recibió.
 6. Despacho avisa a Ventas y Postventa, que decide el reembolso o el cambio.
@@ -353,6 +353,7 @@ El cliente puede devolver un producto que ya recibió. El repartidor va a su dom
 ### 12.2. Reglas
 
 - Solo se recoge un producto de un despacho `ENTREGADO`.
+- Cada jornada es de entregas o de recojos, nunca de ambos. El Gestor lo elige al abrirla, así que una misma persona puede hacer entregas un día y recojos otro. Las jornadas actuales quedan como entregas.
 - El despacho original sigue en `ENTREGADO`; el recojo se registra aparte y queda vinculado a él.
 - Si el repartidor no puede recoger el producto, registra el motivo y una foto, y el Gestor decide si reprograma el recojo o lo cierra.
 - El recojo ocupa capacidad del repartidor y la furgoneta hasta que el centro confirma la recepción. Si no se recoge, la capacidad se libera al registrarlo, porque no hay producto a bordo.

@@ -27,7 +27,7 @@
 
 ### UI-01. Recojo en «Mi Ruta»
 
-Tarjeta en la misma lista de los despachos, en su posición de la secuencia, con la etiqueta «Recojo», dirección, contacto y estado.
+En una jornada `RECOJOS`, la misma pantalla lista solo recojos, con la etiqueta «Recojo», dirección, contacto y estado. La franja dice «X de Y recojos resueltos». En una jornada `ENTREGAS`, la pantalla no cambia. El tipo llega del backend; el repartidor no lo elige.
 
 ### UI-02. Detalle del recojo
 
@@ -58,7 +58,7 @@ Tarjeta en la misma lista de los despachos, en su posición de la secuencia, con
 
 ### UI-05. Resumen de jornada
 
-Añade recojos realizados, recojos no realizados y la lista «Productos por entregar en el centro».
+En una jornada `RECOJOS` muestra recojos asignados, realizados y no realizados, y la lista «Productos por entregar en el centro». En una jornada `ENTREGAS`, el resumen no cambia.
 
 | Paso | Acción | Respuesta de la interfaz | Criterio |
 |---|---|---|---|
@@ -108,7 +108,7 @@ Los textos son propuesta.
 
 | ID | Condición y acción | Resultado observable | Criterio |
 |---|---|---|---|
-| CUI-01 | Ruta con despachos y un recojo | Recojo en su posición, con etiqueta | CA-01 |
+| CUI-01 | Abrir la ruta con una jornada `RECOJOS` y con una `ENTREGAS` | Cada una muestra solo lo suyo, con sus textos | CA-01, CA-12 |
 | CUI-02 | Recojo en cada estado | Acciones y datos correctos para ese estado | CA-02, CA-03, CA-05 |
 | CUI-03 | Confirmar sin foto o sin motivo | Envío bloqueado | CA-04, CA-06 |
 | CUI-04 | Registrar el recojo | Recordatorio visible | CA-03 |
