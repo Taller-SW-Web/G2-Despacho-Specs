@@ -50,6 +50,33 @@ Resultados permitidos: `Pendiente`, `Aprobado`, `Fallido`, `No ejecutado`. Una c
 
 Cada registro ejecutado indica fecha, persona, commit, entorno, pasos, resultado observado y artefacto.
 
+### EV-04. Preparación de sesión y doble local · 05/11/2026
+
+- Alcance: acceso humano de ambas apps, MFA del gestor, renovación rotativa, perfil y cierre; referencia única de formatos en [contrato externo §8.6](../../integraciones/api-contract.md#86-acceso-humano-de-ambas-aplicaciones).
+- Código: ramas `feature/sesion-mfa-local` de Frontend/Backend, sobre frontend `16feb89` y backend `614f685`. Documentación: `docs/sesion-mfa-local` de Specs. Incremento sin commit ni publicación en esta fase.
+- Fuente externa: copia de `Modulo-de-Seguridad-main` facilitada por el usuario; kit §7, SPEC-05/06/09 y OpenAPI v1.1.0, que declara `revision-local-no-publicada`.
+- Implementación preparada: transporte humano compartido, sesión en memoria independiente por app, renovación única ante concurrencia, protección de navegación, código OTP aleatorio visible solo en buzón Vite local, y proxy de acceso humano en Gateway base/render. El emisor requiere habilitación explícita; no crea cuentas en G7 ni perfiles F-05.
+- Regresiones escritas: acceso sin sesión, desafío sin tokens, validación de rol, renovación concurrente y resultado tardío tras logout, limpieza local ante fallo remoto; emisor con OTP/rotación/reutilización/independencia de familias, y rutas de Gateway. No se afirma que estos casos hayan aprobado.
+- Resultado observado: revisión de código y documentación exclusivamente. Por instrucción explícita del usuario no se ejecutaron pruebas, comprobación de tipos, builds, Maven, Compose, peticiones a G7 ni validación de navegador. CA/CUI, integración y aceptación permanecen abiertos.
+- Límites: falta verificar disponibilidad y revisión desplegada, CORS, gestor activado con MFA/entrega real del OTP y dos repartidores activados con sus UUID. Las credenciales entre microservicios siguen siendo una dependencia distinta. Los JWT ya emitidos pueden seguir válidos hasta vencer; no se implementó revocación distribuida.
+
+### EV-05. Verificación local autorizada · 05/11/2026
+
+- Entorno: Compose ya iniciado por el usuario, Gateway local y frontends Vite en `localhost:5173` y `localhost:5174`. Seguridad temporal de G2; no se realizaron llamadas a G7 ni escrituras de negocio.
+- Navegador: credenciales incorrectas rechazadas; gestor entra únicamente después de verificar OTP; un repartidor no obtiene acceso administrativo. Gerardo entra sin MFA y su ruta informa fuera de turno; Kevin consulta su ruta existente. Ambos pueden cerrar sesión y vuelven al ingreso. Recargar la app del repartidor elimina la sesión en memoria. La sesión de Kevin siguió permitiendo actualizar su ruta tras el intervalo de vigencia inicial.
+- MFA: tres errores agotan los intentos; reenviar genera otro código, invalida el anterior y conserva el vencimiento original del desafío. La cuarta solicitud devuelve la limitación y deshabilita reenvío; el código vigente todavía permite terminar el acceso.
+- Correcciones realizadas al verificar: etiquetas accesibles explícitas; aviso de desarrollo como nota; cierre del repartidor con icono visible sobre la cabecera oscura; cuenta atrás calculada con la hora actual al abrir un desafío. La ruta humana del Gateway se configura en Java para que el perfil demo sin `SEGURIDAD_URL` no intente registrar un destino vacío. Las pruebas de rutas de flota preparan ahora su sesión explícitamente.
+- Comprobaciones aprobadas: `npm run typecheck`, `npm run build` de ambas apps, 13 pruebas del repartidor, 208 pruebas compartidas más la nueva regresión del contador, comprobaciones HTTP/criptografía del emisor y `clean verify` del Gateway con 30 pruebas sin fallos ni omisiones. Los casos de sesión incluyen renovación automática con reloj controlado, vencimiento del desafío, renovación concurrente y cierre con respuesta tardía.
+- Suite administrativa: 218 de 219 pruebas aprobaron en la repetición con un único proceso, incluidos los diez casos de sesión. Un caso de `CierreRecorrido.test.tsx` agotó la espera del listado vacío; había aprobado en la primera ejecución y sus dos casos aprobaron al repetir ese archivo aislado (35,67 s en total). La ejecución paralela con compilaciones había agotado otras siete esperas, que aprobaron al repetir por separado. No se aumentaron límites ni se debilitaron aserciones. Todos los casos tuvieron una ejecución satisfactoria; la suite general no se registra como completamente verde en una sola ejecución.
+- Artefactos locales fuera de Git: `G2-Despacho-Frontend/test-results/sesion-local/gestor-autenticado.jpg`, `repartidor-autenticado.jpg` y `administrativo.log`; informe Maven en `G2-Despacho-Backend/api-gateway/target/surefire-reports/`.
+- Límite: valida acceso/sesiones con el doble local y navegación sobre los datos existentes. No acredita entrega de OTP real, integración G7, almacenamiento de evidencia, aceptación completa de F-03 ni recorrido funcional completo en nube.
+
+### EV-06. Publicación para revisión · 05/11/2026
+
+- [Frontend PR #21 hacia `develop`](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/pull/21), commit `2f6bc0a`: acceso de ambas apps, formulario compartido, MFA, sesión en memoria, renovación y cierre.
+- [Backend PR #29 hacia `develop`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/29), commit `c5d887b`: emisor local de sesiones y ruta humana común a los perfiles del Gateway.
+- Ambas ramas están sincronizadas con sus bases remotas. Las descripciones conservan los resultados de EV-05, el fallo intermitente de la ejecución administrativa completa y los pendientes de G7. CI remoto, revisión y aceptación quedan sujetos al estado de los PR; esta publicación no cierra los criterios de integración real.
+
 ## 4. Uso de IA
 
 | Tarea | Herramienta y fecha | Entrada | Revisado por |

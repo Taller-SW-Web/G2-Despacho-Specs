@@ -56,6 +56,8 @@ Desglose de ejecución en los tres repositorios: [Plan de F-02 para el Hito 4](.
 
 **Entregable** — Acceso con cuentas reales, llamada desde la app del repartidor y registro persistido visible en la app administrativa.
 
+**Preparación de sesiones · 05/11/2026.** Código de acceso de ambas apps, MFA del gestor, renovación y cierre preparado en `feature/sesion-mfa-local` de Frontend/Backend. El emisor Compose reproduce el intercambio de G7 y ofrece un buzón OTP solo en desarrollo. Se utilizó el kit detallado y OpenAPI v1.1.0 facilitados por el usuario; este último se identifica como revisión no publicada. Código y regresiones escritos, sin ejecutar pruebas, tipos, build, Maven, Compose ni navegador por indicación del usuario. Las casillas de integración real permanecen abiertas hasta confirmar cuentas, ambiente, OTP y CORS. Seguimiento y límites en [EV-04 de ES-F03-01](../especificaciones/ES-F03-01-AccesoHabilitacionRepartidor/evidence.md#ev-04-preparación-de-sesión-y-doble-local--05112026).
+
 ### Kevin Rhamses · DevOps, CI/CD, F-05 y F-06
 
 - [ ] Liderar el **ADR de nube**. Comparar el alojamiento actual con al menos otra alternativa por costo total, región y latencia, esfuerzo operativo, portabilidad, acceso a dependencias y comportamiento de tareas programadas. Registrar qué componentes se migran y justificar la elección.
@@ -91,6 +93,10 @@ Desglose de ejecución en los tres repositorios: [Plan de F-02 para el Hito 4](.
 **Publicación para revisión.** [Backend PR #26 hacia `develop`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/26) y [Specs PR #26 hacia `main`](https://github.com/Taller-SW-Web/G2-Despacho-Specs/pull/26). Las ramas incorporan sus bases remotas recientes. Tras sincronizar F-01/G6, Gestión aprobó 232 pruebas y se repitieron los 14 casos de recepción sobre backend `7665640`; las 15 regresiones de herramientas y las cuatro comprobaciones de CI del backend aprobaron. Revisión por pares y aceptación pendientes.
 
 ## 4. Dependencias y orden de ejecución
+
+**PR de sesiones para revisión.** [Frontend #21 hacia `develop`](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/pull/21), commit `2f6bc0a`, y [Backend #29 hacia `develop`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/29), commit `c5d887b`. Documentación en la rama `docs/sesion-mfa-local`, para PR hacia `main`. Conviene integrar el contrato y el backend antes del frontend. La validación con G7 permanece pendiente.
+
+**Verificación local de sesiones · 05/11/2026.** Se probaron ambos accesos en navegador con Compose, MFA/errores/reenvío/límites del gestor, rechazo del repartidor en Administración, renovación y cierre. Aprobaron tipos, builds, pruebas específicas de sesión, emisor local y 30 pruebas del Gateway. La suite administrativa obtuvo 218/219; el caso restante aprobó al repetirlo aislado, sin relajar aserciones. La integración G7 permanece pendiente. Resultados y capturas en [EV-05 de ES-F03-01](../especificaciones/ES-F03-01-AccesoHabilitacionRepartidor/evidence.md#ev-05-verificación-local-autorizada--05112026).
 
 | Momento | Trabajo en paralelo | Condición para avanzar |
 |---|---|---|

@@ -34,7 +34,7 @@ Este documento centraliza las posibles ampliaciones y los acuerdos que todavía 
 ### Pendientes de F-03
 
 - Configurar el bucket privado con los mismos tipos y límite, y verificar de extremo a extremo la carga firmada, la comprobación previa a la asociación y la lectura con URL firmada ([Operación §3.5](../integraciones/api-contract-operacion-reparto.md#35-autorizar-la-lectura-de-evidencia)). Por decisión del equipo, el entorno local no emula Storage: sin las variables `EVIDENCIAS_*` la entrega y el fallo responden `503`.
-- Acceso humano: Seguridad y Usuarios debe confirmar el login propuesto en el [contrato externo §8.6](../integraciones/api-contract.md#86-acceso-humano-de-la-app-del-repartidor-propuesto), entregar cuentas de prueba y definir la renovación del token; hoy un token de 15 minutos obliga a reingresar durante la jornada.
+- Acceso humano: código de ambas apps y doble local preparados contra el kit G7 para login, MFA, renovación y logout ([contrato externo §8.6](../integraciones/api-contract.md#86-acceso-humano-de-ambas-aplicaciones)). Pendientes ejecuciones locales, revisión visual, confirmación de revisión desplegada, cuentas activadas, envío OTP y prueba con G7. No se acredita integración por la existencia del código.
 - Corte automático de fin de turno (ES-F03-07 CA-03) y bandeja de regularización de jornadas anteriores.
 - Operación sin conexión: la app avisa y exige reintento explícito (RN-08); no guarda operaciones para enviarlas después.
 
