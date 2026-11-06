@@ -41,7 +41,7 @@ Desglose de ejecución en los tres repositorios: [Plan de F-02 para el Hito 4](.
 - [ ] Verificar en la versión del hito que se ejecuta la suite administrativa completa, incluida Zonas. La corrección de pruebas y la reincorporación a CI se prepararon en el [PR de Frontend #19](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/pull/19).
 - [ ] Consolidar un **inventario enlazado a los tres contratos vigentes**. Separar integraciones con otros módulos, APIs consumidas por los dos frontends y llamadas privadas entre Gestión y Operación. Por operación del hito registrar proveedor, consumidor, método, ruta, datos, autenticación, errores y estado de verificación.
 - [ ] Revisar con cada dueño sus operaciones en Swagger/OpenAPI y contrastarlas con el contrato y la respuesta real. Verificar especialmente permisos, códigos HTTP, formato de errores e idempotencia donde aplique.
-- [ ] Alinear con Kevin el contrato de las llamadas internas con la decisión de autorizar por identidad de servicio. Retirar la solicitud de los seis scopes internos de la documentación de G2 y conservar los permisos acordados para las integraciones externas. Registrar el mecanismo de emisión y validación cuando quede definido.
+- [x] Alinear con Kevin el contrato de las llamadas internas con la decisión de autorizar por identidad de servicio. Retirar la solicitud de los seis scopes internos de la documentación de G2 y conservar los permisos acordados para las integraciones externas. Hecho en los contratos y en el backend: las rutas internas verifican el token de servicio de `modulo-despacho` y no exigen ni solicitan scopes.
 - [ ] Apoyar a Kevin en la comparación de nube con compatibilidad de PostgreSQL/PostGIS, migraciones, conectividad entre servicios, CORS y almacenamiento de evidencias. Revisar el esquema y el historial de Flyway antes de plantear una migración sobre una base existente.
 
 **Entregable** — Inventario y Swagger de Gestión y Operación listos para mostrar, más la prueba de F-01 que sustenta el escenario.
@@ -110,7 +110,7 @@ Tarqui y Gerardo confirman con G7 el ambiente y la fecha de prueba. Pedir **un g
 
 ### 4.2 Comunicación entre servicios
 
-G2 acordó autorizar las llamadas entre Gestión y Operación por **identidad del servicio autorizado para la operación**. Los seis scopes internos quedan fuera del pedido a G7. El contrato y el backend actuales todavía los exigen. Antes de cambiar el código, Kevin y Valqui deben definir con los responsables cómo emitir una credencial interna con la audiencia esperada. G7 deriva la audiencia de los scopes concedidos, así que una credencial emitida para Ventas o Seguridad puede tener otra audiencia.
+G2 acordó autorizar las llamadas entre Gestión y Operación por **identidad del servicio autorizado para la operación**. Los seis scopes internos quedan fuera del pedido a G7. El contrato y el backend ya no los exigen: las rutas internas verifican el token de servicio de `modulo-despacho` y no solicitan scopes. Kevin y Valqui deben confirmar con los responsables que la credencial interna se emita con la audiencia esperada. G7 deriva la audiencia de los scopes concedidos, así que una credencial emitida para Ventas o Seguridad puede tener otra audiencia.
 
 El login de las aplicaciones y la preparación de pruebas pueden avanzar en paralelo. La **demo completa** requiere además que Gestión y Operación puedan reservar y liberar capacidad en el ambiente publicado. Las credenciales de integraciones externas se coordinan por separado, según lo que se vaya a demostrar.
 

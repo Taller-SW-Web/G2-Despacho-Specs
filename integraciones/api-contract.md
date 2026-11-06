@@ -749,7 +749,7 @@ Respuesta esperada:
 
 El arreglo `scopes` pertenece a la respuesta HTTP de emisión. Dentro del JWT emitido, el claim `scope` contiene esos valores separados por espacios. El canal utiliza después `Authorization: Bearer <jwt-de-servicio>` al llamar a Despacho. Del mismo modo, `modulo-despacho` solicita otro token con sus propias credenciales y el scope aceptado por Productos; nunca reutiliza el token del canal.
 
-`modulo-despacho` usa además estos scopes internos, emitidos por Seguridad con audiencia `api-despacho`, entre sus propios microservicios: `operacion:capacidad:reservar`, `operacion:capacidad:liberar`, `operacion:proyecciones:escribir` y `operacion:incidencias:leer` (Gestión hacia Operación), y `gestion:despachos:transicionar` y `gestion:catalogos:leer` (Operación hacia Gestión).
+`modulo-despacho` no usa scopes internos entre sus propios microservicios: Gestión y Operación autorizan las rutas `/internal` por la identidad del servicio (`tipo=servicio`, `sub=modulo-despacho`, audiencia `api-despacho`, y firma, emisor y vencimiento válidos). Los permisos externos descritos en este contrato se mantienen.
 
 ### 8.3. Introspección de un usuario antes de una operación sensible
 
@@ -867,7 +867,7 @@ El contrato funcional con Ventas y Postventa está cerrado: se confirmaron el mo
 
 | Equipo | Acuerdo pendiente |
 |---|---|
-| Seguridad y Usuarios | Confirmar el acceso humano propuesto en §8.6 (ruta, cuentas de prueba, renovación del token); registrar `gestion:despachos:transicionar` y `gestion:catalogos:leer` para `modulo-despacho`; registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
+| Seguridad y Usuarios | Confirmar el acceso humano propuesto en §8.6 (ruta, cuentas de prueba, renovación del token); registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
 | Productos y Ofertas | H-G2-01/02/03 y semántica D-G2-01/02 cerrados. Sincronizar el OpenAPI con el acuerdo y fijar su revisión; verificar el consumidor G2, coordinar con Seguridad la concesión efectiva y ejecutar las pruebas de contrato y el recorrido real de §11.1 |
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
 | Equipo de Despacho | Tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
