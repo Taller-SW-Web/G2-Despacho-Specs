@@ -77,6 +77,15 @@ Cada registro ejecutado indica fecha, persona, commit, entorno, pasos, resultado
 - [Backend PR #29 hacia `develop`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/29), commit `c5d887b`: emisor local de sesiones y ruta humana común a los perfiles del Gateway.
 - Ambas ramas están sincronizadas con sus bases remotas. Las descripciones conservan los resultados de EV-05, el fallo intermitente de la ejecución administrativa completa y los pendientes de G7. CI remoto, revisión y aceptación quedan sujetos al estado de los PR; esta publicación no cierra los criterios de integración real.
 
+### EV-09. Cabecera CORS duplicada en el acceso publicado · 06/11/2026
+
+- Incidente: captura proporcionada por el usuario al ingresar desde Administración en Vercel. El navegador bloqueó una respuesta de login `200` porque `Access-Control-Allow-Origin` contenía dos veces el origen administrativo. La captura también muestra un `503` previo, cuya causa no se atribuye a esta corrección.
+- Reproducción local: servidor HTTP simulado de Seguridad que añade el origen recibido, junto al CORS existente del Gateway con perfil `render`. Antes del cambio, dos casos de regresión fallaron al esperar un único origen y recibir dos valores iguales; las otras dos pruebas del archivo aprobaron. No se usaron credenciales reales ni se intentó acceder a cuentas G7.
+- Corrección backend: [PR #31 hacia `develop`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/31), commit `caacf78`, rama `fix/cors-acceso-seguridad` desde `develop` `f43edb5`. La ruta Java compartida de login, OTP, renovación, cierre y perfil aplica `DedupeResponseHeader` para `Access-Control-Allow-Origin` y `Access-Control-Allow-Credentials`, con estrategia `RETAIN_UNIQUE`. No cambia la lista de orígenes autorizados, la validación JWT ni los requisitos de rol o vínculo del repartidor.
+- Resultado: desde `api-gateway`, `.\mvnw.cmd --batch-mode --no-transfer-progress clean verify` aprobado el 06/11/2026 a las 09:24 de Lima: 33 pruebas, cero fallos, cero errores y cero omitidas; JAR generado. Los casos CORS cubren los dos frontends, las cinco operaciones POST de acceso, estados `202`, `204`, `401`, `429`, `503`, preflight y rechazo de un origen ajeno sin llamar al destino. Se mantienen las pruebas de protección de `/me` y del endpoint técnico de tokens.
+- Artefactos: informes locales `G2-Despacho-Backend/api-gateway/target/surefire-reports/`. También aprobó `git diff --check`. Solo cambian la ruta del Gateway, sus pruebas y documentación; sin cambios de frontend, variables privadas, bases, cuentas o roles de G7.
+- Pendiente: integrar y publicar el Gateway corregido, repetir el acceso/MFA real con Jerson y verificar que el navegador reciba un único origen. Esta ejecución con destino simulado no acredita el login real, ni soluciona por sí sola una indisponibilidad `503` del ambiente.
+
 ## 4. Uso de IA
 
 | Tarea | Herramienta y fecha | Entrada | Revisado por |
