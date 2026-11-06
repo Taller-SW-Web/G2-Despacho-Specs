@@ -502,6 +502,19 @@ Gestión deduplica las jornadas de todas las incidencias pendientes de retorno d
 Cada lote obtenido aporta su `consultadoEn`. Una omisión o respuesta incoherente se trata como dato desconocido para los elementos afectados. Un timeout o indisponibilidad del servicio convierte en desconocidos los elementos del lote no obtenido y aplica la degradación de Gestión §5.1; no se usa como confirmación una copia antigua de una jornada activa. Si Operación no puede ejecutar su lectura, responde `503` con `code=DESP_ERROR_OPERACION_NO_DISPONIBLE`. Las credenciales inválidas se rechazan según Común §3.5; Gestión no omite la autenticación ni expone errores internos al usuario. Referencia: [Gestión](./api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01), [Convenciones e integración externa](./api-contract.md#35-errores).
 
 
+### 5.5. Gestión transfiere una reserva en Operación
+
+Precisión de la operación ya presente en `ControladorCapacidadInterna`/`GestorJornadas.transferir`, consumida por la reasignación de Gestión. No habilita una integración publicada ni resuelve el mecanismo de identidad interna pendiente del Hito 4.
+
+- **Método y ruta:** `POST /internal/v1/capacidad/transferencias`; privada, nunca publicada por el Gateway. Requiere `Idempotency-Key` UUID v4.
+- **Autorización actual del código:** credencial de servicio aceptada por Operación, con los controles existentes de reserva y liberación. No se agrega un nuevo scope ni se amplía el pedido a G7. Su sustitución por identidad del servicio autorizado depende todavía del acuerdo de emisión/audiencia del plan del hito; no se retira ningún control sin ese mecanismo.
+- **Cuerpo:** exclusivamente `idReservaOrigen`, `idDespacho`, `idNuevoRepartidor` e `idNuevaJornada`, todos UUID. El consumidor no transmite una carga nueva: se obtiene de la reserva original.
+- **Reglas:** reserva de origen activa del mismo despacho; destino distinto en repartidor y jornada; jornada destino activa de hoy, perfil habilitado y vehículo disponible; capacidad remanente suficiente en kg, m³ y paquetes. Validar el destino antes de liberar el origen.
+- **Atomicidad local:** en la misma transacción de Operación, liberar el origen con motivo `REASIGNACION`, crear otra reserva y persistir la respuesta de transferencia. Un fallo al crear el destino revierte la liberación; no hay una ventana con liberación confirmada y destino rechazado.
+- **Respuesta `200`:** `idReservaOrigen`, `idDespacho`, `idNuevaReserva`, `idNuevaJornada`, `estado=TRANSFERIDA`, `capacidadRemanente` (forma de §5.1) y `transferidaEn` UTC. La nueva reserva es distinta de la original.
+- **Idempotencia:** la misma clave/cuerpo recupera la primera respuesta durable, aun si después cambian las reservas; otra solicitud con esa clave responde `409 DESP_ERROR_CLAVE_REUTILIZADA`. Gestión mantiene su intención original si pierde la respuesta y recupera hacia adelante; no libera la nueva reserva para recrear la anterior ante un fallo local.
+- **Errores:** `400` por clave/formato/destino iguales al origen; `404` por recurso inexistente; `409 DESP_ERROR_RESERVA_NO_COINCIDE` o `DESP_ERROR_REPARTIDOR_NO_HABILITADO`; `422 DESP_ERROR_CAPACIDAD_EXCEDIDA`; `503` ante indisponibilidad y `401/403` comunes. Ningún rechazo definitivo confirma una transferencia parcial.
+
 ## 6. APIs de Gestión e integraciones externas consumidas
 
 Operación utiliza el [catálogo común de motivos](./api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo) para F-03 y solicita las [transiciones canónicas](./api-contract-gestion-despachos.md#61-operación-solicita-una-transición-a-gestión). El catálogo es de Gestión; el formulario del repartidor filtra los motivos activos seleccionables en campo, sin una segunda definición del endpoint.

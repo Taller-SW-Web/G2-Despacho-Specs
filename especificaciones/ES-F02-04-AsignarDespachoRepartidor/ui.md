@@ -2,7 +2,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Modal implementado; el incremento del 30/10/2026 incorpora placa, ocupación/límites y tres proyecciones reales del proveedor F-06. Verificación con APIs simuladas; aceptación e integración real pendientes.
+**Estado:** Modal y barras implementados y verificados localmente con API simulada el 05/11/2026 (EV-04 de `evidence.md`); proveedor real y aceptación pendientes.
 
 **Aplicabilidad:** Modal interactivo de asignación invocado desde la cola de pendientes (`/programacion`).
 

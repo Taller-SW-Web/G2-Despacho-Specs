@@ -30,9 +30,17 @@ El microservicio `servicio-gestion-despachos` es el propietario de la secuencia 
 
 ## 3. Frontend y componentes React
 
-- Biblioteca DND: `@hello-pangea/dnd` para reordenamiento fluido con soporte de accesibilidad y teclado.
+- Arrastre nativo y botones accesibles de teclado en este incremento, sin instalar una biblioteca DND adicional.
 - Estado local: `paradasOriginales` y `paradasModificadas`. Cuando difieren, se despliega `BarraAccionesFija` (CR-13).
 - Las tarjetas de despacho en `EN_CAMINO`, `ENTREGADO` o `FALLIDO` se renderizan como ítems fijos sin `Draggable`.
+
+### Incremento seguro del Hito 4
+
+`RutasProgramacion.tsx` habilita consulta de jornadas desde el monitoreo de Operación, incluidas saturadas, y ruta desde Gestión. Reutiliza los lectores cancelables y descarta respuestas al cambiar sesión/jornada; renueva cada 30 segundos y al recuperar foco cuando no hay edición ni comando abierto. La UI usa botones subir/bajar accesibles y arrastre nativo sin añadir dependencias, con barra CR-13 para guardar/descartar.
+
+El consumidor solo envía permutaciones de fotografías continuas `1..N`, preservando las paradas no `ASIGNADO`. Si existen huecos históricos, una jornada cerrada o comandos pendientes, bloquea el reordenamiento y explica el motivo sin cambiar los datos. **No se resuelve** la contradicción del borrador entre continuidad obligatoria y conservación de posiciones históricas; no se cambian los CA para acomodar el backend.
+
+El transporte canónico se precisa en [Gestión §3.2.1](../../integraciones/api-contract-gestion-despachos.md#321-consulta-de-ruta-y-transporte-de-secuencia): versión de ruta y UUID de operación conservados durante la recuperación. Un resultado incierto congela el comando; un rechazo definitivo exige consultar y revisar antes de otra decisión. Estas medidas no acreditan persistencia ni nube.
 
 ## 4. Backend, persistencia e integraciones
 

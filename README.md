@@ -41,6 +41,7 @@ Los requisitos, escenarios y criterios de aceptación de cada capacidad se desar
 |---|---|
 | [Visión general](./overview.md) | Problema, objetivos, alcance, actores y flujo general del módulo. |
 | [Índice de funcionalidades](./funcionalidades/funcionalidad.md) | Listado y estado de las especificaciones funcionales. |
+| [Plan del Hito 4](./hitos/Plan_Hito_4_Despacho.md) · [Ejecución de F-02](./hitos/Plan_Hito_4_F02.md) | Responsables, dependencias, prioridades y evidencia del recorrido publicado; sin declarar aceptación funcional anticipada. |
 | [Integraciones externas](./integraciones/api-contract.md) | Comunicaciones con otros módulos y convenciones compartidas. |
 | [Homologación física G2–G6](./integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento) | H cerrados en la línea base rc.3; semántica D-G2-01/02 cerrada al 04/11 y proveedor fusionado. Publicación normativa G6, consumidor G2, credencial G7 y recorrido real tienen seguimiento propio. |
 | [API de Gestión de Despachos](./integraciones/api-contract-gestion-despachos.md) | Zonas, programación, catálogo, incidencias y API interna provista por Gestión. |

@@ -20,6 +20,8 @@
 
 La asignación involucra una transacción distribuida ligera o de dos pasos entre `servicio-gestion-despachos` y `servicio-operacion-reparto`. Primero, Gestión solicita a Operación la reserva de capacidad en la furgoneta mediante una clave de idempotencia única generada para esta asignación; si Operación valida que hay espacio libre en peso, volumen y paquetes, confirma la reserva. Luego, Gestión actualiza el despacho a `ASIGNADO`, asigna la posición secuencial y registra la auditoría. Si la transacción en Gestión falla, se ejecuta una llamada de compensación a Operación para liberar la reserva técnica.
 
+**Conciliación del 05/11/2026:** el backend existente usa `AsignarDespacho`, `ProgramacionPersistencia`, `CapacidadProgramacionHttp` y `RecuperacionProgramacion`. La intención, la confirmación y la compensación son durables; HTTP queda fuera de las transacciones locales. Antes de compensar se consulta una posible confirmación concurrente o respuesta perdida. Las integraciones PostgreSQL siguen bloqueadas por falta de Docker en esta sesión; esta descripción no acredita su resultado.
+
 | Capa | Responsabilidad | Elementos previstos |
 |---|---|---|
 | Frontend | Modal, proyección de barras, selección de repartidor y mutación. | `ModalAsignacionDespacho.tsx`, `useAsignarDespacho`. |
@@ -34,6 +36,7 @@ La asignación involucra una transacción distribuida ligera o de dos pasos entr
 - Consume el endpoint `GET /api/v1/repartidores/disponibles` (provisto por Operación / F-06) para pintar la lista con `TarjetaRepartidor` (CR-20).
 - La proyección de carga suma localmente los datos del despacho (`pesoKg`, `volumenM3`, `cantidadPaquetes = 1`) sobre los balances actuales del repartidor y renderiza `BarraOcupacion` (CR-11).
 - Si alguna barra supera el 100%, la tarjeta se deshabilita y se muestra advertencia.
+- Actualización del hito: `ModalAsignacion.tsx` consume placa, límites y ocupación ya definidos en [Operación §4.2](../../integraciones/api-contract-operacion-reparto.md#42-jornadas-y-monitoreo). La proyección se muestra en el candidato seleccionado y en los candidatos con sobrecarga para explicar su bloqueo; el remanente sigue determinando la compatibilidad visual. No se fabrican totales si falta información ni se utiliza la UI como autoridad de reserva.
 
 ## 4. Backend, persistencia e integraciones
 
@@ -43,15 +46,13 @@ La asignación involucra una transacción distribuida ligera o de dos pasos entr
   - Despacho en `PENDIENTE_ASIGNACION`.
   - `fechaProgramada <= LocalDate.now("America/Lima")`.
 - **Llamada a Operación (F-06):**
-  - `POST /internal/v1/operacion/capacidad/reserva` con:
-    `{ "idJornada": "...", "idDespacho": "...", "pesoKg": ..., "volumenM3": ..., "paquetes": ..., "claveIdempotencia": "UUID" }`.
-  - Respuestas de Operación: `200 OK` (reserva exitosa), `422 Unprocessable Entity` (sobrecarga en alguna variable), `409 Conflict` (repartidor saturado/fuera de turno).
+   - Usar la reserva canónica de [Operación §5.1](../../integraciones/api-contract-operacion-reparto.md#51-gestión-consulta-y-reserva-capacidad-en-operación), incluida su cabecera de idempotencia; no mantener un segundo payload en este plan.
 - **Cálculo de secuencia:**
-  - Consulta: `SELECT COALESCE(MAX(posicion_secuencia), 0) + 1 FROM despachos WHERE id_jornada = :idJornada AND estado = 'ASIGNADO'`.
+   - Usar el máximo histórico de `secuencia_ruta` para `asignacion_diaria_id_externa` y agregar uno; no reutilizar la posición de una parada ya iniciada o cerrada por filtrar solo `ASIGNADO`.
 - **Persistencia en Gestión:**
   - Transición a `ASIGNADO`, seteo de repartidor, jornada, secuencia, observaciones y marca temporal.
   - Registro en `historial_estados_despacho` con usuario gestor.
-- **Compensación:** si ocurre un error inesperado tras la reserva en Operación, bloque `catch` invoca `DELETE /internal/v1/operacion/capacidad/reserva/{claveIdempotencia}` para liberar el cupo.
+- **Compensación:** usar la liberación canónica de [Operación §5.2](../../integraciones/api-contract-operacion-reparto.md#52-gestión-libera-una-reserva-en-operación) con motivo de compensación, conservando referencia de reserva e intención recuperable. No existe un DELETE alternativo. Reintentar la misma intención sin duplicar reservas y comprobar primero si la asignación ya quedó confirmada.
 
 ## 5. Orden de implementación
 

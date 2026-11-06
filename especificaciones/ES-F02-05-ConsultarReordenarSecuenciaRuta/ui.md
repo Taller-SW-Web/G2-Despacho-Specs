@@ -2,7 +2,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Especificación de UI preparada el 16/10/2026; implementación pendiente.
+**Estado:** Consulta y edición del subconjunto seguro implementadas localmente; huecos históricos bloqueados hasta aclaración, sin cerrar la aceptación integral (EV-04 de evidencia).
 
 **Aplicabilidad:** Pestaña "Rutas por repartidor" dentro del Panel de Programación (`/programacion`).
 

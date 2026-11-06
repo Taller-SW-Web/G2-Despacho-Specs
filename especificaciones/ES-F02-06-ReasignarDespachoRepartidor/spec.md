@@ -4,7 +4,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Consumidor implementado y verificado localmente con API simulada; integración persistente y aceptación reales pendientes (EV-04).
 
 **Actor principal:** Gestor de Despacho (aplicación web administrativa).
 

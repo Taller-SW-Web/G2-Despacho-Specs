@@ -4,7 +4,7 @@
 
 **Responsable:** Tarqui.
 
-**Estado:** Preparación SDD completada; implementación y verificación pendientes.
+**Estado:** Consulta e incremento seguro de reordenamiento implementados localmente; verificación del proveedor real y aclaración de huecos históricos pendientes (EV-04).
 
 **Actor principal:** Gestor de Despacho (aplicación web administrativa).
 

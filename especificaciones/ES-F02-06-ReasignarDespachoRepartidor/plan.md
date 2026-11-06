@@ -18,7 +18,7 @@
 
 ## 2. Estrategia y responsabilidades
 
-La reasignación requiere orquestar con Operación (F-06) la transferencia de la reserva de capacidad vehicular: liberar la reserva en la furgoneta saliente y registrar una nueva reserva en la furgoneta entrante. Para evitar inconsistencias ante fallos intermedios, se utiliza el patrón de reserva previa con clave técnica y posterior confirmación o compensación. En Gestión, la mutación actualiza el repartidor y ubica el despacho al final de la ruta del nuevo conductor de forma atómica bajo bloqueo optimista.
+La reasignación utiliza la transferencia local atómica de [Operación §5.5](../../integraciones/api-contract-operacion-reparto.md#55-gestión-transfiere-una-reserva-en-operación). Gestión conserva la intención durable y confirma después sus cambios locales; HTTP queda fuera de esa transacción. Si pierde una respuesta o falla el guardado local, recupera hacia adelante con la misma operación. No recrea la reserva anterior ni compensa liberando el destino. El incremento de UI no cambia la identidad de servicio todavía pendiente.
 
 | Capa | Responsabilidad | Elementos previstos |
 |---|---|---|
@@ -32,7 +32,8 @@ La reasignación requiere orquestar con Operación (F-06) la transferencia de la
 
 - El modal se renderiza condicionalmente cuando se activa el botón "Reasignar" de una parada `ASIGNADO`.
 - Consume la lista de repartidores en turno mediante el hook `useRepartidoresDisponibles`, filtrando localmente para excluir al conductor actual.
-- Valida en tiempo real que el campo `motivo` contenga al menos 5 caracteres no vacíos antes de habilitar el botón primario.
+- Valida motivo no vacío tras recortar espacios y hasta 500 puntos de código Unicode conforme a Gestión §3.2.2; no introduce la longitud mínima de cinco del borrador anterior.
+- Implementación local: `ModalReasignacion.tsx` consume candidatos reales del cliente API, excluye al conductor actual y reutiliza CR-20/CR-11. Durante un resultado incierto conserva exactamente clave, versión y cuerpo y permite recuperación explícita, nunca otro POST automático con identidad nueva. Tras éxito, se consulta de nuevo el origen y el catálogo; el destino se consulta al seleccionarlo, sin caché de rutas anterior.
 
 ## 4. Backend, persistencia e integraciones
 
@@ -43,12 +44,9 @@ La reasignación requiere orquestar con Operación (F-06) la transferencia de la
   - `idNuevoRepartidor != idRepartidorActual`.
   - `motivo != null && !motivo.trim().isEmpty()`.
 - **Interacción con Operación (F-06):**
-  - Reserva nueva: `POST /internal/v1/operacion/capacidad/reserva` (evalúa espacio libre tridimensional).
-  - Liberación anterior: `POST /internal/v1/operacion/capacidad/liberacion` con la clave de reserva del conductor saliente.
+  - Usar exclusivamente la transferencia de [Operación §5.5](../../integraciones/api-contract-operacion-reparto.md#55-gestión-transfiere-una-reserva-en-operación); no usar las dos llamadas independientes del borrador anterior.
 - **Persistencia en Gestión:**
-  - Actualizar `id_repartidor = :idNuevoRepartidor`, `id_jornada = :idNuevaJornada`.
-  - Posición en secuencia: `SELECT COALESCE(MAX(posicion_secuencia), 0) + 1 FROM despachos WHERE id_jornada = :idNuevaJornada`.
-  - Registro de auditoría `REASIGNACION_DESPACHO` con `repartidor_anterior`, `nuevo_repartidor` y `motivo`.
+  - `ReasignacionesPersistencia` confirma referencias de repartidor/jornada/reserva, siguiente secuencia histórica de la jornada destino y auditoría en una transacción local. No mezclar los nombres SQL del borrador con el modelo vigente ni consultar tablas de Operación.
 
 ## 5. Orden de implementación
 
@@ -62,5 +60,5 @@ La reasignación requiere orquestar con Operación (F-06) la transferencia de la
 
 - Pruebas unitarias de `ReasignarDespachoUseCase` verificando transiciones válidas y rechazos ante despachos `EN_CAMINO`.
 - Pruebas de integración con MockMvc evaluando validaciones de motivo y respuestas 400, 409 y 422.
-- Verificación de compensación ante error en la liberación o en el guardado de base de datos.
+- Verificación de recuperación durable hacia adelante ante respuesta perdida o fallo del guardado local; no liberar/recrear reservas para ocultar el fallo.
 - Pruebas de UI con Testing Library comprobando que el chofer actual no aparece en la lista de candidatos.

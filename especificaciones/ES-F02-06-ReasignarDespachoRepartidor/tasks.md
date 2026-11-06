@@ -2,7 +2,7 @@
 
 **Responsable de coordinación:** Tarqui.
 
-**Estado:** Pendiente de implementación.
+**Estado:** Consumidor implementado localmente; backend persistente, identidad interna y ensayo publicado pendientes.
 
 **Plan de origen:** [plan.md](./plan.md), preparado el 16/10/2026.
 
@@ -15,8 +15,8 @@
 | T-03 | Caso de uso `ReasignarDespachoUseCase` con validación de estado ASIGNADO y recálculo de secuencia. | Backend / Dominio | T-02 | CA-01, CA-04, CA-05 | Pendiente |
 | T-04 | Controlador REST `ReasignacionController` con `@PreAuthorize` y Bean Validation. | Backend / API | T-03 | CA-02, CA-06, CA-07 | Pendiente |
 | T-05 | Pruebas de integración de backend con WireMock y Testcontainers. | Calidad / Backend | T-04 | CA-01 a CA-07 | Pendiente |
-| T-06 | Modal React `ModalReasignacionDespacho` con exclusión de chofer actual y campo obligatorio de motivo. | Frontend / UI | CR-02, CR-11, CR-12, CR-20 | CUI-01 a CUI-04 | Pendiente |
-| T-07 | Conexión con React Query y recarga reactiva de rutas en la interfaz. | Integración UI | T-04, T-06 | CUI-05 | Pendiente |
+| T-06 | Modal React `ModalReasignacion` con exclusión de chofer actual y campo obligatorio de motivo. | Frontend / UI | CR-02, CR-11, CR-12, CR-20 | CUI-01 a CUI-04 | Implementado localmente y verificado con API simulada; EV-04 |
+| T-07 | Conexión con el cliente API y recarga reactiva de rutas en la interfaz. | Integración UI | T-04, T-06 | CUI-05 | Verificada con API simulada, sin caché de rutas; nube pendiente, EV-04 |
 
 ## 2. Detalle de tareas
 
@@ -25,7 +25,7 @@
 - Comprobación: contrato revisado.
 
 ### T-02. Transferencia de capacidad
-- Alcance: llamadas coordinadas a Operación: reservar en chofer destino y liberar en chofer origen.
+- Alcance: transferencia local atómica de Operación §5.5 y recuperación durable hacia adelante de Gestión. No reemplazarla por dos llamadas independientes ni por recreación compensatoria del origen.
 - Comprobación: tests con WireMock simulando escenarios de sobrecarga en el nuevo chofer (422).
 
 ### T-03. Caso de uso
