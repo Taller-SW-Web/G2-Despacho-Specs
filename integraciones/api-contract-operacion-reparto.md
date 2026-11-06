@@ -26,6 +26,10 @@ Todos los recursos requieren un JWT humano con `tipo=acceso`. En las rutas `/rep
 | `GET` | `/api/v1/repartidor/jornada/resumen` | Consultar el resumen propio |
 | `GET` | `/api/v1/repartidor/motivos-fallo` | Consultar los motivos seleccionables en campo |
 | `POST` | `/api/v1/evidencias/{idEvidencia}/acceso` | Obtener URL firmada de lectura |
+| `GET` | `/api/v1/repartidor/recojos/{idRecojo}` | Consultar un recojo propio (propuesta, §3.7) |
+| `POST` | `/api/v1/repartidor/recojos/{idRecojo}/inicio-traslado` | Cambiar `ASIGNADO` a `EN_CAMINO` (propuesta, §3.7) |
+| `POST` | `/api/v1/repartidor/recojos/{idRecojo}/recogido` | Registrar `RECOGIDO` (propuesta, §3.7) |
+| `POST` | `/api/v1/repartidor/recojos/{idRecojo}/fallo` | Registrar `FALLIDO` (propuesta, §3.7) |
 
 Los comandos que cambian estado requieren `Idempotency-Key` UUID v4. La misma clave con el mismo contenido devuelve el resultado original; con otra operación o contenido responde `409` con `DESP_ERROR_CLAVE_REUTILIZADA`. Las consultas no requieren clave. La clave pertenece al `sub` autenticado; un rechazo definitivo (`4xx`) la libera, de modo que repetirla vuelve a validar y obtiene el mismo rechazo, mientras que un `503` la conserva para reintentar sin duplicar la transición.
 
@@ -138,6 +142,8 @@ Los identificadores `idDespacho` e `idEvidencia` de esta operación son UUID. La
 
 La app del repartidor reduce la foto antes de solicitar la autorización (lado mayor 1600 px, JPEG con calidad de 0,8 a 0,5 hasta quedar bajo 2 MiB) y la sube con `PUT` a `urlCarga` con su `Content-Type`. Re-codificar la imagen descarta los metadatos EXIF, incluida la ubicación. Esta decisión pertenece al cliente; el backend sigue sin comprimir y solo valida.
 
+Para un recojo (propuesta, §3.7), el cuerpo envía `idRecojo` en lugar de `idDespacho` y `tipo` admite `RECOJO` o `FALLO_RECOJO`; exige el recojo propio en `EN_CAMINO` dentro de la jornada activa. La verificación del párrafo siguiente se aplica igual.
+
 Antes de asociar una evidencia a una entrega o un fallo, Operación comprueba que pertenezca al mismo despacho, `sub` y tipo (`ENTREGA` o `FALLO`), que siga `AUTORIZADA` o `CARGADA`, y que el objeto exista en el bucket con un tipo y tamaño permitidos e igual al tipo autorizado (ES-F03-05 RN-03). Si el objeto aún no existe responde `409` `DESP_ERROR_EVIDENCIA_NO_CARGADA` sin cambiar el estado; si no corresponde o incumple la política, `400` `DESP_ERROR_EVIDENCIA_INVALIDA`; si el almacenamiento no responde, `503` `DESP_ERROR_EVIDENCIA_NO_DISPONIBLE`. Tras la transición aceptada, la evidencia queda `ASOCIADA`.
 
 ### 3.3. Registrar entrega
@@ -206,6 +212,51 @@ El almacenamiento deniega accesos sin firma válida y enlaces vencidos. Un fallo
 `POST /api/v1/repartidor/jornada/cierre` con `Idempotency-Key` y cuerpo `{ "idJornada": "<UUID>" }`. La jornada debe pertenecer al perfil del `sub` (`403` en otro caso).
 
 Cada despacho `ASIGNADO` o `EN_CAMINO` se resuelve primero en Gestión como `FALLIDO` con motivo `NO_INTENTADO`, sin fotografía ni incremento del contador, con origen manual y el repartidor como ejecutor (ES-F03-07). Cada solicitud usa una clave derivada de forma estable de la clave del cierre y del despacho, de modo que un reintento no duplica transiciones. Después se cierra la jornada como en §4.2.1 y responde `200` con el recurso Jornada. Si algún despacho no pudo resolverse responde `503` y la jornada sigue abierta: se reintenta con la misma clave. Una jornada ya cerrada devuelve su estado sin cambios. El corte automático de fin de turno sigue pendiente de implementación.
+
+Propuesta: el cierre también resuelve los recojos `ASIGNADO` o `EN_CAMINO` como `FALLIDO` con `NO_INTENTADO` (§3.7).
+
+### 3.7. Recojo de una devolución
+
+**Estado:** propuesta pendiente de revisión. Definición funcional: [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
+
+Los comandos siguen el procedimiento y los errores de §3.1.1, y se coordinan con [Gestión §6.3](./api-contract-gestion-despachos.md#63-operación-solicita-una-transición-de-recojo). Un recojo ajeno, inexistente o de otra jornada responde `404` con `DESP_ERROR_RECOJO_NO_ENCONTRADO`.
+
+`GET /api/v1/repartidor/mi-ruta` añade `recojos`, y `secuenciaRuta` es común con `despachos`:
+
+```json
+{
+  "recojos": [{
+    "idRecojo": "2b6f7a10-5c1e-4a8e-9d34-7f2c1b0e6a55",
+    "idDespacho": "854e7b68-394e-4e5f-9ccf-5350d7d4e3e8",
+    "codigoRastreoInterno": "TRK-001",
+    "estado": "ASIGNADO",
+    "secuenciaRuta": 2,
+    "fechaProgramada": "2026-11-10",
+    "numeroIntentos": 0,
+    "destinatario": "Ana Mendoza",
+    "direccion": "Av. Ejemplo 123",
+    "distrito": "Centro",
+    "lineas": [{ "sku": "ZAP-RUN-42", "cantidad": 1 }],
+    "motivoFallo": null,
+    "hitos": {
+      "asignadoEn": "2026-11-10T13:12:00Z",
+      "enCaminoEn": null,
+      "recogidoEn": null,
+      "fallidoEn": null
+    }
+  }]
+}
+```
+
+`GET /api/v1/repartidor/recojos/{idRecojo}` devuelve los mismos campos y añade `telefono` y `referencia`. Nombre, dirección, teléfono y referencia solo se incluyen en `ASIGNADO` y `EN_CAMINO`; en otros estados son `null`.
+
+| Comando | Cuerpo | Origen | Respuesta `200` |
+|---|---|---|---|
+| `inicio-traslado` | Sin cuerpo | `ASIGNADO` | Detalle en `EN_CAMINO` |
+| `recogido` | `idEvidencia` obligatorio; `comentario` opcional (máx. 200) | `EN_CAMINO` | Detalle en `RECOGIDO` |
+| `fallo` | `motivo` e `idEvidencia` obligatorios; `comentario` opcional (máx. 200) | `EN_CAMINO` | Detalle en `FALLIDO` |
+
+`GET /api/v1/repartidor/motivos-fallo` admite `?ambito=RECOJO` para el formulario de no recojo. El resumen de jornada (§3.1) añade `recojosRealizados`, `recojosNoRealizados` y `productosPorEntregar`, que lista los recojos `RECOGIDO` con `idRecojo`, `codigoRastreoInterno` y `lineas`. La lectura de evidencia (§3.5) admite al repartidor propietario del recojo.
 
 
 ## 4. API de F-05 y F-06: perfiles, flota y jornadas
@@ -397,6 +448,8 @@ La repetición con la misma clave y contenido devuelve el resultado original per
 }
 ```
 
+Propuesta para recojos: la solicitud añade `idRecojo` opcional, con `idDespacho` del despacho original. Como un despacho solo tiene un recojo activo, se conserva la regla de una reserva activa.
+
 Una capacidad insuficiente responde `422` con `DESP_ERROR_CAPACIDAD_EXCEDIDA`. Si otra operación intenta reservar un despacho cuya reserva anterior sigue activa, responde `409` con `DESP_ERROR_RESERVA_ANTERIOR_ACTIVA`, sin crear otra reserva ni reutilizarla como éxito de una asignación nueva. Una repetición reconocida por su clave se resuelve antes de esa comprobación. La cancelación, reasignación, entrega o recepción debe liberar o actualizar su reserva de manera idempotente; una reserva liberada no se reactiva para una salida nueva.
 
 ### 5.2. Gestión libera una reserva en Operación
@@ -414,7 +467,7 @@ Autorización: JWT de servicio con `sub=modulo-despacho` y audiencia `api-despac
 }
 ```
 
-Los motivos iniciales son `ENTREGA`, `CANCELACION`, `RECEPCION_EN_CENTRO`, `REASIGNACION` y `COMPENSACION`. Con `RECEPCION_EN_CENTRO`, Gestión invoca esta operación únicamente después de persistir el retorno físico y su solicitud durable conforme a [Gestión §5.2.1](./api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03).
+Los motivos iniciales son `ENTREGA`, `CANCELACION`, `RECEPCION_EN_CENTRO`, `REASIGNACION` y `COMPENSACION`. Se propone `RECOJO_NO_REALIZADO` para un recojo `FALLIDO`. Con `RECEPCION_EN_CENTRO`, Gestión invoca esta operación únicamente después de persistir el retorno físico y su solicitud durable conforme a [Gestión §5.2.1](./api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03).
 
 - Validar credencial técnica y existencia de `idReserva`; comprobar que su despacho coincide con `idDespacho`. No buscar ni sustituir otra reserva si la referencia no coincide.
 - Si está `ACTIVA`, marcarla `LIBERADA` en una transacción local con motivo y fecha del servidor; peso, volumen y paquetes se obtienen de esa reserva. Si ya está liberada, devolverla sin alterar fecha, motivo ni ocupación por segunda vez.
@@ -514,6 +567,12 @@ Precisión de la operación ya presente en `ControladorCapacidadInterna`/`Gestor
 - **Respuesta `200`:** `idReservaOrigen`, `idDespacho`, `idNuevaReserva`, `idNuevaJornada`, `estado=TRANSFERIDA`, `capacidadRemanente` (forma de §5.1) y `transferidaEn` UTC. La nueva reserva es distinta de la original.
 - **Idempotencia:** la misma clave/cuerpo recupera la primera respuesta durable, aun si después cambian las reservas; otra solicitud con esa clave responde `409 DESP_ERROR_CLAVE_REUTILIZADA`. Gestión mantiene su intención original si pierde la respuesta y recupera hacia adelante; no libera la nueva reserva para recrear la anterior ante un fallo local.
 - **Errores:** `400` por clave/formato/destino iguales al origen; `404` por recurso inexistente; `409 DESP_ERROR_RESERVA_NO_COINCIDE` o `DESP_ERROR_REPARTIDOR_NO_HABILITADO`; `422 DESP_ERROR_CAPACIDAD_EXCEDIDA`; `503` ante indisponibilidad y `401/403` comunes. Ningún rechazo definitivo confirma una transferencia parcial.
+
+### 5.6. Gestión comunica el estado de un recojo
+
+**Estado:** propuesta pendiente de revisión.
+
+`POST /internal/v1/proyecciones/recojos/{idRecojo}`, con la autorización, idempotencia por versión y respuestas de §5.3. El cuerpo incluye `idRecojo`, `idDespacho`, `codigoRastreoInterno`, `estado`, `idJornada`, `idReserva`, `secuenciaRuta`, `destinatario`, `destino`, `lineas`, `fechaProgramada`, `numeroIntentos`, `motivoFallo`, `hitos`, `version` y `actualizadoEn`.
 
 ## 6. APIs de Gestión e integraciones externas consumidas
 

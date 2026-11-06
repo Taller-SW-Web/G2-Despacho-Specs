@@ -657,6 +657,52 @@ Cada microservicio tiene su propia tabla. Restricción única: `(actor_tipo, act
 
 Idempotencia significa que repetir una solicitud porque se perdió la respuesta no duplica el efecto. Por ejemplo, dos peticiones iguales de “Entregado” producen un solo intento y una sola transición. `Idempotency-Key` es obligatorio para la creación y la cancelación solicitadas por Ventas; los demás comandos solo exigen el encabezado cuando su contrato lo declara. En todos los casos se mantienen además las protecciones de negocio: `id_pedido` único, una reserva vigente por despacho y versiones de proyección crecientes.
 
+### 3.6. Recojos de devoluciones
+
+**Estado:** propuesta pendiente de revisión; no existe migración. Definición funcional: [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
+
+#### `recojos` (Gestión de Despachos; escriben F-02, F-03 y F-04)
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | `UUID` | PK | Identificador (`idRecojo`). |
+| `despacho_id` | `UUID` | FK → `despachos.id`, NOT NULL | Despacho original, que permanece `ENTREGADO`. |
+| `estado` | `TEXT` | NOT NULL, CHECK (ver §4) | Estado actual. |
+| `contacto_nombre`, `contacto_telefono` | `TEXT` | NOT NULL | Datos de contacto en el domicilio. |
+| `direccion`, `referencia`, `distrito`, `codigo_postal` | `TEXT` | `direccion` y `distrito` NOT NULL | Domicilio del recojo. |
+| `zona_id` | `UUID` | FK → `zonas.id`, NOT NULL | Zona resuelta. |
+| `lineas` | `JSONB` | NOT NULL | SKU y cantidades que se recogen. |
+| `motivo_devolucion` | `TEXT` | NULL | Motivo informado por Ventas. |
+| `peso_kg`, `volumen_m3` | `NUMERIC` | NOT NULL, CHECK (> 0) | Carga calculada con los datos de Productos. |
+| `fecha_programada` | `DATE` | NOT NULL | Fecha del recojo. |
+| `repartidor_id_externo`, `asignacion_diaria_id_externa`, `reserva_capacidad_id_externa` | `UUID` | NULL | Asignación vigente en Operación. |
+| `secuencia_ruta` | `INTEGER` | NULL, CHECK (> 0) | Posición en la ruta. |
+| `numero_intentos` | `INTEGER` | NOT NULL, DEFAULT 0 | Intentos reales del recojo. |
+| `motivo_codigo` | `TEXT` | FK → `motivos_fallo.codigo`, NULL | Último motivo de fallo. |
+| `evidencia_id_externa` | `UUID` | NULL | Última evidencia asociada. |
+| `recibido_en_centro_en`, `recibido_por` | — | NULL | Recepción en el centro. |
+| `version` | `INTEGER` | NOT NULL, DEFAULT 1 | Bloqueo optimista. |
+| `creado_en`, `actualizado_en` | `TIMESTAMPTZ` | NOT NULL | Auditoría. |
+
+Un índice único parcial sobre `despacho_id` garantiza un solo recojo activo por despacho; excluye los estados finales.
+
+#### `historial_estados_recojo` (Gestión de Despachos)
+
+Tabla de solo inserción, con las columnas de `historial_estados_despacho` y `recojo_id` en lugar de `despacho_id`. Se escribe en la misma transacción que el cambio de estado.
+
+#### `proyecciones_recojo` (Operación de Reparto y Flota)
+
+Copia de `proyecciones_despacho` para la ruta, con `recojo_id_externo` como PK, `despacho_id_externo`, `lineas` y los mismos campos de jornada, reserva, secuencia, estado, contacto, destino y versión.
+
+#### Cambios en tablas existentes
+
+| Tabla | Cambio |
+|---|---|
+| `motivos_fallo` | Añade `ambito` (`ENTREGA`, `RECOJO`, `AMBOS`) y los dos motivos propios del recojo. |
+| `evidencias` | Añade `recojo_id_externo` NULL, amplía `tipo` a `VARCHAR(15)` y admite `RECOJO` y `FALLO_RECOJO`; `despacho_id_externo` guarda el despacho original. |
+| `reservas_capacidad` | Añade `recojo_id_externo` NULL y admite `motivo_liberacion` `RECOJO_NO_REALIZADO`; conserva una sola reserva activa por despacho. |
+| `eventos_salientes` | Añade `recojo_id` NULL, FK → `recojos.id`; `despacho_id` guarda el despacho original. |
+
 ---
 
 ## 4. Estados y valores permitidos
@@ -664,6 +710,7 @@ Idempotencia significa que repetir una solicitud porque se perdió la respuesta 
 | Columna | Valores |
 |---|---|
 | `despachos.estado` | `PENDIENTE_ASIGNACION`, `ASIGNADO`, `EN_CAMINO`, `ENTREGADO`, `FALLIDO`, `DEVUELTO_A_ORIGEN`, `CANCELADO` |
+| `recojos.estado` (propuesta) | `PENDIENTE_ASIGNACION`, `ASIGNADO`, `EN_CAMINO`, `RECOGIDO`, `FALLIDO`, `RECIBIDO_EN_CENTRO`, `CERRADO_SIN_RECOJO`, `CANCELADO` |
 | `zonas.estado` | `ACTIVO`, `INACTIVO` |
 | `cotizaciones.estado` | `vigente` como valor físico inicial del DDL comunicado; los demás valores y transiciones no están habilitados por este alcance |
 | `repartidores.estado_registro` | `ACTIVO`, `INACTIVO` |

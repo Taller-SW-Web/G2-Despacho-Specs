@@ -122,6 +122,25 @@ Precisión de transporte contrastada con `ControladorRutas` y `RutasHttpTests`; 
 - Motivo/formato/destino iguales al origen inválidos: `400`; estado incompatible o destino no habilitado: `409`; carga excedida: `422`; indisponibilidad/resultado incierto: `503`. Aplican `401/403` comunes. Un rechazo definitivo exige revisar datos actuales antes de preparar un comando nuevo.
 - La transferencia técnica ya existente se define únicamente en [Operación §5.5](./api-contract-operacion-reparto.md#55-gestión-transfiere-una-reserva-en-operación). No se sustituye por reservar/liberar de forma independiente ni por una compensación que pueda recrear la reserva anterior. La decisión pendiente sobre identidad de servicio permanece separada y no se cambia aquí.
 
+### 3.3. Recojos de devoluciones
+
+**Estado:** propuesta pendiente de revisión. Definición funcional: [F-02 RF-10](../funcionalidades/F-02-ProgramacionAsignacionDespachos.md#rf-10-asignación-de-recojos), [F-04 RF-08](../funcionalidades/F-04-GestionEntregasFallidas.md#rf-08-recepción-y-resolución-de-recojos) y [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md). La solicitud de Ventas está en el [contrato externo §7.4](./api-contract.md#74-solicitar-y-cancelar-el-recojo-de-una-devolución).
+
+Todas las rutas requieren rol `GESTOR_DESPACHO`. Los comandos requieren `Idempotency-Key` UUID v4 e `If-Match` con la versión del recojo.
+
+| Método | Ruta | Cuerpo | Origen admitido | Resultado |
+|---|---|---|---|---|
+| `GET` | `/api/v1/recojos?estado=&pagina=&tamanio=` | — | — | Lista paginada |
+| `GET` | `/api/v1/recojos/{idRecojo}` | — | — | Detalle, evidencia e historial |
+| `POST` | `/api/v1/despachos/{idDespacho}/recojos/simulacion` | `lineas` | Despacho simulado `ENTREGADO` | `PENDIENTE_ASIGNACION`, sin eventos |
+| `POST` | `/api/v1/recojos/{idRecojo}/asignacion` | `idRepartidor`, `idJornada` | `PENDIENTE_ASIGNACION` | `ASIGNADO` y reserva |
+| `POST` | `/api/v1/recojos/{idRecojo}/reasignacion` | Igual que §3.2 | `ASIGNADO` | `ASIGNADO` con otro repartidor |
+| `POST` | `/api/v1/recojos/{idRecojo}/recepcion` | `observacion` opcional | `RECOGIDO` | `RECIBIDO_EN_CENTRO` y liberación |
+| `POST` | `/api/v1/recojos/{idRecojo}/reprogramacion` | `fechaProgramada` futura, `observacion` opcional | `FALLIDO` | `PENDIENTE_ASIGNACION` |
+| `POST` | `/api/v1/recojos/{idRecojo}/cierre` | `motivoCierre` obligatorio | `FALLIDO` | `CERRADO_SIN_RECOJO` |
+
+La cola de F-02 incluye los recojos en `PENDIENTE_ASIGNACION` con `tipo=RECOJO`. El `PUT` de secuencia de §3.2 acepta un arreglo `recojos` con la misma forma que `despachos`, porque ambos comparten numeración en la jornada. Un origen distinto responde `409 DESP_ERROR_ESTADO_INCOMPATIBLE`; una versión obsoleta, `409`. La capacidad y los demás errores de asignación siguen §3.2 y [Operación §5.1](./api-contract-operacion-reparto.md#51-gestión-consulta-y-reserva-capacidad-en-operación).
+
 ## 4. Catálogo único de motivos de fallo
 
 - **Método y ruta:** `GET /api/v1/catalogos/motivos-fallo`.
@@ -129,6 +148,7 @@ Precisión de transporte contrastada con `ControladorRutas` y `RutasHttpTests`; 
 - **Respuesta `200 OK`:** objeto con `motivos`, arreglo de objetos con `codigo`, `etiqueta`, `seleccionableEnCampo`, `consumeIntento` y `activo`. Los tres últimos campos son booleanos obligatorios. Orden por `codigo` ascendente. No recibe filtros ni paginación.
 - Devuelve el catálogo completo, incluidos motivos inactivos conservados para consultas históricas. F-03 ofrece para registrar únicamente los que tengan `activo=true` y `seleccionableEnCampo=true`; F-04 admite todos los códigos como filtro. La validación del backend aplica la misma restricción al registrar un fallo.
 - `NO_INTENTADO` tiene `seleccionableEnCampo=false` y `consumeIntento=false`; lo genera exclusivamente el cierre de jornada. No se mantiene un segundo catálogo para F-04.
+- Propuesta para recojos: cada motivo añade `ambito` (`ENTREGA`, `RECOJO` o `AMBOS`). Un despacho solo admite `ENTREGA` o `AMBOS`, y un recojo solo `RECOJO` o `AMBOS`. Los motivos actuales son `ENTREGA`, excepto `CLIENTE_AUSENTE`, `DIRECCION_NO_UBICADA`, `DATOS_DE_CONTACTO_ERRONEOS`, `ZONA_INACCESIBLE` y `NO_INTENTADO`, que son `AMBOS`. `CLIENTE_NO_ENTREGA_PRODUCTO` y `PRODUCTO_NO_CORRESPONDE` son `RECOJO`.
 - Token no aceptado: `401`; usuario sin autorización: `403`, conforme a Común §3.5. Una caída al consultar el catálogo muestra un error y permite reintentar; el frontend no fabrica motivos. Referencia: [Convenciones e integración externa](./api-contract.md#35-errores).
 - Si la lectura local no está disponible, responde `503` con `DESP_ERROR_CONSULTA_NO_DISPONIBLE` y el formato compartido, sin motivos parciales ni detalles de infraestructura.
 
@@ -596,6 +616,34 @@ Al aceptar un fallo, Gestión captura también la reserva de capacidad que ya co
 ### 6.2. Operación consulta el catálogo de motivos
 
 `GET /internal/v1/catalogos/motivos-fallo`, con JWT de servicio `sub=modulo-despacho` y audiencia `api-despacho`; no se exigen scopes internos. Devuelve exactamente la respuesta de §4. Operación la expone al repartidor filtrada por `activo` y `seleccionableEnCampo`, después de validar su perfil de campo, porque Gestión no conoce los perfiles locales de Operación.
+
+### 6.3. Operación solicita una transición de recojo
+
+**Estado:** propuesta pendiente de revisión.
+
+`POST /internal/v1/recojos/{idRecojo}/transiciones`, con la misma autorización e idempotencia de §6.1 y este cuerpo:
+
+```json
+{
+  "estadoDestino": "RECOGIDO",
+  "idRepartidor": "7d0f4a52-1b39-4c0a-9a0e-2f5e1b6c8d11",
+  "idJornada": "d42d8d4b-1a80-481f-9f35-9ff0c6c935f1",
+  "idEvidencia": "f7d6a0fc-6546-4a57-a2c2-a944f8d2f98b",
+  "motivo": null,
+  "comentario": null,
+  "ejecutor": "22222222-2222-4222-8222-222222222222",
+  "origen": "MANUAL"
+}
+```
+
+| `estadoDestino` | Origen admitido | Datos | Efecto |
+|---|---|---|---|
+| `EN_CAMINO` | `ASIGNADO` | Sin evidencia ni motivo | No cambia el contador. |
+| `RECOGIDO` | `EN_CAMINO` | `idEvidencia` obligatorio; `comentario` opcional (máx. 200) | Registra `RECOJO_RECOGIDO`; conserva la reserva. |
+| `FALLIDO` | `EN_CAMINO` | `motivo` activo, seleccionable y de ámbito `RECOJO` o `AMBOS`; `idEvidencia` obligatorio; `comentario` opcional | Incrementa el contador del recojo, registra `RECOJO_FALLIDO` y solicita liberar la reserva. |
+| `FALLIDO` con `motivo=NO_INTENTADO` | `ASIGNADO` o `EN_CAMINO` | Sin evidencia | Cierre de jornada: no incrementa el contador; registra `RECOJO_FALLIDO` y solicita liberar la reserva. |
+
+Los errores siguen §6.1. Responde `200` con `idRecojo`, `idDespacho`, `estadoAnterior`, `estado`, `version`, `numeroIntentos`, `motivoFallo`, `hitos` y `registradoEn`. Estado, contador, historial, evento y copia hacia Operación ([§5.6](./api-contract-operacion-reparto.md#56-gestión-comunica-el-estado-de-un-recojo)) se registran en la misma transacción. El estado del despacho original no cambia.
 
 ## 7. APIs de Operación consumidas por Gestión
 

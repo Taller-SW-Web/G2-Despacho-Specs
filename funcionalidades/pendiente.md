@@ -37,6 +37,7 @@ Este documento centraliza las posibles ampliaciones y los acuerdos que todavía 
 - Acceso humano: código de ambas apps y doble local preparados contra el kit G7 para login, MFA, renovación y logout ([contrato externo §8.6](../integraciones/api-contract.md#86-acceso-humano-de-ambas-aplicaciones)). Pendientes ejecuciones locales, revisión visual, confirmación de revisión desplegada, cuentas activadas, envío OTP y prueba con G7. No se acredita integración por la existencia del código.
 - Corte automático de fin de turno (ES-F03-07 CA-03) y bandeja de regularización de jornadas anteriores.
 - Operación sin conexión: la app avisa y exige reintento explícito (RN-08); no guarda operaciones para enviarlas después.
+- Recojo de devoluciones: acuerdo con Ventas y Postventa, scopes con Seguridad y decisiones DT-01 a DT-05 de [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/plan.md#7-decisiones-y-pendientes).
 
 ### Trabajo futuro
 
@@ -49,10 +50,9 @@ La aplicación no implementará cálculo de rutas ni navegación propia. El repa
 ### Decisión pendiente de integración
 
 - **Envío de reemplazo sin recojo:** Ventas y Postventa autoriza el reemplazo y solicita una nueva entrega. El recorrido de salida podría reutilizar F-02 y F-03, pero todavía debe acordarse cómo identificar su origen posventa.
-- **Recojo de una devolución:** Despacho recoge en el domicilio un producto ya entregado y lo retorna al centro. Requeriría solicitud autorizada, asignación, evidencia de recojo y confirmación de recepción.
 - **Cambio combinado:** el repartidor entrega el reemplazo y recoge el producto anterior en una misma visita. Requeriría reglas para completar o rechazar cada parte de la operación y registrar ambas evidencias.
 
-Los tres escenarios permanecen fuera del alcance actual hasta que Ventas y Postventa confirme cuáles necesita y se acuerden sus contratos de integración.
+Ambos escenarios permanecen fuera del alcance actual hasta que Ventas y Postventa confirme cuáles necesita y se acuerden sus contratos de integración. El recojo de una devolución ya forma parte del alcance ([overview §12](../overview.md#12-devolución-del-producto)).
 
 ## F-05: Flota y capacidad
 

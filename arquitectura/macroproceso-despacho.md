@@ -93,7 +93,25 @@ Para mantener la vista legible, el diagrama conecta el bloque de comunicación c
 - Un reintento regresa a asignación y recorre nuevamente el proceso de reparto.
 - Los estados finales se notifican a Ventas, que continúa cualquier tratamiento comercial, reembolso o comunicación con el cliente.
 
-## 5. Referencias
+## 5. Devolución del producto
+
+Después de `ENTREGADO`, el cliente puede devolver el producto. Es un proceso aparte, que no cambia el estado del despacho:
+
+```mermaid
+flowchart LR
+    VEN["Ventas aprueba la devolución<br/>y solicita el recojo"] --> ASIG["F-02: el Gestor asigna<br/>el recojo"]
+    ASIG --> CAMPO["F-03: el repartidor va<br/>al domicilio"]
+    CAMPO -->|Recoge con foto| CENTRO["F-04: el centro confirma<br/>la recepción"]
+    CAMPO -->|No recoge: motivo y foto| DEC{"F-04: el Gestor decide"}
+    DEC -->|Reprograma| ASIG
+    DEC -->|Cierra| FIN["Cerrado sin recojo"]
+    CENTRO --> AVISO["Despacho avisa a Ventas, que decide<br/>el reembolso o el cambio"]
+    FIN --> AVISO
+```
+
+Detalle en [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
+
+## 6. Referencias
 
 - [Glosario de dominio](./glosario-dominio.md).
 - [Diagrama de estados del despacho](./diagrama-estados-despacho.md).

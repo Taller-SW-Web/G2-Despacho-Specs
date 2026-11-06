@@ -13,6 +13,8 @@ El repartidor recoge en el centro de despacho los paquetes sellados que F-02 le 
 
 Esta funcionalidad es el origen de las transiciones `EN_CAMINO`, `ENTREGADO` y `FALLIDO`. F-03 no crea ni asigna despachos: ejecuta y registra el resultado de los despachos que F-02 asigna al repartidor, en el orden que F-02 define. Los despachos fallidos que genera son resueltos por F-04, y la ocupación que liberan al cerrarse es recalculada por F-05 a partir del estado de los despachos.
 
+El repartidor también recoge en el domicilio los productos que el cliente devuelve y los lleva al centro de despacho (RF-12).
+
 ## 2. Propósito
 
 Permitir al repartidor consultar los despachos de su jornada, actualizar su estado desde el celular, registrar evidencia fotográfica obligatoria del resultado y cerrar su jornada sin dejar despachos en `ASIGNADO` ni `EN_CAMINO`, con trazabilidad de quién ejecutó cada transición y cuándo.
@@ -33,6 +35,7 @@ Esta funcionalidad incluye:
 - Resumen de jornada del propio repartidor.
 - Catálogo único de motivos de fallo para el módulo.
 - Idempotencia en las operaciones de cambio de estado.
+- Recojo de devoluciones en el domicilio, con evidencia fotográfica.
 
 ## 4. Precondiciones, dependencias y resultados
 
@@ -298,6 +301,40 @@ El sistema DEBE registrar cada transición ejecutada en campo en el historial co
 - **CUANDO** se persiste.
 - **ENTONCES** el historial guarda despacho, ejecutor, origen manual o automático, marca temporal del servidor, estado anterior, estado nuevo, motivo y observaciones.
 
+### RF-12. Recojo de una devolución
+
+El sistema DEBE permitir al repartidor recoger en el domicilio un producto devuelto y registrar el resultado. El recojo es una operación aparte y el despacho original permanece en `ENTREGADO`. Detalle en [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
+
+#### CA-32. Recojo en la ruta
+
+- **DADO** un recojo asignado al repartidor en su jornada activa.
+- **CUANDO** abre "Mi Ruta".
+- **ENTONCES** ve el recojo en su posición de la secuencia, identificado como "Recojo".
+
+#### CA-33. Recojo exitoso con evidencia
+
+- **DADO** un recojo `EN_CAMINO`.
+- **CUANDO** el repartidor adjunta la fotografía y pulsa "Confirmar recojo".
+- **ENTONCES** el recojo pasa a `RECOGIDO`, el despacho original no cambia y la interfaz recuerda llevar el producto al centro.
+
+#### CA-34. Recojo no realizado
+
+- **DADO** un recojo `EN_CAMINO` que no pudo realizarse.
+- **CUANDO** el repartidor selecciona un motivo, adjunta la fotografía y confirma.
+- **ENTONCES** el recojo pasa a `FALLIDO`, se libera su capacidad y queda disponible para que el Gestor decida en F-04.
+
+#### CA-35. Recojo pendiente al cerrar la jornada
+
+- **DADO** un recojo en `ASIGNADO` o `EN_CAMINO` al cerrar la jornada.
+- **CUANDO** se confirma el cierre.
+- **ENTONCES** pasa a `FALLIDO` con motivo `NO_INTENTADO`, sin fotografía ni consumo de intento.
+
+#### CA-36. Producto por entregar en el centro
+
+- **DADO** un recojo `RECOGIDO` sin recepción confirmada.
+- **CUANDO** el repartidor consulta el resumen de jornada.
+- **ENTONCES** el producto aparece como pendiente de entregar en el centro.
+
 ## 6. Frontend
 
 La funcionalidad tendrá una experiencia web mobile-first compuesta por:
@@ -312,6 +349,7 @@ La funcionalidad tendrá una experiencia web mobile-first compuesta por:
 | Formulario de incidencia | Motivo obligatorio, fotografía y comentario opcional. |
 | Cierre de jornada | Advertir cuántos despachos quedarán como no intentados antes de confirmar. |
 | Resumen de jornada | Consolidado del día. |
+| Recojo de devolución | Recojo en la ruta, detalle y formularios de recojo y no recojo con fotografía. |
 | Retroalimentación | Éxito, validaciones, conflictos, ausencia de red y errores de evidencia. |
 
 La interfaz debe impedir acciones conocidas como inválidas, pero las reglas siempre se validan en el backend.
@@ -330,6 +368,7 @@ La interfaz debe impedir acciones conocidas como inválidas, pero las reglas sie
 | Gestión de evidencia | Aplicar las validaciones de carga acordadas y controlar la lectura de objetos privados mediante el contrato de Operación, §3.4. |
 | Control de idempotencia | Registrar la clave de operación y devolver el resultado original ante reintentos. |
 | Catálogo de motivos | Exponer los motivos tipificados. |
+| Caso de uso de recojo | Validar evidencia y motivo, y solicitar a Gestión el cambio de estado del recojo. |
 
 Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se definen en `integraciones/api-contract-operacion-reparto.md`.
 
@@ -347,7 +386,8 @@ Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se 
 
 ## 9. Fuera de alcance
 
-- **Resolución de incidencias:** confirmar la recepción del paquete en el centro, reprogramar o cerrar como `DEVUELTO_A_ORIGEN` corresponde a F-04.
+- **Resolución de incidencias:** confirmar la recepción del paquete en el centro, reprogramar o cerrar como `DEVUELTO_A_ORIGEN` corresponde a F-04, igual que la recepción y resolución de recojos.
+- **Aprobación de devoluciones, reembolsos y cambios:** corresponden a Ventas y Postventa.
 - **Asignación, reasignación, secuencia y cancelación:** corresponden a F-02.
 - **Repartidores, furgonetas, jornadas y cálculo de ocupación:** corresponden a F-05.
 - **Publicación de eventos a otros módulos:** corresponde al requisito transversal RT-03 del overview.
@@ -374,19 +414,21 @@ La decisión técnica sobre fotografías y sus posibles ampliaciones están cent
 | CA-27 a CA-29 | Consultar evidencias con usuarios autorizados y no autorizados. | Integración de seguridad | Evidencia disponible solo para autorizados. |
 | CA-30 | Consultar el catálogo. | Integración | Motivos seleccionables sin `NO_INTENTADO`. |
 | CA-31 | Revisar el historial tras cada transición. | Integración con persistencia | Registro completo en el historial común. |
+| CA-32 a CA-36 | Recoger, no recoger y cerrar la jornada con recojos pendientes. | Integración y frontend | Estado y evidencia correctos, y despacho original sin cambios. |
 
-Además, se ejecutarán tres recorridos funcionales completos:
+Además, se ejecutarán cuatro recorridos funcionales completos:
 
 1. `ASIGNADO` → `EN_CAMINO` → entrega con evidencia → `ENTREGADO`.
 2. `ASIGNADO` → `EN_CAMINO` → incidencia con motivo y evidencia → `FALLIDO` con intento incrementado y visible para F-04.
 3. `ASIGNADO` → cierre de jornada → `FALLIDO` con motivo `NO_INTENTADO`, contador sin variación y repartidor `FUERA_DE_TURNO`.
+4. Recojo `ASIGNADO` → `EN_CAMINO` → recojo con evidencia → `RECOGIDO` → recepción en el centro por F-04.
 
 ## 11. Criterio de completitud
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-31` están implementados y cuentan con pruebas exitosas.
-- Los tres recorridos funcionales han sido verificados.
+- Los criterios `CA-01` a `CA-36` están implementados y cuentan con pruebas exitosas.
+- Los cuatro recorridos funcionales han sido verificados.
 - Ninguna transición fuera del Anexo A es aceptada.
 - El contador de intentos aumenta solo ante intentos reales y nunca por reintentos.
 - Ningún despacho queda en `ASIGNADO` ni `EN_CAMINO` tras el cierre o el corte automático.
@@ -403,7 +445,7 @@ La funcionalidad se considera completa cuando:
 | `EN_CAMINO` | `FALLIDO` | Incidencia con motivo y evidencia | Incrementa en uno |
 | `ASIGNADO` o `EN_CAMINO` | `FALLIDO` (`NO_INTENTADO`) | Cierre de jornada o corte automático | Sin efecto |
 
-Cualquier otra transición desde F-03 es rechazada con `409 Conflict`. La máquina de estados completa del módulo está definida en [Diagrama de estados del despacho](../arquitectura/diagrama-estados-despacho.md).
+Cualquier otra transición desde F-03 es rechazada con `409 Conflict`. La máquina de estados completa del módulo está definida en [Diagrama de estados del despacho](../arquitectura/diagrama-estados-despacho.md). El recojo tiene sus propios estados, en la [sección 7](../arquitectura/diagrama-estados-despacho.md#7-estados-del-recojo) de ese documento.
 
 ## Anexo B. Catálogo de motivos de fallo
 
@@ -417,9 +459,17 @@ Cualquier otra transición desde F-03 es rechazada con `409 Conflict`. La máqui
 | `PAQUETE_DANADO` | Paquete dañado antes de la entrega | Sí | Sí |
 | `NO_INTENTADO` | No intentado por fin de jornada | No | No |
 
+Motivos propios del recojo, además de `CLIENTE_AUSENTE`, `DIRECCION_NO_UBICADA`, `DATOS_DE_CONTACTO_ERRONEOS`, `ZONA_INACCESIBLE` y `NO_INTENTADO`, que también le aplican:
+
+| Código | Etiqueta | Seleccionable en campo | Consume intento |
+|---|---|---|---|
+| `CLIENTE_NO_ENTREGA_PRODUCTO` | Cliente no entrega el producto | Sí | Sí |
+| `PRODUCTO_NO_CORRESPONDE` | El producto no corresponde a la devolución | Sí | Sí |
+
 ## Anexo C. Acuerdos de integración pendientes con otros módulos
 
 | Nº | Módulo | Acuerdo pendiente |
 |---|---|---|
 | 1 | Seguridad y Usuarios | Confirmar que el JWT incluye el identificador de usuario y el rol `REPARTIDOR`. El identificador de repartidor se resuelve dentro del módulo mediante F-05. |
 | 2 | Ventas y Postventa | Confirmar que la solicitud de despacho incluye el teléfono del destinatario y la referencia de la dirección. |
+| 3 | Ventas y Postventa | Acordar la solicitud y cancelación del recojo y sus eventos ([contrato externo §7.4](../integraciones/api-contract.md#74-solicitar-y-cancelar-el-recojo-de-una-devolución)). |

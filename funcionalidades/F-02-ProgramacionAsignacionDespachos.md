@@ -32,6 +32,7 @@ Esta funcionalidad incluye:
 - Secuencia de ruta: posición automática al asignar y reordenamiento por el Gestor.
 - Reasignación de un despacho `ASIGNADO` a otro repartidor antes de iniciar su traslado.
 - Cancelación de despachos por anulación del pedido en Ventas y Postventa.
+- Recepción, cola y asignación de los recojos de devoluciones (RF-10).
 - Auditoría de recepciones, simulaciones, asignaciones, reordenamientos, reasignaciones y cancelaciones.
 
 ## 4. Precondiciones, dependencias y resultados
@@ -271,6 +272,28 @@ El sistema DEBE permitir al Gestor generar despachos simulados con datos válido
 - **CUANDO** solicita la generación de prueba mediante la interfaz o invoca `POST /api/v1/despachos/simulaciones`.
 - **ENTONCES** el sistema crea un despacho simulado en `PENDIENTE_ASIGNACION` con código operativo y de rastreo único (ej. `DSP-SIM-XXXXX`), asigna una zona activa de F-01 con datos físicos válidos y responde `201 Created` incorporándolo de inmediato a la cola con la etiqueta "Simulado".
 
+### RF-10. Asignación de recojos
+
+El sistema DEBE recibir los recojos de devoluciones y permitir al Gestor asignarlos a un repartidor con las mismas validaciones de jornada, zona y capacidad de un despacho. La ejecución en campo corresponde a [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
+
+#### CA-28. Recojo solicitado
+
+- **DADO** un despacho `ENTREGADO` sin otro recojo activo.
+- **CUANDO** Ventas y Postventa solicita el recojo, o el Gestor lo genera para un despacho simulado.
+- **ENTONCES** se crea el recojo en `PENDIENTE_ASIGNACION` y aparece en la cola con la etiqueta "Recojo".
+
+#### CA-29. Recojo no permitido
+
+- **DADO** un despacho que no está `ENTREGADO`, o que ya tiene un recojo activo.
+- **CUANDO** se solicita el recojo.
+- **ENTONCES** se responde `409 Conflict` sin crear otro.
+
+#### CA-30. Asignación del recojo
+
+- **DADO** un recojo en `PENDIENTE_ASIGNACION` y un repartidor con capacidad suficiente.
+- **CUANDO** el Gestor lo asigna.
+- **ENTONCES** el recojo pasa a `ASIGNADO`, se reserva la capacidad y aparece en la ruta de F-03 en la siguiente posición de la secuencia.
+
 ## 6. Frontend
 
 | Elemento | Responsabilidad |
@@ -339,6 +362,7 @@ Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendien
 | CA-15 y CA-16 | Reasignar un despacho `ASIGNADO` y otro `EN_CAMINO`. | Integración | Cambio de repartidor en el primer caso y `409` en el segundo. |
 | CA-17 a CA-19 | Cancelar despachos en cada estado. | Unitaria e integración | `CANCELADO`, `409` o anulación registrada según el estado. |
 | CA-20 | Generar un despacho de prueba simulado. | Integración y API | `201 Created` con datos válidos y presencia inmediata en cola. |
+| CA-28 a CA-30 | Solicitar recojos válidos y no permitidos, y asignarlos. | Integración y frontend | Recojo en cola, `409` y reserva creada. |
 
 Además, se ejecutarán tres recorridos funcionales completos:
 
@@ -350,7 +374,7 @@ Además, se ejecutarán tres recorridos funcionales completos:
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-27` están implementados y cuentan con pruebas automatizadas exitosas, con H-G2-01/02/03 y el cierre/revisión D-G2-01/02 enlazados.
+- Los criterios `CA-01` a `CA-30` están implementados y cuentan con pruebas automatizadas exitosas, con H-G2-01/02/03 y el cierre/revisión D-G2-01/02 enlazados.
 - Los tres recorridos funcionales han sido verificados de extremo a extremo.
 - No existe más de un despacho por pedido.
 - Ninguna asignación supera la capacidad en kg, m³ o paquetes informada por F-06.

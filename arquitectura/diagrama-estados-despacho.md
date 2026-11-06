@@ -87,3 +87,42 @@ Toda transición aceptada utiliza control de versión, registra historial y gene
 - No aumenta con `NO_INTENTADO`.
 - No cambia al confirmar la recepción ni al reprogramar.
 - El máximo inicial es dos y se mantiene configurable.
+
+## 7. Estados del recojo
+
+El recojo de una devolución tiene su propio ciclo de vida (propuesta pendiente de revisión). El despacho original permanece en `ENTREGADO`.
+
+```mermaid
+stateDiagram-v2
+    direction LR
+
+    [*] --> PENDIENTE_ASIGNACION: Solicitud de Ventas
+    PENDIENTE_ASIGNACION --> ASIGNADO: Gestor asigna
+    PENDIENTE_ASIGNACION --> CANCELADO: Ventas cancela
+    ASIGNADO --> CANCELADO: Ventas cancela
+    ASIGNADO --> EN_CAMINO: Repartidor sale
+    ASIGNADO --> FALLIDO: Cierre de jornada / NO_INTENTADO
+    EN_CAMINO --> RECOGIDO: Recojo con evidencia
+    EN_CAMINO --> FALLIDO: Motivo y evidencia
+    EN_CAMINO --> FALLIDO: Cierre de jornada / NO_INTENTADO
+    RECOGIDO --> RECIBIDO_EN_CENTRO: Gestor confirma recepción
+    FALLIDO --> PENDIENTE_ASIGNACION: Gestor reprograma
+    FALLIDO --> CERRADO_SIN_RECOJO: Gestor cierra
+
+    RECIBIDO_EN_CENTRO --> [*]
+    CERRADO_SIN_RECOJO --> [*]
+    CANCELADO --> [*]
+```
+
+| Estado | Significado | Ubicación del producto | Final |
+|---|---|---|---|
+| `PENDIENTE_ASIGNACION` | Espera repartidor. | Con el cliente. | No |
+| `ASIGNADO` | Tiene repartidor, jornada, reserva y secuencia. | Con el cliente. | No |
+| `EN_CAMINO` | El repartidor va al domicilio. | Con el cliente. | No |
+| `RECOGIDO` | El repartidor tiene el producto. | Con el repartidor. | No |
+| `FALLIDO` | No se pudo recoger. | Con el cliente. | No |
+| `RECIBIDO_EN_CENTRO` | El centro confirmó la llegada. | En el centro, a disposición de Ventas y Postventa. | Sí |
+| `CERRADO_SIN_RECOJO` | El Gestor cerró el recojo sin realizarlo. | Con el cliente. | Sí |
+| `CANCELADO` | Ventas canceló antes de que el repartidor saliera. | Con el cliente. | Sí |
+
+El contador de intentos del recojo aumenta solo al pasar de `EN_CAMINO` a `FALLIDO` por un intento real. Definición funcional: [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).

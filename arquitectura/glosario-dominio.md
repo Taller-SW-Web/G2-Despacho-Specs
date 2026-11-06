@@ -57,10 +57,11 @@ La tarifa base es una regla almacenada; la consulta de cobertura no devuelve un 
 | **Asignación de despacho** | Operación que reserva capacidad y vincula un despacho pendiente con un repartidor, una jornada y una posición de ruta. |
 | **Secuencia de ruta** | Orden operativo en el que el repartidor debe atender sus despachos. No constituye navegación GPS ni optimización automática. |
 | **Intento de entrega** | Visita real al destino que termina en entrega o fallo. Un cierre con `NO_INTENTADO` no consume un intento. |
-| **Evidencia** | Fotografía obligatoria asociada a una entrega o a un fallo con intento real. |
+| **Evidencia** | Fotografía obligatoria asociada a una entrega, un recojo o un fallo con intento real. |
 | **Recepción en centro** | Confirmación de que un paquete `FALLIDO` regresó físicamente. No cambia el estado, pero libera capacidad y habilita la reprogramación o el cierre. |
 | **Reprogramación** | Decisión que devuelve un despacho `FALLIDO` recibido en el centro a `PENDIENTE_ASIGNACION` con una nueva fecha programada. |
 | **Devolución a origen** | Cierre operativo en `DEVUELTO_A_ORIGEN`; el paquete queda en el centro a disposición de Ventas y Postventa. |
+| **Recojo de devolución** | Visita al domicilio para recoger un producto ya entregado que el cliente devuelve. Es una operación aparte, no reabre el despacho `ENTREGADO` y no es una devolución a origen. |
 
 ## 5. Integración y trazabilidad
 

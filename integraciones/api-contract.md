@@ -93,6 +93,8 @@ El valor de `iss` se obtiene del campo `issuer` publicado por `GET /api/v1/auth/
 | `seguimientos:leer` | Marketplace, Chatbot y Ventas | Consultar seguimiento por `idPedido` |
 | `despachos:crear` | Ventas | Crear un despacho para un pedido pagado, preparado y listo para entrega |
 | `despachos:cancelar` | Ventas | Solicitar cancelación por anulación del pedido |
+| `recojos:crear` | Ventas (propuesta §7.4) | Solicitar el recojo de una devolución aprobada |
+| `recojos:cancelar` | Ventas (propuesta §7.4) | Cancelar un recojo antes de que el repartidor salga |
 
 Estos scopes pertenecen a la API de Despacho: Despacho define su significado y Seguridad los registra y concede a cada `client_id`. En cambio, `usuarios:leer` y `direcciones:leer` pertenecen a la API de Seguridad y ya están concedidos a `modulo-despacho`. Para consultar datos físicos, Productos y Ofertas acordó el scope `productos:fisicos:leer`, perteneciente a `api-productos`, que deberá concederse al cliente técnico `modulo-despacho`.
 
@@ -192,6 +194,7 @@ Para cerrar la integración se deben probar, como mínimo, los casos sin token, 
 | Despacho | Productos y Ofertas | Consultar datos físicos por SKU | Token de `modulo-despacho` con `aud=api-productos` y scope `productos:fisicos:leer` | REST síncrono en lote |
 | Ventas y Postventa | Despacho | Crear despacho de pedido listo para entrega | Token de `modulo-ventas` con `aud=api-despacho` y scope `despachos:crear` | REST síncrono e idempotente |
 | Ventas y Postventa | Despacho | Cancelar por anulación | Token de `modulo-ventas` con `aud=api-despacho` y scope `despachos:cancelar` | REST síncrono e idempotente |
+| Ventas y Postventa | Despacho | Solicitar y cancelar el recojo de una devolución (propuesta) | Token de `modulo-ventas` con `aud=api-despacho` y scopes `recojos:crear` y `recojos:cancelar` | REST síncrono e idempotente |
 | Despacho | Ventas y Postventa | Informar cambios de estado | Token de `modulo-despacho` con `aud=api-ventas` y scope `ventas:pedidos:estado` | Webhook con outbox y reintentos |
 | Despacho | Seguridad y Usuarios | Obtener claves públicas | HTTPS | JWKS con caché |
 | Seguridad y Usuarios | Despacho | Notificar cambios de estado o roles de usuarios | Credenciales y permisos del broker pendientes de publicación | Eventos RabbitMQ previstos por Seguridad |
@@ -678,6 +681,76 @@ Despacho no envía una `guiaRemision`, no solicita reembolsos y no informa impor
 
 Si Ventas no responde con `2xx`, Despacho realiza hasta cinco reintentos con espera creciente. El mismo `idEvento` se conserva. Tras agotarlos, el evento queda como `ENVIO_FALLIDO` y puede reenviarse manualmente. Los despachos simulados no generan eventos externos.
 
+### 7.4. Solicitar y cancelar el recojo de una devolución
+
+**Estado:** propuesta de Despacho; pendiente de acuerdo con Ventas y Postventa y de concesión de scopes por Seguridad. Definición funcional: [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
+
+- **Solicitar:** `POST /api/v1/despachos/pedidos/{idPedido}/recojos`, con scope `recojos:crear`.
+- **Cancelar:** `POST /api/v1/despachos/pedidos/{idPedido}/recojos/{idRecojo}/cancelacion`, con scope `recojos:cancelar`.
+- **Autenticación:** token de servicio con `tipo=servicio`, `sub=modulo-ventas` y `aud=api-despacho`.
+- **Idempotencia:** `Idempotency-Key` UUID v4 obligatorio en ambas operaciones.
+
+```json
+{
+  "destinatario": {
+    "nombre": "Carlos Mendoza",
+    "telefono": "+51987654321"
+  },
+  "destino": {
+    "direccion": "Av. Javier Prado Este 2465",
+    "referencia": "Frente al parque",
+    "departamento": "Lima",
+    "provincia": "Lima",
+    "distrito": "San Borja",
+    "codigoPostal": "15036"
+  },
+  "lineas": [
+    {
+      "sku": "ZAP-RUN-42",
+      "cantidad": 1
+    }
+  ],
+  "motivo": "Talla incorrecta"
+}
+```
+
+La llamada declara que Ventas aprobó la devolución. `lineas` indica solo lo que se recoge y es obligatorio; una devolución parcial informa únicamente esos productos. Peso y volumen se calculan con Productos como en §7.1. `destinatario` y `destino` son opcionales: si se omiten, se copian del despacho. `motivo` es opcional, hasta 200 caracteres.
+
+Respuesta `201 Created`:
+
+```json
+{
+  "idRecojo": "2b6f7a10-5c1e-4a8e-9d34-7f2c1b0e6a55",
+  "idPedido": "PED-2026-00891",
+  "idDespacho": "DSP-100234",
+  "estado": "PENDIENTE_ASIGNACION",
+  "fechaProgramada": "2026-11-10",
+  "creadoEn": "2026-11-06T18:45:00Z"
+}
+```
+
+| HTTP | Código | Significado |
+|---|---|---|
+| `400` | `DESP_ERROR_CAMPOS_INVALIDOS` | Cuerpo o clave no válidos. |
+| `404` | `DESP_ERROR_DESPACHO_NO_ENCONTRADO` | El pedido no tiene despacho. |
+| `409` | `DESP_ERROR_DESPACHO_NO_ENTREGADO` | El despacho no está `ENTREGADO`. |
+| `409` | `DESP_ERROR_RECOJO_ACTIVO` | Ya existe un recojo activo para ese despacho. |
+| `422` | `DESP_ERROR_SIN_COBERTURA` | El domicilio no tiene cobertura. |
+| `503` | Común §3.5 | Productos no disponible; no se crea el recojo. |
+
+La cancelación se acepta en `PENDIENTE_ASIGNACION` y `ASIGNADO`, y libera la capacidad si había reserva. Desde otro estado responde `409 DESP_ERROR_ESTADO_INCOMPATIBLE`, salvo la repetición idempotente de un recojo ya cancelado. Responde `200` con `idRecojo`, `estado=CANCELADO` y `procesadoEn`.
+
+Despacho informa el resultado por el webhook de §7.3, con los mismos reintentos y deduplicación. `idDespacho` es el despacho original, y `estadoAnterior` y `estadoNuevo` son estados del recojo:
+
+| Estado nuevo del recojo | Tipo de evento | Datos adicionales | Efecto propuesto en Ventas |
+|---|---|---|---|
+| `RECOGIDO` | `RECOJO_RECOGIDO` | `idRecojo` | Registra el hito. |
+| `FALLIDO` | `RECOJO_FALLIDO` | `idRecojo`, `motivo` | Registra el intento. |
+| `RECIBIDO_EN_CENTRO` | `RECOJO_RECIBIDO` | `idRecojo` | Puede continuar con el reembolso o el cambio. |
+| `CERRADO_SIN_RECOJO` | `RECOJO_CERRADO` | `idRecojo`, `motivoCierre` | Decide cómo continúa la devolución. |
+
+Los recojos de despachos simulados no generan eventos. Estos eventos no cambian el estado `ENTREGADO` del despacho.
+
 ## 8. Integración con Seguridad y Usuarios
 
 ### 8.1. Validación local de tokens
@@ -869,11 +942,12 @@ Despacho -> Canal: estado, fecha, distrito e hitos sin coordenadas ni PII
 
 ## 11. Acuerdos externos que aún deben confirmarse
 
-El contrato funcional con Ventas y Postventa está cerrado: se confirmaron el momento de creación, el payload sin `cantidadPaquetes`, la cancelación, los siete eventos, la ruta y el scope del webhook y la convención de `Idempotency-Key`. Solo quedan el aprovisionamiento o verificación de credenciales por ambiente y las pruebas de contrato.
+El contrato funcional con Ventas y Postventa está cerrado: se confirmaron el momento de creación, el payload sin `cantidadPaquetes`, la cancelación, los siete eventos, la ruta y el scope del webhook y la convención de `Idempotency-Key`. Solo quedan el aprovisionamiento o verificación de credenciales por ambiente y las pruebas de contrato. La excepción es el recojo de devoluciones, añadido después de ese cierre (§7.4).
 
 | Equipo | Acuerdo pendiente |
 |---|---|
-| Seguridad y Usuarios | Confirmar el acceso humano propuesto en §8.6 (ruta, cuentas de prueba, renovación del token); registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
+| Ventas y Postventa | Acordar la solicitud y cancelación del recojo y sus cuatro eventos (§7.4) |
+| Seguridad y Usuarios | Confirmar el acceso humano propuesto en §8.6 (ruta, cuentas de prueba, renovación del token); registrar los scopes de `api-despacho`, incluidos `recojos:crear` y `recojos:cancelar`, y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
 | Productos y Ofertas | H-G2-01/02/03 y semántica D-G2-01/02 cerrados. Sincronizar el OpenAPI con el acuerdo y fijar su revisión; verificar el consumidor G2, coordinar con Seguridad la concesión efectiva y ejecutar las pruebas de contrato y el recorrido real de §11.1 |
 | Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
 | Equipo de Despacho | Tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |

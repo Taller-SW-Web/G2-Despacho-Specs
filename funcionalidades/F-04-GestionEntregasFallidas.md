@@ -28,6 +28,7 @@ Esta funcionalidad incluye:
 - Cierre del despacho como `DEVUELTO_A_ORIGEN`.
 - Restricción al cierre como devuelto cuando el pedido fue anulado.
 - Auditoría de cada recepción y decisión.
+- Recepción en el centro de los productos recogidos y resolución de los recojos no realizados (RF-08).
 
 ## 4. Precondiciones, dependencias y resultados
 
@@ -203,6 +204,28 @@ El sistema DEBE registrar el retorno físico de cada paquete antes de cualquier 
 
 Si no puede confirmarse la jornada, el listado informa `No se pudo confirmar el cierre de jornada`, sin inventar un atraso ni descartarlo. La tarjeta de atrasados muestra `No disponible` si no puede calcularse su cifra exacta; las filas y los indicadores de recepción siguen disponibles según ES-F04-01 y el contrato. La consulta no altera las reglas de cierre de turno ni de capacidad de F-06.
 
+### RF-08. Recepción y resolución de recojos
+
+El sistema DEBE permitir al Gestor confirmar la llegada de un producto recogido y decidir qué hacer con un recojo no realizado. La ejecución en campo corresponde a [ES-F03-09](../especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
+
+#### CA-19. Recepción del producto recogido
+
+- **DADO** un recojo `RECOGIDO`.
+- **CUANDO** el Gestor confirma que el producto llegó al centro.
+- **ENTONCES** el recojo pasa a `RECIBIDO_EN_CENTRO`, se solicita liberar su capacidad y se registra el evento `RECOJO_RECIBIDO` hacia Ventas y Postventa.
+
+#### CA-20. Reprogramación de un recojo no realizado
+
+- **DADO** un recojo `FALLIDO`.
+- **CUANDO** el Gestor elige una fecha futura.
+- **ENTONCES** el recojo vuelve a `PENDIENTE_ASIGNACION` con esa fecha y aparece en la cola de F-02.
+
+#### CA-21. Cierre de un recojo no realizado
+
+- **DADO** un recojo `FALLIDO`.
+- **CUANDO** el Gestor lo cierra indicando un motivo.
+- **ENTONCES** el recojo pasa a `CERRADO_SIN_RECOJO` y se registra el evento `RECOJO_CERRADO`.
+
 ## 6. Frontend
 
 | Elemento | Responsabilidad |
@@ -212,6 +235,7 @@ Si no puede confirmarse la jornada, el listado informa `No se pudo confirmar el 
 | Detalle de la incidencia | Última incidencia, intentos consumidos, recepción por salida, historial completo, comunicación con Ventas y fotografía autorizada; consulta histórica tras resolver. |
 | Formulario de reprogramación | Fecha futura con validación; disponible solo con recepción confirmada. |
 | Confirmación de cierre | Motivo obligatorio y advertencia de que el despacho no tendrá más intentos. |
+| Recojos de devoluciones | Productos por recibir y recojos no realizados, con acciones de recepción, reprogramación y cierre. |
 | Retroalimentación | Éxito, validaciones, conflictos y errores de comunicación. |
 
 ## 7. Backend
@@ -239,7 +263,7 @@ Esta sección no prescribe clases ni paquetes. Las rutas, cuerpos y códigos se 
 
 ## 9. Fuera de alcance
 
-- **Reembolsos, cambios, devoluciones comerciales y reclamos:** pertenecen a Ventas y Postventa.
+- **Reembolsos, cambios, aprobación de devoluciones y reclamos:** pertenecen a Ventas y Postventa. El recojo del producto devuelto se describe en [overview §12](../overview.md#12-devolución-del-producto).
 - **Almacenamiento, reingreso a inventario y reintegro de stock:** pertenecen a la operación del centro, Ventas y Postventa y Productos y Ofertas; Despacho solo registra que el paquete volvió.
 - **Registro del fallo en campo:** corresponde a F-03.
 - **Asignación del nuevo intento a un repartidor:** corresponde a F-02.
@@ -259,6 +283,7 @@ La posible logística inversa posterior a una entrega está centralizada en [Pen
 | CA-13 | Revisar la auditoría tras cada operación. | Integración con persistencia | Registro completo. |
 | CA-14 y CA-15 | Reprogramar un `NO_INTENTADO` y un despacho con pedido anulado. | Unitaria e integración | Contador sin cambio; `409` con pedido anulado. |
 | CA-16 a CA-18 | Confirmar recepción, decidir sin recepción y cerrar la jornada sin retorno. | Unitaria e integración | Ocupación liberada en F-06, `409` y alerta de retorno atrasado. |
+| CA-19 a CA-21 | Recibir un producto recogido y reprogramar o cerrar un recojo no realizado. | Integración y frontend | Estado correcto, capacidad liberada y evento registrado. |
 
 Además, se ejecutarán tres recorridos funcionales completos:
 
@@ -270,7 +295,7 @@ Además, se ejecutarán tres recorridos funcionales completos:
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-18` están implementados y cuentan con pruebas exitosas.
+- Los criterios `CA-01` a `CA-21` están implementados y cuentan con pruebas exitosas.
 - Los tres recorridos funcionales han sido verificados.
 - Ninguna decisión se toma sin recepción confirmada del paquete.
 - La política de intentos se aplica y los `NO_INTENTADO` no consumen intentos.

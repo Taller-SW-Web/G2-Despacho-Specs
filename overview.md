@@ -10,7 +10,7 @@ El detalle de cada funcionalidad vive en `funcionalidades/`, los endpoints en `i
 
 El módulo de Despacho y Entrega es uno de los siete módulos del Marketplace Multicanal. Su actor principal es el **Gestor de Despacho**.
 
-Todos los pedidos de la tienda, sin importar el canal por el que se vendieron, se preparan en un **único centro de despacho**. Cuando un pedido ya fue pagado y su paquete está sellado en ese centro, Ventas y Postventa solicita el despacho. Desde ese momento el módulo se encarga de **enviar el paquete**: asignarlo a un repartidor, llevarlo al domicilio del cliente y, si la entrega no se concreta, traerlo de vuelta al centro de despacho.
+Todos los pedidos de la tienda, sin importar el canal por el que se vendieron, se preparan en un **único centro de despacho**. Cuando un pedido ya fue pagado y su paquete está sellado en ese centro, Ventas y Postventa solicita el despacho. Desde ese momento el módulo se encarga de **enviar el paquete**: asignarlo a un repartidor, llevarlo al domicilio del cliente y, si la entrega no se concreta, traerlo de vuelta al centro de despacho. También recoge en el domicilio los productos que el cliente devuelve ([sección 12](#12-devolución-del-producto)).
 
 El módulo es **dueño de la entidad despacho**. No es dueño del pedido ni del pago (Ventas y Postventa), del producto ni del stock (Productos y Ofertas), ni de los usuarios (Seguridad y Usuarios); esa información se obtiene exclusivamente mediante APIs.
 
@@ -254,7 +254,7 @@ Según la matriz cruzada del curso, Despacho y Entrega se integra con Marketplac
 |---|---|---|---|
 | Canal Marketplace | Entrante | Cotizar el envío y consultar el seguimiento del pedido. | F-01, RT-04 |
 | Canal Chatbot | Entrante | Cotizar el envío y consultar el estado del pedido. | F-01, RT-04 |
-| Ventas y Postventa | Entrante | Solicitar el despacho de un pedido pagado con paquete sellado mediante `despachos:crear`, cancelarlo mediante `despachos:cancelar` y consultar sus hitos mediante `seguimientos:leer`. | F-02, RT-04 |
+| Ventas y Postventa | Entrante | Solicitar el despacho de un pedido pagado con paquete sellado mediante `despachos:crear`, cancelarlo mediante `despachos:cancelar` y consultar sus hitos mediante `seguimientos:leer`. Solicitar y cancelar el recojo de una devolución (propuesta). | F-02, RT-04, sección 12 |
 | Ventas y Postventa | Saliente | Recibir en `/api/v1/integraciones/despachos/eventos` los cambios de estado enviados por `modulo-despacho` con `aud=api-ventas` y `ventas:pedidos:estado`. | RT-03 |
 | Productos y Ofertas | Saliente | Proveer el perfil físico y estado del SKU para cotizar y recibir un pedido listo para entrega. El catálogo y stock permanecen en G6. | F-01, F-02 |
 | Seguridad y Usuarios | Bidireccional | Emitir JWT y tokens de servicio; crear los usuarios de los repartidores. | Todas, F-05 |
@@ -307,11 +307,12 @@ Actualización G2–G6 del 04/11/2026: H-G2-01/02/03 están homologados desde el
 
 | Módulo | Acuerdo |
 |---|---|
+| Ventas y Postventa | Acordar cómo solicita el recojo de una devolución y cómo recibe su resultado (sección 12). |
 | Seguridad y Usuarios | Publicar formalmente la revisión que establece el alta por `ADMIN_SISTEMA` y `roles: []`; registrar y conceder los scopes de `api-despacho`, incluido `despachos:cancelar` para `modulo-ventas` si aún está pendiente; verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; definir cómo se solicita el alta o baja global, cómo se comunica el `usuario_id` a Despacho y publicar el contrato RabbitMQ de eventos de usuario. |
 | Canal Marketplace y Canal Chatbot | Obtener tokens de servicio con `cotizaciones:calcular` y `seguimientos:leer`. |
 | Productos y Ofertas | Sincronizar el OpenAPI con D-G2-01/02 ya cerrados semánticamente y fijar su revisión. H-G2-01/02/03 permanecen cerrados; proveedor fusionado, consumidor G2, grant y E2E con seguimiento propio. |
 
-No quedan decisiones funcionales pendientes con Ventas y Postventa. El acuerdo confirmó el paquete lógico interno con `cantidadPaquetes=1`, la creación y cancelación, el mapeo de eventos, la ruta y autorización del webhook y la convención de idempotencia; quedan únicamente configuración por ambiente y pruebas de contrato.
+Salvo el recojo de devoluciones, no quedan decisiones funcionales pendientes con Ventas y Postventa. El acuerdo confirmó el paquete lógico interno con `cantidadPaquetes=1`, la creación y cancelación, el mapeo de eventos, la ruta y autorización del webhook y la convención de idempotencia; quedan únicamente configuración por ambiente y pruebas de contrato.
 
 ### 10.2. Dentro del equipo
 
@@ -325,7 +326,7 @@ No quedan decisiones funcionales pendientes con Ventas y Postventa. El acuerdo c
 ## 11. Fuera del alcance del módulo
 
 - **Preparación y sellado de paquetes:** ocurren en el centro de despacho antes de la solicitud.
-- **Pagos, facturación, reembolsos, cambios, devoluciones comerciales y reclamos:** pertenecen a Ventas y Postventa.
+- **Pagos, facturación, reembolsos, cambios, aprobación de devoluciones y reclamos:** pertenecen a Ventas y Postventa. Despacho solo recoge el producto devuelto (sección 12).
 - **Stock, inventario y catálogo de productos:** pertenecen a Productos y Ofertas.
 - **Gestión de identidad y credenciales:** pertenece a Seguridad y Usuarios.
 - **Notificación al cliente final:** corresponde a los canales y a Ventas y Postventa a partir de los eventos.
@@ -333,5 +334,27 @@ No quedan decisiones funcionales pendientes con Ventas y Postventa. El acuerdo c
 - **Rastreo GPS en tiempo real:** el seguimiento se basa en los cambios de estado.
 - **Operación sin conexión:** la web del repartidor requiere red activa.
 - **Mantenimiento, seguros y costos de la flota:** se gestionan fuera del sistema.
+
+---
+
+## 12. Devolución del producto
+
+El cliente puede devolver un producto que ya recibió. El repartidor va a su domicilio, lo recoge y lo lleva al centro de despacho. Detalle en [ES-F03-09](especificaciones/ES-F03-09-RecojoDevolucion/spec.md).
+
+### 12.1. Flujo
+
+1. Ventas y Postventa aprueba la devolución y solicita el recojo a Despacho.
+2. El Gestor asigna el recojo a un repartidor y una fecha.
+3. El repartidor ve el recojo en su ruta y va al domicilio.
+4. Recoge el producto y toma una foto como evidencia.
+5. Lleva el producto al centro y el Gestor confirma que lo recibió.
+6. Despacho avisa a Ventas y Postventa, que decide el reembolso o el cambio.
+
+### 12.2. Reglas
+
+- Solo se recoge un producto de un despacho `ENTREGADO`.
+- El despacho original sigue en `ENTREGADO`; el recojo se registra aparte y queda vinculado a él.
+- Si el repartidor no puede recoger el producto, registra el motivo y una foto, y el Gestor decide si reprograma el recojo o lo cierra.
+- El recojo ocupa capacidad del repartidor y la furgoneta hasta que el centro confirma la recepción. Si no se recoge, la capacidad se libera al registrarlo, porque no hay producto a bordo.
 
 [cite: 1] [Contrato externo: homologación física y precisiones](./integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento), con aceptación H del 02/11, cierre semántico D del 03–04/11/2026, merge G6 #162 y revisión normativa inspeccionada.

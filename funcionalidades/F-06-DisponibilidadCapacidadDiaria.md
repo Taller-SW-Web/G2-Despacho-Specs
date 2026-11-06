@@ -59,7 +59,7 @@ Esta funcionalidad incluye:
 |---|---|
 | `FUERA_DE_TURNO` | No tiene asignación diaria activa. |
 | `DISPONIBLE` | Tiene asignación diaria activa y no ha alcanzado ningún límite ni tiene despachos `EN_CAMINO`. |
-| `EN_RUTA` | Tiene al menos un despacho `EN_CAMINO`. |
+| `EN_RUTA` | Tiene al menos un despacho o recojo `EN_CAMINO`. |
 | `SATURADO` | Ha alcanzado cualquiera de sus tres límites (kg, m³ o paquetes). |
 
 ### 4.5. Regla de cálculo de ocupación
@@ -71,6 +71,7 @@ F-06 calcula la ocupación exclusivamente sumando sus reservas `ACTIVA` en peso,
 - Un despacho `FALLIDO` sin recepción confirmada en el centro ocupa capacidad.
 - Un despacho `FALLIDO` recibido solicita liberar su reserva; deja de ocupar capacidad cuando Operación confirma la liberación, aunque siga pendiente de reprogramación o cierre.
 - Los despachos `ENTREGADO`, `CANCELADO` y `DEVUELTO_A_ORIGEN` deben terminar sin reserva activa. Mientras una liberación de F-04 siga pendiente, esa reserva conserva su ocupación de forma conservadora, incluso si el despacho ya se reprogramó o cerró.
+- Un recojo `ASIGNADO`, `EN_CAMINO` o `RECOGIDO` ocupa capacidad. Deja de ocuparla cuando Operación confirma la liberación tras la recepción en el centro o, si no se recogió, tras registrar `FALLIDO`.
 
 Cuando F-04 confirma la recepción, Gestión registra una solicitud durable para la reserva y jornada originales. Operación aplica su liberación idempotente y F-06 refleja el resultado en la siguiente consulta. Si hay caída se conserva la recepción y se reintenta; no se libera otra reserva ni se modifica el cierre de jornada. El retorno físico y la sincronización no se confunden; antes de una asignación nueva, F-02 debe esperar a que la reserva anterior deje de estar activa. Contratos: [Gestión §5.2.1](../integraciones/api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03) y [Operación §5.2](../integraciones/api-contract-operacion-reparto.md#52-gestión-libera-una-reserva-en-operación).
 
