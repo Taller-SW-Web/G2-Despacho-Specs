@@ -1,16 +1,16 @@
 # Evidencia de ES-F03-01: Acceso y habilitación operativa del repartidor
 
-**Estado:** Pendiente; no acredita implementación.
+**Estado:** Verificación local registrada; integración real con G7 y aceptación pendientes.
 
 **Responsable de verificación:** Max Rojas
 
-**Última verificación:** Pendiente
+**Última verificación:** 05/11/2026; véanse EV-05 y EV-07.
 
 ## 1. Versión y entorno
 
 - Documentos: [spec.md](./spec.md), [ui.md](./ui.md), [plan.md](./plan.md) y [tasks.md](./tasks.md), en la misma revisión.
-- Commits de frontend y backend: pendientes.
-- Entorno: pendiente.
+- Commits de frontend y backend: registrados en EV-06 y EV-07.
+- Entorno: desarrollo local descrito en EV-05; navegador con APIs simuladas y CI descritos en EV-07.
 - Datos: sintéticos; sin datos personales reales ni tokens.
 
 ## 2. Cobertura de criterios
@@ -77,6 +77,14 @@ Cada registro ejecutado indica fecha, persona, commit, entorno, pasos, resultado
 - [Backend PR #29 hacia `develop`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/29), commit `c5d887b`: emisor local de sesiones y ruta humana común a los perfiles del Gateway.
 - Ambas ramas están sincronizadas con sus bases remotas. Las descripciones conservan los resultados de EV-05, el fallo intermitente de la ejecución administrativa completa y los pendientes de G7. CI remoto, revisión y aceptación quedan sujetos al estado de los PR; esta publicación no cierra los criterios de integración real.
 
+### EV-07. Corrección del CI de navegador · 05/11/2026
+
+- Origen: en el primer CI del Frontend PR #21 aprobaron componentes, administrativo, repartidor y tipos/compilación. F-02 y flota agotaban las esperas porque entraban directamente a rutas ahora protegidas y permanecían en `/acceso`.
+- Corrección: frontend `cfbea50`, en el mismo PR. Los recorridos usan un helper compartido que solicita login, recibe el desafío, solicita OTP y verifica sus seis dígitos desde la interfaz antes de volver a la ruta original. El helper intercepta el contrato HTTP de G7 con credenciales ficticias; las configuraciones desactivan modo demo, token heredado y buzón local. Se conservan las aserciones funcionales y los límites de espera.
+- Ejecución local: F-02, 7/7 aprobadas (1,1 min); flota, 6/6 aprobadas (1,6 min), en Chromium real y con APIs simuladas. También aprobaron `npm run typecheck`, `npm run build` de ambas aplicaciones y `git diff --check`. Un intento inicial no logró disponibilidad del servidor dentro del aislamiento de ejecución y se interrumpió; los resultados anteriores corresponden a la repetición fuera de ese aislamiento.
+- CI remoto: [ejecución de la corrección](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/actions/runs/42158305111) aprobada en `cfbea50`: las seis comprobaciones de componentes, administrativo, repartidor, tipos/compilación, E2E F-02 y E2E flota terminaron con `success`. Este resultado remoto es independiente del fallo intermitente local registrado en EV-05.
+- Límites: no se modificó la autorización de producción ni se emitieron tokens reales. Estos recorridos no validan firmas JWT, persistencia ni la integración G7. Las capturas F-02 se generan al ejecutar; las nuevas de esta repetición no se incorporan a Git. Las capturas de flota y los informes son artefactos locales/CI.
+
 ## 4. Uso de IA
 
 | Tarea | Herramienta y fecha | Entrada | Revisado por |
@@ -94,6 +102,6 @@ Cada registro ejecutado indica fecha, persona, commit, entorno, pasos, resultado
 
 ## 6. Entrega y revisión
 
-- PR de implementación: pendiente.
+- PR de implementación: Frontend #21 y Backend #29, enlazados en EV-06.
 - Revisor y fecha: pendientes.
 - Estado del alcance: Pendiente.
