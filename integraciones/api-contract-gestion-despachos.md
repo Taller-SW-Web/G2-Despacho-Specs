@@ -540,7 +540,7 @@ Estas rutas las implementa Gestión y las consume Operación con credencial de s
 
 - **Método:** `POST`
 - **Ruta:** `/internal/v1/despachos/{idDespacho}/transiciones`
-- **Consumidor:** Operación de Reparto y Flota, con JWT de servicio `sub=modulo-despacho`, audiencia `api-despacho` y scope `gestion:despachos:transicionar`. Otro cliente o un token humano reciben `403`.
+- **Consumidor:** Operación de Reparto y Flota, con JWT de servicio `sub=modulo-despacho` y audiencia `api-despacho`; no se exigen scopes internos. Otro cliente o un token humano reciben `403`.
 - **Idempotencia:** `Idempotency-Key` UUID obligatorio, el mismo que el repartidor envió a Operación (o uno derivado de forma estable en el cierre). La misma clave con el mismo contenido devuelve la respuesta original sin duplicar historial, intento ni eventos; con otro contenido, `409` `DESP_ERROR_OPERACION_REUTILIZADA`.
 
 ```json
@@ -595,7 +595,7 @@ Al aceptar un fallo, Gestión captura también la reserva de capacidad que ya co
 
 ### 6.2. Operación consulta el catálogo de motivos
 
-`GET /internal/v1/catalogos/motivos-fallo`, con JWT de servicio `sub=modulo-despacho` y scope `gestion:catalogos:leer`. Devuelve exactamente la respuesta de §4. Operación la expone al repartidor filtrada por `activo` y `seleccionableEnCampo`, después de validar su perfil de campo, porque Gestión no conoce los perfiles locales de Operación.
+`GET /internal/v1/catalogos/motivos-fallo`, con JWT de servicio `sub=modulo-despacho` y audiencia `api-despacho`; no se exigen scopes internos. Devuelve exactamente la respuesta de §4. Operación la expone al repartidor filtrada por `activo` y `seleccionableEnCampo`, después de validar su perfil de campo, porque Gestión no conoce los perfiles locales de Operación.
 
 ## 7. APIs de Operación consumidas por Gestión
 
