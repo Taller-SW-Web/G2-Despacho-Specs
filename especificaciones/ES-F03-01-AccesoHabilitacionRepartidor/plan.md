@@ -28,6 +28,8 @@ El frontend obtiene el contexto del repartidor y adapta la vista; el backend val
 
 ## 3. Frontend
 
+Incremento de sesión del 05/11/2026: adaptar ambas apps mediante el transporte compartido `packages/cliente-api/src/sesion.ts`, según [contrato humano §8.6](../../integraciones/api-contract.md#86-acceso-humano-de-ambas-aplicaciones). Tokens y desafío en memoria; renovación serializada antes del vencimiento o ante rechazo explícito JWT; logout remoto con limpieza local incondicional. La app administrativa comprueba el rol de gestor para navegación y el backend conserva la autorización. El emisor Compose reproduce login JSON, desafío/OTP, rotación y logout sin cuentas G7. El buzón OTP se consulta solo mediante el proxy Vite de desarrollo. No se habilitan modos demo en builds publicados. Código y regresiones escritos; ejecuciones aplazadas por indicación del usuario. DT-01 sigue abierto para el ambiente G7 real.
+
 - Pantalla de acceso con mensajes por motivo de rechazo.
 - Guardia de ruta: sin contexto válido no se muestra «Mi Ruta».
 - El modo operativo o de solo lectura se deriva del indicador de habilitación del backend, no de cálculos locales.

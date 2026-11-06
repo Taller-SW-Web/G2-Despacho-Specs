@@ -27,6 +27,8 @@
 
 ### UI-01. Pantalla de acceso
 
+Preparación del 05/11/2026: ambas apps muestran correo y contraseña. El gestor pasa a un panel OTP con seis posiciones, envío inicial, cuenta atrás, intentos restantes, reenvío y vuelta al ingreso. El desafío por sí solo no abre rutas protegidas. Los repartidores sin MFA pasan al contenido operativo y el backend determina vínculo/jornada. Solo en desarrollo local se muestra el código del buzón simulado; no se genera en el navegador. Ambas apps ofrecen cierre de sesión y conservan una ruta interna de retorno. Recargar la pestaña pide autenticarse otra vez porque los tokens permanecen en memoria. Validación visual, teclado, foco y errores pendientes de ejecución.
+
 | Elemento | Contenido y comportamiento |
 |---|---|
 | Autenticación | Delegada a Seguridad y Usuarios (mecanismo pendiente, DT-01) |

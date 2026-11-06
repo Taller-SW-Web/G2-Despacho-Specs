@@ -2,7 +2,7 @@
 
 **Responsable:** Max Rojas
 
-**Estado:** Pendiente de implementación
+**Estado:** En curso; incremento de sesión escrito, sin ejecutar verificaciones.
 
 **Plan de origen:** [plan.md](./plan.md)
 
@@ -10,13 +10,15 @@
 
 | ID | Resultado | Área | Depende de | Criterios | Estado |
 |---|---|---|---|---|---|
-| T-01 | Pantalla de acceso y modos de «Mi Ruta» con fixtures | Frontend, I-01 | DT-04 | CUI-01 a CUI-05 | Pendiente |
-| T-02 | Contrato de contexto y errores cerrado | Contrato | DT-01, DT-02 | CA-01 a CA-04 | Pendiente |
+| T-01 | Pantalla de acceso y modos de «Mi Ruta» con fixtures | Frontend, I-01 | DT-04 | CUI-01 a CUI-05 | En curso |
+| T-02 | Contrato de contexto y errores cerrado | Contrato | DT-01, DT-02 | CA-01 a CA-04 | En curso |
 | T-03 | Autorización, contexto y rechazo `409` en backend | Backend, I-02 | T-02, DT-03, DT-05 | CA-01 a CA-04 | Pendiente |
 | T-04 | Frontend conectado al backend real | Integración, I-03 | T-01, T-03 | CA-01 a CA-04; CUI-01 a CUI-05 | Pendiente |
 | T-05 | Evidencia y revisión completadas | Calidad | T-04 | Todos | Pendiente |
 
 Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`.
+
+Actualización del 05/11/2026: código de sesión de ambas apps y doble Compose preparados en ramas `feature/sesion-mfa-local`; documentación en `docs/sesion-mfa-local`. T-01/T-02 registran preparación de login JSON, MFA, renovación y logout según §8.6, sin cerrar todos sus criterios ni los de contexto operativo. Se escribieron casos de regresión; pruebas, compilaciones, Compose y revisión visual se posponen por instrucción del usuario. Véase EV-04. El kit G7 recibido señala revisión no publicada: T-04/T-05 siguen pendientes.
 
 ## 2. Detalle de tareas
 

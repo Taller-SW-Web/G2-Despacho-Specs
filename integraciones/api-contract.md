@@ -785,16 +785,30 @@ Despacho prevé consumir los eventos `usuario.desactivado`, `usuario.bloqueado`,
 
 Seguridad ha previsto publicar estos cambios mediante RabbitMQ, pero el contrato asíncrono todavía debe definir disponibilidad, exchange, routing keys, payloads, credenciales, permisos de consumo y política de reentrega. Hasta que ese contrato esté disponible, Despacho no asume que los eventos puedan consumirse en producción.
 
-### 8.6. Acceso humano de la app del repartidor (propuesto)
+### 8.6. Acceso humano de ambas aplicaciones
 
-La app móvil del repartidor necesita que la persona ingrese con su usuario y contraseña. Mientras Seguridad y Usuarios publica su flujo de acceso, Despacho propone esta forma, implementada por la herramienta `seguridad-local` y consumida desde un único adaptador de la app:
+Base documental: kit de integración de G7 §7, SPEC-05, SPEC-06, SPEC-09 y `specs/contrato-api/openapi.yaml` v1.1.0, copia facilitada el 05/11/2026. El OpenAPI indica `revision-local-no-publicada`; esta revisión no acredita publicación ni disponibilidad del servidor. El adaptador humano de G2 se prepara contra esa forma; la integración real y la aceptación siguen pendientes.
 
-- **Método y ruta:** `POST /api/v1/auth/login` en el origen de Seguridad; en local, el Gateway la enruta a `seguridad-local` sin exigir JWT.
-- **Content-Type:** `application/x-www-form-urlencoded`, campos `usuario` (usuario o correo) y `clave`.
-- **Respuesta `200`:** `{ "accessToken": "<jwt>", "tokenType": "Bearer", "expiresIn": 900 }`. El JWT es el mismo token humano de §8.1: `tipo=acceso`, `sub` igual al `usuario_id` vinculado en F-05 y sin rol obligatorio de repartidor.
-- **Errores:** `401` con credenciales inválidas, sin indicar si falló el usuario o la contraseña.
+Todas las rutas siguientes parten de `/api/v1/auth`, en el origen de Seguridad. Los cuerpos de `POST` son JSON. El Gateway publica exclusivamente estas operaciones humanas, sin exponer por ello la emisión de tokens de servicio ni el buzón de pruebas.
 
-Pendiente de confirmar con Seguridad: ruta y formato definitivos, cuentas de prueba, renovación (un token de 15 minutos obliga a reingresar durante la jornada) y cierre de sesión. Si el contrato definitivo difiere, solo cambian `VITE_SEGURIDAD_URL` y el adaptador `servicioAcceso.ts` del frontend; Operación sigue validando el JWT por §8.1.
+| Operación | Entrada | Respuesta |
+|---|---|---|
+| `POST /login` | `correo`, `contrasena` | `200` con sesión o `{mfaRequerido:true, challengeToken, canal:"EMAIL", expiraEn:300}`. El desafío no concede acceso. |
+| `POST /otp/solicitar` | `challengeToken`, `canal` (`EMAIL` en G2) | `202` con `canal`, `destinoEnmascarado`, `expiraEn` y `desafioExpiraEn`. No contiene el código. |
+| `POST /otp/verificar` | `challengeToken`, `codigo` (seis dígitos) | `200` con sesión. El desafío se consume. |
+| `POST /refresh` | `refreshToken` | `200` con nuevo par de tokens de la misma sesión; el refresco anterior deja de servir. |
+| `POST /logout` | `refreshToken` | `204`, también si ya no existe o está revocado. No exige JWT de acceso. |
+| `GET /me` | `Authorization: Bearer <accessToken>` | `200` con perfil del titular, o `401`. |
+
+La sesión contiene `accessToken`, `refreshToken`, `tokenType:"Bearer"`, `expiresIn:900` y `usuario:{id,nombreCompleto,correo,roles}`. El acceso del gestor exige `GESTOR_DESPACHO` y MFA efectivo. El repartidor no necesita rol global: Operación resuelve su perfil activo por `sub`, según §8.1/§8.4. La comprobación visual del rol no sustituye la autorización del backend.
+
+El código vence a los cinco minutos, admite tres intentos y tiene un límite de tres solicitudes por usuario en quince minutos. Reenviar invalida el código anterior del mismo desafío y no extiende su vencimiento. La pantalla utiliza el menor vencimiento entre código y desafío. Errores relevantes: `CREDENCIALES_INVALIDAS` (`401`), `CODIGO_INVALIDO` con `intentosRestantes` (`401`), `OTP_INTENTOS_AGOTADOS` (`401`), `OTP_EXPIRADO` (`410`), `TOKEN_INVALIDO` (`401`), `PASSWORD_CADUCADA` (`403`) y `DEMASIADAS_SOLICITUDES` (`429`, cabecera `Retry-After`). La UI selecciona mensajes por `code`, sin presentar detalles arbitrarios.
+
+Acceso, refresco, usuario y desafío se mantienen en memoria; recargar exige login. El refresco es rotativo, con una sola renovación simultánea por sesión. Reutilizar uno usado revoca su familia sin afectar sesiones independientes. Logout limpia la memoria incluso si falla la conexión. Un JWT ya emitido puede seguir aceptándose hasta vencer en APIs que validan localmente; el cierre no acredita revocación instantánea en todos los servicios.
+
+El doble `seguridad-local` reproduce este intercambio para Compose. Mantiene estado efímero y un buzón de códigos aleatorios accesible mediante `POST /pruebas/codigo-otp` con `challengeToken`, exclusivamente para desarrollo. El proxy Vite lo muestra en ambas apps solo en modo local; no es una operación de G7 ni una ruta pública del Gateway. Las herramientas antiguas pueden seguir usando el formulario `usuario`/`clave` del emisor local; el gestor recibe igualmente un desafío, nunca tokens antes de completarlo. El emisor no crea perfiles F-05 ni modifica las bases de negocio.
+
+Pendientes externos: confirmar revisión contractual desplegada, ambiente y CORS; habilitar cuentas/activación/entrega de OTP y proporcionar los UUID de los repartidores. `VITE_SEGURIDAD_URL` cambia el origen del adaptador compartido `packages/cliente-api/src/sesion.ts`; si se mantiene el proxy Gateway, se configura `SEGURIDAD_URL` del backend. Las credenciales técnicas entre servicios se resuelven por separado.
 
 ## 9. Reglas de idempotencia y concurrencia
 
