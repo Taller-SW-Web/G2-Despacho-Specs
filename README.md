@@ -8,6 +8,22 @@
 
 ---
 
+## Backend desplegado: pruebas de integración
+
+El backend de Despacho está desplegado en la nube y disponible para iniciar pruebas de integración.
+
+**URL base:** [https://taller-api-gateway.onrender.com](https://taller-api-gateway.onrender.com)
+
+Las solicitudes deben incluir un token técnico de G7 correspondiente al módulo consumidor, con audiencia `api-despacho` y los permisos requeridos para la operación:
+
+```http
+Authorization: Bearer <token>
+```
+
+Los servicios pueden entrar en reposo por inactividad, por lo que las primeras solicitudes podrían demorar o presentar indisponibilidad temporal. Si esto ocurre, esperen unos segundos antes de reintentar. Podemos coordinar una ventana de pruebas para verificar la disponibilidad de los servicios.
+
+Los endpoints, cuerpos de las solicitudes y respuestas están documentados en el [contrato de integración](integraciones/api-contract.md).
+
 ## 📦 Acerca del módulo
 
 El **Módulo de Despacho y Entrega a Domicilio** administra el ciclo operativo que comienza cuando un pedido está listo para ser despachado y termina con su entrega, reprogramación o devolución.
