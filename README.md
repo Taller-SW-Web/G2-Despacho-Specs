@@ -1,170 +1,48 @@
 # Módulo de Despacho y Entrega a Domicilio
 
-> Documentación y especificaciones del módulo responsable de organizar, ejecutar y dar seguimiento al proceso de despacho y entrega de pedidos.
+Este repositorio reúne las especificaciones, contratos y evidencias de Despacho. El módulo organiza pedidos para reparto, asigna capacidad, registra entregas e incidencias y ofrece seguimiento a los canales autorizados. Gestión de Despachos y Operación de Reparto y Flota se comunican mediante APIs y conservan sus propias bases.
 
-**Estado del proyecto:** En especificación y diseño inicial  
-**Arquitectura prevista:** Dos microservicios con persistencia aislada, integrados mediante APIs  
-**Repositorio:** Documentación funcional y técnica
-
----
+El módulo está en implementación y pruebas de integración. El [índice funcional](./funcionalidades/funcionalidad.md) distingue el avance por especificación, las comprobaciones locales y la aceptación pendiente.
 
 ## Backend desplegado: pruebas de integración
 
-El backend de Despacho está desplegado en la nube y disponible para iniciar pruebas de integración.
+El origen publicado del Gateway para coordinar pruebas es [taller-api-gateway.onrender.com](https://taller-api-gateway.onrender.com). Los módulos consumidores usan un token técnico de G7 con audiencia `api-despacho` y los permisos de la operación. Consultar [autenticación, endpoints y ejemplos](./integraciones/api-contract.md) antes de probar; las primeras solicitudes pueden demorar si los servicios estaban en reposo.
 
-**URL base:** [https://taller-api-gateway.onrender.com](https://taller-api-gateway.onrender.com)
+Para pruebas locales, seguir las instrucciones de los repositorios de implementación. Seguridad temporal, catálogos simulados y bases de prueba permiten verificar flujos de Despacho por separado. La aceptación conjunta y los resultados de cada entorno se registran en la evidencia correspondiente.
 
-Las solicitudes deben incluir un token técnico de G7 correspondiente al módulo consumidor, con audiencia `api-despacho` y los permisos requeridos para la operación:
-
-```http
-Authorization: Bearer <token>
-```
-
-Los servicios pueden entrar en reposo por inactividad, por lo que las primeras solicitudes podrían demorar o presentar indisponibilidad temporal. Si esto ocurre, esperen unos segundos antes de reintentar. Podemos coordinar una ventana de pruebas para verificar la disponibilidad de los servicios.
-
-Los endpoints, cuerpos de las solicitudes y respuestas están documentados en el [contrato de integración](integraciones/api-contract.md).
-
-## 📦 Acerca del módulo
-
-El **Módulo de Despacho y Entrega a Domicilio** administra el ciclo operativo que comienza cuando un pedido está listo para ser despachado y termina con su entrega, reprogramación o devolución.
-
-El módulo es responsable de la entidad **despacho** y mantiene sus propios datos. La información perteneciente a pedidos, productos y usuarios se obtiene mediante las APIs de los módulos propietarios, sin acceder directamente a sus bases de datos.
-
-La implementación se divide en los microservicios **Gestión de Despachos** y **Operación de Reparto y Flota**. Cada uno mantiene su propia persistencia y se comunican mediante APIs internas.
-
-Este repositorio centraliza las especificaciones funcionales, decisiones generales y contratos necesarios para que el frontend, el backend y los demás módulos puedan desarrollarse de manera coordinada.
-
-## 🎯 Capacidades principales
-
-| ID | Área funcional | Descripción |
-|---|---|---|
-| **F-01** | Zonas geográficas y cotización | Administra zonas de cobertura y calcula tarifas de entrega según las reglas definidas. |
-| **F-02** | Programación y asignación | Organiza los despachos pendientes y permite asignarlos a repartidores o rutas disponibles. |
-| **F-03** | Operación del repartidor | Ofrece una web responsive para consultar entregas, actualizar estados y registrar evidencias. |
-| **F-04** | Entregas fallidas y reprogramaciones | Gestiona incidencias, nuevos intentos de entrega y devoluciones a almacén. |
-| **F-05** | Repartidores y vehículos | Registra repartidores con vinculación a Seguridad y furgonetas con capacidades de carga. |
-| **F-06** | Disponibilidad y capacidad diaria | Asigna repartidores a furgonetas y zonas por jornada, calcula ocupación y disponibilidad. |
-
-### Seguimiento de pedidos
-
-El módulo expondrá información de seguimiento mediante API para que los canales autorizados consulten el estado de un despacho. Esta capacidad es transversal y no constituye un área funcional independiente.
-
-Los requisitos, escenarios y criterios de aceptación de cada capacidad se desarrollan en sus respectivas especificaciones.
-
-## 🧭 Mapa de documentación
+## Mapa de documentación
 
 | Documento | Contenido |
 |---|---|
-| [Visión general](./overview.md) | Problema, objetivos, alcance, actores y flujo general del módulo. |
-| [Índice de funcionalidades](./funcionalidades/funcionalidad.md) | Listado y estado de las especificaciones funcionales. |
-| [Plan del Hito 4](./hitos/Plan_Hito_4_Despacho.md) · [Ejecución de F-02](./hitos/Plan_Hito_4_F02.md) | Responsables, dependencias, prioridades y evidencia del recorrido publicado; sin declarar aceptación funcional anticipada. |
-| [Integraciones externas](./integraciones/api-contract.md) | Comunicaciones con otros módulos y convenciones compartidas. |
-| [Homologación física G2–G6](./integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento) | H cerrados en la línea base rc.3; semántica D-G2-01/02 cerrada al 04/11 y proveedor fusionado. Publicación normativa G6, consumidor G2, credencial G7 y recorrido real tienen seguimiento propio. |
-| [API de Gestión de Despachos](./integraciones/api-contract-gestion-despachos.md) | Zonas, programación, catálogo, incidencias y API interna provista por Gestión. |
-| [API de Operación de Reparto y Flota](./integraciones/api-contract-operacion-reparto.md) | Repartidor, flota, jornadas, evidencias, capacidad y API interna provista por Operación. |
-| [Modelo de datos](./arquitectura/modelo-datos.md) | Base evolutiva de entidades, relaciones y decisiones de persistencia. |
-| [C4 de contexto](./arquitectura/c4-contexto.md) | Actores, límites del sistema e integraciones externas. |
-| [C4 de contenedores](./arquitectura/c4-contenedores.md) | Aplicaciones, microservicios, persistencias y comunicaciones internas. |
-| [Glosario de dominio](./arquitectura/glosario-dominio.md) | Significado común de pedidos, despachos, cotizaciones, capacidad y operación. |
-| [Estados del despacho](./arquitectura/diagrama-estados-despacho.md) | Estados, transiciones, precondiciones y operaciones no permitidas. |
-| [Componentes React compartidos](./disenio/componentes-react.md) | Contratos, criterios de aceptación y estilos con Mantine; reparto entre seis integrantes y ubicación en el paquete compartido del frontend. |
-| [Macroproceso de despacho](./arquitectura/macroproceso-despacho.md) | Flujo funcional de alto nivel desde la solicitud de Ventas hasta el resultado final. |
-| [Especificaciones funcionales](./funcionalidades/) | Requisitos, escenarios y criterios de completitud por funcionalidad. |
-| [Especificaciones atómicas](./especificaciones/) | F-02 cuenta con sus ocho carpetas SDD preparadas: [recepción](./especificaciones/ES-F02-01-RecepcionSolicitudDespacho/spec.md), [simulación](./especificaciones/ES-F02-02-GenerarDespachoPrueba/spec.md), [cola de pendientes](./especificaciones/ES-F02-03-ConsultarColaPendientes/spec.md), [asignación](./especificaciones/ES-F02-04-AsignarDespachoRepartidor/spec.md), [secuencia de ruta](./especificaciones/ES-F02-05-ConsultarReordenarSecuenciaRuta/spec.md), [reasignación](./especificaciones/ES-F02-06-ReasignarDespachoRepartidor/spec.md), [cancelación](./especificaciones/ES-F02-07-CancelarDespachoPorAnulacion/spec.md) y [trazabilidad](./especificaciones/ES-F02-08-RegistrarTrazabilidadOperaciones/spec.md). F-04 tiene sus seis carpetas SDD preparadas: [listado](./especificaciones/ES-F04-01-ConsultarEntregasFallidas/spec.md), [detalle](./especificaciones/ES-F04-02-ConsultarDetalleIncidencia/spec.md), [recepción](./especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/spec.md), [reprogramación](./especificaciones/ES-F04-04-ReprogramarDespachoFallido/spec.md), [cierre](./especificaciones/ES-F04-05-CerrarDespachoComoDevueltoAOrigen/spec.md) y [trazabilidad](./especificaciones/ES-F04-06-RegistrarTrazabilidadOperaciones/spec.md). Incluyen plan, tareas, evidencia y UI cuando aplica. El avance implementado y sus verificaciones se registran en la evidencia de cada carpeta. |
-| [Especificaciones F-05](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-05) | Las nueve especificaciones de Rhamses en SDD: [ES-F05-01](./especificaciones/ES-F05-01-RegistrarRepartidor/spec.md), [ES-F05-02](./especificaciones/ES-F05-02-ConsultarRepartidores/spec.md), [ES-F05-03](./especificaciones/ES-F05-03-EditarRepartidor/spec.md), [ES-F05-04](./especificaciones/ES-F05-04-DarDeBajaRepartidor/spec.md), [ES-F05-05](./especificaciones/ES-F05-05-VincularRepartidorConSeguridad/spec.md), [ES-F05-06](./especificaciones/ES-F05-06-RegistrarFurgoneta/spec.md), [ES-F05-07](./especificaciones/ES-F05-07-ConsultarFurgonetas/spec.md), [ES-F05-08](./especificaciones/ES-F05-08-EditarFurgoneta/spec.md), [ES-F05-09](./especificaciones/ES-F05-09-CambiarEstadoFurgoneta/spec.md). Cada carpeta incluye especificación, UI, plan, tareas y evidencia; se conservan los 47 IDs de criterios de aceptación, con el flujo de vinculación alineado al contrato de Seguridad. La verificación documental y los pendientes funcionales están separados de la aceptación del producto. |
-| [Plantillas y flujo SDD](./plantillas/sdd/README.md) | Organización aprobada por especificación, con adopción progresiva: comportamiento, UI opcional, plan, tareas y evidencia; componentes React compartidos. |
-| [Especificaciones F-06](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-06) | Ocho especificaciones de jornadas, monitoreo, disponibilidad, ocupación, cierre, reservas, liberaciones y proyecciones. Kevin Rhamses es responsable actual de F-05 y F-06. La [revisión conjunta](./especificaciones/ES-F06-01-AbrirJornada/evidencia/validacion.md#revision-f05-f06-2026-10-26) registra los PR, los pipelines aprobados y los pendientes con Seguridad real. |
-| [Historias de usuario](./historias-usuario/) | Historias en formato Jira (COMO/QUIERO/PARA) con criterios de aceptación Gherkin y DoD. |
-| [Reglas del repositorio](./AGENTS.md) | Convenciones para crear y mantener la documentación. |
-| [Guía de contribución](./CONTRIBUTING.md) | Integración de código en `develop`, documentación en `main`, revisión de PR y entregas con changelog y tags manuales. |
+| [Visión general](./overview.md) e [índice funcional](./funcionalidades/funcionalidad.md) | Alcance, responsables, estados y acceso a las especificaciones. |
+| [Especificaciones atómicas](./especificaciones/) e [historias de usuario](./historias-usuario/) | Requisitos, planes, tareas y evidencia de cada caso. |
+| [Contrato externo](./integraciones/api-contract.md) | Integraciones con Marketplace, Chatbot, Productos, Ventas y Seguridad; incluye cotización y seguimiento por pedido. |
+| [API de Gestión](./integraciones/api-contract-gestion-despachos.md) | Zonas, tarifas, programación, incidencias y operaciones internas de Gestión. |
+| [API de Operación](./integraciones/api-contract-operacion-reparto.md) | Reparto, flota, jornadas, evidencias, capacidad y operaciones internas de Operación. |
+| [Contexto](./arquitectura/c4-contexto.md), [contenedores](./arquitectura/c4-contenedores.md) y [modelo de datos](./arquitectura/modelo-datos.md) | Límites del módulo, servicios y persistencia. |
+| [Estados del despacho](./arquitectura/diagrama-estados-despacho.md), [macroproceso](./arquitectura/macroproceso-despacho.md) y [glosario](./arquitectura/glosario-dominio.md) | Flujo de negocio, transiciones y términos compartidos. |
+| [Sistema de diseño](./disenio/SYSTEM-DESIGN.md) y [componentes React](./disenio/componentes-react.md) | Referencias de interfaz de las dos aplicaciones. |
+| [Plan del Hito 4](./hitos/Plan_Hito_4_Despacho.md) y [ejecución F-02](./hitos/Plan_Hito_4_F02.md) | Coordinación y evidencia de integración por hito. |
+| [Entrega v0.2.0](./entregas/v0.2.0.md) | Alcance, revisiones del corte y validaciones pendientes. |
+| [Guía SDD](./plantillas/sdd/README.md), [reglas](./AGENTS.md) y [contribución](./CONTRIBUTING.md) | Plantillas y flujo de revisión y entregas. |
 
-F-01 cuenta con sus ocho carpetas SDD preparadas. Las últimas migraciones son [cotización con productos (ES-F01-06)](./especificaciones/ES-F01-06-CotizarEnvioConProductos/spec.md), [resolución de zona (ES-F01-07)](./especificaciones/ES-F01-07-ResolverZonaParaModulo/spec.md) y [trazabilidad de configuración (ES-F01-08)](./especificaciones/ES-F01-08-RegistrarTrazabilidadConfiguracion/spec.md), cada una con especificación, plan, tareas y evidencia. La UI no aplica en esas tres; su implementación y verificación funcional están pendientes. El [índice funcional](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-01) enlaza todos sus documentos.
+## Repositorios del módulo
 
-Actualización del 26/10/2026: F-01 guardará únicamente cotizaciones exactas exitosas antes de responder al canal, sin exigir un pedido. El [modelo](./arquitectura/modelo-datos.md#12-persistencia-exacta-y-estado-comunicado-del-esquema) recoge `cotizaciones` creada y `zonas_codigos_postales` con datos como antecedentes comunicados. El [plan de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/plan.md) y su [tarea T-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/tasks.md#t-06-implementar-la-persistencia-de-cotizaciones-exactas) mantienen pendientes el escritor, la verificación del esquema/lector y las pruebas. La preparación documental y la existencia de tablas no acreditan esos resultados [cite: 1].
+| Repositorio | Propósito |
+|---|---|
+| [G2-Despacho-Backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend) | Gateway, reglas de negocio, persistencia e integraciones. |
+| [G2-Despacho-Frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend) | Aplicación administrativa, PWA del repartidor y paquetes compartidos. |
+| [G2-Despacho-Specs](https://github.com/Taller-SW-Web/G2-Despacho-Specs) | Especificaciones, contratos y evidencia. |
 
-[cite: 1] [Evidencia de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md), antecedentes y límites de la actualización; [contrato externo §11.1](./integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento), con el cierre H del 02/11 y semántico D del 03–04/11/2026.
+Specs recibe cambios por PR a `main`. Los repositorios de código integran el desarrollo en `develop` y promueven las entregas a `main` por PR.
 
-Actualización del 04/11/2026: el estado efectivo D-G2-01 y el rechazo identificado del SKU padre D-G2-02 están cerrados semánticamente, incluidos campo obligatorio, orden y precedencia. El PR backend G6 #162 está fusionado; su OpenAPI publicado aún requiere sincronización normativa. [ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/spec.md) conserva CA-01 a CA-19 y T-07/T-08; [ES-F02-01](./especificaciones/ES-F02-01-RecepcionSolicitudDespacho/spec.md), CA-01 a CA-13 y T-09/T-10. Implementación y pruebas G2 permanecen pendientes. Hito 4 oficial: **07/11/2026** [cite: 1].
-
-## 🗂️ Repositorios del módulo
-
-Actualización del 05/11/2026: F-01 cuenta con implementación backend local de cliente G6, validación del lote, estados/errores identificados, persistencia exacta y redondeos confirmados. Gestión aprobó 231 pruebas con bases desechables y proveedor controlado. La [evidencia de ES-F01-06](./especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md#ejecución-local-del-consumidor--05112026) registra el comando, revisiones, escenarios y límites. El [índice funcional](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-01) distingue backend local, UI e integración externa; G6/G7 reales, publicación normativa, calendario y E2E siguen pendientes.
-
-El módulo se divide en repositorios independientes que comparten las especificaciones de este proyecto.
-
-| Repositorio | Propósito | Estado |
-|---|---|---|
-| [G2-Despacho-Specs](https://github.com/Taller-SW-Web/G2-Despacho-Specs) | Documentación, especificaciones y contrato de integración. | Disponible |
-| [G2-Despacho-Frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend) | Interfaz web para gestores y repartidores. | Disponible; integración por PR a `develop` |
-| [G2-Despacho-Backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend) | Servicios, reglas de negocio, persistencia e integraciones. | Disponible; integración por PR a `develop` |
-
-La documentación utiliza `main` como base y recibe cambios por PR; los repositorios de código integran en `develop`, conforme a CONTRIBUTING.
-
-## 🔗 Integraciones
-
-De acuerdo con la arquitectura general, Despacho y Entrega se relacionará con:
-
-- Canal Marketplace.
-- Canal Chatbot.
-- Ventas y Postventa.
-- Productos y Ofertas.
-- Seguridad y Usuarios.
-
-La comunicación se realiza mediante APIs y sin compartir bases de datos entre módulos. Las solicitudes de cotización, seguimiento, creación y cancelación se atienden de forma síncrona. Los cambios de estado hacia Ventas y Postventa se notifican de forma asíncrona mediante webhook HTTPS con bandeja de salida y reintentos.
-
-## 🛠️ Tecnologías previstas
-
-### Backend
-
-- Java 21 y Spring Boot 4.1.1.
-- Maven como herramienta de construcción y gestión de dependencias.
-- Spring Web MVC para las APIs REST.
-- Spring Data JPA e Hibernate para persistencia.
-- Spring Security para autenticación y autorización.
-- PostgreSQL Driver, Lombok y Bean Validation.
-- Swagger UI para documentar y explorar la API desplegada.
-
-### Frontend
-
-- React con Vite.
-- Tailwind CSS.
-- Diseño web responsive para escritorio y dispositivos móviles.
-
-### Datos, calidad y despliegue
-
-- PostgreSQL administrado mediante Supabase.
-- JUnit, Mockito, Spring Boot Test y Testcontainers.
-- Figma para el diseño de interfaces.
-- Vercel para el frontend y Render para el backend.
-- Webhooks HTTPS con patrón outbox para notificaciones asíncronas a Ventas y Postventa.
-
-Las dependencias específicas y sus versiones se documentarán en los repositorios de implementación correspondientes.
-
-## 📜 Contrato y documentación de API
-
-La documentación se distribuye en tres contratos: [integraciones externas y convenciones compartidas](./integraciones/api-contract.md), [Gestión de Despachos](./integraciones/api-contract-gestion-despachos.md) y [Operación de Reparto y Flota](./integraciones/api-contract-operacion-reparto.md). Cada operación tiene una sola definición; los consumidores enlazan el contrato de su proveedor y las convenciones comunes.
-
-Cuando el backend esté desplegado, publicará su documentación interactiva mediante Swagger UI. Esta documentación representará la API implementada y permitirá explorar sus operaciones disponibles. El enlace se incorporará cuando exista el entorno correspondiente.
-
-Los endpoints, modelos, códigos de respuesta y ejemplos no se duplicarán en este README.
-
-## 👥 Equipo
-
-El equipo está conformado por 6 integrantes:
+## Equipo
 
 | Integrante | Rol transversal o responsabilidad |
 |---|---|
-| **Tarqui** | Product Owner |
-| **Gerardo** | Líder del equipo y responsable de Calidad |
-| **Rhamses** | Responsable de DevOps y Cloud |
-| **Max** | Responsable de Frontend y UI/UX |
-| **Valqui** | Responsable de Arquitectura y Base de Datos |
-| **Luis** | Responsable de F-06: disponibilidad y capacidad diaria de la flota |
-
-## 🚧 Evolución del proyecto
-
-La documentación evolucionará junto con el desarrollo. Se actualizarán progresivamente las especificaciones, las decisiones de integración y los enlaces a los entornos desplegados.
-
-Ante cualquier diferencia entre este README y una especificación detallada, deberá revisarse y corregirse la documentación para mantener una única definición coherente del módulo.
-
-La preparación e implementación de F-06 se desglosa en [ocho especificaciones SDD](./funcionalidades/funcionalidad.md#especificaciones-atómicas-de-f-06), con contrato canónico, UI cuando aplica, plan, tareas y evidencia sin aceptación anticipada.
+| Tarqui | Product Owner |
+| Gerardo | Líder del equipo y Calidad |
+| Rhamses | DevOps y Cloud |
+| Max | Frontend y UI/UX |
+| Valqui | Arquitectura y Base de Datos |
+| Luis | Disponibilidad y capacidad diaria de flota |
