@@ -4,7 +4,7 @@
 
 **Responsable de verificación:** Gerardo. Ejecución asistida por Codex.
 
-**Última verificación funcional:** 24/10/2026, America/Lima.
+**Última verificación de la matriz completa:** 24/10/2026, America/Lima. La prueba de humo posterior se registra en la sección 6.
 
 ## 1. Versión y entorno verificados
 
@@ -113,7 +113,9 @@ Se generaron código, pruebas, migración, recorrido de navegador y seguimiento.
 | Backend | `124727b1eedb26721e953ac2474226052caf79f4` | feat(f04): implementar cierre atómico de despachos a origen |
 | Frontend | `b6823ed033e4a3700104fbb955e40ee20c972b60` | feat(f04): integrar cierre de despachos devueltos a origen |
 
-- No se publicaron ramas, PR, tags ni Release; los tres repositorios quedan en su rama de trabajo con commits locales.
+- El 24/10/2026 se prepararon los commits locales de implementación.
+- El 25/10/2026 el código entró a `develop` por [Frontend #16](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/pull/16) (merge `6520f8f`) y [Backend #18](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/18) (merge `48fe3b6`). Ambos merges están en el historial de `main`.
+- El 09/11/2026 se repitió por Gateway el recorrido recepción, liberación y cierre con un despacho simulado en un Compose aislado. El cierre devolvió `DEVUELTO_A_ORIGEN` y su repetición devolvió la respuesta original. El [corte v0.2.0](../../entregas/v0.2.0.md#verificación-y-pendientes) registra el entorno y los límites de esta comprobación.
 - T-01 a T-06 completadas en el entorno local. T-07/T-08 en curso por integración conjunta y revisión humana; no se sustituyen por una aprobación ficticia.
 - El commit de Specs que contiene esta evidencia registra el seguimiento; revisión por pares pendiente.
 
