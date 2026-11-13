@@ -20,6 +20,8 @@ Actualización del 04/11/2026: H-G2-01/02/03 cerrados, D-G2-01 cerrado el 03/11 
 
 ## 1. Contexto y objetivo
 
+Ampliación del 13/11/2026: un distrito inactivo rechaza solicitudes nuevas como destino sin cobertura, incluso con cotización previa o código postal alternativo. Recuperar una creación ya aceptada se reconoce antes de resolver cobertura; no afecta despachos existentes ni sus reprogramaciones. Fuente: [Gestión §3.1.1](../../integraciones/api-contract-gestion-despachos.md#311-administración-de-distritos--13112026), ES-F01-12 CA-03/04.
+
 Todos los pedidos de la tienda se preparan en un único centro de despacho. Cuando un pedido ya fue pagado y su paquete está sellado y listo en ese centro, el módulo de Ventas y Postventa solicita a Despacho su entrega a domicilio. A partir de esa solicitud nace la entidad despacho en estado `PENDIENTE_ASIGNACION` ("En centro de despacho").
 
 El objetivo es recibir, validar e incorporar de forma segura, atómica e idempotente en el Módulo de Despacho las solicitudes de entrega emitidas por Ventas y Postventa. El sistema resuelve la zona de cobertura mediante F-01, consulta en lote a Productos y Ofertas los datos físicos vigentes de las líneas del pedido, calcula el peso y el volumen totales y la fecha programada de entrega, crea el despacho con un paquete lógico (`cantidadPaquetes = 1`), asigna códigos únicos de operación y rastreo y responde de inmediato con la confirmación [cite: 1].

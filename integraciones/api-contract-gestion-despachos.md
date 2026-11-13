@@ -48,6 +48,41 @@ Ejemplo de tarifa:
 }
 ```
 
+### 3.1.1. Administración de distritos — 13/11/2026
+
+Gestión es propietaria del catálogo de Lima Metropolitana y Callao. Todas las operaciones siguientes requieren JWT humano `tipo=acceso` y rol `GESTOR_DESPACHO`, a través del Gateway.
+
+| Método | Ruta | Entrada | Respuesta exitosa |
+|---|---|---|---|
+| `GET` | `/api/v1/distritos` | `nombre` opcional; `estado=ACTIVO` por defecto, `INACTIVO` o `TODOS` | `200`, arreglo ordenado por nombre e identificador |
+| `GET` | `/api/v1/distritos/{id}` | Identificador UUID | `200`, distrito |
+| `POST` | `/api/v1/distritos` | `nombre`, `provincia`, `departamento`, `ubigeo` | `201`, distrito activo y `Location` |
+| `PUT` | `/api/v1/distritos/{id}` | Los cuatro datos de creación y `versionDistrito` | `200`, distrito actualizado |
+| `DELETE` | `/api/v1/distritos/{id}` | Parámetro obligatorio `versionDistrito` | `200`, distrito inactivo; baja lógica |
+| `PATCH` | `/api/v1/distritos/{id}/estado` | `estado` y `versionDistrito` | `200`, distrito con el estado solicitado |
+
+Las solicitudes admiten únicamente los campos y parámetros declarados. Los parámetros de consulta no se repiten. `nombre` se recorta en extremos, entre 1 y 100 caracteres; su unicidad no distingue mayúsculas, incluyendo inactivos. Provincia/departamento se normalizan a `Lima`/`Lima` o `Callao`/`Callao`. `ubigeo` es una cadena de seis dígitos, prefijo `1501` o `0701` respectivamente y sufijo distrital de `01` a `99`; es único incluso entre inactivos. Los espacios extremos se recortan. No se comprueba un padrón externo ni se permiten otras provincias.
+
+La representación conserva los cinco campos históricos (`id`, `nombre`, `provincia`, `departamento`, `ubigeo`) y añade `estado`, `versionDistrito` (entero no negativo), `catalogoBase` (booleano), `identidadEditable` (booleano), `creadoEn` y `actualizadoEn` (instantes UTC). `identidadEditable` es falso para los 50 precargados o si existe cualquier asociación distrital o postal, aun con zona inactiva. Solo nombre y ubigeo quedan protegidos por esta condición. El cliente vuelve a validar las restricciones al guardar; no puede escribir estos indicadores, fechas ni el estado mediante POST/PUT.
+
+`versionDistrito` es obligatorio en toda mutación de un recurso existente. Con cambio efectivo, una versión distinta produce `409 DESP_ERROR_DISTRITO_DESACTUALIZADO`, con `estadoActual` y `versionDistrito` vigentes. Un estado solicitado que ya coincide devuelve el recurso actual sin incrementar versión, cambiar fecha ni auditar, incluso con versión anterior de formato válido. Una edición sin cambios tampoco modifica ni audita, después de comprobar su versión. DELETE y PATCH a `INACTIVO` comparten el caso de uso. No se elimina físicamente el registro.
+
+| HTTP | Código | Causa |
+|---|---|---|
+| `400` | `DESP_ERROR_DATOS_DISTRITO_INVALIDOS` | Formato, campos adicionales, versión ausente/negativa, filtros o geografía inválidos; `errores` por campo |
+| `404` | `DESP_ERROR_DISTRITO_NO_ENCONTRADO` | UUID válido inexistente |
+| `409` | `DESP_ERROR_DISTRITO_DUPLICADO` | Nombre normalizado o ubigeo utilizado; identifica el campo |
+| `409` | `DESP_ERROR_IDENTIDAD_DISTRITO_PROTEGIDA` | Cambio de nombre/ubigeo protegido; identifica los campos |
+| `409` | `DESP_ERROR_DISTRITO_DESACTUALIZADO` | Vista obsoleta o escritura concurrente |
+
+Aplican `401/403` y Problem Details compartidos. Un UUID de ruta malformado responde `400`. Cada creación, edición o transición efectiva registra anterior/nuevo, ejecutor del JWT e instante UTC junto al cambio en una transacción; rechazos y repeticiones sin cambio no generan auditoría de éxito.
+
+**Cobertura:** un distrito informado que existe y está inactivo corta la resolución antes del respaldo postal, incluso si el código corresponde a otro distrito activo. Las coberturas distritales y postales requieren distrito y zona activos; entre las elegibles se conserva la prioridad distrital y después postal. No se altera el tratamiento de un distrito desconocido. La baja conserva asociaciones, exclusividad, tarifas, cotizaciones y despachos históricos. Nuevas asociaciones exigen distrito activo; la edición de zona puede conservar o retirar las asociaciones inactivas existentes, sin ampliarlas ni convertir una asociación postal inactiva en cobertura distrital. El detalle de zona añade `estado` a cada distrito asociado.
+
+Una asociación nueva o ampliada con distrito inactivo responde `400 DESP_ERROR_DISTRITO_INACTIVO`, con el campo `distritos` en `errores`, sin cambiar parcialmente la zona.
+
+Cotización mantiene el contrato externo: `200` sin cobertura, costo ni plazo, sin consultar Productos ni guardar una cotización. Recepción nueva mantiene `422 DESP_ERROR_SIN_COBERTURA`; una creación ya aceptada se recupera antes de reevaluar cobertura. Despachos existentes y reprogramaciones mantienen sus reglas. Reactivar recupera únicamente la cobertura cuya zona siga activa, sin activar zonas ni crear tarifas. Los simuladores seleccionan exclusivamente cobertura de distritos activos.
+
 ### 3.2. Programación y asignación
 
 | Método | Ruta | Roles | Propósito |

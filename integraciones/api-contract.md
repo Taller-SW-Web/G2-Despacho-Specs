@@ -248,7 +248,7 @@ Reglas:
 - Debe informarse `distrito`; `direccion`, `codigoPostal` y los demás datos del destino son opcionales.
 - `lineas` es opcional. Si se omite, la respuesta confirma únicamente la cobertura, la zona y los datos del destino, sin costo ni plazo. Si se envía, debe contener al menos un elemento.
 - En cada línea, `sku` es obligatorio y `cantidad` debe ser mayor que cero.
-- Despacho evalúa primero la cobertura. Si el destino no tiene cobertura, responde sin consultar a Productos ni validar las líneas.
+- Despacho evalúa primero la cobertura. Si el destino no tiene cobertura, responde sin consultar a Productos ni validar las líneas. Un distrito informado inactivo tampoco tiene cobertura, aunque se envíe un código postal cubierto; se aplica [Gestión §3.1.1](./api-contract-gestion-despachos.md#311-administración-de-distritos--13112026), conservando este formato público.
 - Con `lineas`, Despacho agrupa los SKU repetidos, consulta a Productos en lote y calcula el peso y volumen totales; el canal no envía esos totales.
 - La cotización no crea un pedido ni un despacho.
 - Decisión de redondeo confirmada el 05/11/2026: el cálculo utiliza aritmética decimal y peso/volumen exactos acumulados, sin redondeos por unidad o línea. `costoEnvio` se eleva directamente al siguiente múltiplo de `0.50 PEN` y se representa con dos decimales; un múltiplo exacto se conserva. Ejemplos: `8.12 → 8.50`, `8.78 → 9.00`, `15.13 → 15.50`, `8.5001 → 9.00`.

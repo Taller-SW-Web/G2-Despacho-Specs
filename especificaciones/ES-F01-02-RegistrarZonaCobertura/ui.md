@@ -31,6 +31,8 @@ La delimitación se realiza por distritos y códigos postales, sin mapa, sin pol
 
 ### UI-01. Formulario de Zona
 
+Ampliación del 13/11/2026: mostrar distritos asociados inactivos con «Inactivo · sin cobertura», conservando selección, códigos e indicador postal al editar. Solo activos en nuevas selecciones. Se permite retirar inactivos, sin ampliar sus asociaciones. Trazabilidad: ES-F01-12 CUI-04.
+
 Composición: estructura administrativa CR-03 → encabezado CR-05 → campos de formulario con validación en línea → acciones «Cancelar» y «Guardar». El título cambia entre «Nueva zona» y «Editar zona».
 
 | Elemento | Contenido y comportamiento |

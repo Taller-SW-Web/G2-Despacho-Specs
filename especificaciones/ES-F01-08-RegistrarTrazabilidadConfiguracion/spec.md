@@ -20,7 +20,7 @@ Garantizar que cada cambio aceptado sobre zonas y tarifas deje un registro audit
 
 ## 2. Alcance
 
-- Incluye: capturar cambios aceptados de zonas y tarifas con identidad y fecha confiables; conservar el histórico y evitar auditorías duplicadas.
+- Incluye: capturar cambios efectivos aceptados de zonas, distritos y tarifas con identidad y fecha confiables; conservar el histórico y evitar auditorías duplicadas.
 - Fuera de alcance: pantalla exclusiva de auditoría; edición o eliminación del histórico; registro de rechazos como éxitos; sustitución de logs, métricas o trazas; auditoría de consultas y cotizaciones.
 
 ## 3. Actor, precondiciones y resultados
@@ -49,6 +49,8 @@ Garantizar que cada cambio aceptado sobre zonas y tarifas deje un registro audit
 | Mutación del histórico | Intento de editar o eliminar registros | Operación no disponible; registros inalterados | CA-06 |
 
 ## 5. Reglas, datos e integraciones
+
+Ampliación del 13/11/2026: también se auditan altas, ediciones y estados efectivos de distritos, con anterior/nuevo, ejecutor JWT y fecha UTC en la misma transacción. Rechazos, ediciones sin cambios y estados coincidentes no insertan auditoría. Las nuevas operaciones pertenecen a ES-F01-10/11/12; contrato en [Gestión §3.1.1](../../integraciones/api-contract-gestion-despachos.md#311-administración-de-distritos--13112026).
 
 ### Reglas y validaciones
 

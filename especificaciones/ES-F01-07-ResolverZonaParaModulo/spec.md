@@ -16,6 +16,8 @@
 
 ## 1. Contexto y objetivo
 
+Ampliación del 13/11/2026: resolver mediante la fuente compartida que exige distrito y zona activos. Un distrito informado inactivo corta también el respaldo postal ajeno, conforme a [Gestión §3.1.1](../../integraciones/api-contract-gestion-despachos.md#311-administración-de-distritos--13112026). Verificación en ES-F01-12 CA-01/03/07.
+
 Determinar qué zona de cobertura activa contiene un destino y entregar esa resolución a las funcionalidades que la necesitan. F-02 la utiliza al crear un despacho para asociarle su zona o para rechazar el destino, y F-05 la utiliza para asignar la zona de trabajo de un repartidor en su jornada. Al ser F-01 la fuente única de cobertura del módulo, ninguna otra funcionalidad mantiene reglas propias de cobertura.
 
 ## 2. Alcance

@@ -24,6 +24,17 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 | **ES-F01-07** | Resolver la zona de un destino para el módulo | [Especificación](../especificaciones/ES-F01-07-ResolverZonaParaModulo/spec.md) · [Plan](../especificaciones/ES-F01-07-ResolverZonaParaModulo/plan.md) · [Tareas](../especificaciones/ES-F01-07-ResolverZonaParaModulo/tasks.md) · [Evidencia](../especificaciones/ES-F01-07-ResolverZonaParaModulo/evidence.md) | Resolución local verificada; consumo remoto de Operación y rendimiento pendientes |
 | **ES-F01-08** | Registrar la trazabilidad de la configuración | [Especificación](../especificaciones/ES-F01-08-RegistrarTrazabilidadConfiguracion/spec.md) · [Plan](../especificaciones/ES-F01-08-RegistrarTrazabilidadConfiguracion/plan.md) · [Tareas](../especificaciones/ES-F01-08-RegistrarTrazabilidadConfiguracion/tasks.md) · [Evidencia](../especificaciones/ES-F01-08-RegistrarTrazabilidadConfiguracion/evidence.md) | Auditoría, rollback e identidad durable de reintentos verificados localmente; revisión pendiente |
 
+### Administración de distritos — ampliación del 13/11/2026
+
+| ID | Comportamiento y documentación SDD | Estado |
+|---|---|---|
+| ES-F01-09 | [Consultar distritos](../especificaciones/ES-F01-09-ConsultarDistritos/spec.md) | Implementado; suites y navegador locales aprobados, revisión humana pendiente |
+| ES-F01-10 | [Registrar un distrito](../especificaciones/ES-F01-10-RegistrarDistrito/spec.md) | Implementado; suites y navegador locales aprobados, revisión humana pendiente |
+| ES-F01-11 | [Editar un distrito](../especificaciones/ES-F01-11-EditarDistrito/spec.md) | Implementado; protección y concurrencia verificadas, revisión humana pendiente |
+| ES-F01-12 | [Activar o desactivar un distrito](../especificaciones/ES-F01-12-ActivarDesactivarDistrito/spec.md) | Implementado; Gateway/navegador aislados aprobados con G7 temporal y Productos simulados |
+
+Cada carpeta incluye plan, tareas, UI y evidencia. El alcance previo de F-01 conserva sus resultados históricos; esta ampliación requiere evidencia propia.
+
 ## Especificaciones atómicas de F-02
 
 | ID | Comportamiento | Especificación | Estado |
