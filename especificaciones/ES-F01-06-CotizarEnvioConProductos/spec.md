@@ -22,6 +22,8 @@
 
 ## 1. Contexto y objetivo
 
+Ampliación del 13/11/2026: distrito inactivo equivale a destino sin cobertura, sin Productos, costo, plazo ni inserción histórica; no puede eludirse por código postal. Las instantáneas existentes permanecen intactas. Fuente: [Gestión §3.1.1](../../integraciones/api-contract-gestion-despachos.md#311-administración-de-distritos--13112026); regresión en ES-F01-12 CA-01/02/05/07.
+
 Calcular el costo de envío y el plazo estimado de un pedido a partir del destino, de los SKU y cantidades indicados por el canal y de la tarifa vigente de la zona que cubre ese destino. El módulo obtiene los datos físicos de cada producto ante Productos y Ofertas, calcula el peso y el volumen cotizables y devuelve una cotización exacta que los canales comunican al cliente antes de confirmar el pedido.
 
 ## 2. Alcance

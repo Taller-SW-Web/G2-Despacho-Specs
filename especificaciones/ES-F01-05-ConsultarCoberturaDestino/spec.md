@@ -48,6 +48,8 @@ La consulta de cobertura permite que los canales de venta sepan si un destino es
 
 ## 5. Reglas, datos e integraciones
 
+Ampliación del 13/11/2026: el distrito informado inactivo produce sin cobertura aun con código postal propio o ajeno cubierto; toda cobertura postal exige distrito activo. El formato público se conserva. Fuente: [Gestión §3.1.1](../../integraciones/api-contract-gestion-despachos.md#311-administración-de-distritos--13112026); verificación en ES-F01-12 CA-01/02/07.
+
 | Regla | Descripción comprobable | Origen |
 |---|---|---|
 | RN-01 | Si la solicitud incluye `lineas`, se procesa como una cotización completa según ES-F01-06; esta especificación describe el caso en que se omiten. | F-01 CA-10 |

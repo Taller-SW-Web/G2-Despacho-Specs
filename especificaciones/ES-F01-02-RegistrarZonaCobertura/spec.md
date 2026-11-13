@@ -48,6 +48,8 @@ El registro y la edición de zonas permiten delimitar la cobertura del centro de
 
 ## 5. Reglas, datos e integraciones
 
+Ampliación del 13/11/2026: las nuevas asociaciones requieren distrito activo. Una edición conserva o retira asociaciones inactivas ya existentes, sin añadir códigos ni convertir su cobertura postal en distrital. La baja no libera exclusividad entre zonas activas. Estado asociado y comportamiento se definen en [Gestión §3.1.1](../../integraciones/api-contract-gestion-despachos.md#311-administración-de-distritos--13112026) y se verifican en ES-F01-12 CA-08.
+
 | Regla | Descripción comprobable | Origen |
 |---|---|---|
 | RN-01 | El nombre es obligatorio, no admite duplicados y se conserva entre 1 y 80 caracteres. | F-01 CA-01 |

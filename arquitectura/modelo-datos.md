@@ -183,6 +183,8 @@ La existencia física comunicada de `cotizaciones` y `zonas_codigos_postales` se
 | `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
 | `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
 
+Ampliación V11 de administración (13/11/2026): `estado TEXT NOT NULL DEFAULT 'ACTIVO'` limitado a ACTIVO/INACTIVO, `version BIGINT NOT NULL DEFAULT 0` no negativa y `catalogo_base BOOLEAN NOT NULL DEFAULT false`. Se marcan como base exclusivamente los 50 ubigeos precargados; UUID, nombres y relaciones se conservan. Índice único `uq_distrito_nombre_normalizado` sobre `lower(btrim(nombre))`; ubigeo conserva su unicidad. Las nuevas escrituras validan ámbito, prefijo y formato conforme a [Gestión §3.1.1](../integraciones/api-contract-gestion-despachos.md#311-administración-de-distritos--13112026). Identidad editable se deriva de catálogo base y existencia de asociaciones, no es una columna. Auditoría con entidad `distrito` en la misma transacción. La baja no borra relaciones ni históricos.
+
 Índice: `idx_distrito_geom` (GiST sobre `geom`).
 
 #### `zonas_distritos`
@@ -213,7 +215,7 @@ El nombre documental canónico es `zonas_distritos`. Las menciones previas a `zo
 
 Restricción `uq_zcp`: UNIQUE (`zona_id`, `distrito_id`, `codigo_postal`). Índices comunicados: `idx_zcp_zona` (`zona_id`) e `idx_zcp_cp` (`codigo_postal`). Trigger `trg_zcp_actualizado_en`, con `public.set_actualizado_en()`.
 
-La unicidad de la terna no impide por sí sola que un distrito o código postal solape zonas activas. La administración de F-01 debe comprobar esa regla también al activar o editar zonas. Los lectores comparten la misma resolución de cobertura; la precedencia/conflicto cuando se informan distrito y código postal sigue como decisión pendiente en [ES-F01-07/plan.md](../especificaciones/ES-F01-07-ResolverZonaParaModulo/plan.md#7-decisiones-y-pendientes), sin elegir arbitrariamente una coincidencia. La presencia de datos en esta tabla no acredita que los lectores actuales la utilicen [cite: 1, 2].
+La unicidad de la terna no impide por sí sola que un distrito o código postal solape zonas activas. La administración de F-01 comprueba esa regla también al activar o editar zonas. Los lectores comparten la resolución y precedencia del [contrato de Gestión §§3.1 y 3.1.1](../integraciones/api-contract-gestion-despachos.md#31-zonas-y-tarifas). La baja de un distrito conserva sus asociaciones y no libera la exclusividad entre zonas activas; las asociaciones postales solo ofrecen cobertura si su distrito está activo. La [evidencia de ES-F01-12](../especificaciones/ES-F01-12-ActivarDesactivarDistrito/evidence.md) registra la verificación local de los lectores, sin acreditar proveedores publicados [cite: 1, 2].
 
 #### `zona_conflictos_log`
 | Columna | Tipo | Restricciones | Descripción |
@@ -625,7 +627,7 @@ Valores iniciales:
 
 #### `auditoria_configuracion`
 
-Cada servicio mantiene su propia auditoría: Gestión para zonas, tarifas y parámetros; Operación para repartidores, furgonetas y jornadas.
+Cada servicio mantiene su propia auditoría: Gestión para distritos, zonas, tarifas y parámetros; Operación para repartidores, furgonetas y jornadas.
 
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|

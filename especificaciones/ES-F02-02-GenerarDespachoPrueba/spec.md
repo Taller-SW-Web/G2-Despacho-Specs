@@ -16,6 +16,8 @@ Documentos SDD: [plan](./plan.md), [tareas](./tasks.md), [evidencia](./evidence.
 
 ## 1. Contexto y objetivo
 
+Ampliación del 13/11/2026: elegir exclusivamente cobertura de un distrito activo y una zona activa, filtrando antes de limitar la selección, tanto en cobertura distrital como exclusivamente postal. Fuente: [Gestión §3.1.1](../../integraciones/api-contract-gestion-despachos.md#311-administración-de-distritos--13112026), ES-F01-12 CA-07.
+
 El equipo técnico y los gestores de despacho requieren contar con carga de trabajo inmediata en la cola de asignación para realizar pruebas funcionales, verificar límites de carga de furgonetas y comprobar el flujo operativo sin depender de pedidos reales emitidos por Ventas y Postventa.
 
 El objetivo es permitir que el Gestor de Despacho genere de forma autónoma despachos simulados con datos realistas y consistentes directamente en estado `PENDIENTE_ASIGNACION`. Estos despachos reciben la marca booleana `esSimulacion=true` para mostrar la etiqueta "Simulado" en la interfaz, tienen fecha programada igual a hoy para permitir su asignación inmediata y siguen exactamente las mismas reglas de negocio operativas que un despacho real [cite: 1].

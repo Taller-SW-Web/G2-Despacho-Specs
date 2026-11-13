@@ -49,6 +49,8 @@ El cambio de estado retira o devuelve una zona de la cobertura efectiva del mód
 
 ## 5. Reglas, datos e integraciones
 
+Ampliación del 13/11/2026: activar una zona no activa sus distritos. Sus asociaciones inactivas se conservan y siguen contando para exclusividad, pero no resuelven cobertura mientras el distrito permanezca inactivo. Fuente: [Gestión §3.1.1](../../integraciones/api-contract-gestion-despachos.md#311-administración-de-distritos--13112026), ES-F01-12.
+
 | Regla | Descripción comprobable | Origen |
 |---|---|---|
 | RN-01 | Los únicos estados de una zona son `ACTIVO` e `INACTIVO`. | F-01 CA-17 |

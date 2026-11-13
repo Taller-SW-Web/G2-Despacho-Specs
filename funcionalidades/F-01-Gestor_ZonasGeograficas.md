@@ -9,6 +9,8 @@
 
 **Actualización 05/11/2026:** se implementan y verifican localmente cliente G6, validación, redondeos confirmados, instantáneas y configuración concurrente/auditable. Los resultados y límites están en la evidencia de ES-F01-06; las notas de fechas anteriores conservan su carácter histórico.
 
+**Actualización 13/11/2026:** administración de distritos implementada y verificada localmente en backend, interfaz y Gateway con Seguridad temporal y Productos simulados. Trazabilidad en ES-F01-09 a ES-F01-12; revisión por pares, aceptación humana e integración publicada pendientes.
+
 ## 1. Contexto
 
 Todos los envíos de la tienda salen de un único centro de despacho. La determinación de la cobertura y del costo de envío desde ese centro es el primer paso del ciclo de despacho. Antes de que un pedido se confirme, los canales de venta necesitan saber si la dirección del cliente está dentro de la cobertura y cuánto cuesta el envío.
@@ -26,6 +28,7 @@ Permitir la configuración de las zonas de cobertura y de la matriz tarifaria, e
 Esta funcionalidad incluye:
 
 - Administración de zonas de cobertura: registro, edición, consulta, activación y desactivación mediante distritos y códigos postales.
+- Administración de distritos de Lima Metropolitana y Callao: consulta, alta, edición protegida, baja lógica y reactivación. Un distrito inactivo no ofrece cobertura nueva, aun mediante código postal, y conserva asociaciones e históricos. Los comportamientos se concretan en ES-F01-09 a ES-F01-12 y [Gestión §3.1.1](../integraciones/api-contract-gestion-despachos.md#311-administración-de-distritos--13112026).
 - Matriz de tarifas: una regla vigente por zona con tarifa base, peso incluido, recargo por kilogramo adicional, factor volumétrico, moneda y plazo estimado en días hábiles.
 - Consulta de los datos físicos de cada producto ante Productos y Ofertas, en lote y con token propio, para calcular el peso y el volumen cotizables.
 - Cotización de envíos para Marketplace y Chatbot, con costo en soles y plazo estimado.
@@ -44,7 +47,7 @@ Quedan fuera de la cotización la resolución por geometría o por polígonos, l
 - Una solicitud de cotización debe identificar el destino con `distrito`; `direccion` y `codigoPostal` son opcionales.
 - `lineas` es opcional. Si se omite, la operación solo confirma cobertura y zona. Si se envía, debe contener al menos un elemento con `sku` y `cantidad` mayor que cero.
 - Cada producto cotizable debe identificar una unidad física, tener peso mayor a cero, dimensiones válidas, marca de actualización y estado efectivo elegible. La línea base H-G2-01/02/03 y las precisiones D-G2-01/02 se distinguen en el contrato externo §§5.2 y 11.1 [cite: 1].
-- Solo se cotiza contra zonas en estado `ACTIVO`.
+- Solo se cotiza contra zonas y distritos en estado `ACTIVO`; la baja del distrito informado no puede eludirse por un código postal.
 - Un distrito o código postal no puede pertenecer a más de una zona activa.
 - Los límites de cotización por consumidor y el tiempo de caché de los datos físicos de productos son acuerdos pendientes de cierre en el contrato.
 
@@ -319,12 +322,53 @@ El sistema DEBE ofrecer al resto del módulo la resolución de la zona que cubre
 - **CUANDO** el sistema evalúa el destino.
 - **ENTONCES** retorna `200 OK` con `coberturaDisponible: false`, sin zona y con el mensaje de destino fuera de cobertura.
 
+### RF-05. Administración de distritos
+
+El Gestor administra el catálogo de Lima Metropolitana y Callao conservando la identidad de los registros base, sus asociaciones e históricos. Detalle de comportamiento en ES-F01-09 a ES-F01-12; el contrato de Gestión es la única fuente de formatos.
+
+#### CA-33. Consulta compatible del catálogo distrital
+
+- **DADO** un catálogo con activos e inactivos.
+- **CUANDO** el Gestor consulta, busca por nombre o filtra estado.
+- **ENTONCES** recibe el arreglo compatible, activos por defecto, y puede obtener el detalle vigente con restricciones de edición.
+
+#### CA-34. Registro de distrito válido
+
+- **DADO** datos únicos y geografía válida del ámbito administrado.
+- **CUANDO** el Gestor registra el distrito.
+- **ENTONCES** se crea activo, con UUID y auditoría atómica, sin asignación de cobertura implícita; datos inválidos y duplicados, incluidos inactivos, se rechazan por campo.
+
+#### CA-35. Edición protegida y concurrente
+
+- **DADO** un distrito del catálogo base o con asociaciones distritales/postales, incluidas zonas inactivas.
+- **CUANDO** se intenta cambiar nombre o ubigeo.
+- **ENTONCES** se rechaza sin mutaciones; los nuevos sin asociaciones permiten esos cambios, y una versión obsoleta nunca sobrescribe una decisión posterior.
+
+#### CA-36. Baja lógica y reactivación auditables
+
+- **DADO** un distrito consultado con su versión.
+- **CUANDO** el Gestor confirma baja o reactivación.
+- **ENTONCES** conserva UUID, asociaciones y tarifas y confirma cambio y auditoría juntos; repetir el estado coincidente no modifica versión/fecha ni duplica auditoría.
+
+#### CA-37. Cobertura coherente con el estado distrital
+
+- **DADO** un distrito inactivo, incluso con código postal propio o de otro distrito cubierto.
+- **CUANDO** se cotiza o resuelve cobertura.
+- **ENTONCES** responde sin cobertura, costo ni plazo, sin Productos ni nueva cotización; otros distritos activos conservan cobertura y reactivar recupera únicamente configuración todavía vigente y activa.
+
+#### CA-38. Conservación del ciclo y del histórico
+
+- **DADO** una baja con cotizaciones y despachos existentes.
+- **CUANDO** llegan solicitudes nuevas, reintentos de creaciones ya aceptadas o reprogramaciones.
+- **ENTONCES** se rechazan los destinos nuevos sin cobertura, se recuperan los resultados idempotentes y continúan despachos existentes e históricos; los simuladores y las asociaciones nuevas exigen distritos activos.
+
 ## 6. Frontend
 
 La funcionalidad tendrá una experiencia web responsive compuesta por:
 
 | Elemento | Responsabilidad |
 |---|---|
+| Administración de distritos | Listado con búsqueda/estado, alta y edición protegida, confirmación de baja/reactivación y conflictos de versión; conservar distritos asociados inactivos al editar zonas. |
 | Panel de Gestión de Zonas | Listado paginado de zonas con filtros por nombre, distrito y estado, indicación de tarifa vigente y acciones de activación o desactivación. |
 | Formulario de Zona | Registro o edición del nombre, distritos y códigos postales. |
 | Formulario de Tarifas | Configuración de tarifa base, peso incluido, recargo por kilogramo, factor volumétrico y plazo estimado. |
@@ -337,6 +381,7 @@ La interfaz debe impedir acciones conocidas como inválidas, pero las mismas reg
 
 | Componente lógico | Responsabilidad |
 |---|---|
+| Administración de distritos | Consultar, crear, editar y cambiar estado con protección de identidad, versión y auditoría transaccional; resolver cobertura según su estado. |
 | Gestión de zonas | Registrar, editar, listar y consultar zonas con validación de distritos y códigos postales duplicados, y autorización. |
 | Estado de zonas | Activar y desactivar zonas validando el solapamiento con otras zonas activas. |
 | Servicio de matriz tarifaria | Administrar una tarifa vigente por zona y validar su consistencia. |
@@ -375,6 +420,7 @@ Las posibles ampliaciones de esta funcionalidad están centralizadas en [Pendien
 
 | Criterios | Verificación automatizada | Nivel | Evidencia esperada |
 |---|---|---|---|
+| CA-33 a CA-38 | CRUD, protección, concurrencia, baja/reactivación y regresiones distritales; recorrido por Gateway y navegador. | PostgreSQL/HTTP, componentes y Chromium | [ES-F01-09](../especificaciones/ES-F01-09-ConsultarDistritos/evidence.md) a [ES-F01-12](../especificaciones/ES-F01-12-ActivarDesactivarDistrito/evidence.md); distinguir dobles y aceptación humana. |
 | CA-01, CA-03 y CA-16 | Registrar y editar zonas válidas, duplicadas y con delimitación colidida. | Integración y unitaria | Zona creada en `ACTIVO`, `409` para nombres, distritos o códigos duplicados y persistencia de la edición con su auditoría. |
 | CA-04 | Invocar la configuración sin credenciales o con rol incorrecto. | Integración de seguridad | `403 Forbidden` sin datos de configuración. |
 | CA-15 | Consultar el catálogo con filtros combinados, paginación y zona sin tarifa. | Integración | Página con las coincidencias y metadatos de paginación. |
@@ -401,7 +447,7 @@ Además, se ejecutarán dos recorridos funcionales completos:
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-32` están implementados y cuentan con pruebas automatizadas exitosas, con H-G2-01/02/03 y el cierre/revisión de las precisiones D-G2-01/02 enlazados.
+- Los criterios `CA-01` a `CA-38` están implementados y cuentan con pruebas automatizadas exitosas, con H-G2-01/02/03 y el cierre/revisión de las precisiones D-G2-01/02 enlazados; CA-33 a CA-38 trazan la ampliación de distritos.
 - Los dos recorridos funcionales han sido verificados de extremo a extremo.
 - La cotización y la resolución de zona devuelven resultados coherentes con la configuración vigente.
 - F-02 obtiene la zona de cada despacho desde este servicio y no mantiene una lógica de cobertura propia.
