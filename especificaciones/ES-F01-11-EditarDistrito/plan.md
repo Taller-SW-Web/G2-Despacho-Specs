@@ -11,6 +11,7 @@
 1. Añadir versión JPA en V11 y comprobar la versión presentada antes de escribir.
 2. Serializar identidad/asociaciones con el bloqueo compartido de configuración. Consultar tanto asociaciones distritales como postales, incluyendo zonas inactivas. No auditar ediciones sin cambios.
 3. Precargar detalle, bloquear nombre/ubigeo según `identidadEditable` y presentar el motivo. Conflictos no renuevan automáticamente la versión; ofrecer revisión conservando los datos.
+4. Selección y detalle en PaginaDistritos; formulario reutilizable sin API ni navegación. Guardar/cancelar retorna al alta; proteger borradores al cambiar de selección, gestionar foco e ignorar respuestas obsoletas. Actualizar el listado no renueva la versión de una edición.
 
 ## 3. Verificación y cierre
 

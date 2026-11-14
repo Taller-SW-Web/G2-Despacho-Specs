@@ -7,3 +7,4 @@
 - [x] T-03: Implementar confirmaciones y preservación de distritos inactivos en zonas.
 - [x] T-04: Ejecutar regresiones y recorrido Gateway/navegador aislado; registrar [evidencia](./evidence.md).
 - [ ] T-05: Revisión técnica, funcional y aceptación humana.
+- [x] T-06: Integrar baja/reactivación en el panel unificado preservando filtros y otros borradores; verificar bloqueo, permisos y confirmaciones accesibles. Resultados en [evidencia](./evidence.md).

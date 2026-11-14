@@ -368,7 +368,7 @@ La funcionalidad tendrá una experiencia web responsive compuesta por:
 
 | Elemento | Responsabilidad |
 |---|---|
-| Administración de distritos | Listado con búsqueda/estado, alta y edición protegida, confirmación de baja/reactivación y conflictos de versión; conservar distritos asociados inactivos al editar zonas. |
+| Administración de distritos | Botón Distritos en Zonas y tarifas; pantalla unificada con formulario izquierdo y listado derecho, búsqueda/estado, alta y edición protegida, descarte de borradores, confirmación de baja/reactivación y conflictos de versión. Regreso con consulta de zonas conservada; conservar distritos asociados inactivos al editar zonas. |
 | Panel de Gestión de Zonas | Listado paginado de zonas con filtros por nombre, distrito y estado, indicación de tarifa vigente y acciones de activación o desactivación. |
 | Formulario de Zona | Registro o edición del nombre, distritos y códigos postales. |
 | Formulario de Tarifas | Configuración de tarifa base, peso incluido, recargo por kilogramo, factor volumétrico y plazo estimado. |

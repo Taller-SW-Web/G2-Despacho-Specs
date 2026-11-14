@@ -12,6 +12,7 @@
 2. ZonasAdaptadorJpa rechaza distrito informado inactivo antes del respaldo postal; ambas consultas JPA exigen distrito activo. Todos los consumidores usan esa resolución.
 3. GestionZonas permite conservar/retirar asociaciones inactivas existentes, pero no ampliarlas. Exponer estado en detalle. Simulación filtra activos antes del LIMIT de elección de cobertura.
 4. Modal de confirmación, actualización del catálogo y adaptación del formulario de zonas sin pérdida de selecciones ni de `soloCodigosPostales`.
+5. Coordinar estado y edición desde la pantalla unificada: versión consultada, respuesta confirmada, filtros conservados y bloqueo de escrituras simultáneas. Descartar expresamente el borrador del distrito afectado; preservar el de cualquier otro. Denegación retira datos y modales e invalida consultas pendientes.
 
 ## 3. Verificación y cierre
 

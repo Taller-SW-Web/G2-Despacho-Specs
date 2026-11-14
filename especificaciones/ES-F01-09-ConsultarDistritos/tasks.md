@@ -7,3 +7,4 @@
 - [x] T-03: Implementar listado con búsqueda, filtro y estados de UI; probar con API simulada.
 - [x] T-04: Ejecutar suites y recorrido real aislado; registrar [evidencia](./evidence.md).
 - [ ] T-05: Revisión técnica, funcional y aceptación humana.
+- [x] T-06: Unificar pantalla, acceso/rutas y regreso con contexto separado; comprobar filtros, recuperación, permisos, escritorio y móvil. Resultados en [evidencia](./evidence.md).

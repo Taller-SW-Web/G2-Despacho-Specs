@@ -11,6 +11,7 @@ Acciones del listado con ModalConfirmacion, notificaciones y EstadoVista del [pa
 - CUI-03: Conflicto actualiza datos consultados y exige otra confirmación. Fallos no se presentan como éxito; bloqueo durante envío.
 - CUI-04: Formulario de zona conserva inactivos asociados, los rotula «Inactivo · sin cobertura» y permite retirarlos; solo activos para nuevas selecciones. Conserva cobertura exclusivamente postal.
 - CUI-05: Modal con foco atrapado/restaurado, cancelar por teclado, acciones rotuladas y sin depender del color.
+- CUI-06: Acciones en el panel derecho de la administración unificada. Éxito muestra el estado confirmado y refresca conservando filtros, aunque la fila deje de coincidir. Si afecta a la edición abierta, confirmar antes el descarte pendiente y volver al alta tras éxito; el borrador de otro distrito se conserva. Durante una escritura se bloquean envíos y acciones incompatibles.
 
 ## 3. Verificación
 

@@ -18,3 +18,9 @@ Verificación local del 13/11/2026 mediante OpenCode: aprobada; cambios en ramas
 | CUI-01 a CUI-04 | `Distritos.test.tsx`: formulario, prefijo, duplicado por campo y preservación; Chromium: alta y conflicto reales, captura móvil y foco de teclado | Aprobado; API simulada en componentes, real local en Chromium |
 
 V11 se prueba sobre V10 con 51 registros, asociaciones distritales/postales y comparación íntegra de todos los campos previos, incluidas fechas. Reportes y comandos en [ES-F01-12](../ES-F01-12-ActivarDesactivarDistrito/evidence.md#2-resultados-del-13112026). G6/G7 publicados y aceptación humana pendientes.
+
+## 3. Administración unificada — 13/11/2026
+
+T-06 y CUI-01 a CUI-05 verificados localmente. Componentes con APIs simuladas prueban creación sin salir, formulario limpio, filtros conservados, aviso del registro oculto, errores por campo, descarte cancelable, `beforeunload` y bloqueo de doble envío. Se inyecta fallo de lectura después de un alta confirmada: el éxito permanece visible y Reintentar listado no repite POST.
+
+El navegador crea mediante Gateway real y permanece en la administración, conserva filtros tras editar, descarta el formulario explícitamente y regresa a zonas con su contexto y catálogo actualizado. Comandos y límites en [evidencia compartida de la unificación](../ES-F01-12-ActivarDesactivarDistrito/evidence.md#3-administración-unificada-de-distritos). Aceptación humana pendiente.
