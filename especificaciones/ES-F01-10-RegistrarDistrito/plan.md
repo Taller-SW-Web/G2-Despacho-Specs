@@ -10,7 +10,8 @@
 
 1. Migración V11 nueva: estado activo inicial, versión y marca del catálogo base; preservar UUID, datos y relaciones.
 2. GestionDistritos valida datos y unicidad bajo el mismo bloqueo de configuración de zonas; base impone unicidad normalizada. Registro y auditoría comparten transacción.
-3. Formulario con React Hook Form/Zod y campos Mantine; errores por campo, valores conservados, notificación y vuelta al catálogo.
+3. Formulario con React Hook Form/Zod y campos Mantine dentro del panel unificado; errores por campo y valores conservados. El coordinador notifica, limpia y consulta de nuevo manteniendo filtros, informa registros ocultos y distingue éxito de escritura de fallo posterior de lectura.
+4. Coordinar confirmaciones de descarte para limpiar, editar o regresar y aviso de cierre/recarga con pendientes.
 
 ## 3. Verificación y cierre
 

@@ -11,6 +11,7 @@
 1. Extender controlador, puerto y adaptador de distritos en `zonas/`; filtros validados y orden estable.
 2. Reutilizar cliente API, ShellAdministrativo y EstadoVista para `features/distritos/PaginaDistritos`.
 3. Mantener selector activo por defecto y detalle de zona independiente para asociaciones inactivas.
+4. Unificar las tres rutas en PaginaDistritos como coordinador de consultas, selección y mutaciones; extraer ListadoDistritos de presentación y FormularioDistrito con datos/callbacks. Contexto de regreso en `origenZonas`, separado de `nombre`/`estado` distritales; grilla responsive y tabla con scroll interno.
 
 ## 3. Verificación y cierre
 

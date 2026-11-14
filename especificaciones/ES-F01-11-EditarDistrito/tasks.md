@@ -7,3 +7,4 @@
 - [x] T-03: Implementar precarga, restricciones y recuperación de conflictos en UI.
 - [x] T-04: Verificar suites y recorrido aislado; registrar [evidencia](./evidence.md).
 - [ ] T-05: Revisión técnica, funcional y aceptación humana.
+- [x] T-06: Edición lateral coordinada, selección/foco, descarte y recuperación explícita de conflictos; verificar respuestas atrasadas y borradores. Resultados en [evidencia](./evidence.md).

@@ -7,3 +7,4 @@
 - [x] T-03: Implementar formulario y tratamiento de validaciones/duplicados.
 - [x] T-04: Verificar suites y recorrido aislado; registrar [evidencia](./evidence.md).
 - [ ] T-05: Revisión técnica, funcional y aceptación humana.
+- [x] T-06: Alta dentro del panel, limpieza/descarte, filtros conservados y éxito independiente del refresco; verificar componentes y navegador. Resultados en [evidencia](./evidence.md).

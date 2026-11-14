@@ -62,6 +62,38 @@ Pasos reproducibles en el README del frontend y `docs/pruebas.md` del backend, s
 - La prueba de actualización V10 → V11 detectó que marcar catálogo base alteraba fechas históricas: V11 preserva esas fechas durante esa actualización técnica y restaura el trigger en la misma migración transaccional. Se conserva la comparación íntegra de los datos previos en la prueba.
 - Una primera ejecución con el nivel raíz de log reducido hizo fallar tres aserciones de diagnóstico existentes. La ejecución final usó la configuración normal y las 267 pruebas pasaron; esas aserciones permanecen intactas.
 
-## 3. Revisión y pendientes
+## 3. Administración unificada de distritos
+
+Implementación local del plan `servicio-gestion-despachos/docs/plan-administracion-unificada-distritos.md`, solicitada el 13/11/2026. Se continuó en `feature/f01-administracion-distritos` de frontend/backend y `docs/f01-administracion-distritos` de Specs, preservando el trabajo local previo. Cambios todavía sin commit ni aprobación humana. T-06 y criterios de UI de ES-F01-09 a ES-F01-12 verificados.
+
+### EV-U01. Comprobaciones ejecutadas
+
+| Comando desde frontend | Resultado |
+|---|---|
+| `npm run test:f01` | 52 pruebas aprobadas: 34 de distritos, 7 de navegación y 11 de zonas |
+| `npm run test:administrativo` | Ejecución final: 262 pruebas aprobadas en 24 archivos, cero fallos |
+| `npm run typecheck` | Aprobado en los tres workspaces comprobados |
+| `npm run build` | Administración y repartidor construidos; avisos de tamaño de chunks de Vite |
+| `npm run test:distritos:e2e` | Ejecución final: 2 pruebas Chromium aprobadas en 16,4 s |
+
+Prettier aprobado en los archivos frontend afectados; `git diff --check` aprobado en frontend, backend y Specs. Al finalizar se retiraron los cuatro contenedores y su red del proyecto de prueba, descartando sus datos `tmpfs`.
+
+Componentes con APIs simuladas: borradores y descarte cancelable, cierre/recarga, filtros conservados, alta oculta por filtros, detalle inexistente, respuestas atrasadas, versión obtenida del detalle, conflictos explícitos, bloqueo de doble escritura y retirada de formulario/filas/confirmaciones ante `401/403`. El fallo de refresco posterior a un guardado mantiene el éxito y recupera únicamente GET. Cambiar el estado de otro distrito conserva el borrador abierto; cambiar el del seleccionado requiere descarte y vuelve al alta después de la respuesta aceptada.
+
+### EV-U02. Navegador e integración local
+
+Proyecto Compose `f01-distritos-unificada-qa`, con `pruebas/compose.f02.yaml`, `pruebas/compose.f01-distritos.yaml` y `--env-file /dev/null`. PostgreSQL en `tmpfs`, Seguridad temporal, Gestión y Gateway con salud UP; se reutilizaron los JAR locales ya construidos. Esta ejecución no añadió código backend ni volvió a ejecutar Maven; los resultados de §2 son antecedentes, no pruebas nuevas de esta reorganización. No se utilizó una base compartida.
+
+APIs de la aplicación sin interceptar: acceso mediante Distritos, alta/edición sin abandonar la pantalla, filtros y regreso a zonas, duplicado real, identidad protegida, desactivación/reactivación, cobertura distrital/postal y conservación de zona, conflicto concurrente con revisión explícita y rechazo de credenciales. Productos simulados y emisor temporal: no acredita G6/G7 publicados.
+
+Se verifican geometría de dos columnas a 1440 × 1024, acciones de fila legibles, paneles apilados a 390 × 844, navegación con Tab, foco de edición no tapado por cabecera, Escape con retorno al botón y scroll horizontal por teclado contenido en la tabla. Capturas inspeccionadas, fuera de Git en frontend:
+
+- `test-results/distritos/administracion-administra--1eadc-eal-con-Productos-simulados/zonas-con-distritos.png`.
+- `test-results/distritos/administracion-administra--1eadc-eal-con-Productos-simulados/distritos-escritorio.png`.
+- `test-results/distritos/administracion-mantiene-fo-c68d3-eclado-utilizables-en-móvil/distrito-movil.png`.
+
+La primera pasada encontró pérdida de foco al deshabilitar el botón durante la consulta previa al modal: se conserva su referencia y se restaura al cancelar, con regresión de componentes y navegador. La revisión visual motivó ampliar el listado y apilar sus acciones para evitar recortes, además de dejar margen de desplazamiento bajo la cabecera fija. La prueba de teclado parte explícitamente del extremo izquierdo porque editar puede haber desplazado la tabla hacia las acciones. Cada repetición usó una base desechable nueva; las comprobaciones no se deshabilitaron ni debilitaron.
+
+## 4. Revisión y pendientes
 
 La revisión automatizada local no sustituye revisión por pares ni aceptación humana. Integración por PR a develop en código y a main en Specs, despliegue y aceptación conjunta con G6/G7 quedan pendientes. No se actualizan changelogs ni tags durante esta rama funcional.
