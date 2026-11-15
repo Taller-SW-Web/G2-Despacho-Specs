@@ -38,6 +38,8 @@ No se incorporan dependencias nuevas ni se actualizan versiones en esta concilia
 
 ## 3. Estilos y componentes compartidos
 
+Ampliación F-01 del 14/11/2026: Administración incorpora Leaflet 1.9.x, React Leaflet 5 y tipos GeoJSON/Leaflet, con carga diferida, CSS Modules y Mantine. El proveedor de teselas y su atribución se configuran mediante variables públicas. Resolución exacta en el lockfile del frontend.
+
 Ambas aplicaciones importan el tema `tema` y `tokens.css` de `@despacho/componentes-compartidos`. Inter se utiliza en cuerpo y controles y Oswald 700 en H1–H3. Los estilos propios usan CSS Modules y variables del tema. Los breakpoints se ajustan al diseño: 576, 768, 992, 1200 y 1408 px [cite: 2].
 
 Cada aplicación mantiene un `MantineProvider` y un `Notifications`; CR-15 adapta ese proveedor existente. No se crea un segundo sistema de notificaciones. Los componentes visuales reciben datos, permisos resueltos y callbacks del consumidor [cite: 3].

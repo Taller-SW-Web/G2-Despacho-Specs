@@ -40,6 +40,14 @@ El 26/10/2026 se acordó guardar en F-01 únicamente cálculos `EXACTA` exitosos
 
 ---
 
+### 1.3. Geometrías administrativas — 14/11/2026
+
+Gestión conserva `distrito.geom` (SRID 4326) como límite vigente opcional. `geometrias_distrito` mantiene una fila por distrito con versión geográfica, fuente/revisión, ejecutor, fecha, huella e importación. Su versión es independiente de `distrito.version`: importar no modifica identidad, estado ni asociaciones del CRUD.
+
+`validaciones_geograficas` guarda propuestas revisadas, ejecutor, vencimiento y versiones observadas; no modifica límites. `importaciones_geograficas` identifica cada lote confirmado, su validación única y el nombre de archivo declarado, opcional para cargas directas por API. `historico_geometrias` conserva cada geometría sustituida y sus metadatos, incluida la referencia a su importación/archivo, incluso una geometría heredada sin procedencia. No expone operaciones de edición o borrado. La importación confirma geometría, metadatos, histórico, auditoría y resultado idempotente en una transacción mediante `comandos_configuracion`.
+
+La composición de zonas se deriva de asociaciones distritales y postales; no escribe `zonas.geom` ni incorpora resolución por coordenadas. Contrato canónico en [Gestión §3.1.2](../integraciones/api-contract-gestion-despachos.md#312-geometrías-y-mapas-administrativos--14112026).
+
 ## 2. Diagramas entidad-relación
 
 Las líneas siguientes representan únicamente relaciones dentro de cada persistencia. Los identificadores que cruzan de un servicio a otro no son claves foráneas.

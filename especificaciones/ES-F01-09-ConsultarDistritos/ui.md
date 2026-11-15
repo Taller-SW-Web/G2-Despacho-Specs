@@ -6,6 +6,8 @@ Ruta `/distritos`, accesible mediante **Distritos** en Zonas y tarifas, que perm
 
 ## 2. Interacción y estados
 
+La ampliación del 14/11/2026 conserva esta vista Tabla y su borrador y añade Mapa/Importar geometrías según [ES-F01-13](../ES-F01-13-ConsultarRepresentacionGeografica/ui.md) y [ES-F01-14](../ES-F01-14-ValidarImportacionGeometrias/ui.md). No crea otra sección lateral ni cambia el contexto de regreso.
+
 - CUI-01: Buscar por nombre y filtrar Activos/Inactivos/Todos; listado con nombre, provincia, departamento, ubigeo y estado.
 - CUI-02: Mostrar carga, vacío, error con reintento y acceso denegado sin datos. Peticiones obsoletas no reemplazan resultados recientes.
 - CUI-03: Crear, editar y cambiar estado desde acciones rotuladas; acciones adaptadas al estado vigente.

@@ -20,6 +20,8 @@ El registro y la edición de zonas permiten delimitar la cobertura del centro de
 
 ## 2. Alcance
 
+Ampliación del 14/11/2026: [ES-F01-16](../ES-F01-16-SeleccionarDistritosMapa/spec.md) añade selección administrativa en mapa al formulario. No dibuja polígonos ni modifica la resolución de cobertura; importación e histórico pertenecen a ES-F01-14/15.
+
 - Incluye: crear una zona con nombre, delimitación por distritos y códigos postales y estado inicial; editar el nombre o la delimitación de una zona existente; validar unicidad de nombre y ausencia de solapamiento entre zonas activas.
 - Fuera de alcance: cambiar el estado de una zona (ES-F01-03); configurar su tarifa (ES-F01-04); resolver la cobertura de un destino para módulos o canales (ES-F01-05, ES-F01-06 y ES-F01-07); dibujar polígonos, detectar solapamientos geográficos o almacenar geometrías.
 

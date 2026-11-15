@@ -1,7 +1,7 @@
 # Especificación F-01: Gestor de Zonas Geográficas y Cotizador de Envíos
 
 **Responsable:** Valqui
-**Estado:** Backend local implementado y verificado; UI, integración real y aceptación pendientes.
+**Estado:** Backend y ampliaciones administrativas verificados localmente; integración publicada y aceptación pendientes.
 **Actor principal:** Gestor de Despacho / Administrador
 **Lineamiento del curso:** Gestión de zonas y tarifas de entrega
 
@@ -10,6 +10,8 @@
 **Actualización 05/11/2026:** se implementan y verifican localmente cliente G6, validación, redondeos confirmados, instantáneas y configuración concurrente/auditable. Los resultados y límites están en la evidencia de ES-F01-06; las notas de fechas anteriores conservan su carácter histórico.
 
 **Actualización 13/11/2026:** administración de distritos implementada y verificada localmente en backend, interfaz y Gateway con Seguridad temporal y Productos simulados. Trazabilidad en ES-F01-09 a ES-F01-12; revisión por pares, aceptación humana e integración publicada pendientes.
+
+**Actualización 14/11/2026:** mapas e importación de geometrías implementados y verificados localmente con V12, 50 límites completos, histórico, concurrencia y selección por teclado/móvil. Trazabilidad en ES-F01-13 a ES-F01-16; Seguridad temporal, Productos y caída de teselas son dobles explícitos. Revisión por pares, vigencia oficial del conjunto y aceptación humana pendientes.
 
 ## 1. Contexto
 
@@ -35,6 +37,7 @@ Esta funcionalidad incluye:
 - Persistencia de cada cotización exacta exitosa y de la tarifa aplicada antes de responder al canal, aun sin pedido confirmado.
 - Validación de cobertura y resolución de zona para un destino, como servicio interno para F-02 y F-05.
 - Registro de auditoría de los cambios en zonas y tarifas.
+- Mapas administrativos, importación de límites GeoJSON con previsualización, versiones, histórico y selección sincronizada de distritos. Ampliación del 14/11/2026: ES-F01-13 a ES-F01-16 y [Gestión §3.1.2](../integraciones/api-contract-gestion-despachos.md#312-geometrías-y-mapas-administrativos--14112026).
 
 Quedan fuera de la cotización la resolución por geometría o por polígonos, la definición de rangos de peso por tramos y la promoción de envíos gratuitos, que son responsabilidades de otros ámbitos o decisiones pendientes.
 
@@ -362,6 +365,16 @@ El Gestor administra el catálogo de Lima Metropolitana y Callao conservando la 
 - **CUANDO** llegan solicitudes nuevas, reintentos de creaciones ya aceptadas o reprogramaciones.
 - **ENTONCES** se rechazan los destinos nuevos sin cobertura, se recuperan los resultados idempotentes y continúan despachos existentes e históricos; los simuladores y las asociaciones nuevas exigen distritos activos.
 
+### RF-06. Mapas y límites administrativos
+
+El sistema DEBE ofrecer mapas administrativos y un flujo de validación/importación de límites, manteniendo la resolución por distrito/código postal. El detalle atómico y la evidencia residen en ES-F01-13 a ES-F01-16; no se duplican formatos del contrato.
+
+- **CA-39:** DADO un catálogo con activos, inactivos y límites faltantes, CUANDO el Gestor consulta distritos o composición de una zona, ENTONCES distingue esos estados y la referencia postal sin modificar cobertura.
+- **CA-40:** DADO un GeoJSON y su procedencia, CUANDO valida, ENTONCES recibe correspondencias e incidencias topológicas antes de cualquier cambio geográfico; las sugerencias requieren selección explícita.
+- **CA-41:** DADA una propuesta válida y vigente, CUANDO confirma, ENTONCES guarda el lote atómicamente con histórico/auditoría y control concurrente; recuperar una respuesta perdida no duplica decisiones.
+- **CA-42:** DADO el formulario de zona, CUANDO selecciona en mapa o lista, ENTONCES mantiene una sola selección, códigos e indicadores postales e inactivos existentes; guarda únicamente al confirmar el formulario.
+- **CA-43:** DADA la misma cotización con tarifa, Productos y reloj controlados, CUANDO importa o reemplaza geometría, ENTONCES conserva respuesta y resolución, incluyendo distritos sin geometría.
+
 ## 6. Frontend
 
 La funcionalidad tendrá una experiencia web responsive compuesta por:
@@ -407,7 +420,7 @@ Las rutas administrativas, cuerpos, respuestas y códigos de error se definen en
 
 - **Cobro del envío:** corresponde al proceso de pago de los canales y a Ventas y Postventa.
 - **Envío gratuito y promociones:** pertenecen a Ventas y Postventa y no modifican el costo logístico.
-- **Geometría, polígonos y PostGIS:** no forman parte del alcance; la cobertura se define por distritos y códigos postales.
+- **Resolución por geometría y dibujo de límites:** fuera de alcance. Los mapas e importaciones son administrativos; la cobertura y cotización se siguen definiendo por distritos y códigos postales.
 - **Rangos de peso por tramos:** la tarifa vigente se define con peso incluido y recargo por kilogramo adicional.
 - **Registro de despachos:** corresponde a F-02.
 - **Ciclo comercial de cotizaciones:** aceptación, cancelación, vencimiento, consulta pública y asociación automática a pedidos o despachos requieren un alcance posterior; los campos existentes en la tabla no habilitan esos comportamientos.
@@ -447,7 +460,7 @@ Además, se ejecutarán dos recorridos funcionales completos:
 
 La funcionalidad se considera completa cuando:
 
-- Los criterios `CA-01` a `CA-38` están implementados y cuentan con pruebas automatizadas exitosas, con H-G2-01/02/03 y el cierre/revisión de las precisiones D-G2-01/02 enlazados; CA-33 a CA-38 trazan la ampliación de distritos.
+- Los criterios `CA-01` a `CA-43` están implementados y cuentan con pruebas automatizadas exitosas, con H-G2-01/02/03 y el cierre/revisión de las precisiones D-G2-01/02 enlazados; CA-33 a CA-38 trazan la ampliación de distritos y CA-39 a CA-43 la ampliación geográfica.
 - Los dos recorridos funcionales han sido verificados de extremo a extremo.
 - La cotización y la resolución de zona devuelven resultados coherentes con la configuración vigente.
 - F-02 obtiene la zona de cada despacho desde este servicio y no mantiene una lógica de cobertura propia.

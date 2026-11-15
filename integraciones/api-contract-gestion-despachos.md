@@ -83,6 +83,46 @@ Una asociación nueva o ampliada con distrito inactivo responde `400 DESP_ERROR_
 
 Cotización mantiene el contrato externo: `200` sin cobertura, costo ni plazo, sin consultar Productos ni guardar una cotización. Recepción nueva mantiene `422 DESP_ERROR_SIN_COBERTURA`; una creación ya aceptada se recupera antes de reevaluar cobertura. Despachos existentes y reprogramaciones mantienen sus reglas. Reactivar recupera únicamente la cobertura cuya zona siga activa, sin activar zonas ni crear tarifas. Los simuladores seleccionan exclusivamente cobertura de distritos activos.
 
+### 3.1.2. Geometrías y mapas administrativos — 14/11/2026
+
+Estas operaciones requieren JWT humano `tipo=acceso`, rol `GESTOR_DESPACHO` y acceso por Gateway. Importar no altera identidad, estado, asociaciones, tarifas ni resolución de cotización. La geometría vigente permanece en `distrito.geom`.
+
+| Método | Ruta | Entrada | Respuesta |
+|---|---|---|---|
+| `GET` | `/api/v1/distritos/geometrias` | `nombre` opcional; `estado=TODOS` por defecto, `ACTIVO` o `INACTIVO` | `200`, capa GeoJSON |
+| `GET` | `/api/v1/zonas/{id}/geometria` | UUID de zona | `200`, composición GeoJSON; desconocida `404 DESP_ERROR_ZONA_NO_ENCONTRADA` |
+| `POST` | `/api/v1/distritos/geometrias/validaciones` | Solicitud de validación | `200`, informe; no modifica geometrías |
+| `POST` | `/api/v1/distritos/geometrias/importaciones` | `validacionId` UUID y encabezado obligatorio `Idempotency-Key` UUID v4 | `200`, resultado confirmado o recuperado |
+
+Se rechazan parámetros desconocidos o repetidos. Las capas usan `application/geo+json`; informes y confirmaciones usan JSON. Cada capa es `FeatureCollection`, con una `Feature` por distrito y `geometry` `Polygon`/`MultiPolygon` o `null` cuando falta. Propiedades: `id` UUID, `nombre`, `provincia`, `departamento`, `ubigeo` de texto, `estado`, `versionGeometria` (cero sin metadatos), `fuente`, `versionFuente`, `importadoEn`, `importadoPor`, `huella`, `importacionId` (nulos sin metadatos), y `zonas`: asociaciones con `id`, `nombre`, `estado`, `soloCodigosPostales`. Orden por ubigeo e id; incluye distritos sin geometría. El listado ordinario no incorpora coordenadas.
+
+La composición de zona añade `zona: {id,nombre,estado}` y restringe las entidades a sus asociaciones distritales o postales, incluidas las inactivas. Cada entidad añade `soloCodigosPostales`, verdadero para asociación exclusivamente postal: su límite es referencia sin relleno de cobertura completa. Es una representación derivada; no escribe `zonas.geom`.
+
+La validación admite exclusivamente `geojson` (FeatureCollection), `fuente` y `versionFuente` (textos recortados de 1 a 200 caracteres), `correspondencias` opcional (arreglo de `{indice,ubigeo}`) y `nombreArchivo` opcional (texto recortado de 1 a 255 caracteres, sin rutas ni controles). La interfaz informa el nombre del archivo seleccionado; una carga generada directamente por API puede omitirlo. El informe, resultado de importación y propiedades de las capas incluyen `nombreArchivo`, nulo si no se declaró. Se conserva con la importación para trazar el archivo de cada geometría vigente o histórica. Se aceptan 1 a 100 entidades, hasta 200 000 posiciones y hasta 5 242 880 bytes por cuerpo de validación/importación, también sin `Content-Length`. Otras rutas conservan su máximo habitual de 1 MiB.
+
+Se admiten únicamente `Feature` con `Polygon`/`MultiPolygon` no vacíos, anillos cerrados de al menos cuatro posiciones y coordenadas numéricas finitas bidimensionales longitud/latitud WGS84. Todas las posiciones deben estar dentro de la envolvente operativa amplia `[-78,-13.5,-76,-11]`; no certifica límites oficiales. Se rechaza CRS explícito distinto de WGS84/CRS84. PostGIS debe confirmar validez topológica, sin reparación automática, conservando partes y huecos.
+
+`properties.ubigeo`, cuando existe, debe ser texto de seis dígitos y corresponder a un distrito existente; un código inválido no se sustituye por sugerencias. Si falta, se sugieren coincidencias por `nombre` o `distrito`, provincia y departamento normalizados. `correspondencias` confirma explícitamente el ubigeo para un índice sin código y no reemplaza códigos declarados. Índices, códigos y distritos no se repiten. Las propiedades del archivo no sobrescriben el catálogo ni crean distritos.
+
+Informe: `valida`, `validacionId` y `expiraEn` (nulos con errores), `fuente`, `versionFuente`, `entidades`, `posiciones`, `errores` (`campo`, `motivo`), `sugerencias` (`indice`, `nombre`, `ubigeo`), `distritos` (propiedades de la entidad de la capa, más `accion` `PRIMERA_CARGA`/`REEMPLAZO`), `actuales` y `propuesta` (capas para comparar). Una validación válida dura 30 minutos y queda ligada al ejecutor, contenido y versiones geográficas y distritales observadas. No se aplican geometrías durante la validación.
+
+La confirmación admite exclusivamente `{"validacionId":"UUID"}`. Revisa propietario, vigencia, versiones y validez nuevamente. En una transacción guarda el lote completo o revierte; conserva en histórico la geometría previa con procedencia, incrementa la versión geográfica independiente del CRUD y registra ejecutor JWT y fecha del servidor. Los omitidos se conservan. Respuesta: `importacionId`, `validacionId`, `importadoEn`, `importadoPor`, `fuente`, `versionFuente`, `distritos` (`id`, `ubigeo`, `versionGeometria`).
+
+La identidad durable del reintento es ejecutor y clave: repetir clave y validación devuelve exactamente el resultado original, incluso después de expirar o cambiar las geometrías, sin duplicar histórico/auditoría. Otra validación con la misma clave produce `409 DESP_ERROR_OPERACION_REUTILIZADA`. Confirmar una validación consumida con otra clave produce `409 DESP_ERROR_VALIDACION_CONSUMIDA`.
+
+| HTTP | Código | Condición |
+|---|---|---|
+| `400` | `DESP_ERROR_IMPORTACION_INVALIDA` | JSON, envoltura, campos, fuente, parámetros o clave inválidos; errores geográficos se detallan en el informe si la envoltura es válida |
+| `413` | `DESP_ERROR_SOLICITUD_DEMASIADO_GRANDE` | Cuerpo superior al máximo |
+| `404` | `DESP_ERROR_VALIDACION_NO_ENCONTRADA` | Validación desconocida o de otro ejecutor |
+| `409` | `DESP_ERROR_GEOMETRIA_DESACTUALIZADA` | Distrito o geometría cambiaron desde la revisión |
+| `409` | `DESP_ERROR_VALIDACION_EXPIRADA` | Superó los 30 minutos |
+| `409` | `DESP_ERROR_VALIDACION_CONSUMIDA` | Ya confirmada con otra clave |
+| `409` | `DESP_ERROR_OPERACION_REUTILIZADA` | Clave ligada a otra validación |
+| `500` | `DESP_ERROR_PERSISTENCIA_GEOMETRIA` | No se confirmó la transacción; recuperar con la misma clave |
+
+Aplican `401/403`, Problem Details y errores internos de persistencia sin aceptación parcial. Marketplace/Chatbot conservan íntegramente el contrato externo §5.
+
 ### 3.2. Programación y asignación
 
 | Método | Ruta | Roles | Propósito |
