@@ -25,7 +25,7 @@
 | [Alta fidelidad F-01](../../disenio/SystemDesign/f-01-alta-fidelidad.md) | Formulario de zona y estados de validación | Presentación de campos y errores. |
 | [Componentes React](../../disenio/componentes-react.md) | §4.5 y §4.6; CR de formulario | Contratos de componentes y responsables propuestos. |
 
-La delimitación se realiza por distritos y códigos postales, sin mapa, sin polígonos y sin rangos. Los fragmentos del wireframe que mostraban un mapa quedan fuera de alcance [cite: 1, 2].
+La ampliación del 14/11/2026 incorpora un mapa administrativo sincronizado con el selector según [ES-F01-16](../ES-F01-16-SeleccionarDistritosMapa/ui.md), sin dibujo de límites ni resolución por polígonos. Se conservan códigos postales e indicadores de cobertura postal exclusiva [cite: 1, 2].
 
 ## 3. Pantallas e interacción
 

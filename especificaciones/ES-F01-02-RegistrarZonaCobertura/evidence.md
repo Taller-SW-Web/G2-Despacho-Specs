@@ -8,6 +8,10 @@
 
 ## 1. Versión y entorno verificados
 
+### Ampliación de selección geográfica — 14/11/2026
+
+El formulario incorpora mapa controlado sin otro borrador y conserva códigos/indicadores postales y restricciones de inactivos. Verificación de componentes y recorrido real por Gateway, incluyendo guardado y móvil, en [ES-F01-16](../ES-F01-16-SeleccionarDistritosMapa/evidence.md). La evidencia histórica siguiente conserva su alcance y no se reemplaza por la ampliación.
+
 ### Incremento backend del 05/11/2026
 
 `FlujoF01Tests` comprueba creación, edición, cobertura postal exclusiva, reemplazo de códigos, conflictos, identidad durable de reintentos, colisiones concurrentes y rollback si falla auditoría. Contrato actualizado en Gestión §3.1; la UI consumidora debe preservar `soloCodigosPostales`. Revisión, comando y reportes de las 231 pruebas de Gestión están en la [evidencia de ejecución de ES-F01-06](../ES-F01-06-CotizarEnvioConProductos/evidence.md#ejecución-local-del-consumidor--05112026). La matriz integral de UI/aceptación continúa pendiente. Los antecedentes siguientes corresponden a la preparación documental original.

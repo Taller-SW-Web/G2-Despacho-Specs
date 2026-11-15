@@ -54,6 +54,8 @@ Ampliación del 13/11/2026: también se auditan altas, ediciones y estados efect
 
 ### Reglas y validaciones
 
+Ampliación geográfica del 14/11/2026: [ES-F01-15](../ES-F01-15-ImportarGeometriasDistritales/spec.md) registra cada geometría aceptada con importación, versión, ejecutor JWT y fecha del servidor en la misma transacción que límite e histórico. Rechazos y reintentos recuperados no generan auditorías nuevas.
+
 - Toda operación aceptada produce exactamente un registro de auditoría.
 - La auditoría de una zona incluye identificador, operación, usuario, marca temporal del servidor en UTC y los valores afectados.
 - La auditoría de una tarifa incluye la zona, el identificador de la regla, si queda vigente o inactiva, el usuario y la marca temporal.

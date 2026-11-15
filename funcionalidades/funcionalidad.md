@@ -4,7 +4,7 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 
 | ID | Funcionalidad | Descripción breve | Responsable | Estado | Especificación |
 |---|---|---|---|---|---|
-| **F-01** | Gestión de zonas geográficas y cotización | Define cobertura, tarifas e instantáneas de cotización exacta exitosa. | Valqui | Backend y automatización local verificados el 05/11; G6/G7 reales, UI, calendario operativo y aceptación pendientes | [Ver especificación](./F-01-Gestor_ZonasGeograficas.md) |
+| **F-01** | Gestión de zonas geográficas y cotización | Define cobertura, tarifas, cotizaciones y mapas administrativos. | Valqui | Backend, distritos y geometrías verificados localmente al 14/11; G6/G7 publicados, calendario operativo y aceptación pendientes | [Ver especificación](./F-01-Gestor_ZonasGeograficas.md) |
 | **F-02** | Programación y asignación de despachos | Recibe solicitudes y asigna despachos con jornada y secuencia. | Tarqui | Implementación local parcial; barras verificadas con API simulada al 05/11. H y semántica D cerrados; publicación normativa G6, integración G2 y aceptación pendientes | [Ver especificación](./F-02-ProgramacionAsignacionDespachos.md) |
 | **F-03** | Operación del repartidor y evidencia de entrega | Permite ejecutar entregas y registrar estados y evidencias. | Max | En especificación | [Ver especificación](./F-03-AppMovilRepartidor.md) |
 | **F-04** | Entregas fallidas y reprogramaciones | Recibe en el centro los paquetes no entregados y decide su reprogramación o cierre. | Gerardo | Listado, detalle, recepción, reprogramación y cierre implementados localmente; trazabilidad verificada en Gestión e integración conjunta pendiente | [Ver especificación](./F-04-GestionEntregasFallidas.md) |
@@ -34,6 +34,17 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 | ES-F01-12 | [Activar o desactivar un distrito](../especificaciones/ES-F01-12-ActivarDesactivarDistrito/spec.md) | Implementado; Gateway/navegador aislados aprobados con G7 temporal y Productos simulados |
 
 Cada carpeta incluye plan, tareas, UI y evidencia. El alcance previo de F-01 conserva sus resultados históricos; esta ampliación requiere evidencia propia.
+
+### Geometrías y mapas administrativos — ampliación del 14/11/2026
+
+| ID | Comportamiento y documentación SDD | Estado |
+|---|---|---|
+| ES-F01-13 | [Consultar representación geográfica](../especificaciones/ES-F01-13-ConsultarRepresentacionGeografica/spec.md) | Implementado; suites y Chromium locales aprobados, aceptación humana pendiente |
+| ES-F01-14 | [Validar importación de geometrías](../especificaciones/ES-F01-14-ValidarImportacionGeometrias/spec.md) | Implementado; 50 topologías y validaciones locales aprobadas, vigencia oficial pendiente |
+| ES-F01-15 | [Importar geometrías distritales](../especificaciones/ES-F01-15-ImportarGeometriasDistritales/spec.md) | Implementado; atomicidad, histórico, reintentos y regresión verificados localmente |
+| ES-F01-16 | [Seleccionar distritos en mapa](../especificaciones/ES-F01-16-SeleccionarDistritosMapa/spec.md) | Implementado; selección real, postal/inactivos y móvil verificados por Gateway local |
+
+Cada carpeta contiene especificación, UI, plan, tareas y evidencia propia.
 
 ## Especificaciones atómicas de F-02
 
