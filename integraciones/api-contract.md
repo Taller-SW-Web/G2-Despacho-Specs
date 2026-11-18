@@ -591,17 +591,34 @@ Respuesta de creación, `201 Created`:
 
 ```json
 {
-  "idDespacho": "DSP-100234",
+  "idDespacho": "7f3c2a9e-4b1d-4c8e-9a2f-1d6b5e8c0a41",
   "idPedido": "PED-2026-00891",
-  "codigoRastreoInterno": "TRK-78901",
+  "codigoRastreoInterno": "TRK-000234",
   "estado": "PENDIENTE_ASIGNACION",
-  "idZona": "ZONA-LIMA-CENTRO",
+  "idZona": "3899d20d-d800-4a8f-9970-713e518c28d0",
   "fechaProgramada": "2026-09-25",
-  "creadoEn": "2026-09-23T18:45:00Z"
+  "creadoEn": "2026-09-23T18:45:00Z",
+  "codigoOperativo": "DSP-000234",
+  "esSimulacion": false,
+  "pesoTotalKg": 0.37,
+  "volumenTotalM3": 0.004416,
+  "cantidadPaquetes": 1
 }
 ```
 
-Si el pedido ya tiene despacho, se responde `200 OK` con el recurso existente y no se crea otro. Si el destino no tiene cobertura, se responde `422` con `DESP_ERROR_SIN_COBERTURA`. Los SKU inexistentes o sin datos físicos responden con los errores definidos en la sección 5.1; si Productos no está disponible, se responde `503` y no se crea el despacho.
+`idDespacho` e `idZona` son UUID y se tratan como cadenas opacas; `codigoOperativo` y `codigoRastreoInterno` son legibles para personas. `fechaProgramada` es una fecha civil `YYYY-MM-DD` del calendario `America/Lima`, calculada en días hábiles de lunes a viernes; `creadoEn` es un instante ISO 8601 en UTC.
+
+Reglas del cuerpo:
+
+- Son obligatorios `idPedido`, `destinatario.nombre`, `destinatario.telefono`, `destino.direccion`, `destino.distrito` y al menos una línea. Los opcionales pueden omitirse o enviarse como `null`.
+- Los textos deben ser cadenas JSON; se recortan los espacios de los extremos. `telefono` no tiene formato validado; se recomienda E.164, por ejemplo `+51987654321`.
+- Se rechaza con `400 DESP_ERROR_CAMPOS_INVALIDOS` cualquier campo no declarado.
+- `distrito` debe coincidir con un distrito activo de una zona con tarifa vigente, con tildes incluidas.
+- El cuerpo no puede superar 1 MiB (`413 DESP_ERROR_SOLICITUD_DEMASIADO_GRANDE`).
+
+Si el pedido ya tiene despacho, se responde `200 OK` con el recurso existente y no se crea otro. Hay un único despacho por `idPedido` y su `idDespacho` no cambia en los reintentos de entrega.
+
+La clave de idempotencia solo se registra cuando el despacho queda creado (`201` o `200`). Un intento rechazado (`400`, `422` o `503`) no la consume, de modo que el pedido corregido puede reintentarse con la misma clave. Una clave ya registrada con un cuerpo distinto responde `409 DESP_ERROR_OPERACION_REUTILIZADA`. Si eso ocurre tras un `503` o un tiempo agotado, el despacho pudo haberse creado; repetir el cuerpo original devuelve el resultado registrado. Si el destino no tiene cobertura, se responde `422` con `DESP_ERROR_SIN_COBERTURA`. Los SKU inexistentes o sin datos físicos responden con los errores definidos en la sección 5.1; si Productos no está disponible, se responde `503` y no se crea el despacho.
 
 ### 7.2. Cancelar por anulación del pedido
 
@@ -621,18 +638,22 @@ Comportamiento:
 
 | Estado actual | Resultado |
 |---|---|
-| `PENDIENTE_ASIGNACION` | Cambia a `CANCELADO` |
-| `ASIGNADO` | Cambia a `CANCELADO` y libera capacidad |
-| `EN_CAMINO` | `409 Conflict`; no se cancela |
-| `FALLIDO` | `202 Accepted`; registra la anulación y obliga al cierre en F-04 |
-| `ENTREGADO`, `DEVUELTO_A_ORIGEN` o `CANCELADO` | `409 Conflict` o respuesta idempotente si ya estaba cancelado |
+| `PENDIENTE_ASIGNACION` | `200 OK`; cambia a `CANCELADO` y emite `DESPACHO_CANCELADO` |
+| `ASIGNADO` | `200 OK`; cambia a `CANCELADO`, libera capacidad y emite `DESPACHO_CANCELADO` |
+| `EN_CAMINO` | `409 DESP_ERROR_ESTADO_INCOMPATIBLE` con `estadoActual`; no se cancela |
+| `FALLIDO` | `202 Accepted` con `estado=FALLIDO`; registra la anulación, no emite `DESPACHO_CANCELADO` y obliga al cierre en F-04, que emite `DESPACHO_DEVUELTO_A_ORIGEN` cuando el paquete vuelve al centro |
+| `ENTREGADO`, `DEVUELTO_A_ORIGEN` o `CANCELADO` | `409 DESP_ERROR_ESTADO_INCOMPATIBLE` con `estadoActual`. La repetición con la misma clave de una cancelación aceptada devuelve su resultado original |
+
+`motivo` es obligatorio, texto de hasta 128 caracteres; Ventas envía `PEDIDO_ANULADO`. `observacion` es opcional, de hasta 500 caracteres. Como la clave identifica el cuerpo, un reintento debe repetir el mismo `motivo` y la misma `observacion`.
+
+Otras respuestas: `404 DESP_ERROR_DESPACHO_NO_ENCONTRADO` si no hay despacho para el pedido; `409 DESP_ERROR_OPERACION_REUTILIZADA` si la clave ya identifica otra cancelación. `409 DESP_ERROR_ASIGNACION_EN_PROCESO`, `409 DESP_ERROR_CANCELACION_EN_PROCESO`, `409 DESP_ERROR_DESPACHO_DESACTUALIZADO` y `503 DESP_ERROR_CANCELACION_NO_DISPONIBLE` pueden reintentarse con la misma clave.
 
 Registrar la anulación en `FALLIDO` incrementa la versión del despacho y compite con reprogramación/cierre, aunque conserve el estado. Si otra operación ganó al confirmar, responde `409` sin registrar parcialmente la marca; una nueva ejecución debe evaluar el estado canónico vigente. Si ganó una reprogramación, la cancelación posterior se evalúa sobre `PENDIENTE_ASIGNACION`; no se descarta por conservar una lectura anterior de `FALLIDO`. Una repetición ya aceptada sigue las reglas de idempotencia de §9.
 
 ```json
 {
   "idPedido": "PED-2026-00891",
-  "idDespacho": "DSP-100234",
+  "idDespacho": "7f3c2a9e-4b1d-4c8e-9a2f-1d6b5e8c0a41",
   "estado": "CANCELADO",
   "procesadoEn": "2026-09-23T19:00:00Z"
 }
@@ -649,10 +670,10 @@ Despacho registra el evento en una bandeja de salida dentro de la misma transacc
 
 ```json
 {
-  "idEvento": "EVT-8e191bab-6ec4-4fa4-b70e-d90e83bd48df",
+  "idEvento": "8e191bab-6ec4-4fa4-b70e-d90e83bd48df",
   "tipo": "DESPACHO_EN_CAMINO",
   "idPedido": "PED-2026-00891",
-  "idDespacho": "DSP-100234",
+  "idDespacho": "7f3c2a9e-4b1d-4c8e-9a2f-1d6b5e8c0a41",
   "estadoAnterior": "ASIGNADO",
   "estadoNuevo": "EN_CAMINO",
   "ocurridoEn": "2026-09-23T19:20:00Z",
@@ -664,11 +685,11 @@ Despacho registra el evento en una bandeja de salida dentro de la misma transacc
 |---|---|---|---|
 | `ASIGNADO` | `DESPACHO_ASIGNADO` | `fechaProgramada` | Conserva `EN_PREPARACION`; registra el hito. |
 | `EN_CAMINO` | `DESPACHO_EN_CAMINO` | Ninguno | Cambia `EN_PREPARACION` a `DESPACHADO`. |
-| `ENTREGADO` | `DESPACHO_ENTREGADO` | `fechaEntrega`, `recibidoPor` opcional | Cambia `DESPACHADO` a `ENTREGADO`. |
-| `FALLIDO` | `DESPACHO_FALLIDO` | `motivo`, `numeroIntento` | Conserva `DESPACHADO`; registra el intento para auditoría. |
+| `ENTREGADO` | `DESPACHO_ENTREGADO` | `fechaEntrega`; `recibidoPor` opcional, texto libre de hasta 120 caracteres | Cambia `DESPACHADO` a `ENTREGADO`. |
+| `FALLIDO` | `DESPACHO_FALLIDO` | `motivo` (código del catálogo de motivos de fallo), `numeroIntento` | Conserva `DESPACHADO`; registra el intento para auditoría. |
 | `PENDIENTE_ASIGNACION` reprogramado | `DESPACHO_REPROGRAMADO` | `nuevaFechaProgramada` | Conserva el estado comercial y actualiza la fecha estimada de entrega. |
-| `DEVUELTO_A_ORIGEN` | `DESPACHO_DEVUELTO_A_ORIGEN` | `motivoCierre` | Cambia `DESPACHADO` a `ANULADO` y habilita el tratamiento comercial correspondiente. |
-| `CANCELADO` | `DESPACHO_CANCELADO` | Ninguno | Confirma idempotentemente la cancelación solicitada; no reabre ni vuelve a modificar un pedido ya anulado. |
+| `DEVUELTO_A_ORIGEN` | `DESPACHO_DEVUELTO_A_ORIGEN` | `motivoCierre`, texto libre del gestor de hasta 500 caracteres | Cambia `DESPACHADO` a `ANULADO` y habilita el tratamiento comercial correspondiente. |
+| `CANCELADO` | `DESPACHO_CANCELADO` | `motivo` recibido en la cancelación | Confirma idempotentemente la cancelación solicitada; no reabre ni vuelve a modificar un pedido ya anulado. |
 
 Los siete tipos anteriores son eventos logísticos aceptados por Ventas, no siete estados adicionales de su pedido. Ventas conserva su propia máquina de estados comercial y aplica el efecto indicado para cada evento.
 
@@ -676,7 +697,13 @@ La política de intentos pertenece a Despacho: el máximo inicial es `2`, puede 
 
 Despacho no envía una `guiaRemision`, no solicita reembolsos y no informa importes a devolver. Esas responsabilidades permanecen fuera de este contrato.
 
-Si Ventas no responde con `2xx`, Despacho realiza hasta cinco reintentos con espera creciente. El mismo `idEvento` se conserva. Tras agotarlos, el evento queda como `ENVIO_FALLIDO` y puede reenviarse manualmente. Los despachos simulados no generan eventos externos.
+Formato del sobre: `idEvento` e `idDespacho` son UUID; `ocurridoEn` y `fechaEntrega` son instantes ISO 8601 en UTC con `Z` y precisión fraccionaria variable; `fechaProgramada` y `nuevaFechaProgramada` son fechas `YYYY-MM-DD`. La petición lleva `Authorization: Bearer <token>` y `Content-Type: application/json`; no incluye `X-Correlation-Id`, por lo que la correlación se hace con `idEvento` e `idDespacho`.
+
+`motivo` de `DESPACHO_FALLIDO` usa los códigos del catálogo de Gestión: `CLIENTE_AUSENTE`, `DATOS_DE_CONTACTO_ERRONEOS`, `DIRECCION_NO_UBICADA`, `PAQUETE_DANADO`, `RECHAZO_DEL_PAQUETE`, `ZONA_INACCESIBLE` y `NO_INTENTADO`. El catálogo puede ampliarse, así que Ventas no rechaza un código desconocido. `NO_INTENTADO` lo registra el cierre de jornada para los pendientes no visitados y, según el catálogo, no consume intento.
+
+Orden posible: en cada intento, `ASIGNADO` se genera antes que `EN_CAMINO`; tras `FALLIDO` pueden llegar `REPROGRAMADO`, otro `ASIGNADO` y otro `EN_CAMINO`, o bien `DEVUELTO_A_ORIGEN`. Los reintentos de entrega pueden alterar el orden de llegada, así que Ventas no retrocede su estado y responde `2xx` a eventos atrasados o duplicados. Reasignar el repartidor de un despacho ya asignado no genera evento.
+
+Si Ventas no responde con `2xx`, Despacho realiza hasta cinco reintentos con espera creciente (unos 30 s, 1, 2, 4 y 8 minutos). Cualquier otra respuesta, incluidos `4xx`, o un tiempo agotado cuenta como fallo; el plazo predeterminado es 3 s de conexión y 5 s de lectura. El mismo `idEvento` se conserva. Tras agotarlos, el evento queda como `ENVIO_FALLIDO`; un gestor puede devolverlo a la cola con `POST /api/v1/despachos/{idDespacho}/eventos-ventas/{idEvento}/reenvio`, que conserva el contenido y el `idEvento`. Los despachos simulados no generan eventos externos.
 
 ## 8. Integración con Seguridad y Usuarios
 
