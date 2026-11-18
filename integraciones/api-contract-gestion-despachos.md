@@ -607,6 +607,17 @@ El cliente conserva `idIncidencia` y `versionDespacho`, compara la identidad al 
 
 Los fallos al autorizar o cargar la fotografía se resuelven en el visor mediante Operación §3.4 y no sustituyen el resultado de este GET.
 
+#### 5.3.1. Reenviar una comunicación con Ventas
+
+El gestor puede devolver a la cola una comunicación en `ENVIO_FALLIDO` desde el detalle de la incidencia (Común §7.3).
+
+- **Método y ruta:** `POST /api/v1/despachos/{idDespacho}/eventos-ventas/{idEvento}/reenvio`, sin cuerpo ni parámetros.
+- **Autorización:** rol `GESTOR_DESPACHO`.
+- **Respuesta `202 Accepted`:** `{ "idEvento": "<uuid>", "idDespacho": "<uuid>", "estadoEnvio": "PENDIENTE" }`. El evento conserva su contenido y su `idEvento`, y el contador de intentos vuelve a cero. Gestión lo envía en su siguiente ciclo de recuperación.
+- **Errores:** `400 DESP_ERROR_CAMPOS_INVALIDOS` si algún identificador no es UUID; `404 DESP_ERROR_EVENTO_NO_ENCONTRADO` si el evento no pertenece al despacho o no va dirigido a Ventas; `409 DESP_ERROR_EVENTO_NO_REENVIABLE` con `estadoActual` si el evento no está en `ENVIO_FALLIDO`.
+
+La aplicación administrativa muestra la acción **Reenviar a Ventas** solo en las comunicaciones con `estadoEnvio=ENVIO_FALLIDO` y vuelve a consultar el detalle después de cada intento.
+
 ## 6. API interna provista por Gestión
 
 Estas rutas las implementa Gestión y las consume Operación con credencial de servicio. No se exponen mediante el Gateway.
