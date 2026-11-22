@@ -67,6 +67,7 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`. Registra
 - [ ] Implementada y verificada.
 - Incremento: I-03. Responsable: Valqui con DevOps, Calidad, Productos y canales.
 - Objetivo y entradas: aplicar límite por `sub` e IP y recorrer la cotización por Gateway con servicios reales; medir la latencia exigida por F-01 §8.
+- Verificación en el Gateway: seguir la [política general y específica de tasa](../../arquitectura/api-management-gateway.md#22-límite-de-solicitudes). En entorno aislado, comprobar que la solicitud excedida recibe el `429` contractual antes de reenviar a Gestión, que la cuota específica convive con la general y que el otro consumidor conserva su cupo. Registrar este alcance en EV-04 y reservar el cierre de T-04 para el recorrido real.
 - Dependencias: T-03, T-06, T-08 y acuerdos DT-04/05/06/08 para el alcance D.
 - Verificación: superar el límite y recibir `429` sin cálculo; comprobar aislamiento entre consumidores según configuración; ejecutar escenarios de cotización con proveedor real y reportar carga, caché y latencias medidas.
 - Cierre: CA-09 y recorrido real comprobados; el canal muestra el costo logístico conforme al contrato; rendimiento contrastado con el umbral, sin declarar cumplimiento si falla.

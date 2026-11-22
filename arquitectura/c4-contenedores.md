@@ -4,6 +4,8 @@
 
 Este documento presenta el nivel 2 del modelo C4. Muestra una arquitectura con dos aplicaciones frontend, dos microservicios, un API Gateway, persistencia administrada y notificación asíncrona mediante webhook HTTPS con outbox.
 
+El [documento de API Management](./api-management-gateway.md) recoge el estado del Gateway y las políticas propuestas para autenticación, permisos, límites de solicitudes, red privada, catálogo y monitoreo.
+
 ## 1. Diagrama de contenedores
 
 ```mermaid
@@ -27,7 +29,7 @@ flowchart TB
         end
 
         subgraph RENDER["Render · 3 despliegues backend"]
-            GW["API Gateway<br/>Punto único de entrada<br/>Enrutamiento, JWT, CORS, rate limiting y correlación opcional"]:::gateway
+            GW["API Gateway<br/>Entrada de las APIs de negocio<br/>Enrutamiento, JWT, CORS, tamaño de solicitudes y correlación"]:::gateway
             MD["Microservicio Gestión de Despachos<br/>Java + Spring Boot<br/>F-01, F-02, F-04, estados, historial, seguimiento y eventos"]:::servicio
             MR["Microservicio Operación de Reparto y Flota<br/>Java + Spring Boot<br/>F-03, F-05, jornadas, capacidad y evidencias"]:::servicio
         end
@@ -68,6 +70,8 @@ flowchart TB
 
     MD -->|"Consulta datos físicos"| PRO
     MD -->|"Webhook HTTPS de estados<br/>con outbox y reintentos"| VEN
+    FA -.->|"Acceso directo a G7 propuesto"| SEG
+    FR -.->|"Acceso directo a G7 propuesto"| SEG
     GW -->|"Obtiene descubrimiento y JWKS para validar tokens"| SEG
     MD -->|"Obtiene tokens de servicio para APIs externas"| SEG
 ```
@@ -78,8 +82,8 @@ flowchart TB
 |---|---|---|---|---|
 | Frontend Administrativo | Experiencia para `GESTOR_DESPACHO`: zonas, tarifas, programación, incidencias, flota y jornadas | React, Vite y Tailwind CSS | Proyecto independiente en Vercel | API Gateway y, mediante URL firmada, Storage |
 | Frontend del Repartidor | Ruta diaria, detalle, transiciones en campo, evidencia y cierre de jornada | React, Vite y Tailwind CSS, diseño mobile-first | Proyecto independiente en Vercel | API Gateway y, mediante URL firmada, Storage |
-| API Gateway | Única URL pública; enruta por capacidad, aplica CORS, límite de cotizaciones, validación inicial del JWT y correlación técnica opcional | Java y componente Gateway compatible con el stack Spring | Servicio independiente en Render | Seguridad y Usuarios, ambos microservicios |
-| Microservicio Gestión de Despachos | Fuente única de zonas, tarifas y del estado del despacho; asignación, reprogramación, seguimiento, historial y publicación de eventos | Java 21, Spring Boot, Maven, Spring Web, Spring Security y JPA | Servicio independiente en Render | Su PostgreSQL, Operación de Reparto, Productos y Ofertas, Ventas y Postventa |
+| API Gateway | Entrada pública de negocio. Enruta por capacidad, valida inicialmente el JWT, aplica CORS, controla el tamaño de solicitudes y propaga la correlación | Java y Spring Cloud Gateway | Servicio independiente en Render | Seguridad y Usuarios, ambos microservicios |
+| Microservicio Gestión de Despachos | Fuente única de zonas, tarifas y del estado del despacho. Aplica el límite vigente de cotizaciones y gestiona asignaciones, reprogramaciones, seguimiento, historial y eventos | Java 21, Spring Boot, Maven, Spring Web, Spring Security y JPA | Servicio independiente en Render | Su PostgreSQL, Operación de Reparto, Productos y Ofertas, Ventas y Postventa |
 | Microservicio Operación de Reparto y Flota | Fuente única de repartidores, furgonetas, jornadas y capacidad; operación móvil y gestión de evidencias | Java 21, Spring Boot, Maven, Spring Web, Spring Security y JPA | Servicio independiente en Render | Su PostgreSQL, Storage, Gestión de Despachos y Seguridad y Usuarios |
 | Datos de Gestión de Despachos | Zonas, tarifas, despachos, historial, intentos, recepciones, idempotencia y bandeja de eventos salientes | PostgreSQL administrado por Supabase | Un esquema o base lógica aislada | Solo Gestión de Despachos |
 | Datos de Operación y Flota | Repartidores, furgonetas, jornadas, reservas de capacidad, proyección de ruta y referencias de evidencia | PostgreSQL administrado por Supabase | Un esquema o base lógica aislada | Solo Operación de Reparto y Flota |

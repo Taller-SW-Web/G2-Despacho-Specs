@@ -20,6 +20,7 @@ Para pruebas locales, seguir las instrucciones de los repositorios de implementa
 | [API de Gestión](./integraciones/api-contract-gestion-despachos.md) | Distritos, geometrías y mapas administrativos (ES-F01-09 a ES-F01-16), zonas, tarifas, programación, incidencias y operaciones internas de Gestión. |
 | [API de Operación](./integraciones/api-contract-operacion-reparto.md) | Reparto, flota, jornadas, evidencias, capacidad y operaciones internas de Operación. |
 | [Contexto](./arquitectura/c4-contexto.md), [contenedores](./arquitectura/c4-contenedores.md) y [modelo de datos](./arquitectura/modelo-datos.md) | Límites del módulo, servicios y persistencia. |
+| [API Management del Gateway](./arquitectura/api-management-gateway.md) | Propuesta del próximo hito para autenticación, permisos, límites, red privada, catálogo de rutas y monitoreo. |
 | [Estados del despacho](./arquitectura/diagrama-estados-despacho.md), [macroproceso](./arquitectura/macroproceso-despacho.md) y [glosario](./arquitectura/glosario-dominio.md) | Flujo de negocio, transiciones y términos compartidos. |
 | [Sistema de diseño](./disenio/SYSTEM-DESIGN.md) y [componentes React](./disenio/componentes-react.md) | Referencias de interfaz de las dos aplicaciones. |
 | [Plan del Hito 4](./hitos/Plan_Hito_4_Despacho.md) y [ejecución F-02](./hitos/Plan_Hito_4_F02.md) | Coordinación y evidencia de integración por hito. |
