@@ -29,7 +29,7 @@ Gestión recibe la solicitud por Gateway, verifica identidad, destino y límite,
 
 | Capa o aplicación | Responsabilidad | Elementos previstos |
 |---|---|---|
-| Gateway | Enrutamiento y control de tasa según acuerdo | Ruta existente de cotizaciones |
+| Gateway | Enrutamiento y aplicación propuesta del límite antes de reenviar la cotización | Ruta existente y [política de tasa del Gateway](../../arquitectura/api-management-gateway.md#22-límite-de-solicitudes) |
 | Gestión | Orquestación, cobertura, tarifa, cálculo, persistencia exacta y errores | Caso de uso, adaptador de Productos y escritor de cotizaciones |
 | Productos y Ofertas | Proveer datos físicos vigentes por SKU | API externa §5.2 |
 | Seguridad y Usuarios | Emitir tokens de canal y de `modulo-despacho` | Credenciales y scopes por ambiente |
@@ -55,6 +55,7 @@ No aplica. No se requieren componentes React ni mock visual del módulo. El dobl
 - Seguridad: autorización por scope antes de revelar cobertura; ignorar peso/volumen aportados por el cliente como datos autoritativos; no exponer reglas internas de tarifa.
 - Concurrencia y efectos: capturar cobertura/tarifa de forma coherente; una sustitución posterior no reescribe instantáneas. La escritura exacta es el único efecto nuevo; sin eventos, cobros, reservas ni `Idempotency-Key`. Los estados de ciclo de vida del DDL no habilitan nuevos comandos.
 - Configuración operativa: acordar tasa por `sub` e IP, timeout, caché y medición de latencia; no fijar valores nuevos en esta carpeta (DT-04).
+- La [política de API Management](../../arquitectura/api-management-gateway.md#22-límite-de-solicitudes) define una cuota general para las rutas públicas de negocio y una específica para cotizaciones. Validar en un entorno aislado que el traslado al Gateway conserve la regla específica por `sub` e IP y el `429` contractual. El acuerdo de cuota con los consumidores se mantiene en DT-04.
 
 ## 5. Orden de implementación
 
