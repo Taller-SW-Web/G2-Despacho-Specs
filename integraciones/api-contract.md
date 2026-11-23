@@ -196,6 +196,20 @@ Para cerrar la integración se deben probar, como mínimo, los casos sin token, 
 | Despacho | Seguridad y Usuarios | Obtener claves públicas | HTTPS | JWKS con caché |
 | Seguridad y Usuarios | Despacho | Notificar cambios de estado o roles de usuarios | Credenciales y permisos del broker pendientes de publicación | Eventos RabbitMQ previstos por Seguridad |
 
+### 4.1. Guía rápida por módulo
+
+Esta guía resume, para cada equipo, qué llama, qué recibe y qué debe entregar para conectarse con Despacho. Las rutas, payloads y respuestas canónicos están en las secciones enlazadas; esta tabla no los reemplaza. Todas las rutas públicas se publican a través del Gateway de Despacho, cuya URL base se comunica por ambiente.
+
+| Módulo | Llama a Despacho | Recibe de Despacho | Credencial que necesita | Debe entregar o confirmar |
+|---|---|---|---|---|
+| Marketplace | `POST /api/v1/cotizaciones` ([§5.1](#51-solicitar-cotización)); `GET /api/v1/seguimientos/pedidos/{idPedido}` ([§6.1](#61-consultar-por-identificador-de-pedido)) | Respuestas síncronas; no recibe eventos | Token de servicio de su propio `client_id` con `cotizaciones:calcular` y `seguimientos:leer`, `aud=api-despacho` ([§8.2](#82-obtención-de-un-token-de-servicio)) | Su `client_id` registrado en Seguridad con esos scopes |
+| Chatbot | Igual que Marketplace | Respuestas síncronas; no recibe eventos | Igual que Marketplace | Igual que Marketplace |
+| Ventas y Postventa | `POST /api/v1/despachos` ([§7.1](#71-crear-un-despacho-para-un-pedido-listo-para-entrega)); `POST /api/v1/despachos/pedidos/{idPedido}/cancelacion` ([§7.2](#72-cancelar-por-anulación-del-pedido)); seguimiento opcional ([§6.1](#61-consultar-por-identificador-de-pedido)) | Webhook `POST /api/v1/integraciones/despachos/eventos` con los siete tipos `DESPACHO_*` ([§7.3](#73-eventos-salientes-hacia-ventas-y-postventa)) | `modulo-ventas` con `despachos:crear`, `despachos:cancelar` y `seguimientos:leer`; `Idempotency-Key` UUID v4 en crear y cancelar | URL base de su webhook por ambiente (`VENTAS_URL`); aceptar el token de `modulo-despacho` con `aud=api-ventas` y `ventas:pedidos:estado`; deduplicar por `idEvento` y responder `2xx` a duplicados y atrasados |
+| Productos y Ofertas | No llama a Despacho | Consulta en lote de datos físicos por SKU ([§5.2](#52-integración-de-despacho-con-productos-y-ofertas)) | Despacho usa `modulo-despacho` con `aud=api-productos` y `productos:fisicos:leer` | URL base por ambiente (`PRODUCTOS_URL`) y concesión del scope a `modulo-despacho` |
+| Seguridad y Usuarios | Eventos de usuario previstos ([§8.5](#85-eventos-de-usuarios-publicados-por-seguridad)), aún sin contrato asíncrono | Despacho consulta OIDC y JWKS ([§8.1](#81-validación-local-de-tokens)) y solicita tokens de servicio ([§8.2](#82-obtención-de-un-token-de-servicio)) | No aplica | Scopes y `client_id` de cada módulo; credenciales de `modulo-despacho` por ambiente; acuerdos de [§11](#11-acuerdos-externos-que-aún-deben-confirmarse) |
+
+Antes de declarar cerrada una integración, cada equipo prueba con Despacho los casos de seguridad de [§3.5](#35-errores) y el recorrido de referencia de [§10](#10-flujos-de-referencia) en un ambiente compartido.
+
 ## 5. F-01: cotización para Marketplace y Chatbot
 
 ### 5.1. Solicitar cotización
@@ -843,6 +857,33 @@ El doble `seguridad-local` reproduce este intercambio para Compose. Mantiene est
 
 Pendientes externos: confirmar revisión contractual desplegada, ambiente y CORS; habilitar cuentas/activación/entrega de OTP y proporcionar los UUID de los repartidores. `VITE_SEGURIDAD_URL` cambia el origen del adaptador compartido `packages/cliente-api/src/sesion.ts`; si se mantiene el proxy Gateway, se configura `SEGURIDAD_URL` del backend. Las credenciales técnicas entre servicios se resuelven por separado.
 
+#### 8.6.1. Recuperación de contraseña del repartidor (propuesta pendiente de Seguridad)
+
+**Estado:** propuesta de Despacho del 23/11/2026, no confirmada por Seguridad. El kit G7 y el OpenAPI v1.1.0 no incluyen esta operación. Hasta su confirmación, la app del repartidor muestra la opción deshabilitada ([ES-F03-09](../especificaciones/ES-F03-09-RecuperarContrasenaRepartidor/spec.md)) y no realiza llamadas.
+
+Seguridad sigue siendo la única responsable de las cuentas: crea los correos y contraseñas de los repartidores, envía el correo de recuperación y restablece la contraseña en una página propia. Despacho solo ofrece en su app la entrada «¿Olvidaste tu contraseña?» y nunca recibe, transporta ni almacena la contraseña ni el enlace.
+
+| Operación propuesta | Entrada | Respuesta |
+|---|---|---|
+| `POST /api/v1/auth/recuperacion-contrasena` | `correo` | `202` sin datos de la cuenta, exista o no el correo. Si la cuenta existe y está habilitada, Seguridad envía un enlace de restablecimiento. |
+
+```json
+{
+  "correo": "repartidor@ejemplo.pe"
+}
+```
+
+Reglas propuestas:
+
+- **Respuesta neutra:** la respuesta y el tiempo de respuesta no deben revelar si el correo pertenece a una cuenta. Cuentas inexistentes, desactivadas o bloqueadas reciben el mismo `202` y no reciben enlace.
+- **Enlace:** de un solo uso, con vencimiento definido por Seguridad (se sugieren 30 minutos), apuntando a una página de Seguridad. Solicitar otro invalida el anterior.
+- **Nueva contraseña:** se valida con la política de Seguridad. Tras restablecerla, se sugiere revocar los `refreshToken` vigentes de la cuenta; los JWT de acceso ya emitidos pueden seguir siendo válidos hasta vencer, igual que en `logout`.
+- **Autenticación:** la operación es pública y no exige JWT, igual que `/login`.
+- **Errores:** `400 SOLICITUD_INVALIDA` si falta `correo` o no tiene formato de correo; `429 DEMASIADAS_SOLICITUDES` con `Retry-After` al superar el límite. Se sugiere el mismo límite del OTP: tres solicitudes por correo cada quince minutos, además de un límite por origen.
+- **Gateway:** al confirmarse, el Gateway publica esta ruta junto con las operaciones humanas de §8.6 y `seguridad-local` la simula para Compose.
+
+Para cerrarla, Seguridad debe confirmar o ajustar la ruta, el payload, los códigos, la vigencia del enlace, el límite de solicitudes y la revocación de sesiones, e indicar el ambiente y la revisión del contrato donde la publica.
+
 ## 9. Reglas de idempotencia y concurrencia
 
 - La idempotencia de negocio es obligatoria en todos los comandos que modifican estado.
@@ -900,9 +941,9 @@ El contrato funcional con Ventas y Postventa está cerrado: se confirmaron el mo
 
 | Equipo | Acuerdo pendiente |
 |---|---|
-| Seguridad y Usuarios | Confirmar el acceso humano propuesto en §8.6 (ruta, cuentas de prueba, renovación del token); registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario |
+| Seguridad y Usuarios | Confirmar el acceso humano propuesto en §8.6 (ruta, cuentas de prueba, renovación del token); registrar los scopes de `api-despacho` y asignarlos a cada `client_id`; en particular, incorporar `despachos:cancelar` para `modulo-ventas` si aún conserva la configuración anterior y verificar `ventas:pedidos:estado` para `modulo-despacho` con `aud=api-ventas`; confirmar el valor de `roles` para la cuenta del repartidor; definir el canal de alta y baja global, la comunicación de `usuario_id`, la entrega de credenciales y el contrato RabbitMQ de eventos de usuario; confirmar o ajustar la recuperación de contraseña por enlace propuesta en §8.6.1 |
 | Productos y Ofertas | H-G2-01/02/03 y semántica D-G2-01/02 cerrados. Sincronizar el OpenAPI con el acuerdo y fijar su revisión; verificar el consumidor G2, coordinar con Seguridad la concesión efectiva y ejecutar las pruebas de contrato y el recorrido real de §11.1 |
-| Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento |
+| Marketplace y Chatbot | Registrar sus clientes técnicos con `cotizaciones:calcular` y `seguimientos:leer`; custodiar el `client_secret`; usar solamente `idPedido` para seguimiento. Marketplace mencionó el evento `pedidos.envio.estado_actualizado`, que no forma parte de este contrato: debe confirmar si lo publicará Ventas a partir de §7.3 o si espera recibirlo directamente de Despacho. Mientras tanto, obtiene el estado mediante el seguimiento de §6.1. Una notificación directa a Marketplace requiere acordar ruta, payload, estados, autenticación (audiencia y scope) y política de reintentos antes de implementarse |
 | Equipo de Despacho | Tiempo de caché; límites de cotización; expiración de URLs firmadas y estrategia final para eventos internos |
 
 <a id="111-respuesta-propuesta-y-plan-de-homologación-física-g2g6"></a>
