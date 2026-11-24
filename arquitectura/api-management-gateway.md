@@ -14,7 +14,7 @@ El estado siguiente se basa en la configuración y el código del repositorio. L
 | Autenticación | El Gateway valida el JWT de las operaciones protegidas. Los permisos por operación y el acceso al recurso se comprueban en los microservicios. Ambos frontends admiten configurar un origen de G7 para la sesión y recurren al Gateway si no está configurado. |
 | Límite de cotizaciones | Gestión cuenta en memoria por combinación de `sub` del JWT e IP, en ventanas fijas de un minuto. El valor por defecto es 60. El exceso produce el `429` contractual. |
 | Validación y trazabilidad | El Gateway controla el tamaño de solicitud, limita los tiempos de conexión y respuesta y propaga `X-Correlation-Id`. Los servicios validan el contenido de negocio. La exposición HTTP de Actuator incluye `health` e `info`. |
-| Red de despliegue | El perfil de Render incluye destinos `onrender.com` por defecto para Gestión y Operación. El aislamiento de red se verifica en el entorno de despliegue. |
+| Red de despliegue | El perfil de Render incluye destinos `onrender.com` por defecto para Gestión y Operación. Sin Private Services, el acceso directo a `/api/v1/**` se bloquea con un secreto compartido que solo añade el Gateway (§2.3), activado por configuración. El aislamiento de red se verifica en el entorno de despliegue. |
 
 ## 2. Políticas propuestas
 
@@ -46,6 +46,7 @@ El Gateway aplicará **una cuota general por consumidor para todas las rutas pú
 
 - Conservar el origen público del Gateway y las rutas contractuales `/api/v1/...`. El nombre del recurso público describe la operación y el Gateway resuelve el servicio de destino [cite: 1, 2].
 - Configurar direcciones privadas en `GESTION_DESPACHOS_URL` y `OPERACION_REPARTO_URL` donde corresponda. Antes de restringir el acceso público directo, probar desde la red de Render los recorridos Gateway a servicio y Gestión a Operación. Revisar además los monitores y la verificación de despliegue que consultan la salud directamente. Verificar que los destinos internos queden inaccesibles desde Internet y que el Gateway siga respondiendo [cite: 3, 8, 9].
+- En Render Free, sin Private Services, simular el aislamiento con una cabecera secreta. El Gateway añade `X-Despacho-Interno` en las rutas `/api/v1/**`, salvo `/api/v1/auth/**`, y descarta la que envíe el cliente. Gestión y Operación responden `404` a las llamadas directas a `/api/v1/**` sin ese secreto cuando `INTERNO_REQUERIDO=true`. Quedan fuera `/actuator/**`, `/internal/v1/**` y `OPTIONS`. Activarlo en dos fases: primero configurar el secreto sin bloquear y, tras confirmar que ningún consumidor llama directamente a los servicios, activar el bloqueo. A diferencia de una red privada, las URLs públicas siguen existiendo, `/actuator/health` sigue visible y un secreto filtrado permite saltar el Gateway. Las variables, la verificación y el rollback están en la [guía de despliegue](https://github.com/Taller-SW-Web/G2-Despacho-Backend/blob/main/docs/despliegue.md#acceso-solo-por-el-gateway-en-render-free) [cite: 8, 9].
 - Conservar las credenciales de servicio para las llamadas privadas. Configurar orígenes y credenciales en el entorno correspondiente. Las variables públicas `VITE_*` almacenan orígenes y configuración de cliente, y las credenciales privadas quedan en la configuración de servidor.
 
 ### 2.4. Catálogo de APIs y compatibilidad
