@@ -66,7 +66,7 @@
 
 ## 4. Definición de Terminado (Definition of Done - DoD)
 
-- [ ] Código implementado en Java 21 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
+- [ ] Código implementado en Java 25 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
 - [ ] Entidad JPA y repositorio para `repartidores` implementados en Spring Data con restricción de unicidad sobre DNI.
 - [ ] DTOs de entrada validados con anotaciones `@NotNull`, `@NotBlank`, `@Size` (`jakarta.validation`).
 - [ ] Baja lógica implementada sin eliminación física del registro.

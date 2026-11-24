@@ -16,7 +16,7 @@ Para pruebas locales, seguir las instrucciones de los repositorios de implementa
 |---|---|
 | [Visión general](./overview.md) e [índice funcional](./funcionalidades/funcionalidad.md) | Alcance, responsables, estados y acceso a las especificaciones. |
 | [Especificaciones atómicas](./especificaciones/) e [historias de usuario](./historias-usuario/) | Requisitos, planes, tareas y evidencia de cada caso. |
-| [Contrato externo](./integraciones/api-contract.md) | Integraciones con Marketplace, Chatbot, Productos, Ventas y Seguridad; incluye cotización y seguimiento por pedido. |
+| [Contrato externo](./integraciones/api-contract.md) | Integraciones con Marketplace, Chatbot, Productos, Ventas y Seguridad; incluye cotización, seguimiento por pedido y una [guía rápida por módulo](./integraciones/api-contract.md#41-guía-rápida-por-módulo). |
 | [API de Gestión](./integraciones/api-contract-gestion-despachos.md) | Distritos, geometrías y mapas administrativos (ES-F01-09 a ES-F01-16), zonas, tarifas, programación, incidencias y operaciones internas de Gestión. |
 | [API de Operación](./integraciones/api-contract-operacion-reparto.md) | Reparto, flota, jornadas, evidencias, capacidad y operaciones internas de Operación. |
 | [Contexto](./arquitectura/c4-contexto.md), [contenedores](./arquitectura/c4-contenedores.md) y [modelo de datos](./arquitectura/modelo-datos.md) | Límites del módulo, servicios y persistencia. |

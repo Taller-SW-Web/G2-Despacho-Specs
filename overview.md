@@ -291,7 +291,7 @@ Actualización G2–G6 del 04/11/2026: H-G2-01/02/03 están homologados desde el
 
 | Capa | Tecnología |
 |---|---|
-| Backend | Java 21, Spring Boot 4.1.1, Maven, Spring Web MVC, Spring Data JPA con Hibernate, Spring Security con JWT, Bean Validation, Lombok |
+| Backend | Java 25, Spring Boot 4.1.3, Maven, Spring Web MVC, Spring Data JPA con Hibernate, Spring Security con JWT, Bean Validation, Lombok |
 | Frontend | React con Vite y Tailwind CSS; dependencias en `arquitectura/stack-frontend.md` |
 | Base de datos | Dos esquemas o bases lógicas PostgreSQL aisladas en Supabase |
 | Evidencias | Almacenamiento de objetos privado con URL firmadas; compresión en cliente y eliminación de EXIF |

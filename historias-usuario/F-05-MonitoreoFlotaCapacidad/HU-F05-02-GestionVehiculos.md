@@ -61,7 +61,7 @@
 
 ## 4. Definición de Terminado (Definition of Done - DoD)
 
-- [ ] Código implementado en Java 21 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
+- [ ] Código implementado en Java 25 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
 - [ ] Entidad JPA y repositorio para `furgonetas` en Spring Data con restricción de unicidad sobre placa.
 - [ ] DTOs de entrada validados con `@NotNull`, `@NotBlank`, `@Positive` para los límites de capacidad (`jakarta.validation`).
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) cubriendo los 3 escenarios (`CA-05`, `CA-06`, `CA-07`).
