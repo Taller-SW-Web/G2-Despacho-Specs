@@ -67,7 +67,7 @@
 | Resultado o error de API | Mensaje y comportamiento de UI | Recuperación |
 |---|---|---|
 | `202` | «Si el correo está registrado, recibirás un enlace para restablecer tu contraseña. Revisa también tu carpeta de correo no deseado.» | Volver al ingreso |
-| `429 DEMASIADAS_SOLICITUDES` | «Hiciste varias solicitudes seguidas. Espera unos minutos antes de intentarlo de nuevo.» | Conserva el correo |
+| `429 DEMASIADAS_SOLICITUDES` (más de tres por correo en una hora) | «Hiciste varias solicitudes seguidas. Puedes pedir hasta tres enlaces por hora; inténtalo más tarde.» | Conserva el correo |
 | Sin conexión | «No pudimos conectar con Seguridad. Revisa tu conexión e inténtalo de nuevo.» | Conserva el correo; reintentar |
 | `400`, `5xx` u otra respuesta | «No pudimos enviar la solicitud. Inténtalo nuevamente en unos minutos.» | Conserva el correo; reintentar |
 
@@ -94,5 +94,5 @@
 
 1. [Especificación funcional](./spec.md): criterios y reglas.
 2. [Diseño de F-03](../../disenio/funcionalidades/f-03.md) y [SYSTEM-DESIGN.md](../../disenio/SYSTEM-DESIGN.md).
-3. [Contrato externo §8.6.1](../../integraciones/api-contract.md#861-recuperación-de-contraseña-del-repartidor-propuesta-pendiente-de-seguridad).
+3. [Contrato externo §8.6.1](../../integraciones/api-contract.md#861-recuperación-de-contraseña-del-repartidor).
 4. [Plan](./plan.md) y [evidencia](./evidence.md).

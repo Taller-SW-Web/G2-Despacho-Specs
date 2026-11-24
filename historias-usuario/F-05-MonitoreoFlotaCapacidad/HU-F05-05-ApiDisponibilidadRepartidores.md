@@ -53,7 +53,7 @@
 
 ## 4. Definición de Terminado (Definition of Done - DoD)
 
-- [ ] Código implementado en Java 21 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
+- [ ] Código implementado en Java 25 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
 - [ ] Consulta optimizada en Spring Data JPA filtrando por estado (`DISPONIBLE`, `EN_RUTA`) y calculando capacidad remanente en tiempo real.
 - [ ] Filtro opcional por `pesoRequeridoKg` implementado y validado con prueba unitaria.
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) cubriendo los 2 escenarios (`CA-12`, `CA-13`) y el filtro por peso.

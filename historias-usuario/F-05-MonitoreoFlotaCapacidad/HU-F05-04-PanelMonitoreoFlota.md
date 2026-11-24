@@ -55,7 +55,7 @@
 
 ## 4. Definición de Terminado (Definition of Done - DoD)
 
-- [ ] Código implementado en Java 21 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
+- [ ] Código implementado en Java 25 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
 - [ ] Motor de cálculo de ocupación implementado en backend: suma de despachos activos (`ASIGNADO` + `EN_CAMINO`) por repartidor frente a su límite diario configurado.
 - [ ] Endpoint `GET /api/v1/flota/resumen-capacidad` implementado y documentado en [integraciones/api-contract-operacion-reparto.md](../../integraciones/api-contract-operacion-reparto.md).
 - [ ] Tiempo de respuesta de `GET /api/v1/flota/resumen-capacidad` menor a 300 ms para 50 repartidores activos.

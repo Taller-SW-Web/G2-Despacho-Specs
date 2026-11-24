@@ -54,7 +54,7 @@
 
 ## 4. Definición de Terminado (Definition of Done - DoD)
 
-- [ ] Código implementado en Java 21 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
+- [ ] Código implementado en Java 25 / Spring Boot siguiendo las convenciones de [AGENTS.md](../../AGENTS.md).
 - [ ] Apertura de jornada implementada con `@Transactional`, unicidad por repartidor y furgoneta, y copia de límites.
 - [ ] Entidad JPA y repositorio para `turnos_operador` con restricción de unicidad `(idRepartidor, fechaJornada)`.
 - [ ] Pruebas unitarias (`JUnit 5 + Mockito`) cubriendo los 2 escenarios (`CA-08`, `CA-09`).

@@ -22,7 +22,7 @@ Permitir al repartidor consultar los despachos de su jornada, actualizar su esta
 Esta funcionalidad incluye:
 
 - Acceso del repartidor con el JWT emitido por Seguridad y Usuarios, y validación de su habilitación operativa en F-05.
-- Opción «¿Olvidaste tu contraseña?» para que el repartidor pida a Seguridad y Usuarios un enlace de restablecimiento ([ES-F03-09](../especificaciones/ES-F03-09-RecuperarContrasenaRepartidor/spec.md)). Seguridad envía el correo y cambia la contraseña; la opción permanece deshabilitada hasta que confirme la operación.
+- Opción «¿Olvidaste tu contraseña?» para que el repartidor pida a Seguridad y Usuarios un enlace de restablecimiento ([ES-F03-09](../especificaciones/ES-F03-09-RecuperarContrasenaRepartidor/spec.md)). Seguridad envía el correo y cambia la contraseña en su propia pantalla (`POST /api/v1/password/recuperar` del OpenAPI G7 1.2.0); la opción se activa por ambiente.
 - Ruta de la jornada en curso, ordenada según la secuencia definida por F-02.
 - Detalle del despacho con los datos necesarios para entregar y contactar al destinatario.
 - Transición a `EN_CAMINO` al iniciar el traslado.
@@ -424,4 +424,4 @@ Cualquier otra transición desde F-03 es rechazada con `409 Conflict`. La máqui
 |---|---|---|
 | 1 | Seguridad y Usuarios | Confirmar que el JWT incluye el identificador de usuario y el rol `REPARTIDOR`. El identificador de repartidor se resuelve dentro del módulo mediante F-05. |
 | 2 | Ventas y Postventa | Confirmar que la solicitud de despacho incluye el teléfono del destinatario y la referencia de la dirección. |
-| 3 | Seguridad y Usuarios | Confirmar o ajustar la recuperación de contraseña por enlace propuesta en el [contrato externo §8.6.1](../integraciones/api-contract.md#861-recuperación-de-contraseña-del-repartidor-propuesta-pendiente-de-seguridad) y publicar la página de restablecimiento. |
+| 3 | Seguridad y Usuarios | Para la recuperación de contraseña del [contrato externo §8.6.1](../integraciones/api-contract.md#861-recuperación-de-contraseña-del-repartidor), definir un `canalOrigen` para la app del repartidor y desplegar la operación con envío real de correos. |
