@@ -131,6 +131,7 @@ Aplican `401/403`, Problem Details y errores internos de persistencia sin acepta
 | `GET` | `/api/v1/despachos/pendientes` | `GESTOR_DESPACHO` | Consultar cola paginada |
 | `GET` | `/api/v1/despachos/{idDespacho}` | `GESTOR_DESPACHO` | Consultar detalle e historial |
 | `POST` | `/api/v1/despachos/{idDespacho}/asignacion` | `GESTOR_DESPACHO` | Asignar a un repartidor |
+| `POST` | `/api/v1/despachos/{idDespacho}/adelanto` | `GESTOR_DESPACHO` | Adelantar un pendiente futuro a hoy, sin asignarlo |
 | `POST` | `/api/v1/despachos/{idDespacho}/reasignacion` | `GESTOR_DESPACHO` | Cambiar repartidor antes del traslado |
 | `PUT` | `/api/v1/jornadas/{idJornada}/secuencia` | `GESTOR_DESPACHO` | Reordenar despachos `ASIGNADO` |
 | `GET` | `/api/v1/jornadas/{idJornada}/ruta` | `GESTOR_DESPACHO` | Consultar seguimiento operativo completo |
@@ -172,7 +173,7 @@ Secuencia:
 }
 ```
 
-**Integración con reprogramaciones de F-04:** una transición aceptada a `PENDIENTE_ASIGNACION` aparece inmediatamente en la cola, sujeta a sus filtros; no espera a la nueva fecha para incorporarse. Se utiliza `fechaProgramada` como fecha civil y «hoy» del servidor en `America/Lima`. Una fecha futura mantiene la fila en solo lectura y el comando de asignación la rechaza con `409`; desde su fecha puede asignarse si cumple las demás condiciones, incluida la liberación de toda reserva anterior conforme a Operación §5.1.
+**Integración con reprogramaciones de F-04:** una transición aceptada a `PENDIENTE_ASIGNACION` aparece inmediatamente en la cola, sujeta a sus filtros; no espera a la nueva fecha para incorporarse. Se utiliza `fechaProgramada` como fecha civil y «hoy» del servidor en `America/Lima`. Una fecha futura bloquea la asignación con `409`, pero admite el adelanto explícito de §3.2.3; desde su fecha puede asignarse si cumple las demás condiciones, incluida la liberación de toda reserva anterior conforme a Operación §5.1.
 
 El filtro `tipoIntento` de la cola admite `TODOS`, `PRIMER_INTENTO` y `REINTENTOS`. `REINTENTOS` selecciona despachos con al menos una reprogramación aceptada en su historial; `PRIMER_INTENTO`, los que no tienen ninguna; `TODOS` no aplica esa restricción. No se deduce la reprogramación de `numeroIntentos > 1`: el acumulado cuenta fallos reales, permanece en uno tras el primer fallo reprogramado y puede seguir en cero con `NO_INTENTADO`. La etiqueta `Reintento` y el KPI correspondiente usan esa misma condición, sin incrementar el contador ni presentar una nueva salida como ya realizada. Las demás reglas de la cola se desarrollan en [ES-F02-03](../especificaciones/ES-F02-03-ConsultarColaPendientes/spec.md).
 
@@ -196,6 +197,16 @@ Precisión de transporte contrastada con `ControladorRutas` y `RutasHttpTests`; 
 - La clave, contenido, versión y ejecutor se conservan para recuperar la misma operación. Una repetición exacta devuelve el resultado original; contenido distinto con la misma clave o versión concurrente rechaza con `409`. `409 DESP_ERROR_REASIGNACION_EN_PROCESO` indica resultado pendiente, no una transferencia cancelada. Un `503`, timeout o respuesta no verificable tampoco demuestra reversión: conservar el comando original y recuperar explícitamente su resultado, sin otro envío automático ni otra transferencia.
 - Motivo/formato/destino iguales al origen inválidos: `400`; estado incompatible o destino no habilitado: `409`; carga excedida: `422`; indisponibilidad/resultado incierto: `503`. Aplican `401/403` comunes. Un rechazo definitivo exige revisar datos actuales antes de preparar un comando nuevo.
 - La transferencia técnica ya existente se define únicamente en [Operación §5.5](./api-contract-operacion-reparto.md#55-gestión-transfiere-una-reserva-en-operación). No se sustituye por reservar/liberar de forma independiente ni por una compensación que pueda recrear la reserva anterior. La decisión pendiente sobre identidad de servicio permanece separada y no se cambia aquí.
+
+#### 3.2.3. Adelantar un despacho a hoy
+
+- `POST /api/v1/despachos/{idDespacho}/adelanto`, JWT humano y rol `GESTOR_DESPACHO`. Cuerpo JSON exclusivo: `{ "motivo": "Disponibilidad inmediata de un repartidor" }`. Motivo obligatorio tras recortar espacios, entre 1 y 500 puntos de código Unicode. No admite parámetros de consulta ni fechas elegidas por el cliente.
+- Requiere `Idempotency-Key` UUID v4 e `If-Match` con la versión numérica del despacho entre comillas, como `"4"`. El ejecutor, la clave, el despacho, la versión y el motivo identifican el comando; una repetición exacta recupera la primera respuesta, incluso otro día o tras asignarse. Cambiar el comando con la misma clave responde `409 DESP_ERROR_OPERACION_REUTILIZADA`.
+- Solo acepta `PENDIENTE_ASIGNACION` con fecha estrictamente futura, versión vigente y sin asignación/compensación o cancelación pendiente. Cambia únicamente la fecha programada a hoy del servidor (`America/Lima`), la versión y `actualizadoEn`. Conserva `enColaDesde`, identidad, carga, intentos, referencias e históricos.
+- `200 OK`, `Cache-Control: no-store`: `{ "idDespacho": "<uuid>", "estado": "PENDIENTE_ASIGNACION", "fechaProgramadaAnterior": "2026-12-01", "fechaProgramada": "2026-11-24", "versionDespacho": 5, "motivo": "...", "actualizadoEn": "<instante UTC>" }`.
+- Persistencia atómica de fecha, versión, respuesta idempotente y auditoría `ADELANTO_PROGRAMACION` con actor, motivo, fecha anterior/nueva y momento. No es una transición de estado, no cuenta como reprogramación F-04 ni consume intentos. No reserva/libera capacidad, no asigna jornada/repartidor y no emite eventos a Ventas ni proyecciones a Operación. No modifica eventos ya pendientes. La asignación posterior conserva las validaciones y los eventos existentes, que incluyen la fecha actualizada.
+- Formato/cabeceras/motivo inválidos: `400 DESP_ERROR_CAMPOS_INVALIDOS`; desconocido: `404 DESP_ERROR_DESPACHO_NO_ENCONTRADO`; versión obsoleta: `409 DESP_ERROR_DESPACHO_DESACTUALIZADO`; estado incompatible: `409 DESP_ERROR_ESTADO_INCOMPATIBLE`; fecha de hoy/pasada: `409 DESP_ERROR_ADELANTO_NO_APLICABLE`; operación pendiente: `409 DESP_ERROR_OPERACION_EN_PROCESO`. Aplican `401/403` comunes.
+- Ante timeout, `5xx` o respuesta no verificable, conservar el comando original y ofrecer recuperación explícita con la misma clave, versión y motivo. No generar automáticamente otro comando. El cliente valida identidad, estado, fechas, motivo y versión antes de notificar éxito y vuelve a consultar cola e indicadores.
 
 ## 4. Catálogo único de motivos de fallo
 
@@ -563,7 +574,7 @@ Con identificador de evidencia, `estadoReferencia=REFERENCIADA`: acredita la ref
 
 Cada entrada de `historial` contiene `id`, `fechaServidor`, `tipoOperacion`, `estadoAnterior`, `estadoNuevo`, `funcionalidadOrigen`, `ejecutorTipo`, `ejecutorId`, `origen`, `motivo`, `observacion` y `datos`. `fechaServidor` es la marca persistida; orden ascendente por ella y desempate por `id` ascendente. No se ordena con la hora del navegador.
 
-- `tipoOperacion`: `TRANSICION`, `REASIGNACION`, `REORDENAMIENTO`, `RECEPCION_EN_CENTRO` o `ANULACION_REGISTRADA`; estados y funcionalidad conservan sus valores canónicos.
+- `tipoOperacion`: `TRANSICION`, `REASIGNACION`, `REORDENAMIENTO`, `RECEPCION_EN_CENTRO`, `ANULACION_REGISTRADA` o `ADELANTO_PROGRAMACION`; estados y funcionalidad conservan sus valores canónicos. El adelanto expone en `datos` únicamente `fechaProgramadaAnterior` y `fechaProgramada`, con motivo en `observacion`; no se presenta como cambio de estado.
 - `estadoAnterior` es `null` solo en la creación; `estadoNuevo` siempre existe. Una recepción conserva `FALLIDO` en ambos y se describe como operación, no como un estado nuevo.
 - `ejecutorTipo`: `USUARIO`, `SERVICIO` o `SISTEMA`; `ejecutorId` admite `null` para procesos sin identificador. `origen` es `MANUAL` o `AUTOMATICO`; no se inventan nombres de usuario.
 - `motivo` es un objeto con `codigo` y `etiqueta` o `null` cuando no aplica; `observacion` es cadena o `null`. `datos` es un objeto de presentación con los campos registrados que correspondan a la operación, definidos a continuación; no se vuelca JSON interno arbitrario.
@@ -573,6 +584,7 @@ Cada entrada de `historial` contiene `id`, `fechaServidor`, `tipoOperacion`, `es
 | Fallo real o `NO_INTENTADO` | `idIncidencia`, `idRepartidor`, `idJornada`, `idReserva`, `consumeIntento`, `numeroIntentos`. Referencias como cadenas; consumo booleano y contador entero. |
 | Recepción | `idIncidencia`, `idReserva`, `selloIntacto` booleano, `observacionRecepcion` cadena o `null`. |
 | Reprogramación | `idIncidencia`, `nuevaFechaProgramada` como fecha civil `YYYY-MM-DD`. |
+| Adelanto de programación | `fechaProgramadaAnterior`, `fechaProgramada` como fechas civiles `YYYY-MM-DD`. |
 | Cierre a origen | `idIncidencia`, `motivoCierre` como cadena. |
 | Asignación o reasignación | `idRepartidor`, `idJornada`, `idNuevoRepartidor`, `idNuevaJornada`, según corresponda. |
 | Reordenamiento | `despachos`: arreglo de `idDespacho` y `posicion` entera positiva, conforme a §3.2. |

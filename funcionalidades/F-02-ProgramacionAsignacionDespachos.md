@@ -43,7 +43,7 @@ Esta funcionalidad incluye:
 - Una solicitud de despacho corresponde a un pedido pagado, preparado y listo para entrega, e incluye: identificador de pedido, destinatario, destino y las líneas del pedido con `sku` y `cantidad`. Las coordenadas y el código postal son opcionales. Ventas y Postventa no envía peso, volumen, cantidad de paquetes ni fecha comprometida: antes de persistir el despacho, Despacho consulta los datos físicos vigentes de cada SKU ante Productos y Ofertas, calcula `pesoTotalKg` y `volumenTotalM3`, registra internamente `cantidadPaquetes = 1` y calcula `fechaProgramada` a partir de la zona, el plazo aplicable y el calendario operativo. Si Productos y Ofertas no está disponible o faltan datos físicos válidos, no se crea el despacho.
 - No se exige cotización previa ni se usa `cotizaciones` como fuente física. Las reglas homologadas de lote, límite de 100 SKU únicos y estados se definen en el [contrato externo §§5.2 y 7.1](../integraciones/api-contract.md#52-integración-de-despacho-con-productos-y-ofertas); §11.1 registra H-G2-01/02/03 cerrados y las precisiones D-G2-01/02 [cite: 1].
 - Al crear un despacho nuevo, el destino debe estar cubierto por una zona activa de F-01. Los despachos existentes conservan la zona registrada y pueden continuar su ciclo o ser reprogramados aunque posteriormente esa zona sea desactivada.
-- Solo se asignan despachos en `PENDIENTE_ASIGNACION` cuya fecha de entrega programada sea igual o anterior a la fecha actual. Los despachos reprogramados a futuro permanecen en cola en modo solo lectura hasta su fecha programada.
+- Solo se asignan despachos en `PENDIENTE_ASIGNACION` cuya fecha de entrega programada sea igual o anterior a la fecha actual. Los futuros permanecen sin asignación hasta su fecha, salvo adelanto explícito y auditado a hoy según [ES-F02-09](../especificaciones/ES-F02-09-AdelantarDespachoHoy/spec.md).
 - El repartidor debe tener una asignación operativa diaria activa provista por F-06 y encontrarse en estado operativo `DISPONIBLE` o `EN_RUTA`.
 - El peso, el volumen y la cantidad física de paquetes del despacho no deben superar la capacidad remanente del repartidor en ninguna de sus tres variables (evaluación tridimensional obligatoria).
 
@@ -215,7 +215,7 @@ El sistema DEBE definir para cada despacho asignado la jornada y su posición en
 
 - **DADO** un despacho reprogramado por F-04 para una fecha posterior a hoy.
 - **CUANDO** el Gestor consulta la cola o intenta asignarlo.
-- **ENTONCES** la cola lo muestra identificado como "Programado para [fecha]" y el backend rechaza su asignación con `409 Conflict` hasta que llegue esa fecha.
+- **ENTONCES** la cola lo muestra identificado como "Programado para [fecha]" y el backend rechaza su asignación con `409 Conflict` hasta que llegue esa fecha o el Gestor confirme un adelanto a hoy según ES-F02-09. El adelanto no asigna ni cambia el estado.
 
 #### CA-14. Reordenamiento de la secuencia de ruta
 
