@@ -66,3 +66,9 @@ Código identificado en §1; publicación en `develop` para frontend/backend y `
 - Correcciones: invalidación de datos y formularios de F-05/F-06 al cambiar sesión; descarte de respuestas tardías. Los cierres de jornadas vacías por baja o retiro conservan auditoría propia, actor y estados anterior/nuevo, con reversión conjunta ante error y sin duplicación al repetir.
 - Entorno y límites: PostgreSQL desechable en GitHub Actions; JWT identificados como dobles o emisor temporal. El navegador usa APIs simuladas. Docker Desktop local falló al iniciar; la ejecución completa local no se presenta como aprobada. No se modificaron Supabase, Render, Vercel ni migraciones aplicadas. Seguridad real, permisos de cuentas reales, SLA desplegado y aceptación humana siguen pendientes.
 - Entrega: [PR frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/pull/17) y [PR backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/19); [reporte común y trazabilidad](../ES-F06-01-AbrirJornada/evidencia/validacion.md#revision-f05-f06-2026-10-26). No se ha realizado el merge.
+
+## EV-03. Aviso de jornada bloqueante (26/11/2026)
+
+- Operación, `mvnw.cmd clean verify`. Pasaron 142 pruebas con PostgreSQL desechable. Los casos de apertura comprueban el 409 con jornada activa, despachos proyectados y reservas que siguen activas tras el cierre.
+- Frontend, `npm run test:f06`, `npm run typecheck` y `npm run build`. Pasaron 20 pruebas de F-06, la verificación de tipos y la compilación. Pasaron tres pruebas de F-06 en Chrome con APIs simuladas, incluida la revisión del aviso en un ancho de 390 px.
+- La verificación corresponde a los cambios locales. La publicación y la comprobación en el entorno desplegado quedan pendientes.

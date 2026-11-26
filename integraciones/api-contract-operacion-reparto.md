@@ -356,6 +356,8 @@ El contexto propio devuelve `idRepartidor`, `estadoOperativo` y `jornada` activa
 
 Usar Problem Details común: `400 DESP_ERROR_CAMPOS_INVALIDOS`; `401/403` de Seguridad; `404 DESP_ERROR_JORNADA_NO_ENCONTRADA`; `409 DESP_ERROR_CONFLICTO_JORNADA` por recursos ocupados/carga/pendientes; `422 DESP_ERROR_RECURSO_NO_APTO` por perfil, zona o fecha no aptos; `503 DESP_ERROR_OPERACION_NO_DISPONIBLE` por dependencia o datos no disponibles. No retornar SQL ni mensajes remotos sin filtrar.
 
+Cuando una jornada activa o su carga pendiente bloquea `POST /api/v1/jornadas`, el `409` agrega `jornadasBloqueantes`. Cada entrada incluye `idJornada`, `fecha` (ISO), `placa`, `estado` (`ACTIVA` o `CERRADA`), `bloqueaRepartidor` y `bloqueaFurgoneta` (booleanos), `despachosPendientes` (códigos de rastreo, o UUID si falta el código, para despachos `ASIGNADO` o `EN_CAMINO`) y `reservasActivas` (conteo). Una jornada puede aparecer por coincidir con ambos recursos. Una reserva activa puede bloquear aunque no haya despachos pendientes en la proyección. Esta extensión es opcional en el contrato general de errores y solo se devuelve para bloqueos de apertura por jornada. El aviso indica la fecha que se puede consultar en el monitoreo para abrir el detalle.
+
 El tablero actualiza cada 30 segundos mientras sea visible, cancela/descarta solicitudes obsoletas y permite actualización manual. Un fallo de refresco conserva los datos previos identificados como desactualizados y bloquea mutaciones; una pérdida de autorización los retira. Tras mutar, confirma respuesta y consulta nuevamente; una salida incierta exige reconciliar antes de repetir.
 
 ## 5. API interna provista por Operación
