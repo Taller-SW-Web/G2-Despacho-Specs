@@ -15,12 +15,14 @@ Los resultados «Aprobado» se limitan a las comprobaciones locales indicadas; n
 | CA-01 | T-01 a T-04 | Saturación y barras: CalculoOcupacionTests, reservaProyeccionRetornoYCierreCompartenLaMismaOcupacionSinLiberarAnticipadamente y PaginaJornadas.test.tsx. | EV-01 | Aprobado |
 | CA-02 | T-01 a T-04 | Resumen antes de filtrar/paginar: elResumenCuentaAntesDeFiltrarYPaginar y prueba de KPI/URL del frontend. | EV-01 | Aprobado |
 | CA-03 | T-01 a T-04 | Recuperación y denegación: PaginaJornadas.test.tsx, useConsultaJornadas.test.tsx y JornadasHttpTests. | EV-01 | Aprobado |
+| CA-04 | T-01 a T-04 | Jornadas anteriores activas con filtros en PostgreSQL y cierre confirmado en Chrome. | EV-03 | Aprobado localmente |
 | CUI-01 | T-02 y T-04 | Contexto, controles con nombre y métricas: PaginaJornadas y componentes compartidos. | EV-01 | Aprobado |
 | CUI-02 | T-02 y T-04 | URL inválida y modelos: modelo.test.tsx y PaginaJornadas.test.tsx. | EV-01 | Aprobado |
 | CUI-03 | T-02 y T-04 | Resultado incierto y bloqueo de envíos: apertura y hook de mutación en PaginaJornadas.test.tsx. | EV-01 | Aprobado |
 | CUI-04 | T-02 y T-04 | Fallo, datos anteriores y recuperación: PaginaJornadas y useConsultaJornadas. | EV-01 | Aprobado |
 | CUI-05 | T-02 y T-04 | 401/403 retira contenido y formularios: PaginaJornadas.test.tsx. | EV-01 | Aprobado |
 | CUI-06 | T-02 y T-04 | Revisión visual en navegador, foco completo y pantallas reducidas no ejecutados. | EV-01 | Pendiente |
+| CUI-07 | T-02 y T-04 | Aviso en Hoy, navegación al detalle y cierre manual en pantalla de 390 px. | EV-03 | Aprobado localmente |
 
 ## 3. Registros de verificación
 
@@ -63,3 +65,9 @@ Código identificado en §1; publicación en `develop` para frontend/backend y `
 - Correcciones: invalidación de datos y formularios de F-05/F-06 al cambiar sesión; descarte de respuestas tardías. Los cierres de jornadas vacías por baja o retiro conservan auditoría propia, actor y estados anterior/nuevo, con reversión conjunta ante error y sin duplicación al repetir.
 - Entorno y límites: PostgreSQL desechable en GitHub Actions; JWT identificados como dobles o emisor temporal. El navegador usa APIs simuladas. Docker Desktop local falló al iniciar; la ejecución completa local no se presenta como aprobada. No se modificaron Supabase, Render, Vercel ni migraciones aplicadas. Seguridad real, permisos de cuentas reales, SLA desplegado y aceptación humana siguen pendientes.
 - Entrega: [PR frontend](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/pull/17) y [PR backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend/pull/19); [reporte común y trazabilidad](../ES-F06-01-AbrirJornada/evidencia/validacion.md#revision-f05-f06-2026-10-26). No se ha realizado el merge.
+
+## EV-03. Aviso de jornadas anteriores sin cerrar (26/11/2026)
+
+- Backend `3e7450a`. `mvnw.cmd clean verify` aprobó 143 pruebas con PostgreSQL desechable. El aviso incluye jornadas antiguas activas independientemente de la fecha y los filtros de la tabla. La prueba verifica la carga que impide el cierre y retira la jornada del resultado tras el cierre confirmado.
+- Frontend `73baa9c`. Pasaron las 20 pruebas de F-06, la verificación de tipos, la compilación y cuatro pruebas de F-06 en Chrome con HTTP simulado. Se comprobó el aviso en Hoy, la navegación al detalle y el cierre con confirmación en un ancho de 390 px.
+- La comprobación corresponde al entorno local. El despliegue queda pendiente.
