@@ -17,7 +17,7 @@ Garantizar que ningún despacho quede en `ASIGNADO` ni `EN_CAMINO` al terminar l
 ## 2. Alcance
 
 - Incluye: cierre manual con advertencia, corte automático de respaldo, transición masiva a `FALLIDO` / `NO_INTENTADO`, solicitud de cierre de turno a F-05, lista de paquetes a devolver y resumen de la jornada.
-- Fuera de alcance: recepción física de los paquetes devueltos (F-04); gestión de jornadas y turnos más allá de solicitar el cierre (F-05); definición del valor de la hora de corte; regularización de despachos que el corte no logró cerrar; reportes de flota o de otros repartidores y exportación del resumen.
+- Fuera de alcance: recepción física de los paquetes devueltos (F-04); gestión de jornadas y turnos más allá de solicitar el cierre (F-05); elección de la hora para producción; regularización manual de excepciones; reportes de flota o de otros repartidores y exportación del resumen.
 
 ## 3. Actor, precondiciones y resultados
 
@@ -39,7 +39,7 @@ Garantizar que ningún despacho quede en `ASIGNADO` ni `EN_CAMINO` al terminar l
 |---|---|---|---|
 | Sin pendientes | Ningún despacho en `ASIGNADO` ni `EN_CAMINO` | Solo se registra el cierre; sin fallos | CA-02 |
 | Corte automático | El repartidor no cerró antes de la hora de corte | El proceso ejecuta los pasos 4 y 5 por cada repartidor; origen automático | CA-03 |
-| Corte fallido | El corte no se ejecuta o no completa | Los despachos abiertos aparecen al día siguiente como pendientes de regularización (ES-F03-02 CA-04) | — |
+| Corte pendiente | El corte no se ejecutó o no completó | El siguiente ciclo recupera la jornada anterior. Mientras siga activa, sus despachos abiertos aparecen como pendientes de regularización (ES-F03-02 CA-04) | CA-03 |
 | Sin conexión | La solicitud no llega al backend | Aviso de cierre no registrado y reintento explícito | — |
 | Reintento | Misma clave de idempotencia | Resultado original sin duplicar transiciones | — |
 
@@ -83,6 +83,8 @@ Garantizar que ningún despacho quede en `ASIGNADO` ni `EN_CAMINO` al terminar l
 - **DADO** que el repartidor no cerró su jornada antes de la hora de corte configurada.
 - **CUANDO** se ejecuta el proceso automático.
 - **ENTONCES** se aplica el tratamiento de CA-01 y el historial identifica la operación como automática.
+
+El ciclo recupera jornadas activas de fechas anteriores, incluso antes de la hora de corte de hoy. Gestión valida la asignación y el estado vigentes en cada transición. Un fallo deja la jornada abierta y permite reintentar con las mismas claves. El resultado y la recepción de los paquetes se conservan en sus flujos habituales.
 
 ### CA-04. Consolidado correcto del resumen
 

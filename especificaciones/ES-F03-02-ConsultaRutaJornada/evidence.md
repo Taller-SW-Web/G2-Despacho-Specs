@@ -69,3 +69,8 @@ Cada registro ejecutado indica fecha, persona, commit, entorno, pasos, resultado
 - PR de implementación: pendiente.
 - Revisor y fecha: pendientes.
 - Estado del alcance: Pendiente.
+
+## 7. Verificación de la bandeja de pendientes anteriores
+
+- Backend `13daedf` y frontend `c3da28f`. La sesión ficticia vinculada a Ana confirmó en Chrome una ruta de hoy vacía y una bandeja separada con dos despachos de días anteriores. La API devolvió código, fecha y estado.
+- Pasaron las 14 pruebas de la aplicación del repartidor, la comprobación de tipos y la compilación. La verificación usó un emisor local y una base desechable.

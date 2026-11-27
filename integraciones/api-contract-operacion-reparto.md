@@ -17,6 +17,7 @@ Todos los recursos requieren un JWT humano con `tipo=acceso`. En las rutas `/rep
 | Método | Ruta | Propósito |
 |---|---|---|
 | `GET` | `/api/v1/repartidor/mi-ruta` | Consultar la ruta de la jornada actual |
+| `GET` | `/api/v1/repartidor/pendientes-regularizacion` | Consultar despachos pendientes propios de jornadas anteriores |
 | `GET` | `/api/v1/repartidor/despachos/{idDespacho}` | Consultar un despacho propio |
 | `POST` | `/api/v1/repartidor/despachos/{idDespacho}/inicio-traslado` | Cambiar `ASIGNADO` a `EN_CAMINO` |
 | `POST` | `/api/v1/repartidor/evidencias/autorizaciones` | Obtener URL firmada de carga |
@@ -93,7 +94,7 @@ La ruta no entrega teléfono. Nombre y dirección solo se incluyen para `ASIGNAD
 - `paquetesPorDevolver` lista los despachos `FALLIDO` de la jornada, con o sin intento consumido, porque el paquete regresa físicamente con el repartidor. Es la única excepción a la omisión de datos personales: incluye dirección y distrito, sin destinatario ni teléfono, para que el repartidor identifique cada paquete en el centro. La confirmación de recepción sigue perteneciendo a F-04.
 - `estadoJornada` (`ACTIVA`/`CERRADA`) y `cerradaEn` (UTC o `null`) provienen de la jornada. Sin jornada responde `idJornada: null`, contadores en cero y lista vacía.
 
-Las consultas responden con `Cache-Control: no-store`. La bandeja de regularización de jornadas anteriores es una lectura separada, de solo lectura y sin datos personales ni acciones; no forma parte de `mi-ruta` y su endpoint queda pendiente de implementación.
+Las consultas responden con `Cache-Control: no-store`. `GET /api/v1/repartidor/pendientes-regularizacion` devuelve una lista de `{idDespacho, codigoRastreoInterno, fecha, estado}` para los despachos `ASIGNADO` o `EN_CAMINO` de jornadas anteriores activas del perfil resuelto por el token. Si falta el código, se usa el UUID del despacho. La consulta se mantiene separada de `mi-ruta` y excluye datos personales y acciones.
 
 `GET /api/v1/repartidor/motivos-fallo` devuelve `{ "motivos": [...] }` con la forma del [catálogo de Gestión §4](./api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo), filtrada a `activo=true` y `seleccionableEnCampo=true`. Operación lo obtiene de Gestión con su credencial técnica después de validar el perfil de campo; no mantiene una copia propia. Si Gestión no responde: `503` con `DESP_ERROR_GESTION_NO_DISPONIBLE`, y la UI no fabrica motivos.
 
@@ -205,7 +206,9 @@ El almacenamiento deniega accesos sin firma válida y enlaces vencidos. Un fallo
 
 `POST /api/v1/repartidor/jornada/cierre` con `Idempotency-Key` y cuerpo `{ "idJornada": "<UUID>" }`. La jornada debe pertenecer al perfil del `sub` (`403` en otro caso).
 
-Cada despacho `ASIGNADO` o `EN_CAMINO` se resuelve primero en Gestión como `FALLIDO` con motivo `NO_INTENTADO`, sin fotografía ni incremento del contador, con origen manual y el repartidor como ejecutor (ES-F03-07). Cada solicitud usa una clave derivada de forma estable de la clave del cierre y del despacho, de modo que un reintento no duplica transiciones. Después se cierra la jornada como en §4.2.1 y responde `200` con el recurso Jornada. Si algún despacho no pudo resolverse responde `503` y la jornada sigue abierta: se reintenta con la misma clave. Una jornada ya cerrada devuelve su estado sin cambios. El corte automático de fin de turno sigue pendiente de implementación.
+Cada despacho `ASIGNADO` o `EN_CAMINO` se resuelve primero en Gestión como `FALLIDO` con motivo `NO_INTENTADO`, sin fotografía ni incremento del contador, con origen manual y el repartidor como ejecutor (ES-F03-07). Cada solicitud usa una clave derivada de forma estable de la clave del cierre y del despacho, de modo que un reintento no duplica transiciones. Después se cierra la jornada como en §4.2.1 y responde `200` con el recurso Jornada. Si algún despacho no pudo resolverse responde `503` y la jornada sigue abierta: se reintenta con la misma clave. Una jornada ya cerrada devuelve su estado sin cambios.
+
+El corte programado de Operación procesa jornadas activas de hoy desde la hora configurada y recupera jornadas activas anteriores desde el inicio de cada día operativo. Usa el origen `AUTOMATICO`, el ejecutor `corte-jornada` y una clave estable por jornada y despacho. Si falla una transición o sigue habiendo carga sin resultado, la jornada queda abierta para el siguiente ciclo. El corte usa `America/Bogota` y registra el cierre como `CORTE_AUTOMATICO`.
 
 
 ## 4. API de F-05 y F-06: perfiles, flota y jornadas

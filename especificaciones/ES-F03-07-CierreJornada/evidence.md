@@ -71,3 +71,9 @@ Cada registro ejecutado indica fecha, persona, commit, entorno, pasos, resultado
 - PR de implementación: pendiente.
 - Revisor y fecha: pendientes.
 - Estado del alcance: Pendiente.
+
+## 7. Verificación local del corte automático y la recuperación
+
+- Operación `13daedf`. Pasaron 144 pruebas en `clean verify`, con cobertura para umbral horario, recuperación, fallo aislado y reintento estable. Pasaron 20 pruebas de Gestión para transiciones y recepción.
+- En una demo con Operación y Gestión reales, bases desechables e identidad local, el proceso cerró una jornada anterior y registró `FALLIDO / NO_INTENTADO` con cero intentos y auditoría automática. En F-04 el despacho conservó su reserva hasta confirmar la recepción. Tras la liberación, se reprogramó y apareció en la cola de F-02 como `PENDIENTE_ASIGNACION`.
+- La hora y activación del corte en producción siguen pendientes de despliegue y revisión.

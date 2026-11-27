@@ -13,7 +13,7 @@
 | T-01 | Diálogo, lista y resumen con fixtures | Frontend, I-01 | ES-F03-02 T-01, DT-03 | CUI-01 a CUI-05 | Pendiente |
 | T-02 | Contrato de cierre y resumen cerrado | Contrato | DT-01, DT-02, DT-05 | CA-01 a CA-05 | Pendiente |
 | T-03 | Cierre manual y resumen en backend | Backend, I-02 | T-02, ES-F03-04 T-03 | CA-01, CA-02, CA-04, CA-05 | Pendiente |
-| T-04 | Corte automático | Backend, I-03 | T-03, DT-04, DT-06 | CA-03, CA-05 | Pendiente |
+| T-04 | Corte automático | Backend, I-03 | T-03, DT-04, DT-06 | CA-03, CA-05 | Verificado localmente |
 | T-05 | Frontend conectado al backend real | Integración, I-04 | T-01, T-03 | CA-01, CA-02, CA-04; CUI-01 a CUI-05 | Pendiente |
 | T-06 | Evidencia y revisión completadas | Calidad | T-04, T-05 | Todos | Pendiente |
 
