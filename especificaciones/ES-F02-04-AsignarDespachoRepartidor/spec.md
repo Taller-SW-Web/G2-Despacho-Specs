@@ -83,7 +83,7 @@ El objetivo es ejecutar la asignación validando de forma transaccional y en tie
 | RN-02 | Todo despacho asignado adquiere automáticamente la última posición en la secuencia de ruta de la jornada. | F-02 RF-06 |
 | RN-03 | La asignación exige concurrencia optimista (`@Version`); si otro proceso mutó el despacho, la transacción se aborta con 409. | F-02 RNF Concurrencia |
 | RN-04 | La reserva en F-06 utiliza una clave técnica idempotente; una asignación nueva genera una clave fresca y no reutiliza reservas pasadas. | api-contract-operacion-reparto.md §5.1 |
-| RN-05 | No se permite asignar despachos con `fechaProgramada > hoy`. | F-02 RF-06, CA-13 |
+| RN-05 | No se permite asignar despachos con `fechaProgramada > hoy`. El adelanto explícito de [ES-F02-09](../ES-F02-09-AdelantarDespachoHoy/spec.md) cambia la fecha antes de asignar, sin omitir ninguna validación. | F-02 RF-06, CA-13 |
 
 | Operación o dependencia | Uso en este comportamiento | Contrato o fuente |
 |---|---|---|
@@ -121,7 +121,7 @@ El objetivo es ejecutar la asignación validando de forma transaccional y en tie
 
 - **DADO** un despacho en `PENDIENTE_ASIGNACION` cuya fecha programada es posterior al día de hoy.
 - **CUANDO** se procesa una petición de asignación.
-- **ENTONCES** el backend responde `409 Conflict` ("Despacho programado para fecha futura") y bloquea la operación hasta que llegue su fecha.
+- **ENTONCES** el backend responde `409 Conflict` ("Despacho programado para fecha futura") y bloquea la operación hasta que llegue su fecha o se confirme el adelanto independiente de ES-F02-09.
 
 ### CA-06. Rechazo por reserva anterior de salida previa no liberada
 
