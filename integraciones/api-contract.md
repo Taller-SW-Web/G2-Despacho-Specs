@@ -6,7 +6,7 @@ Este documento define las comunicaciones de Despacho y Entrega con Marketplace, 
 
 | Documento | Alcance y lectores |
 |---|---|
-| [Integraciones externas](./api-contract.md) | Equipos de otros módulos: operaciones, autenticación, eventos y acuerdos de integración. También conserva las convenciones comunes (§3) y la idempotencia compartida (§9). |
+| [Integraciones externas](./api-contract.md) | Equipos de otros módulos: operaciones, autenticación, eventos y acuerdos de integración. También conserva las convenciones comunes (§3), la mensajería interna (§3.6) y la idempotencia compartida (§9). |
 | [Gestión de Despachos](./api-contract-gestion-despachos.md) | Frontend administrativo y backend de F-01, F-02 y F-04; catálogo común y API interna provista por Gestión. |
 | [Operación de Reparto y Flota](./api-contract-operacion-reparto.md) | Frontend del repartidor y administración de F-05/F-06; evidencias, jornadas, capacidad y API interna provista por Operación. |
 
@@ -182,6 +182,30 @@ Content-Type: application/problem+json
 ```
 
 Para cerrar la integración se deben probar, como mínimo, los casos sin token, token inválido o vencido, audiencia incorrecta, scope ausente y scope correcto. Una audiencia que no contenga `api-despacho` se rechaza con `401 Unauthorized` antes de ejecutar la operación de negocio.
+
+### 3.6. Mensajería interna con RabbitMQ
+
+RabbitMQ es un transporte opcional y aditivo para los eventos internos entre Gestión de Despachos y Operación de Reparto. No sustituye las API REST internas ni el webhook HTTPS hacia Ventas y Postventa. Se activa con `RABBITMQ_HABILITADO=true`; con el valor por defecto `false`, los flujos siguen por HTTP.
+
+| Exchange | Routing key | Cola | Consumidor |
+|---|---|---|---|
+| `despacho.capacidad` (topic) | `operacion.liberacion.{idReserva}` | `operacion.liberaciones` | Operación |
+| `despacho.estado` (topic) | `despacho.proyeccion` | `despacho.eventos.estado` | Operación |
+
+Cada cola declara un dead-letter exchange `despacho.dlx` con su cola de espera. El productor espera la confirmación del broker antes de marcar el evento como enviado en la bandeja de salida; sin confirmación conserva el estado pendiente y aplica el calendario de reintentos ya acordado.
+
+Sobre del mensaje, con campos `camelCase` y fechas ISO 8601 en UTC:
+
+| Campo | Regla |
+|---|---|
+| `eventId` | UUID v4. Identifica el hecho confirmado y se conserva en cada reentrega. |
+| `tipo` | `LIBERACION_CAPACIDAD` o `PROYECCION_DESPACHO`. |
+| `version` | Entero; comienza en `1` y solo aumenta ante un cambio incompatible del sobre. |
+| `claveIdempotencia` | UUID v4 igual a `eventId`. Equivale al encabezado `Idempotency-Key` de REST. |
+| `ocurridoEn` | Instante en que se confirmó el cambio local. |
+| `datos` | JSON con los mismos nombres que el cuerpo del endpoint interno equivalente. |
+
+El consumidor confirma (`ack`) manualmente y registra `eventId` en su tabla de idempotencia antes de ejecutar la operación de dominio; una reentrega con el mismo identificador se descarta sin repetir efectos. Los fallos definitivos terminan en la cola de espera para revisión, sin reencolado infinito. Las credenciales del broker son independientes de los tokens `client_credentials`; el consumidor no recibe un JWT de usuario y actúa con la identidad técnica `modulo-despacho`.
 
 ## 4. Matriz de comunicaciones externas
 

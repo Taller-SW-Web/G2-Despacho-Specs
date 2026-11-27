@@ -111,7 +111,7 @@ Cuando F-03 origina una transición, Operación de Reparto valida al repartidor,
 
 ## 4. Comunicaciones
 
-La arquitectura utiliza REST para preguntas y comandos que necesitan una respuesta inmediata, y webhook HTTPS con outbox para comunicar a Ventas y Postventa hechos ya confirmados.
+La arquitectura utiliza REST para preguntas y comandos que necesitan una respuesta inmediata, y webhook HTTPS con outbox para comunicar a Ventas y Postventa hechos ya confirmados. RabbitMQ es un transporte opcional y aditivo para eventos internos entre Gestión y Operación, definido en el contrato externo §3.6.
 
 | Interacción | Mecanismo | Motivo |
 |---|---|---|
@@ -122,6 +122,7 @@ La arquitectura utiliza REST para preguntas y comandos que necesitan una respues
 | Gestión consulta, reserva o libera capacidad | API REST interna síncrona e idempotente | La asignación necesita confirmar en ese momento si existe capacidad. |
 | Reparto solicita una transición de campo | API REST interna síncrona e idempotente | El repartidor necesita conocer el resultado de la operación. |
 | Gestión comunica un estado confirmado a Reparto | API REST interna idempotente y versionada | Mantiene la proyección sin compartir la base de datos. |
+| Gestión notifica eventos internos de capacidad y proyección | RabbitMQ opcional en los exchanges `despacho.capacidad` y `despacho.estado` (contrato externo §3.6); REST interno conservado como fallback | El transporte asíncrono no bloquea la transición confirmada y mantiene el mismo payload. |
 | Seguridad entrega identidad, roles y scopes | JWT validado localmente mediante JWKS; token de servicio obtenido por `client_credentials` | Evita consultar Seguridad en cada petición protegida y separa usuarios humanos de clientes técnicos. |
 | Alta y vinculación de un repartidor | `ADMIN_SISTEMA` crea la cuenta en Seguridad sin rol global; una operación administrativa vincula después el `usuario_id` con el perfil local | Despacho no crea cuentas, no administra contraseñas y autoriza al repartidor mediante el `sub` vinculado. |
 | Carga de evidencia | URL firmada hacia Storage | La transferencia directa evita que el Gateway transporte archivos grandes. |
