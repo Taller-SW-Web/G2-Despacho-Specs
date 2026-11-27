@@ -72,7 +72,7 @@ El objetivo es permitir al Gestor consultar de forma paginada y filtrable los de
 |---|---|---|
 | RN-01 | Solo se listan despachos cuyo estado vigente sea estrictamente `PENDIENTE_ASIGNACION`. | F-02 RF-02 |
 | RN-02 | Orden predeterminado: `fechaProgramada` ascendente; desempate por `creadoEn` ascendente. | F-02 CA-03 |
-| RN-03 | Despachos reprogramados para una fecha futura se listan en cola en modo solo lectura; su asignación se bloquea hasta que llegue dicha fecha. | F-02 RF-06, CA-13 |
+| RN-03 | Despachos reprogramados para una fecha futura se listan con asignación bloqueada; pueden adelantarse explícitamente a hoy conforme a [ES-F02-09](../ES-F02-09-AdelantarDespachoHoy/spec.md), sin asignarlos automáticamente. | F-02 RF-06, CA-13 |
 | RN-04 | El filtro `tipoIntento` admite `TODOS`, `PRIMER_INTENTO` y `REINTENTOS`. `REINTENTOS` filtra por presencia de reprogramaciones previas, no por `numeroIntentos > 1`. | api-contract-gestion-despachos.md §3.2 |
 | RN-05 | Rendimiento: tiempo de respuesta inferior a 250 ms para páginas de hasta 100 registros. | F-02 RNF Rendimiento |
 
