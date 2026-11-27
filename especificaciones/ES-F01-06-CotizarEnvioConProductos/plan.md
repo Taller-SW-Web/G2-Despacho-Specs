@@ -55,6 +55,7 @@ No aplica. No se requieren componentes React ni mock visual del módulo. El dobl
 - Seguridad: autorización por scope antes de revelar cobertura; ignorar peso/volumen aportados por el cliente como datos autoritativos; no exponer reglas internas de tarifa.
 - Concurrencia y efectos: capturar cobertura/tarifa de forma coherente; una sustitución posterior no reescribe instantáneas. La escritura exacta es el único efecto nuevo; sin eventos, cobros, reservas ni `Idempotency-Key`. Los estados de ciclo de vida del DDL no habilitan nuevos comandos.
 - Configuración operativa: acordar tasa por `sub` e IP, timeout, caché y medición de latencia; no fijar valores nuevos en esta carpeta (DT-04).
+- Para la contingencia temporal (CA-21), el cliente HTTP compartido aplica el respaldo según [el contrato externo §5.2.2](../../integraciones/api-contract.md#522-traducción-de-errores-y-estado-comercial). Si alguna línea usa el perfil provisional, el caso de uso marca la instantánea con `es_simulado=true`.
 - La [política de API Management](../../arquitectura/api-management-gateway.md#22-límite-de-solicitudes) define una cuota general para las rutas públicas de negocio y una específica para cotizaciones. Validar en un entorno aislado que el traslado al Gateway conserve la regla específica por `sub` e IP y el `429` contractual. El acuerdo de cuota con los consumidores se mantiene en DT-04.
 
 ## 5. Orden de implementación

@@ -416,6 +416,10 @@ La regla comercial homologada es:
 
 Un SKU existente no pasa a `noEncontrados` por su estado comercial. La elegibilidad de venta de F-01 se aplica después de validar el perfil y el lote; F-02 conserva las demás validaciones de cobertura, identidad, existencia e integridad física. Si G6 comunica datos incompletos, se aplica ese error antes de cualquier cálculo.
 
+**Contingencia temporal en Gestión.** Con `PRODUCTOS_RESPALDO_TEMPORAL_HABILITADO=true`, Gestión usa un perfil provisional de `1 kg` y `20 × 15 × 10 cm` por unidad, asociado literalmente al SKU de la solicitud. En un `200` íntegro lo aplica solo a los SKU de `noEncontrados` y conserva los perfiles devueltos por G6. Ante un timeout, fallo de conexión o HTTP `5xx` de G6 lo aplica a todo el lote. Gestión registra el motivo, la correlación y cuántos SKU usaron el respaldo. En F-01, guarda las cotizaciones que usaron algún perfil provisional con `es_simulado=true`.
+
+Los errores de credenciales, de negocio y de integridad conservan el tratamiento indicado arriba. El respaldo está desactivado por defecto y se revierte configurando `PRODUCTOS_RESPALDO_TEMPORAL_HABILITADO=false`. La operación y el esquema de G6 siguen siendo los de §5.2.1.
+
 #### 5.2.3. D-G2-01 — Estado efectivo de variantes
 
 G2 aceptó el 03/11/2026 que `estado` sea la proyección efectiva del SKU en esta consulta y G6 ratificó ese mismo día el cierre D-G2-01. La implementación y regresiones del proveedor están fusionadas en el PR backend #162, merge `eeaf39ad666d7bc5a11c0b2a80d9c8c4b0016414`. La sincronización normativa y las regresiones del consumidor se siguen en §11.1 [cite: 5, 6, 7].
