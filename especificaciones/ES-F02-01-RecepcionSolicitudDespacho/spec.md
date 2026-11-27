@@ -42,7 +42,7 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 - Ventas y Postventa no envía peso, volumen, cantidad de paquetes ni fecha comprometida.
 - No se exige cotización previa ni un identificador de cotización. `cotizaciones` es el histórico de F-01 y no sustituye la consulta vigente a G6 ni se escribe desde esta recepción.
 - El servicio de Zonas Geográficas (F-01) se encuentra disponible y el destino debe pertenecer a una zona en estado `ACTIVO`.
-- El servicio de Productos y Ofertas se encuentra disponible para la consulta en lote de los datos físicos vigentes de cada SKU (`productos:fisicos:leer`).
+- Gestión dispone de una credencial con `productos:fisicos:leer` para consultar en lote los datos físicos. Si el respaldo temporal está habilitado, se puede continuar ante los fallos de Productos descritos en CA-14.
 
 ### 3.2. Dependencias
 
@@ -58,9 +58,9 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 - Solicitud válida: despacho creado en estado `PENDIENTE_ASIGNACION`, código operativo interno único (ej. `DSP-100234`), código de rastreo (ej. `TRK-78901`), zona resuelta, peso y volumen calculados, `cantidadPaquetes = 1`, fecha programada calculada, auditoría registrada y respuesta `201 Created`.
 - Solicitud repetida para el mismo `idPedido`: respuesta `200 OK` con el despacho existente, sin duplicar registros.
 - Destino sin zona activa: respuesta `422 Unprocessable Entity` con código `DESP_ERROR_SIN_COBERTURA`.
-- SKU desconocido o sin datos físicos válidos: respuesta `422 Unprocessable Entity` con `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` o `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS`.
+- SKU desconocido o sin datos físicos válidos: respuesta `422 Unprocessable Entity` según CA-05, con la alternativa CA-14 para SKU desconocidos.
 - SKU padre no físico: rechazo íntegro con el error público de no elegibilidad e identificación de todos y únicamente los causantes, literalmente, sin duplicados y en orden de solicitud, conforme al acuerdo D-G2-02 del contrato §5.2.4. La causa es la identidad no física; no se aplica la restricción comercial de F-01.
-- Productos y Ofertas no disponible: respuesta `503 Service Unavailable` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE`.
+- Productos y Ofertas no disponible: respuesta `503 Service Unavailable` según CA-06, con la alternativa CA-14 ante fallos técnicos cubiertos por el respaldo.
 
 ## 4. Flujo principal y alternativas
 
@@ -91,6 +91,7 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 | SKU padre no físico | Identificador de padre con variantes bajo D-G2-02 homologado | Rechaza todo e informa los afectados exactos | CA-11 |
 | Error no conforme | Detalle obligatorio inválido en esa revisión | Aplica respuesta de Productos inválida, sin inferir afectados | CA-12 |
 | Errores mixtos | Diferentes clases de error en el lote | Precedencia bilateral aceptada el 04/11 según contrato §5.2.4, sin resultados parciales | CA-13 |
+| Respaldo temporal de Productos | Habilitado y con SKU en `noEncontrados` de un lote íntegro, timeout, fallo de conexión o HTTP `5xx` | Calcula la carga con perfiles reales y provisionales según corresponda y continúa la recepción | CA-14 |
 
 ## 5. Reglas, datos e integraciones
 
@@ -142,13 +143,13 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 
 ### CA-05. Rechazo por SKU inexistente o sin datos físicos válidos
 
-- **DADO** un SKU clasificado como inexistente en una respuesta íntegra o un error de negocio de G6 que identifica datos físicos incompletos, incluida su marca de actualización.
+- **DADO** un SKU clasificado como inexistente en una respuesta íntegra con el respaldo temporal desactivado, o un error de negocio de G6 que identifica datos físicos incompletos, incluida su marca de actualización.
 - **CUANDO** el backend intenta obtener los datos físicos antes de la persistencia.
 - **ENTONCES** el sistema responde `422 Unprocessable Entity` con `DESP_ERROR_PRODUCTO_NO_ENCONTRADO` o `DESP_ERROR_DATOS_FISICOS_INCOMPLETOS` y no crea el despacho.
 
 ### CA-06. Rechazo por indisponibilidad de Productos y Ofertas
 
-- **DADO** que el servicio de Productos y Ofertas responde con error 5xx o agota el tiempo de espera (timeout).
+- **DADO** que el respaldo temporal está desactivado y Productos y Ofertas responde con error `5xx`, agota el tiempo de espera o falla la conexión.
 - **CUANDO** se procesa la solicitud de creación de despacho.
 - **ENTONCES** el sistema responde `503 Service Unavailable` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE` y no persiste el despacho.
 
@@ -193,6 +194,12 @@ El objetivo es recibir, validar e incorporar de forma segura, atómica e idempot
 - **DADO** una recepción nueva con SKU padre no físicos y errores de otras clases, y la precedencia aceptada el 04/11 en contrato §5.2.4.
 - **CUANDO** se prueba el mismo conjunto en órdenes diferentes.
 - **ENTONCES** F-02 traduce el mismo error prioritario y conserva el mismo conjunto de afectados, ordenado según cada solicitud. Las bases no físicas prevalecen sobre perfiles incompletos y únicamente se identifican los causantes de la condición seleccionada. Rechaza íntegramente sin escrituras y sin afirmar que las demás líneas sean válidas.
+
+### CA-14. Recepción con datos físicos provisionales
+
+- **DADO** que el respaldo temporal está habilitado, el destino tiene cobertura y Productos reporta SKU en `noEncontrados` o presenta una caída técnica cubierta por [el contrato externo §5.2.2](../../integraciones/api-contract.md#522-traducción-de-errores-y-estado-comercial).
+- **CUANDO** Gestión recibe una solicitud nueva y válida de Ventas.
+- **ENTONCES** calcula el peso y el volumen por cantidad a partir de los perfiles reales y provisionales según corresponda, registra el uso del respaldo y crea el despacho en `PENDIENTE_ASIGNACION`.
 
 ## 7. Referencias
 

@@ -56,7 +56,7 @@ Calcular el costo de envío y el plazo estimado de un pedido a partir del destin
 |---|---|---|---|
 | Sin cobertura | No existe zona activa | Responde sin costo, plazo ni consulta a Productos | CA-02 |
 | Líneas inválidas | Lista vacía o cantidad no positiva, con cobertura | Rechaza sin calcular costo | CA-03 |
-| Productos inválidos o no disponibles | SKU inexistente, datos incompletos o fallo de consulta | Error normalizado sin estimar costo | CA-04 a CA-06 |
+| Productos inválidos o no disponibles | SKU inexistente, datos incompletos o fallo de consulta | Error normalizado según CA-04 a CA-06. Los casos cubiertos por la contingencia pueden continuar con CA-21. | CA-04 a CA-06, CA-21 |
 | Sin tarifa | Zona activa sin regla vigente | `200` con cobertura sin costo ni plazo, según Gestión §3.1 | CA-07 |
 | Exceso de solicitudes | Se supera el límite por `sub` e IP | Rechaza sin procesar el cálculo | CA-09 |
 | Persistencia | Cálculo exacto válido, aunque no exista pedido | Confirma la instantánea antes de responder | CA-11 |
@@ -148,7 +148,7 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 
 ### CA-04. Producto inexistente
 
-- **DADO** una solicitud que incluye un `sku` que Productos y Ofertas no reconoce.
+- **DADO** que el respaldo temporal está desactivado y la solicitud incluye un `sku` que Productos y Ofertas no reconoce.
 - **CUANDO** el canal envía la cotización.
 - **ENTONCES** el sistema responde `422 Unprocessable Entity` con `DESP_ERROR_PRODUCTO_NO_ENCONTRADO`, identifica el `sku` y no devuelve costo.
 
@@ -160,7 +160,7 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 
 ### CA-06. Productos no disponible
 
-- **DADO** que no es posible consultar los datos físicos de los productos.
+- **DADO** que no es posible consultar los datos físicos de los productos y la causa no está cubierta por el respaldo temporal o el respaldo está desactivado.
 - **CUANDO** el canal envía la cotización.
 - **ENTONCES** el sistema responde `503 Service Unavailable` con `DESP_ERROR_PRODUCTOS_NO_DISPONIBLE` y no devuelve un costo estimado.
 
@@ -249,11 +249,17 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 - **ENTONCES** responde y persiste respectivamente `8.50`, `9.00`, `15.50` o `9.00`, conservando un múltiplo exacto sin incremento.
 - **Y** eleva el volumen total a tres decimales únicamente para respuesta y columna de resultado; conserva exactos y ajuste en el detalle. Los casos `0.025822` y `0.025135` producen `0.026`; no se redondea cada línea ni se utiliza el volumen elevado para calcular el recargo.
 
+### CA-21. Cotización con datos físicos provisionales
+
+- **DADO** que el respaldo temporal está habilitado, el destino tiene cobertura y tarifa vigente, y Productos reporta SKU en `noEncontrados` o presenta una caída técnica cubierta por [el contrato externo §5.2.2](../../integraciones/api-contract.md#522-traducción-de-errores-y-estado-comercial).
+- **CUANDO** Gestión procesa la cotización.
+- **ENTONCES** calcula con los perfiles reales y los provisionales según corresponda, registra el uso del respaldo y marca la instantánea con `es_simulado=true`. Los perfiles reales siguen sujetos a la validación comercial de CA-15.
+
 ## 7. UI, backend y requisitos no funcionales
 
 - UI: no aplica; la presentación del resultado pertenece al canal consumidor. No se incluye `ui.md`.
 - Backend: Gestión evalúa cobertura y tarifa, consulta y valida los datos físicos mediante API, calcula y confirma la instantánea exacta en su propia persistencia antes de responder.
-- Requisitos no funcionales: token técnico y scopes acordados; datos de Productos obtenidos sin compartir persistencia; sin exposición de configuración interna; indisponibilidad explícita sin costo estimado. F-01 §8 exige respuesta en menos de 100 ms; el entorno, carga y medición con la dependencia externa se concretarán en el plan [cite: 1].
+- Requisitos no funcionales: token técnico y scopes acordados; datos de Productos obtenidos sin compartir persistencia; sin exposición de configuración interna; tratamiento de indisponibilidad según CA-06 y CA-21. F-01 §8 exige respuesta en menos de 100 ms; el entorno, carga y medición con la dependencia externa se concretarán en el plan [cite: 1].
 - Pendientes: calendario operativo, acuerdo/medición de tasa, caché y rendimiento, publicación normativa G6 y preparación de la integración real; responsables e impacto en [plan.md §7](./plan.md#7-decisiones-y-pendientes).
 
 ## 8. Verificación y completitud
@@ -263,9 +269,9 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 | CA-01 | Unitaria e integración | Productos del ejemplo, tarifa vigente y calendario controlado |
 | CA-02 | Integración | Destino sin cobertura, incluso con líneas inválidas; verificar cero llamadas a Productos |
 | CA-03 | Integración | Destino cubierto con lista vacía y cantidades cero/negativas |
-| CA-04 | Contrato e integración | SKU no reconocido por Productos |
+| CA-04 | Contrato e integración | SKU no reconocido por Productos, con el respaldo desactivado |
 | CA-05 | Contrato e integración | Peso o dimensiones ausentes/no positivos |
-| CA-06 | Integración de fallos | Indisponibilidad y timeout del proveedor |
+| CA-06 | Integración de fallos | Indisponibilidad y timeout del proveedor, con el respaldo desactivado |
 | CA-07 | Integración | Zona activa sin regla vigente; cobertura `200` sin costo, llamada a G6 ni fila |
 | CA-08 | Seguridad e integración | Token técnico válido y ausencia de escrituras de pedido/despacho |
 | CA-09 | Integración de tasa | Mismo `sub` e IP por encima del límite |
@@ -280,8 +286,9 @@ costoEnvio = tarifaBase + (recargoKgAdicional × max(0, pesoCotizableKg − peso
 | CA-18 | Contrato e integración | Detalle obligatorio ausente/vacío/malformado/duplicado/ajeno, con revisión D-G2-02 homologada |
 | CA-19 | Contrato proveedor-consumidor | Lote con distintas clases de error y permutaciones, según precedencia aceptada y orden de cada solicitud |
 | CA-20 | Unitaria e integración PostgreSQL | Medio sol, milésimos, acumulación exacta y correspondencia de respuesta/instantánea |
+| CA-21 | Cliente HTTP con doble y caso de uso | Lote mixto, fallo técnico, perfiles reales conservados y marca de simulación |
 
-- [ ] CA-01 a CA-20 cuentan con resultados reproducibles en [evidence.md](./evidence.md).
+- [ ] CA-01 a CA-21 cuentan con resultados reproducibles en [evidence.md](./evidence.md).
 - [ ] El contrato y los pendientes bloqueantes están resueltos para el alcance implementado.
 - [ ] Se verifican agrupación, integridad de SKU, persistencia solo exacta, rollback, ausencia de pedidos/despachos/cobros, seguridad y rendimiento.
 - [ ] Los commits y la revisión funcional y técnica están enlazados.
