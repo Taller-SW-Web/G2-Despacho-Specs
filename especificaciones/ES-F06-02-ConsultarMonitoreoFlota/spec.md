@@ -57,6 +57,12 @@ Los DTO, encabezados, scopes, rutas y errores se definen una sola vez en Operaci
 - **CUANDO** se actualiza el tablero.
 - **ENTONCES** un fallo conserva datos marcados desactualizados; 401/403 retira datos y formularios.
 
+### CA-04. Jornadas anteriores sin cerrar
+
+- **DADO** al menos una jornada activa de una fecha anterior a hoy en Operación.
+- **CUANDO** el Gestor consulta el tablero, incluso con el filtro de hoy o una página distinta.
+- **ENTONCES** se muestra su fecha, repartidor y furgoneta con acceso al detalle. Cuando la carga permite cerrar, el Gestor puede hacerlo con la confirmación habitual y la jornada desaparece del aviso al actualizar.
+
 ## 7. UI, backend y requisitos no funcionales
 
 - UI: [ui.md](./ui.md), con CR-10/11/14 y componentes administrativos compartidos.
@@ -72,6 +78,7 @@ Los DTO, encabezados, scopes, rutas y errores se definen una sola vez en Operaci
 | CA-01 | Saturación visible | T-03 y T-04; datos sintéticos |
 | CA-02 | Resumen global y paginación | T-03 y T-04; datos sintéticos |
 | CA-03 | Recuperación y permisos | T-03 y T-04; datos sintéticos |
+| CA-04 | Aviso, detalle y cierre manual de jornadas anteriores | T-03 y T-04; PostgreSQL aislado y navegador con HTTP simulado |
 
 - [ ] Todos los criterios tienen evidencia ejecutada y revisada.
 - [ ] Integración con dependencias reales y revisión humana completadas.

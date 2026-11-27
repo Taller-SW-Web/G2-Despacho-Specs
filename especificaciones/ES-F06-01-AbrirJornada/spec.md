@@ -47,9 +47,9 @@ Los DTO, encabezados, scopes, rutas y errores se definen una sola vez en Operaci
 
 ### CA-02. Repartidor ocupado
 
-- **DADO** una jornada activa del repartidor.
+- **DADO** una jornada activa del repartidor, incluso de fecha anterior.
 - **CUANDO** se intenta otra apertura.
-- **ENTONCES** se responde 409 sin cambios.
+- **ENTONCES** se responde 409 sin cambios. La respuesta identifica la jornada, la furgoneta y la carga pendiente según el contrato de Operación.
 
 ### CA-03. Perfil no habilitado
 
@@ -61,7 +61,7 @@ Los DTO, encabezados, scopes, rutas y errores se definen una sola vez en Operaci
 
 - **DADO** vehículo en mantenimiento, retirado, ocupado o con carga histórica pendiente.
 - **CUANDO** se solicita abrir jornada.
-- **ENTONCES** se responde 409 sin cambios.
+- **ENTONCES** se responde 409 sin cambios. Si el bloqueo corresponde a una jornada, la respuesta identifica esa jornada y su carga pendiente.
 
 ### CA-05. Zona o fecha no aptas
 

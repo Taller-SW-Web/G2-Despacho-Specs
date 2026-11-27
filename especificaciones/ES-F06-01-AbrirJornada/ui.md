@@ -26,6 +26,8 @@ Carga sin falsos ceros; lista vacía explícita; error inicial con reintento; da
 
 Apertura requiere repartidor activo/vinculado, furgoneta disponible y zona activa. La UI no reemplaza la validación del servidor. Conflictos conservan los datos corregibles; éxito se muestra solo con respuesta verificada y consulta posterior. No imprimir detail remoto, SQL ni tokens.
 
+Si el servidor identifica una jornada bloqueante, la alerta de apertura muestra su fecha, estado, placa, recurso bloqueado, despachos pendientes y reservas activas. Indica cómo consultar el detalle por fecha en el monitoreo. Al cambiar el repartidor o la furgoneta se retira el aviso anterior.
+
 ## 6. Accesibilidad y adaptación
 
 Mantener etiquetas, navegación por teclado, foco contenido/retornado en modal, texto además de color en barras/KPI y tabla desplazable sin desbordar la página. En móvil apilar controles y métricas. No anunciar cada refresco como una nueva alerta.

@@ -66,7 +66,7 @@ Un mismo caso de uso de cierre lo invocan el repartidor y el proceso programado,
 | DT-01 | Ruta y DTO del cierre y del resumen | Max Rojas con Backend | I-02 |
 | DT-02 | Comportamiento si F-05 falla tras aplicar las transiciones (reintento, compensación o cierre parcial) | Max Rojas con Arquitectura y F-05 | CA-01, CA-02 |
 | DT-03 | Componentes compartidos aplicables | Max Rojas con responsables de componentes | I-01 |
-| DT-04 | Planificador del proceso programado, configuración de la hora de corte y zona horaria (`America/Lima`) | Max Rojas con Arquitectura y DevOps | I-03 |
+| DT-04 | Planificador e intervalo verificados localmente en la zona operativa `America/Bogota`. La hora y la activación del despliegue requieren revisión. | Max Rojas con Arquitectura y DevOps | I-03 |
 | DT-05 | Si la lista de devolución incluye también los `FALLIDO` con intento real (ES-F03-06) o solo los `NO_INTENTADO` | Max Rojas con responsable de F-03 | CA-01 |
 | DT-06 | Tratamiento de un despacho que el repartidor está operando justo cuando se ejecuta el corte | Max Rojas con Arquitectura | CA-03 |
 

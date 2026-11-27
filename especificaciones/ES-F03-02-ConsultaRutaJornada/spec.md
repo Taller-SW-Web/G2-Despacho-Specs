@@ -16,7 +16,7 @@ Mostrar al repartidor, en «Mi Ruta», solo sus despachos de la jornada en curso
 
 ## 2. Alcance
 
-- Incluye: consulta de los despachos de la jornada activa de hoy del repartidor resuelto desde el token, su orden por secuencia y la protección de datos personales. La bandeja de regularización histórica es una lectura separada y permanece pendiente de implementación.
+- Incluye: consulta de los despachos de la jornada activa de hoy del repartidor resuelto desde el token, su orden por secuencia y la protección de datos personales. La bandeja de pendientes anteriores usa una lectura separada para el mismo perfil.
 - Fuera de alcance: definición de secuencia, asignación, reasignación y cancelación (F-02); cálculo de rutas o navegación (se usan aplicaciones externas de mapas); regularización de despachos de jornadas anteriores; acceso y habilitación operativa (ES-F03-01).
 
 ## 3. Actor, precondiciones y resultados
@@ -51,7 +51,7 @@ Mostrar al repartidor, en «Mi Ruta», solo sus despachos de la jornada en curso
 | RN-04 | Cada elemento muestra código de rastreo interno, estado, intento, máximo configurado y posición; no muestra teléfono. | F-03 CA-05 |
 | RN-05 | Nombre y dirección solo se muestran en `ASIGNADO` o `EN_CAMINO`; no hay exportación ni copia masiva. | F-03 §8 |
 | RN-06 | Un identificador de repartidor distinto al del token se rechaza con `403` sin exponer datos. | F-03 CA-07 |
-| RN-07 | Los despachos de jornadas anteriores sin cierre no entran en la ruta vigente. La bandeja separada no muestra datos personales ni ofrece acciones y aún no está implementada. | F-03 CA-08 y contrato de API |
+| RN-07 | La bandeja de jornadas anteriores sin cierre se muestra aparte de la ruta vigente y contiene fecha, código y estado. El repartidor la consulta en solo lectura. | F-03 CA-08 y contrato de API |
 
 | Operación o dependencia | Uso | Contrato o fuente |
 |---|---|---|

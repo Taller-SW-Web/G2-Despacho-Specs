@@ -40,6 +40,7 @@ Implementar paquete `jornadas` con controladores, servicio, modelos y repositori
 | CA-01 | Saturación visible; comprobar efectos y ausencia de mutaciones ante rechazo | Unitario, HTTP y PostgreSQL aislado según el caso |
 | CA-02 | Resumen global y paginación; comprobar efectos y ausencia de mutaciones ante rechazo | Unitario, HTTP y PostgreSQL aislado según el caso |
 | CA-03 | Recuperación y permisos; comprobar efectos y ausencia de mutaciones ante rechazo | Unitario, HTTP y PostgreSQL aislado según el caso |
+| CA-04 | Detectar las jornadas anteriores al día operativo y reutilizar detalle y cierre confirmado | PostgreSQL aislado y navegador con HTTP simulado |
 
 Frontend: tipos, pruebas de interacción y construcción. Backend: unitarias, HTTP con JWT identificado como doble, pruebas PostgreSQL para atomicidad, idempotencia y concurrencia. Nunca usar Supabase para suites que limpian datos. El usuario confirmó Docker disponible para las pruebas PostgreSQL aisladas.
 

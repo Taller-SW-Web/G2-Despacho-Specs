@@ -18,6 +18,8 @@ Gestor autenticado en `/jornadas`; navegar desde «Jornadas y monitoreo». Consu
 
 Encabezado con Actualizar y Abrir jornada; fecha/filtros; cuatro KPI; tabla paginada; detalle con ocupación, límites, remanente y referencias operativas. Apertura en modal con selectores de catálogos reales y fecha del servidor; cierre confirmado indicando que no libera reservas ni resuelve pendientes.
 
+Cuando hay jornadas anteriores sin cerrar, un aviso por encima de los filtros muestra el repartidor, la fecha y la placa de cada jornada. **Ver jornada** abre su detalle y cambia la fecha de consulta. **Cerrar jornada** abre la confirmación habitual si la jornada permite el cierre. Cuando la carga bloquea el cierre, el aviso indica que hay que resolverla primero.
+
 ## 4. Estados de la interfaz
 
 Carga sin falsos ceros; lista vacía explícita; error inicial con reintento; datos previos con franja si falla actualización; 401/403 retira datos y modales; mutación pendiente bloquea doble envío; respuesta incierta conserva formulario y exige consultar antes de repetir.
@@ -40,8 +42,9 @@ Mantener etiquetas, navegación por teclado, foco contenido/retornado en modal, 
 | CUI-04 | Fallo de actualización y recuperación | Datos previos con aviso y posterior actualización |
 | CUI-05 | Perder autorización | Retirar datos y formularios protegidos |
 | CUI-06 | Teclado y pantalla reducida | Foco, etiquetas y todas las acciones accesibles |
+| CUI-07 | Consultar Hoy con jornadas anteriores activas | Aviso visible, acceso al detalle exacto y cierre con confirmación cuando corresponde |
 
-Los seis CUI concretan los CA de spec.md; JSDOM no acredita revisión visual humana.
+Los CUI concretan los CA de spec.md; JSDOM no acredita revisión visual humana.
 
 ## 8. Referencias
 

@@ -662,7 +662,7 @@ Estas rutas las implementa Gestión y las consume Operación con credencial de s
 | `FALLIDO` | `EN_CAMINO` | `motivo` activo y seleccionable en campo, `idEvidencia` obligatorio, `comentario` opcional (máx. 200) | Incrementa el contador si el motivo consume intento; crea la incidencia y actualiza `ultima_incidencia_id`. |
 | `FALLIDO` con `motivo=NO_INTENTADO` | `ASIGNADO` o `EN_CAMINO` | Sin evidencia | Cierre de jornada: no incrementa el contador; crea la incidencia vigente. |
 
-`idRepartidor` e `idJornada` deben coincidir con la asignación vigente del despacho; si no, `409` `DESP_ERROR_DESPACHO_REASIGNADO`. Un origen distinto responde `409` `DESP_ERROR_ESTADO_INCOMPATIBLE` con el estado actual. `ejecutor` es el `sub` del repartidor y `origen` es `MANUAL` o `AUTOMATICO`; ambos se guardan en el historial con `funcionalidad_origen=F-03`. Errores de forma: `400` `DESP_ERROR_CAMPOS_INVALIDOS`; motivo no admitido: `400` `DESP_ERROR_MOTIVO_INVALIDO`; despacho inexistente: `404`.
+`idRepartidor` e `idJornada` deben coincidir con la asignación vigente del despacho; si no, `409` `DESP_ERROR_DESPACHO_REASIGNADO`. Un origen distinto responde `409` `DESP_ERROR_ESTADO_INCOMPATIBLE` con el estado actual. Con `origen=MANUAL`, `ejecutor` es el `sub` del repartidor. El corte usa `origen=AUTOMATICO` y `ejecutor=corte-jornada`. Ambos valores se guardan en el historial con `funcionalidad_origen=F-03`. Errores de forma: `400` `DESP_ERROR_CAMPOS_INVALIDOS`; motivo no admitido: `400` `DESP_ERROR_MOTIVO_INVALIDO`; despacho inexistente: `404`.
 
 Respuesta `200`:
 

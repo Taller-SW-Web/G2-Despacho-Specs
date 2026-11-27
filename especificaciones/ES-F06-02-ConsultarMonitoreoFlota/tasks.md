@@ -65,12 +65,14 @@
 | CA-01 | T-01 a T-03 | T-04 | Ver evidence.md |
 | CA-02 | T-01 a T-03 | T-04 | Ver evidence.md |
 | CA-03 | T-01 a T-03 | T-04 | Ver evidence.md |
+| CA-04 | T-01 a T-03 | T-04 | Ver evidence.md |
 | CUI-01 | T-01 a T-03 | T-04 | Ver evidence.md |
 | CUI-02 | T-01 a T-03 | T-04 | Ver evidence.md |
 | CUI-03 | T-01 a T-03 | T-04 | Ver evidence.md |
 | CUI-04 | T-01 a T-03 | T-04 | Ver evidence.md |
 | CUI-05 | T-01 a T-03 | T-04 | Ver evidence.md |
 | CUI-06 | T-01 a T-03 | T-04 | Ver evidence.md |
+| CUI-07 | T-01 y T-02 | T-04 | Ver evidence.md |
 
 ## 4. Cierre de la especificación
 

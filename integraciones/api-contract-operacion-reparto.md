@@ -17,6 +17,7 @@ Todos los recursos requieren un JWT humano con `tipo=acceso`. En las rutas `/rep
 | Método | Ruta | Propósito |
 |---|---|---|
 | `GET` | `/api/v1/repartidor/mi-ruta` | Consultar la ruta de la jornada actual |
+| `GET` | `/api/v1/repartidor/pendientes-regularizacion` | Consultar despachos pendientes propios de jornadas anteriores |
 | `GET` | `/api/v1/repartidor/despachos/{idDespacho}` | Consultar un despacho propio |
 | `POST` | `/api/v1/repartidor/despachos/{idDespacho}/inicio-traslado` | Cambiar `ASIGNADO` a `EN_CAMINO` |
 | `POST` | `/api/v1/repartidor/evidencias/autorizaciones` | Obtener URL firmada de carga |
@@ -93,7 +94,7 @@ La ruta no entrega teléfono. Nombre y dirección solo se incluyen para `ASIGNAD
 - `paquetesPorDevolver` lista los despachos `FALLIDO` de la jornada, con o sin intento consumido, porque el paquete regresa físicamente con el repartidor. Es la única excepción a la omisión de datos personales: incluye dirección y distrito, sin destinatario ni teléfono, para que el repartidor identifique cada paquete en el centro. La confirmación de recepción sigue perteneciendo a F-04.
 - `estadoJornada` (`ACTIVA`/`CERRADA`) y `cerradaEn` (UTC o `null`) provienen de la jornada. Sin jornada responde `idJornada: null`, contadores en cero y lista vacía.
 
-Las consultas responden con `Cache-Control: no-store`. La bandeja de regularización de jornadas anteriores es una lectura separada, de solo lectura y sin datos personales ni acciones; no forma parte de `mi-ruta` y su endpoint queda pendiente de implementación.
+Las consultas responden con `Cache-Control: no-store`. `GET /api/v1/repartidor/pendientes-regularizacion` devuelve una lista de `{idDespacho, codigoRastreoInterno, fecha, estado}` para los despachos `ASIGNADO` o `EN_CAMINO` de jornadas anteriores activas del perfil resuelto por el token. Si falta el código, se usa el UUID del despacho. La consulta se mantiene separada de `mi-ruta` y excluye datos personales y acciones.
 
 `GET /api/v1/repartidor/motivos-fallo` devuelve `{ "motivos": [...] }` con la forma del [catálogo de Gestión §4](./api-contract-gestion-despachos.md#4-catálogo-único-de-motivos-de-fallo), filtrada a `activo=true` y `seleccionableEnCampo=true`. Operación lo obtiene de Gestión con su credencial técnica después de validar el perfil de campo; no mantiene una copia propia. Si Gestión no responde: `503` con `DESP_ERROR_GESTION_NO_DISPONIBLE`, y la UI no fabrica motivos.
 
@@ -205,7 +206,9 @@ El almacenamiento deniega accesos sin firma válida y enlaces vencidos. Un fallo
 
 `POST /api/v1/repartidor/jornada/cierre` con `Idempotency-Key` y cuerpo `{ "idJornada": "<UUID>" }`. La jornada debe pertenecer al perfil del `sub` (`403` en otro caso).
 
-Cada despacho `ASIGNADO` o `EN_CAMINO` se resuelve primero en Gestión como `FALLIDO` con motivo `NO_INTENTADO`, sin fotografía ni incremento del contador, con origen manual y el repartidor como ejecutor (ES-F03-07). Cada solicitud usa una clave derivada de forma estable de la clave del cierre y del despacho, de modo que un reintento no duplica transiciones. Después se cierra la jornada como en §4.2.1 y responde `200` con el recurso Jornada. Si algún despacho no pudo resolverse responde `503` y la jornada sigue abierta: se reintenta con la misma clave. Una jornada ya cerrada devuelve su estado sin cambios. El corte automático de fin de turno sigue pendiente de implementación.
+Cada despacho `ASIGNADO` o `EN_CAMINO` se resuelve primero en Gestión como `FALLIDO` con motivo `NO_INTENTADO`, sin fotografía ni incremento del contador, con origen manual y el repartidor como ejecutor (ES-F03-07). Cada solicitud usa una clave derivada de forma estable de la clave del cierre y del despacho, de modo que un reintento no duplica transiciones. Después se cierra la jornada como en §4.2.1 y responde `200` con el recurso Jornada. Si algún despacho no pudo resolverse responde `503` y la jornada sigue abierta: se reintenta con la misma clave. Una jornada ya cerrada devuelve su estado sin cambios.
+
+El corte programado de Operación procesa jornadas activas de hoy desde la hora configurada y recupera jornadas activas anteriores desde el inicio de cada día operativo. Usa el origen `AUTOMATICO`, el ejecutor `corte-jornada` y una clave estable por jornada y despacho. Si falla una transición o sigue habiendo carga sin resultado, la jornada queda abierta para el siguiente ciclo. El corte usa `America/Bogota` y registra el cierre como `CORTE_AUTOMATICO`.
 
 
 ## 4. API de F-05 y F-06: perfiles, flota y jornadas
@@ -346,6 +349,8 @@ Jornada: `idJornada`, `idRepartidor`, `idFurgoneta`, `placa`, `idZona`, `fecha`,
 
 Monitoreo acepta `fecha` ISO (hoy por defecto), `pagina` desde 1, `tamanoPagina` de 1 a 100 (50 por defecto), `estadoOperativo` opcional y `idZona` UUID opcional. Devuelve `contenido`, `pagina`, `tamanoPagina`, `totalElementos`, `totalPaginas`, `resumen` y `consultadoEn` UTC. Cada fila tiene `idRepartidor`, `nombre`, `estadoOperativo` y `jornada` (objeto anterior o null). Incluye los perfiles locales activos; el resumen `{disponible,enRuta,saturado,fueraDeTurno}` cuenta el conjunto completo de fecha/zona antes de filtrar por estado y paginar. No se agrega un total a partir de una sola página. Una jornada activa de fecha anterior debe cerrarse antes de reutilizar el recurso.
 
+La respuesta incluye `jornadasAnterioresActivas` con las jornadas `ACTIVA` de fechas anteriores a hoy en `America/Bogota`, ordenadas de la más antigua a la más reciente. Cada entrada incluye `idJornada`, `fecha` (ISO), `nombreRepartidor`, `placa` y `pendientes` (booleano que indica si la carga impide el cierre administrativo). La lista se devuelve aunque los filtros de fecha, zona, estado y página excluyan esas jornadas de la tabla. Cuando no quedan jornadas anteriores activas, se devuelve una lista vacía. El cierre requiere la confirmación del Gestor y pasa por las validaciones de §4.2.1.
+
 Ocupación suma exclusivamente reservas `ACTIVA`, incluidas las de paquetes fallidos pendientes de retorno o sincronización. Remanente = límite menos ocupación, sin fabricar capacidad cuando faltan datos. Prioridad del estado: sin jornada activa `FUERA_DE_TURNO`; cualquier límite alcanzado `SATURADO`; si no, algún despacho `EN_CAMINO` implica `EN_RUTA`; en otro caso `DISPONIBLE`.
 
 Disponibilidad acepta `fecha` e `idZona`; devuelve únicamente jornadas de esa fecha que estén activas con perfil activo/vinculado, vehículo disponible y remanente positivo en las tres dimensiones. Cada candidato tiene `idRepartidor`, `idJornada`, `nombre`, `idZona`, `idFurgoneta`, `placa`, `estadoOperativo`, `limites`, `ocupacion`, `capacidadRemanente` y `porcentajeOcupacion`. Sin candidatos devuelve `{"repartidores":[]}`. Esta lectura no reserva capacidad; F-02 debe confirmar mediante §5.1. Objetivo de respuesta menor de 200 ms, pendiente de medición identificada.
@@ -355,6 +360,8 @@ El contexto propio devuelve `idRepartidor`, `estadoOperativo` y `jornada` activa
 #### 4.2.3. Errores y actualización de UI
 
 Usar Problem Details común: `400 DESP_ERROR_CAMPOS_INVALIDOS`; `401/403` de Seguridad; `404 DESP_ERROR_JORNADA_NO_ENCONTRADA`; `409 DESP_ERROR_CONFLICTO_JORNADA` por recursos ocupados/carga/pendientes; `422 DESP_ERROR_RECURSO_NO_APTO` por perfil, zona o fecha no aptos; `503 DESP_ERROR_OPERACION_NO_DISPONIBLE` por dependencia o datos no disponibles. No retornar SQL ni mensajes remotos sin filtrar.
+
+Cuando una jornada activa o su carga pendiente bloquea `POST /api/v1/jornadas`, el `409` agrega `jornadasBloqueantes`. Cada entrada incluye `idJornada`, `fecha` (ISO), `placa`, `estado` (`ACTIVA` o `CERRADA`), `bloqueaRepartidor` y `bloqueaFurgoneta` (booleanos), `despachosPendientes` (códigos de rastreo, o UUID si falta el código, para despachos `ASIGNADO` o `EN_CAMINO`) y `reservasActivas` (conteo). Una jornada puede aparecer por coincidir con ambos recursos. Una reserva activa puede bloquear aunque no haya despachos pendientes en la proyección. Esta extensión es opcional en el contrato general de errores y solo se devuelve para bloqueos de apertura por jornada. El aviso indica la fecha que se puede consultar en el monitoreo para abrir el detalle.
 
 El tablero actualiza cada 30 segundos mientras sea visible, cancela/descarta solicitudes obsoletas y permite actualización manual. Un fallo de refresco conserva los datos previos identificados como desactualizados y bloquea mutaciones; una pérdida de autorización los retira. Tras mutar, confirma respuesta y consulta nuevamente; una salida incierta exige reconciliar antes de repetir.
 
