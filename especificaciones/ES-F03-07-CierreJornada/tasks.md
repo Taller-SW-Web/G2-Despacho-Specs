@@ -2,7 +2,7 @@
 
 **Responsable:** Max Rojas
 
-**Estado:** Pendiente de implementación
+**Estado:** Parcial. T-04 verificada localmente; el resto de las tareas y la activación desplegada permanecen pendientes.
 
 **Plan de origen:** [plan.md](./plan.md)
 
@@ -44,10 +44,10 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`.
 
 ### T-04. Implementar el corte automático
 
-- [ ] Implementada y verificada.
-- Alcance: RN-05 y RN-06 con el mismo caso de uso de T-03.
-- Verificación: ejecución a la hora configurada con reloj controlado; reejecución sin transiciones adicionales; origen automático en el historial.
-- Evidencia: EV-01.
+- [x] Implementada y verificada localmente el 26/11/2026. La activación y la hora efectivas en el entorno publicado siguen pendientes.
+- Alcance: RN-05 y RN-06 con el mismo caso de uso de T-03; el proceso está deshabilitado por defecto y resuelve los pendientes de jornadas anteriores mediante transiciones HTTP hacia Gestión.
+- Verificación: ejecución a la hora configurada con reloj controlado; reejecución sin transiciones adicionales; origen automático en el historial; fallo aislado de una jornada sin bloquear las demás.
+- Evidencia: EV-01 y [§7](./evidence.md#7-verificación-local-del-corte-automático-y-la-recuperación).
 
 ### T-05. Integrar con servicios reales
 

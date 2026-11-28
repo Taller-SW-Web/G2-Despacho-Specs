@@ -22,7 +22,7 @@ El generador de simulaciones forma parte de `servicio-gestion-despachos`. Se com
 
 | Capa | Responsabilidad | Elementos previstos |
 |---|---|---|
-| Frontend | Botón de acción, modal opcional, mutación React Query y feedback toast. | `BotonGenerarPrueba.tsx`, `ModalSimulacion.tsx`, `useGenerarDespachoPrueba`. |
+| Frontend | Botón de acción, modal opcional, mutación con hooks propios sobre `cliente-api` y feedback toast. React Query no forma parte de la base actual; su incorporación queda como decisión pendiente, no como requisito funcional. | `BotonGenerarPrueba.tsx`, `ModalSimulacion.tsx`, `useGenerarDespachoPrueba`. |
 | API / Web | Validación de JWT `GESTOR_DESPACHO` y DTO de entrada. | `SimulacionController`, `SimulacionRequestDTO`, `DespachoResponseDTO`. |
 | Aplicación | Orquestación: obtención de zona activa, generación de datos verosímiles y persistencia. | `GenerarDespachoPruebaUseCase`, `SimuladorDatosService`. |
 | Dominio | Entidad `Despacho` con flag `esSimulacion = true`, validación de fecha hoy. | `Despacho`, `EstadoDespacho`. |

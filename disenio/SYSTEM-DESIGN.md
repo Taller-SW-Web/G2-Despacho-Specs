@@ -1075,12 +1075,14 @@ El frontend de Despacho se implementa con el stack que define la Guía: **Mantin
 | `@mantine/dates` + `dayjs` | `9.6.2` + `^1.11` | Selectores de fecha y formato en español |
 | `@mantine/notifications` | `9.6.2` | Notificaciones del sistema |
 | `@tabler/icons-react` | `3.x` | Iconografía (§8) |
-| `postcss-preset-mantine`, `postcss-simple-vars` | última | Breakpoints y utilidades CSS de Mantine |
+| `postcss-preset-mantine`, `postcss-simple-vars` | propuestos | No declarados en los manifiestos revisados; los estilos usan CSS Modules y variables del tema [cite: 3] |
 | `@testing-library/react` | `^16` | Pruebas de componentes con React 19 |
 
 Se integran con Mantine las librerías sin estilos propios: `react-router-dom` (rutas), `axios` (API), `@tanstack/react-table` (lógica de tablas renderizada con `Table` de Mantine), `react-hook-form` + `zod` (validación conectada a los inputs con `Controller`) y `zustand` (estado global). El proyecto se crea con la plantilla `react-ts` de Vite.
 
-### 15.2. Tema de Mantine (`src/theme/theme.ts`)
+### 15.2. Tema de Mantine
+
+El tema y los tokens se mantienen en `@despacho/componentes-compartidos` y son importados por ambas aplicaciones; la ruta `src/theme/theme.ts` corresponde al proyecto inicial de referencia, no a la estructura actual del monorepositorio [cite: 3].
 
 Las paletas personalizadas tienen 10 tonos. El valor de marca se ubica en el **índice 7** para que `variant="filled"` lo use directamente (§4.5). La paleta `orange` reemplaza el índice 8 por `#C2410C` para que el hover nativo de Mantine coincida con `color/action/primary-hover`.
 
@@ -2110,11 +2112,13 @@ function AccionDeshabilitada({ motivo, children, ...props }: AccionProps) {
 
 ## 24. Guía F-05 — Monitoreo de Flota y Capacidad
 
+Esta guía conserva la propuesta visual original. La responsabilidad de jornadas, monitoreo y capacidad corresponde hoy a F-06 y las rutas efectivas se resumen al final de esta sección; ante una diferencia, prevalecen los contratos y las `ui.md` de las especificaciones atómicas [cite: 3].
+
 ### 24.A. Ficha
 
 | Campo | Valor |
 |---|---|
-| Funcionalidad | F-05 Monitoreo de Flota y Capacidad |
+| Funcionalidad | F-06 Disponibilidad y capacidad diaria de la flota; F-05 administra repartidores y furgonetas |
 | Usuario | Gestor de Despacho (`GESTOR_DESPACHO`) |
 | Plataforma y estructura | Escritorio, aplicación administrativa |
 | Frame de referencia | 1440 × 1024 px |
@@ -2138,11 +2142,13 @@ function AccionDeshabilitada({ motivo, children, ...props }: AccionProps) {
 
 | Pantalla | Tipo | Ruta | Endpoint principal | Archivo |
 |---|---|---|---|---|
-| P1 Tablero de monitoreo | Página | `/flota` | `GET /api/v1/flota/monitoreo` | `TableroFlota.tsx` |
-| P2 Panel de repartidores | Página | `/flota/repartidores` | `GET /api/v1/repartidores`, `PATCH .../estado`, `POST .../vinculacion/reintento` | `PaginaRepartidores.tsx` |
+| P1 Tablero de monitoreo | Página | `/jornadas` (`/flota` redirige) | `GET /api/v1/flota/monitoreo` | `PaginaJornadas.tsx` |
+| P2 Panel de repartidores | Página | `/repartidores` (`/flota/*` redirige) | `GET /api/v1/repartidores`, `PATCH .../estado`, `PUT .../vinculacion` | `PaginaRepartidores.tsx` |
 | P3 Formulario de repartidor | Modal 880 px | Sobre P2 | `POST` / `PUT /api/v1/repartidores` | `ModalRepartidor.tsx` |
-| P4 Vehículos | Página + modal 880 px | `/flota/vehiculos` | `GET` / `POST` / `PUT /api/v1/furgonetas`, `PATCH .../estado` | `PaginaVehiculos.tsx`, `ModalVehiculo.tsx` |
-| P5 Asignación diaria | Página | `/flota/asignacion-diaria` | `POST /api/v1/jornadas`, `POST /api/v1/jornadas/{id}/cierre` | `AsignacionDiaria.tsx` |
+| P4 Vehículos | Página + modal 880 px | `/furgonetas` | `GET` / `POST` / `PUT /api/v1/furgonetas`, `PATCH .../estado` | `PaginaVehiculos.tsx`, `ModalVehiculo.tsx` |
+| P5 Apertura de jornada | Modal sobre P1 | `/jornadas` | `POST /api/v1/jornadas`, `POST /api/v1/jornadas/{id}/cierre` | `FormularioJornada.tsx` |
+
+Las rutas de la columna reflejan la aplicación administrativa `1bc5458` [cite: 3].
 
 ### 24.D. Pantallas
 
@@ -2180,7 +2186,7 @@ Estados: vacío ("Aún no hay repartidores registrados" + "Nuevo repartidor"), i
 
 #### P3 Formulario de repartidor
 
-`Modal size={880}` con `SimpleGrid cols={2}`: sección "Datos personales" (nombres, apellidos, DNI, teléfono, correo) y "Datos operativos" (brevete, turno habitual). DNI de solo lectura en edición. `Alert` azul "Al registrar, se creará el usuario del repartidor en Seguridad y Usuarios." Errores: "Ingresa un DNI de 8 dígitos", "Ingresa un correo electrónico válido", DNI duplicado bajo el campo. Éxitos: "Repartidor registrado y vinculado" (verde) o "Repartidor registrado. La vinculación quedó pendiente; podrás reintentarla desde el listado." (amarilla, sin cierre automático).
+`Modal size={880}` con `SimpleGrid cols={2}`: sección "Datos personales" (nombres, apellidos, DNI, teléfono, correo) y "Datos operativos" (brevete, turno habitual). DNI de solo lectura en edición. La cuenta global no se crea desde aquí: `ADMIN_SISTEMA` la crea en Seguridad y Usuarios y la vinculación se realiza después con `PUT .../vinculacion` [cite: 3]. Errores: "Ingresa un DNI de 8 dígitos", "Ingresa un correo electrónico válido", DNI duplicado bajo el campo. Éxitos: "Repartidor registrado y vinculado" (verde) o "Repartidor registrado. La vinculación quedó pendiente; podrás reintentarla desde el listado." (amarilla, sin cierre automático).
 
 #### P4 Vehículos
 
@@ -2197,7 +2203,7 @@ Estados: placa duplicada bajo el campo; límites ≤ 0 ("Ingresa un valor mayor 
 
 #### P5 Asignación diaria
 
-**Layout:** `Card` con el formulario en una fila (`Grid` de 4 columnas) → vista previa → tabla "Jornadas de hoy".
+**Layout propuesto:** `Card` con el formulario en una fila (`Grid` de 4 columnas) → vista previa → tabla "Jornadas de hoy". La implementación `1bc5458` compone la apertura como modal sobre `/jornadas`, con aviso de jornadas bloqueantes; prevalecen la [UI de ES-F06-01](../especificaciones/ES-F06-01-AbrirJornada/ui.md) y la [UI de ES-F06-02](../especificaciones/ES-F06-02-ConsultarMonitoreoFlota/ui.md) [cite: 3].
 
 | Elemento | Componente y props | Texto |
 |---|---|---|
@@ -2260,3 +2266,9 @@ Estados: selectores sin opciones ("No hay repartidores habilitados sin jornada",
 - [ ] Se cumplen los criterios de aceptación de la guía de implementación de la funcionalidad.
 - [ ] El frame de Figma y el componente de código tienen nombres y propiedades equivalentes.
 - [ ] La evaluación heurística de Nielsen está registrada.
+
+---
+
+## 26. Referencias
+
+[cite: 3] [Stack frontend](../arquitectura/stack-frontend.md), [componentes React](./componentes-react.md), [frontend `develop` `1bc5458`](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/tree/1bc5458115ed8caf48327a06926d2700d62f468c) y las `ui.md` de las especificaciones atómicas. La guía visual define tokens y criterios; la estructura y las rutas efectivas se rigen por el código y los contratos.

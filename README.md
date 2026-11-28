@@ -4,6 +4,8 @@ Este repositorio reúne las especificaciones, contratos y evidencias de Despacho
 
 El módulo está en implementación y pruebas de integración. El [índice funcional](./funcionalidades/funcionalidad.md) distingue el avance por especificación, las comprobaciones locales y la aceptación pendiente.
 
+RabbitMQ está integrado en las ramas `develop` del backend (`859c5c3`) y del frontend (`1bc5458`), pero permanece deshabilitado por configuración. Es el transporte previsto para las proyecciones del despacho y las liberaciones de capacidad entre Gestión y Operación; mientras tanto esos flujos funcionan por HTTP. La activación, la verificación del broker y las garantías pendientes se describen en el [contrato externo §3.6](./integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq).
+
 ## Backend desplegado: pruebas de integración
 
 El origen publicado del Gateway para coordinar pruebas es [taller-api-gateway.onrender.com](https://taller-api-gateway.onrender.com). Los módulos consumidores usan un token técnico de G7 con audiencia `api-despacho` y los permisos de la operación. Consultar [autenticación, endpoints y ejemplos](./integraciones/api-contract.md) antes de probar; las primeras solicitudes pueden demorar si los servicios estaban en reposo.
@@ -17,10 +19,11 @@ Para pruebas locales, seguir las instrucciones de los repositorios de implementa
 | [Visión general](./overview.md) e [índice funcional](./funcionalidades/funcionalidad.md) | Alcance, responsables, estados y acceso a las especificaciones. |
 | [Especificaciones atómicas](./especificaciones/) e [historias de usuario](./historias-usuario/) | Requisitos, planes, tareas y evidencia de cada caso. |
 | [Adelantar despacho a hoy — ES-F02-09](./especificaciones/ES-F02-09-AdelantarDespachoHoy/spec.md) | Excepción auditada a la fecha futura, sin asignación automática ni eventos de progreso. |
-| [Contrato externo](./integraciones/api-contract.md) | Integraciones con Marketplace, Chatbot, Productos, Ventas y Seguridad; incluye cotización, seguimiento por pedido y la mensajería interna con RabbitMQ (§3.6). |
+| [Contrato externo](./integraciones/api-contract.md) | Integraciones con Marketplace, Chatbot, Productos, Ventas y Seguridad; incluye cotización, seguimiento por pedido y la mensajería interna con RabbitMQ (§3.6), integrada y pendiente de activación. |
 | [API de Gestión](./integraciones/api-contract-gestion-despachos.md) | Distritos, geometrías y mapas administrativos (ES-F01-09 a ES-F01-16), zonas, tarifas, programación, incidencias y operaciones internas de Gestión. |
 | [API de Operación](./integraciones/api-contract-operacion-reparto.md) | Reparto, flota, jornadas, evidencias, capacidad y operaciones internas de Operación. |
-| [Contexto](./arquitectura/c4-contexto.md), [contenedores](./arquitectura/c4-contenedores.md) y [modelo de datos](./arquitectura/modelo-datos.md) | Límites del módulo, servicios y persistencia. |
+| [Contexto](./arquitectura/c4-contexto.md), [contenedores](./arquitectura/c4-contenedores.md) y [modelo de datos](./arquitectura/modelo-datos.md) | Límites del módulo, servicios, broker interno y persistencia. |
+| [Transporte interno RabbitMQ](./arquitectura/c4-contenedores.md#42-transporte-interno-rabbitmq) | Topología, límites síncronos/asíncronos y condiciones de activación. |
 | [API Management del Gateway](./arquitectura/api-management-gateway.md) | Propuesta del próximo hito para autenticación, permisos, límites, red privada, catálogo de rutas y monitoreo. |
 | [Estados del despacho](./arquitectura/diagrama-estados-despacho.md), [macroproceso](./arquitectura/macroproceso-despacho.md) y [glosario](./arquitectura/glosario-dominio.md) | Flujo de negocio, transiciones y términos compartidos. |
 | [Sistema de diseño](./disenio/SYSTEM-DESIGN.md) y [componentes React](./disenio/componentes-react.md) | Referencias de interfaz de las dos aplicaciones. |

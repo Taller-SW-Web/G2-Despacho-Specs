@@ -83,7 +83,7 @@ Mostrar al repartidor, en «Mi Ruta», solo sus despachos de la jornada en curso
 
 - **DADO** despachos de fechas anteriores sin cierre por una falla del corte automático.
 - **CUANDO** el repartidor carga su ruta.
-- **ENTONCES** el sistema no los incorpora a la ruta vigente. La bandeja histórica los presentará sin datos personales ni acciones cuando se implemente.
+- **ENTONCES** el sistema no los incorpora a la ruta vigente. Una bandeja independiente los presenta sin datos personales ni acciones, con una lectura separada de la ruta de hoy [cite: 4].
 
 ## 7. UI, backend y requisitos no funcionales
 
@@ -91,6 +91,7 @@ Mostrar al repartidor, en «Mi Ruta», solo sus despachos de la jornada en curso
 - Backend: consulta de solo lectura; no modifica despachos ni publica eventos.
 - No funcionales: protección de la dirección según RN-05; uso móvil.
 - Pendientes: [plan.md, sección 7](./plan.md#7-decisiones-y-pendientes).
+- [cite: 4] [Verificación local de la bandeja](./evidence.md#7-verificación-de-la-bandeja-de-pendientes-anteriores), con emisor local y base desechable; la aceptación con identidad real sigue pendiente.
 
 ## 8. Verificación
 

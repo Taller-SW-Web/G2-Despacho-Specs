@@ -480,7 +480,9 @@ Operación provee nombres y cierre de jornadas mediante su lectura por lotes, §
 
 Recepción, historial, incremento de `despachos.version` y solicitud se guardan en una sola transacción local. La incidencia debe tener reserva/jornada/repartidor coherentes antes de aceptar; datos históricos incompletos se regularizan desde información verificable, sin seleccionar la reserva actual por conjetura. La recepción y su solicitud no se eliminan al reprogramar o cerrar.
 
-El procesador reclama pendientes vencidas con exclusión de 60 segundos, confirma esa reclamación y realiza HTTP con límite total de cinco segundos fuera de la transacción. Completa el intento solo si conserva el token; tras caída, otra instancia puede retomarlo cuando vence la exclusión. La idempotencia de Operación por reserva hace segura una entrega repetida. Al confirmar no se crea otro historial de recepción ni cambia la versión del despacho; solo se actualiza esta solicitud. Calendario y estados de consulta: [Gestión §5.2.1](../integraciones/api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03).
+El procesador reclama pendientes vencidas con exclusión de 60 segundos y confirma esa reclamación antes de entregar el trabajo fuera de la transacción. Completa el intento solo si conserva el token; tras caída, otra instancia puede retomarlo cuando vence la exclusión. La idempotencia de Operación por reserva, e `eventId` en el transporte Rabbit, hacen segura una entrega repetida. Al confirmar no se crea otro historial de recepción ni cambia la versión del despacho; solo se actualiza esta solicitud. Calendario y estados de consulta: [Gestión §5.2.1](../integraciones/api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03).
+
+**Transporte de la solicitud.** En el estado actual la entrega es HTTP con límite total de cinco segundos y `CONFIRMADA` exige la respuesta `200` de Operación con `estado=LIBERADA`. RabbitMQ está integrado pero deshabilitado; al activarlo, el adaptador correspondiente publica el mensaje `LIBERACION_CAPACIDAD` con `idReserva` en `datos` y marca la solicitud `CONFIRMADA` al recibir la confirmación del broker. Esa confirmación acredita la publicación, no la liberación efectiva: la reserva puede seguir activa si Operación rechaza el mensaje hacia la DLQ. Esta diferencia es un pendiente de activación, no una ampliación del significado de `CONFIRMADA` [cite: 8].
 
 Índices: unicidad de incidencia/reserva y `(estado, proximo_intento_en, bloqueada_hasta)` para el procesador. Esta bandeja interna es independiente de `eventos_salientes` hacia Ventas; no comparte su máximo de cinco reintentos.
 
@@ -561,7 +563,20 @@ Un índice único parcial sobre `despacho_id_externo WHERE estado = 'ACTIVA'` ga
 | `version` | `INTEGER` | NOT NULL | Versión canónica aplicada. |
 | `actualizado_en` | `TIMESTAMPTZ` | NOT NULL | Última sincronización. |
 
-La proyección permite que F-03 lea la ruta sin consultar la base de Gestión. Operación solicita cada transición a Gestión y solo actualiza esta copia con la respuesta o evento confirmado. Una versión repetida o anterior se ignora.
+La proyección permite que F-03 lea la ruta sin consultar la base de Gestión. Operación solicita cada transición a Gestión y solo actualiza esta copia con la respuesta o evento confirmado. Una versión repetida o anterior se ignora. Con RabbitMQ deshabilitado la actualización llega por HTTP; al activarse, el consumidor aplica el mismo efecto con consistencia eventual a partir del mensaje `PROYECCION_DESPACHO`.
+
+#### `eventos_procesados` (Operación de Reparto y Flota; deduplicación del consumidor RabbitMQ)
+
+Creada por la migración V8 de Operación. No existe en el entorno publicado hasta aplicarla con el usuario correspondiente; es condición previa para activar el transporte interno [cite: 8].
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `event_id` | `UUID` | PK | `eventId` del sobre; una reentrega con el mismo valor se descarta. |
+| `procesado_en` | `TIMESTAMPTZ` | NOT NULL | Instante local en que se registró el marcador. |
+
+La tabla revoca permisos a `PUBLIC` y, cuando existen, a `anon` y `authenticated`. No registra estado de procesamiento, huella del contenido, origen ni política de caducidad: la retención y depuración quedan como decisión pendiente.
+
+**Limitación registrada:** el marcador se inserta antes de invocar la operación de dominio y esta última ejecuta su propia transacción. No hay una transacción local compartida entre ambos pasos; una caída intermedia puede dejar el `event_id` marcado sin efecto aplicado. No se describe esta tabla como un inbox transaccional fiable ni se atribuye procesamiento exactamente una vez hasta que la escritura del marcador y el efecto sean atómicos y el ACK ocurra después del commit.
 
 #### `historial_estados_despacho` (RT-02; escribe el componente común)
 
@@ -596,18 +611,21 @@ Un índice único parcial por `despacho_id` para `tipo_operacion=TRANSICION` y `
 |---|---|---|---|
 | `id` | `UUID` | PK | Identificador del evento. |
 | `despacho_id` | `UUID` | FK → `despachos.id`, NOT NULL | Despacho. |
-| `destino` | `TEXT` | NOT NULL | Consumidor del evento (`VENTAS`). |
+| `destino` | `TEXT` | NOT NULL | Consumidor del evento: `VENTAS`, `OPERACION` (proyecciones) u `OPERACION_LIBERACION` (liberaciones por entrega). |
 | `tipo_evento` | `TEXT` | NOT NULL | Tipo de evento. |
-| `payload` | `JSONB` | NOT NULL | Payload enviado. |
+| `payload` | `JSONB` | NOT NULL | Payload enviado; para destinos internos es el sobre con `eventId` definido en [Contrato externo §3.6](../integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq). |
 | `estado_envio` | `TEXT` | NOT NULL | Estado (`PENDIENTE`, `ENVIADO`, `ENVIO_FALLIDO`). |
 | `intentos_envio` | `INTEGER` | NOT NULL, DEFAULT 0 | Reintentos realizados. |
 | `proximo_intento_en` | `TIMESTAMPTZ` | NULL | Siguiente reintento. |
 | `ultimo_error` | `TEXT` | NULL | Último error. |
+| `bloqueada_hasta`, `token_procesamiento` | `TIMESTAMPTZ`, `UUID` | NULL sin procesamiento | Reclamación temporal y propietario del intento del emisor. |
 | `creado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría. |
-| `enviado_en` | `TIMESTAMPTZ` | NULL | Momento de envío exitoso. |
+| `enviado_en` | `TIMESTAMPTZ` | NULL | Momento de envío aceptado por el transporte. |
 | `actualizado_en` | `TIMESTAMPTZ` | NOT NULL, DEFAULT now() | Auditoría (actualizado por trigger). |
 
 Índices: `idx_eventos_salientes_despacho` (`despacho_id`), `idx_eventos_salientes_pendientes` (`estado_envio`, `proximo_intento_en`).
+
+El emisor reclama hasta 20 pendientes con exclusión de 60 segundos y marca `ENVIADO` tras la confirmación del transporte. Ante fallo incrementa intentos con esperas de 30 s, 60 s, 120 s… hasta una hora. Solo `VENTAS` agota los intentos después de seis envíos contando el inicial; los destinos internos se recuperan mientras permanezcan pendientes, con un ciclo de recuperación de 30 segundos. La confirmación de un destino interno mediante RabbitMQ acredita la aceptación del mensaje por el broker, no la aplicación del efecto en Operación [cite: 8].
 
 ### 3.5. Tablas de soporte por microservicio
 
@@ -628,7 +646,7 @@ Valores iniciales:
 |---|---|---|---|
 | Gestión | `MAXIMO_INTENTOS` | `2` | F-04 |
 | Gestión | `REINTENTOS_LIBERACION_SEGUNDOS` | `30,120,600,1800,3600` | ES-F04-03; tras el primer envío inmediato se aplican esas esperas y se repite la última hasta confirmar. |
-| Operación | `HORA_CORTE_JORNADA` | `21:00` | F-03 CA-24 |
+| Operación | `HORA_CORTE_JORNADA` | `21:00` en el parámetro histórico; el proceso implementado usa la propiedad de entorno con valor inicial `23:59` en `America/Bogota` y está deshabilitado por defecto | F-03 CA-24, corte de jornadas anteriores |
 | Operación | `VIGENCIA_URL_FIRMADA_SEGUNDOS` | `300` | F-03 CA-27 |
 | Gestión | `LIMITE_COTIZACIONES_POR_MINUTO` | `60` | F-01 CA-14 |
 | Gestión | `MAXIMO_REINTENTOS_EVENTO` | `5` | RT-03 |
@@ -751,6 +769,7 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 | Operación | `asignaciones_diarias` | `(fecha_jornada, estado)` | Jornada actual |
 | Operación | `reservas_capacidad` | `(asignacion_diaria_id, estado)` | Ocupación |
 | Operación | `proyecciones_despacho` | `(asignacion_diaria_id, secuencia_ruta)` | Ruta móvil |
+| Operación | `eventos_procesados` | PK `event_id` | Deduplicación del consumidor RabbitMQ |
 | Operación | `evidencias` | `(estado, expira_en)` | Limpieza de cargas |
 | Ambos | `claves_idempotencia` | `idx_claves_idempotencia_expira (expira_en)` | Limpieza periódica |
 
@@ -764,13 +783,15 @@ La operación que crea una reserva debe bloquear la jornada o utilizar control o
 | `cotizaciones` | Gestión | F-01 escribe antes de responder al canal; F-02 no depende del histórico | F-01 RF-03; ES-F01-06 |
 | `despachos`, `intentos_entrega` | Gestión | F-02 y F-04; F-03 origina comandos | F-02, F-03 y F-04 |
 | `historial_estados_despacho`, `eventos_salientes` | Gestión | RT-01 a RT-04 | Estados, seguimiento y eventos |
-| `repartidores`, `furgonetas`, `asignaciones_diarias` | Operación | F-05 y F-03 | F-05 RF-01 a RF-07 |
-| `liberaciones_capacidad` | Gestión | F-04 registra; procesador invoca Operación | Recepción recuperable de ES-F04-03 |
+| `repartidores`, `furgonetas` | Operación | F-05 y F-03 | F-05 RF-01 a RF-09 |
+| `asignaciones_diarias` | Operación | F-06 abre y cierra; F-03 consulta jornada activa | F-06 RF-01 a RF-05 |
+| `liberaciones_capacidad` | Gestión | F-04 registra; procesador entrega por HTTP o, al activarse, publica en RabbitMQ | Recepción recuperable de ES-F04-03 |
 | `reprogramaciones_despacho` | Gestión | F-04 registra; F-02 consulta condición de reprogramado | Resultado durable e idempotencia de ES-F04-04 |
 | `reservas_capacidad` | Operación | F-02 consume por API; F-06 calcula ocupación | Asignación y ocupación |
 | `proyecciones_despacho`, `evidencias` | Operación | F-03 | Ruta, transición y evidencia |
+| `eventos_procesados` | Operación | Consumidor RabbitMQ de proyecciones y liberaciones | Deduplicación de mensajes internos |
 | `claves_idempotencia` | Cada servicio | Usuarios y clientes técnicos | Reintentos seguros |
-| `vista_ocupacion_repartidor` | Operación | F-05; Gestión consulta por API | F-05 RF-04, RF-05 y RF-07 |
+| `vista_ocupacion_repartidor` | Operación | F-06; Gestión consulta por API | F-06 RF-04 y RF-05 |
 
 ---
 
@@ -795,3 +816,4 @@ Para mantener `actualizado_en` actualizado en cada UPDATE, se utiliza la funció
 
 - [cite: 1] [ES-F01-06: evidencia y antecedentes comunicados](../especificaciones/ES-F01-06-CotizarEnvioConProductos/evidence.md), actualización del 26/10/2026 basada en el SQL y la aclaración aportados por la persona responsable; comprobación contra base de datos pendiente.
 - [cite: 2] [Contrato externo](../integraciones/api-contract.md), §§5.1, 5.2, 7.1 y 11.1; [F-01 RF-03](../funcionalidades/F-01-Gestor_ZonasGeograficas.md#rf-03-cotización-en-tiempo-real-para-canales-de-venta).
+- [cite: 8] [Backend `develop`, commit `859c5c3`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/tree/859c5c37abd6f9543c70d6c7f456b3d7d651435a): bandejas durables, emisor y migración V8 de Operación. RabbitMQ está integrado, pero su activación y verificación están pendientes.

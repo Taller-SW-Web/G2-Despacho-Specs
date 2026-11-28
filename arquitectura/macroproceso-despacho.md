@@ -76,7 +76,7 @@ Para mantener la vista legible, el diagrama conecta el bloque de comunicación c
 |---|---|---|---|
 | 1. Recibir y validar | F-02 con apoyo de F-01 y Productos | Pedido, destinatario, destino y líneas | Solicitud rechazada o datos válidos para crear el despacho. |
 | 2. Crear despacho | F-02 | Solicitud válida | Despacho `PENDIENTE_ASIGNACION`, zona, peso, volumen y fecha programada. |
-| 3. Programar y asignar | F-02 con capacidad de F-05 | Despacho pendiente y jornada vigente | Despacho `ASIGNADO`, reserva y secuencia de ruta. |
+| 3. Programar y asignar | F-02 con capacidad de F-06 | Despacho pendiente y jornada vigente | Despacho `ASIGNADO`, reserva y secuencia de ruta. |
 | 4. Ejecutar reparto | F-03 | Ruta del repartidor | Despacho `EN_CAMINO` y luego resultado de la visita. |
 | 5. Gestionar resultado | F-03 | Entrega o incidencia | `ENTREGADO` o `FALLIDO` con evidencia y motivo cuando corresponda. |
 | 6. Resolver fallido | F-04 con liberación de capacidad en F-06 | Paquete retornado al centro | Reprogramación o `DEVUELTO_A_ORIGEN`. |
@@ -92,6 +92,9 @@ Para mantener la vista legible, el diagrama conecta el bloque de comunicación c
 - Todo `FALLIDO` debe regresar al centro antes de reprogramarse o cerrarse.
 - Un reintento regresa a asignación y recorre nuevamente el proceso de reparto.
 - Los estados finales se notifican a Ventas, que continúa cualquier tratamiento comercial, reembolso o comunicación con el cliente.
+- La recepción en centro no libera capacidad por sí sola: Operación debe confirmar la liberación de la reserva. Hasta entonces la reserva sigue ocupando y una asignación nueva se rechaza, aunque el despacho ya se haya reprogramado o cerrado [cite: 1].
+- Gestión conserva el estado canónico y Operación mantiene una proyección con consistencia eventual. Las proyecciones repetidas o antiguas se ignoran por versión, y una proyección terminal no libera capacidad [cite: 2].
+- El transporte interno de proyecciones y liberaciones es HTTP en el estado actual. RabbitMQ está integrado pero deshabilitado por configuración; al activarse, el confirm del broker no sustituye la confirmación de la liberación efectiva [cite: 3].
 
 ## 5. Referencias
 
@@ -99,3 +102,9 @@ Para mantener la vista legible, el diagrama conecta el bloque de comunicación c
 - [Diagrama de estados del despacho](./diagrama-estados-despacho.md).
 - [Contrato de comunicación](../integraciones/api-contract.md).
 - [Visión general](../overview.md).
+
+[cite: 1] [Gestión §5.2.1](../integraciones/api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03) y [Operación §5.2](../integraciones/api-contract-operacion-reparto.md#52-gestión-libera-una-reserva-en-operación).
+
+[cite: 2] [Operación §5.3](../integraciones/api-contract-operacion-reparto.md#53-gestión-comunica-el-estado-confirmado-a-operación).
+
+[cite: 3] [Contrato externo §3.6](../integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq).

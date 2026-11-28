@@ -45,7 +45,7 @@
 - Mientras la petición está en vuelo: el botón muestra spinner y queda deshabilitado (prevención de doble envío, CCR-01-01).
 - Éxito (HTTP 201):
   - Se muestra notificación toast flotante (CR-15): *"Despacho de prueba DSP-SIM-XXXXX generado exitosamente"*.
-  - La tabla de la cola de pendientes se invalida y actualiza reactivamente (`queryClient.invalidateQueries(['despachos-pendientes'])`).
+  - La tabla de la cola de pendientes se actualiza mediante el refresco del contenedor, sin depender de una caché de React Query no presente en la base actual [cite: 4].
   - La fila recién creada aparece al tope o según el orden de fecha y se resalta con animación suave y distintivo temporal "Nuevo".
   - La fila muestra permanentemente el badge neutral punteado "Simulado" (CR-09).
 - Error (HTTP 400 / 422 / 500):
@@ -72,3 +72,7 @@
 - **DADO** un fallo de red o rechazo de parámetros.
 - **CUANDO** la petición falla.
 - **ENTONCES** se presenta un banner o toast de alerta informando el error sin alterar la tabla ni descolocar los filtros actuales.
+
+## Referencias
+
+[cite: 4] [Stack frontend](../../arquitectura/stack-frontend.md) y [frontend `develop` `1bc5458`](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/tree/1bc5458115ed8caf48327a06926d2700d62f468c).

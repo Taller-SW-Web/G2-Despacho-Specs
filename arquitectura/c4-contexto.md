@@ -61,7 +61,7 @@ flowchart LR
 - Seguridad y Usuarios conserva la propiedad de las identidades, credenciales y roles.
 - Marketplace y Chatbot son canales consumidores; no crean directamente la entidad despacho.
 - No existe integración con Retail dentro del alcance vigente.
-- No se incluyen mapas, navegación, GPS, notificaciones al cliente ni optimización automática de rutas porque no forman parte de F-01 a F-05.
+- No se incluyen mapas, navegación, GPS, notificaciones al cliente ni optimización automática de rutas porque no forman parte de F-01 a F-06.
 
 ## 5. Acuerdos externos y aspectos operativos pendientes
 
@@ -72,10 +72,12 @@ Permanecen como actividades operativas:
 1. Registrar o verificar en Seguridad las concesiones de scopes para cada `client_id`, incluida `despachos:cancelar` para `modulo-ventas`, `ventas:pedidos:estado` para `modulo-despacho` y `productos:fisicos:leer` para `modulo-despacho`.
 2. Configurar por ambiente las URL, credenciales y secretos, sin incorporarlos al repositorio.
 3. Ejecutar pruebas de contrato entre los módulos consumidores y proveedores.
-4. Publicar el procedimiento administrativo definitivo para comunicar a Despacho el `usuario_id` creado por `ADMIN_SISTEMA`, así como el contrato RabbitMQ de eventos de usuario.
+4. Publicar el procedimiento administrativo definitivo para comunicar a Despacho el `usuario_id` creado por `ADMIN_SISTEMA`, así como el contrato RabbitMQ de eventos de usuario. Este pendiente de Seguridad es distinto del broker interno de Despacho: el transporte entre Gestión y Operación ya está integrado y su activación es competencia del equipo [cite: 3].
 
 ## 6. Regla de lectura
 
-Este diagrama responde únicamente a las preguntas **quién usa el sistema** y **con qué otros sistemas se comunica**. Vercel, Render, Supabase, las aplicaciones frontend, el API Gateway y los microservicios pertenecen al nivel de contenedores y se muestran en `c4-contenedores.md`.
+Este diagrama responde únicamente a las preguntas **quién usa el sistema** y **con qué otros sistemas se comunica**. Vercel, Render, Supabase, las aplicaciones frontend, el API Gateway, los microservicios y el broker RabbitMQ interno pertenecen al nivel de contenedores y se muestran en `c4-contenedores.md` [cite: 3].
+
+[cite: 3] [Contrato externo §3.6](../integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq) y [C4 de contenedores](./c4-contenedores.md#42-transporte-interno-rabbitmq).
 
 [cite: 1] [Contrato externo: homologación y precisiones físicas](../integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento). Los acuerdos, su implementación, autorización y E2E tienen estados independientes.

@@ -24,6 +24,19 @@ Liberar exclusivamente la reserva y despacho indicados, conservando motivo e ins
 
 Implementar paquete `jornadas` con controladores, servicio, modelos y repositorio JDBC. Reutilizar el bloqueo `bloquear_operacion_flota()` para mantener el orden de F-05. No invocar HTTP manteniendo bloqueos de tablas. Auditoría en la misma transacción. Migración aditiva para índices, compatibilidad de proyecciones y respuestas idempotentes; script separado revisable para Supabase heredado con Flyway desactivado. No ejecutar automáticamente sobre producción.
 
+### 4.1. Transporte alternativo RabbitMQ (pendiente de activación)
+
+La liberación se entrega por HTTP en el estado actual. RabbitMQ está integrado en backend `859c5c3`, pero deshabilitado por configuración. Al activarse, el mensaje `LIBERACION_CAPACIDAD` en `despacho.capacidad` es una alternativa al endpoint de §5.2 de Operación; el sobre, la topología y las garantías se definen en [Contrato externo §3.6](../../integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq). `idReserva` viaja dentro de `datos` y la respuesta REST `200` con `estado=LIBERADA` sigue siendo la prueba de liberación efectiva para ES-F04-03.
+
+La verificación de esta vía requiere:
+
+- Productor real, broker desechable, consumidor real y PostgreSQL real, con el mismo `eventId` reenviado para comprobar deduplicación.
+- Operación detenida durante la publicación, para confirmar que la liberación no se considera aplicada hasta su consumo.
+- Mensaje rechazado a la DLQ y procedimiento de recuperación documentado.
+- Regresión con el flag deshabilitado: HTTP, Ventas y Gateway sin cambios.
+
+No se marcan estas comprobaciones como ejecutadas: las pruebas actuales del consumidor usan `GestorJornadas` como doble.
+
 ## 5. Orden de implementación
 
 | Incremento | Resultado | Dependencia |
@@ -49,6 +62,7 @@ Frontend: tipos, pruebas de interacción y construcción. Backend: unitarias, HT
 - DT-01: Seguridad real y concesión de scopes pendientes, propietarios de Seguridad; bloquea aceptación desplegada.
 - DT-02: comprobar script sobre copia del esquema Supabase antes de aplicar; responsable Kevin, bloquea despliegue de nuevas estructuras.
 - DT-03: rendimiento menor de 200 ms y revisión visual humana pendientes; no inferirlos de pruebas con dobles.
+- DT-04: RabbitMQ integrado y deshabilitado. Antes de activarlo faltan la transacción común entre marcador `eventos_procesados` y efecto de dominio, la detección de mensajes no enrutables, la política de DLQ y la distinción entre publicación aceptada y reserva liberada. Responsables: Kevin con Arquitectura y Gerardo; bloquea la activación, no el flujo HTTP vigente.
 
 ## 8. Condiciones para iniciar y cerrar
 

@@ -15,6 +15,7 @@ El estado siguiente se basa en la configuración y el código del repositorio. L
 | Límite de cotizaciones | Gestión cuenta en memoria por combinación de `sub` del JWT e IP, en ventanas fijas de un minuto. El valor por defecto es 60. El exceso produce el `429` contractual. |
 | Validación y trazabilidad | El Gateway controla el tamaño de solicitud, limita los tiempos de conexión y respuesta y propaga `X-Correlation-Id`. Los servicios validan el contenido de negocio. La exposición HTTP de Actuator incluye `health` e `info`. |
 | Red de despliegue | El perfil de Render incluye destinos `onrender.com` por defecto para Gestión y Operación. El aislamiento de red se verifica en el entorno de despliegue. |
+| Mensajería interna | RabbitMQ está integrado entre Gestión y Operación, pero deshabilitado por configuración. AMQP no pasa por el Gateway ni expone una ruta `/api/v1`. El Gateway solo publica REST [cite: 11]. |
 
 ## 2. Políticas propuestas
 
@@ -61,7 +62,13 @@ Mantener un catálogo de método, ruta, consumidor, política, proveedor y prueb
 | `GET /api/v1/repartidor/despachos/{idDespacho}` | Frontend del repartidor, token humano y perfil local activo y vinculado. Operación verifica la propiedad del despacho | Operación | General | El repartidor consulta uno propio y obtiene `404` ante uno ajeno. |
 | `POST /internal/v1/capacidad/reservas` | Gestión, credencial técnica conforme al contrato interno | Operación | Política a cargo del proveedor | La operación funciona en la red privada para el servicio autorizado y el Gateway público no la enruta. |
 
-### 2.5. Monitoreo y evidencia
+### 2.5. Mensajería interna fuera del Gateway
+
+La futura activación de RabbitMQ no cambia las rutas públicas ni las políticas del Gateway. El protocolo AMQP se gestiona entre Gestión y Operación con credenciales del broker, independientes de los JWT y de `X-Despacho-Interno`. La cabecera compartida no constituye red privada: las rutas `/internal/v1/**` quedan fuera de ese filtro y dependen de su autenticación técnica.
+
+Antes de habilitar el transporte, el despliegue debe garantizar broker disponible, TLS y permisos mínimos, topología declarada, migración V8 de Operación aplicada, observabilidad de colas y DLQ, política de retención y procedimiento de conciliación al volver a HTTP. Un `/actuator/health` saludable no acredita por sí solo la disponibilidad del broker ni el procesamiento de mensajes [cite: 11].
+
+### 2.6. Monitoreo y evidencia
 
 - Medir conteo, latencia y estados HTTP de las rutas públicas. Spring Cloud Gateway agrupa las métricas por ruta configurada. Para distinguir cotización y seguimiento, usar identificadores propios o etiquetas por método y patrón estable. Contar en la capa de seguridad los rechazos anteriores al enrutamiento. El limitador registra los `429` por tipo de regla, general o específica, sin incluir la identidad de cada consumidor en las etiquetas [cite: 3, 7].
 - Consultar las métricas de Actuator por un acceso protegido. Agregar un recolector y un tablero compartido cuando el equipo necesite historial. Usar `X-Correlation-Id` en registros para seguir solicitudes. Las etiquetas de métricas usan patrones como `/api/v1/seguimientos/pedidos/{idPedido}`. Mantener fuera de las etiquetas y de los registros operativos los JWT, las credenciales, los cuerpos de solicitud y los identificadores de usuarios o pedidos.
@@ -103,3 +110,4 @@ Quedan por confirmar con los responsables de cada integración la cuota efectiva
 8. Render. [Red privada](https://render.com/docs/private-network) y [servicios privados](https://render.com/docs/private-services).
 9. [Verificación de despliegue del backend](https://github.com/Taller-SW-Web/G2-Despacho-Backend/blob/main/docs/despliegue.md).
 10. [OWASP API4:2023 y políticas de consumo por operación](https://api-security.owasp.org/editions/2023/en/0xa4-unrestricted-resource-consumption/).
+11. [Contrato externo §3.6](../integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq) y [backend `develop` `859c5c3`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/tree/859c5c37abd6f9543c70d6c7f456b3d7d651435a). RabbitMQ está integrado; su activación y verificación están pendientes.

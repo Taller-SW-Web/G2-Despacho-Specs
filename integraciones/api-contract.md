@@ -185,27 +185,57 @@ Para cerrar la integración se deben probar, como mínimo, los casos sin token, 
 
 ### 3.6. Mensajería interna con RabbitMQ
 
-RabbitMQ es un transporte opcional y aditivo para los eventos internos entre Gestión de Despachos y Operación de Reparto. No sustituye las API REST internas ni el webhook HTTPS hacia Ventas y Postventa. Se activa con `RABBITMQ_HABILITADO=true`; con el valor por defecto `false`, los flujos siguen por HTTP.
+RabbitMQ es un transporte **integrado en `develop` pero deshabilitado por configuración**; su activación está pendiente. Es opcional y aditivo para dos comunicaciones internas de Gestión de Despachos hacia Operación de Reparto y Flota:
 
-| Exchange | Routing key | Cola | Consumidor |
-|---|---|---|---|
-| `despacho.capacidad` (topic) | `operacion.liberacion.{idReserva}` | `operacion.liberaciones` | Operación |
-| `despacho.estado` (topic) | `despacho.proyeccion` | `despacho.eventos.estado` | Operación |
+- Proyecciones confirmadas del despacho (`PROYECCION_DESPACHO`).
+- Liberaciones de capacidad posteriores a la recepción en centro y a la entrega (`LIBERACION_CAPACIDAD`).
 
-Cada cola declara un dead-letter exchange `despacho.dlx` con su cola de espera. El productor espera la confirmación del broker antes de marcar el evento como enviado en la bandeja de salida; sin confirmación conserva el estado pendiente y aplica el calendario de reintentos ya acordado.
+Con `RABBITMQ_HABILITADO=false` —valor por defecto— ambos flujos funcionan por las API REST internas de los contratos de Gestión y Operación. RabbitMQ **no sustituye** esas APIs para reservas, transferencias, compensaciones, transiciones de campo ni consultas, y **no sustituye** el webhook HTTPS hacia Ventas y Postventa. El Gateway no publica ni consume AMQP.
 
-Sobre del mensaje, con campos `camelCase` y fechas ISO 8601 en UTC:
+La elección de transporte ocurre al iniciar el servicio. **No hay conmutación automática ante un fallo del broker**: si la publicación falla mientras RabbitMQ está habilitado, el evento permanece pendiente y sigue su calendario de recuperación. Volver a HTTP exige cambiar configuración, reiniciar y drenar o conciliar lo ya publicado.
+
+#### 3.6.1. Topología
+
+| Exchange | Tipo | Routing key publicada / binding | Cola principal | DLQ |
+|---|---|---|---|---|
+| `despacho.capacidad` | topic | `operacion.liberacion.{idReserva}` / `operacion.liberacion.*` | `operacion.liberaciones` | `operacion.liberaciones.dlq` |
+| `despacho.estado` | topic | `despacho.proyeccion` / `despacho.proyeccion` | `despacho.eventos.estado` | `despacho.eventos.estado.dlq` |
+| `despacho.dlx` | direct | routing key igual al nombre de cada DLQ | — | — |
+
+Las cuatro colas son durables. Gestión declara los exchanges de salida; Operación declara las colas, los bindings, el DLX y las DLQ. No existe una cola de reintento con TTL, retorno automático desde DLQ ni una política de intentos del consumidor. Las DLQ son de revisión, **no colas de reintento** [cite: 8].
+
+#### 3.6.2. Sobre del mensaje
+
+Campos en `camelCase` y fechas ISO 8601 en UTC:
 
 | Campo | Regla |
 |---|---|
-| `eventId` | UUID v4. Identifica el hecho confirmado y se conserva en cada reentrega. |
+| `eventId` | UUID v4 estable. Identifica el hecho y se conserva en cada reentrega. No se renombra a `idEvento`, nombre reservado al webhook de Ventas. |
 | `tipo` | `LIBERACION_CAPACIDAD` o `PROYECCION_DESPACHO`. |
 | `version` | Entero; comienza en `1` y solo aumenta ante un cambio incompatible del sobre. |
 | `claveIdempotencia` | UUID v4 igual a `eventId`. Equivale al encabezado `Idempotency-Key` de REST. |
-| `ocurridoEn` | Instante en que se confirmó el cambio local. |
-| `datos` | JSON con los mismos nombres que el cuerpo del endpoint interno equivalente. |
+| `ocurridoEn` | Instante de resolución del hecho en el productor. Actualmente se toma del reloj local al publicar, por lo que una republicación puede cambiarlo aunque el `eventId` se conserve. |
+| `datos` | JSON del payload canónico definido en el contrato del proveedor. Para liberación incluye `idReserva` además del cuerpo REST de [Operación §5.2](./api-contract-operacion-reparto.md#52-gestión-libera-una-reserva-en-operación); para proyección usa el cuerpo de [Operación §5.3](./api-contract-operacion-reparto.md#53-gestión-comunica-el-estado-confirmado-a-operación). |
 
-El consumidor confirma (`ack`) manualmente y registra `eventId` en su tabla de idempotencia antes de ejecutar la operación de dominio; una reentrega con el mismo identificador se descarta sin repetir efectos. Los fallos definitivos terminan en la cola de espera para revisión, sin reencolado infinito. Las credenciales del broker son independientes de los tokens `client_credentials`; el consumidor no recibe un JWT de usuario y actúa con la identidad técnica `modulo-despacho`.
+El publicador envía `contentType=application/json`, `deliveryMode=2` y `messageId=eventId`, y espera de forma síncrona la confirmación del broker con un tiempo de espera de cinco segundos. Solo marca `ENVIADO` la bandeja de salida tras esa confirmación [cite: 8].
+
+#### 3.6.3. Consumo e idempotencia
+
+El consumidor confirma (`ack`) manualmente al terminar. Ante cualquier excepción ejecuta `nack` con `requeue=false`, por lo que el mensaje va a la DLQ **incluso si el error es transitorio**. Antes de ejecutar la operación de dominio comprueba la versión del sobre e inserta `eventId` en `eventos_procesados`; una reentrega con el mismo identificador se descarta.
+
+La comprobación de versión y tipo no equivale a la validación REST completa: el consumidor no aplica todas las restricciones de los DTO ni comprueba explícitamente la igualdad entre `claveIdempotencia` y `eventId`. Las reglas de dominio siguen vigentes, pero la equivalencia de validación no está garantizada.
+
+**Limitación registrada:** el marcador de deduplicación se escribe antes de invocar la operación de dominio y no comparte transacción con ella. Una terminación inesperada entre ambos pasos puede dejar el `eventId` marcado sin efecto aplicado; una reentrega se descartaría. No se atribuye procesamiento exactamente una vez hasta que la escritura del marcador y el efecto sean atómicos y el ACK ocurra después del commit [cite: 8].
+
+#### 3.6.4. Seguridad, salud y recuperación
+
+- Las credenciales del broker son independientes de los tokens `client_credentials`. El consumidor no recibe un JWT de usuario y actúa con la identidad técnica fija `modulo-despacho`.
+- La configuración versionada no define TLS AMQP ni separación de usuarios entre publicación y consumo. Los permisos mínimos del broker forman parte de los requisitos de activación.
+- `RABBITMQ_SALUD_HABILITADA` es independiente del flag de transporte y vale `false` por defecto. Un `/actuator/health` saludable no acredita disponibilidad del broker ni procesamiento correcto.
+- La recuperación de la bandeja de salida conserva el mismo `eventId` con esperas crecientes de 30 s, 60 s, 120 s… hasta una hora. El confirm del broker **solo acredita aceptación por RabbitMQ**: no acredita que Operación haya aplicado la liberación ni la proyección, ni que existiera una cola destinataria. La publicación actual no comprueba mensajes no enrutables.
+- Para la recepción en centro, el estado `CONFIRMADA` de [Gestión §5.2.1](./api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03) significa que la respuesta REST de Operación acreditó `estado=LIBERADA`. El adaptador Rabbit actual marca esa solicitud como confirmada tras el confirm del broker. Esta diferencia debe resolverse antes de activar el transporte; no se rebaja el significado contractual de «Capacidad liberada» [cite: 8].
+
+[cite: 8] [Backend `develop`, commit `859c5c3`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/tree/859c5c37abd6f9543c70d6c7f456b3d7d651435a): configuración de exchanges y colas, publicador, consumidores y adaptadores de transporte. La integración del código no acredita la activación ni la verificación del broker.
 
 ## 4. Matriz de comunicaciones externas
 

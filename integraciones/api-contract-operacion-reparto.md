@@ -429,6 +429,8 @@ Los motivos iniciales son `ENTREGA`, `CANCELACION`, `RECEPCION_EN_CENTRO`, `REAS
 - `400` por datos inválidos, `401/403` por credencial técnica, `404` con `DESP_ERROR_RESERVA_NO_ENCONTRADA`, `409` con `DESP_ERROR_RESERVA_NO_COINCIDE` si pertenece a otro despacho y `503` con `DESP_ERROR_OPERACION_NO_DISPONIBLE` ante indisponibilidad. Aplicar Común §3.5; ningún rechazo libera otra reserva.
 - F-06 calcula ocupación con reservas `ACTIVA`: no anticipa una liberación por recibir `FALLIDO`, cerrar jornada o consultar el detalle. Tras la liberación confirmada refleja el resultado en la siguiente consulta, sin reabrir ni modificar jornadas.
 
+**Transporte alternativo.** Esta operación es la definición canónica de la liberación. Tras activar RabbitMQ —actualmente deshabilitado— Gestión puede publicar el mismo hecho en `despacho.capacidad` con `tipo=LIBERACION_CAPACIDAD`. El sobre, la topología, la deduplicación y las garantías se definen en [Contrato externo §3.6](./api-contract.md#36-mensajería-interna-con-rabbitmq) y no se repiten aquí. El mensaje incorpora `idReserva` dentro de `datos` porque en REST forma parte de la ruta. La respuesta `200` de esta sección acredita la liberación efectiva; el confirm del broker solo acredita que RabbitMQ aceptó el mensaje. Mientras el transporte alternativo esté deshabilitado, la respuesta REST es la única forma de confirmar la liberación en el sentido de [Gestión §5.2.1](./api-contract-gestion-despachos.md#521-confirmar-recepción-en-centro--es-f04-03).
+
 ### 5.3. Gestión comunica el estado confirmado a Operación
 
 Autorización: JWT de servicio con `sub=modulo-despacho` y audiencia `api-despacho`; no se exigen scopes internos. Respuesta `204` para versión nueva, repetida o anterior; las dos últimas no sobrescriben datos. `409 DESP_ERROR_PROYECCION_INCOMPATIBLE` si reserva, jornada o despacho no coinciden. `400` por formato inválido y `503` por indisponibilidad. Una proyección terminal no libera una reserva por sí sola: se confirma §5.2.
@@ -468,6 +470,8 @@ Autorización: JWT de servicio con `sub=modulo-despacho` y audiencia `api-despac
 `motivoFallo` (código del catálogo o `null`) y `hitos` (`asignadoEn`, `enCaminoEn`, `entregadoEn`, `fallidoEn`, cada uno UTC u omitido) son opcionales por compatibilidad: Gestión los envía desde F-03 y Operación conserva `null` cuando faltan. Un `FALLIDO` del cierre llega con `motivoFallo: "NO_INTENTADO"`; Operación no usa un estado `NO_INTENTADO`.
 
 Al asignar o reasignar se envía la información completa necesaria para la ruta móvil. En cambios posteriores puede enviarse el mismo esquema actualizado. La proyección no es el estado canónico: una versión repetida se ignora y una versión anterior nunca reemplaza una posterior.
+
+**Transporte alternativo.** Esta operación es la definición canónica de la proyección. Tras activar RabbitMQ —actualmente deshabilitado— Gestión puede publicar el mismo cuerpo en `despacho.estado` con `tipo=PROYECCION_DESPACHO`. El sobre, la topología, la deduplicación por `eventId` y las garantías se definen en [Contrato externo §3.6](./api-contract.md#36-mensajería-interna-con-rabbitmq). La respuesta `204` de esta sección y el ACK del consumidor son resultados distintos: ninguno modifica el estado canónico de Gestión. La proyección tiene consistencia eventual y una versión terminal no libera capacidad por sí sola; la liberación se rige por §5.2.
 
 ### 5.4. Gestión consulta repartidores y jornadas de incidencias
 

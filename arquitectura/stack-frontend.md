@@ -1,7 +1,7 @@
 # Stack de dependencias: frontend
 
 **Responsable:** Rhamses, con revisión de Max.
-**Estado:** Conciliado con el monorepositorio y SYSTEM-DESIGN.md §15 el 16/10/2026.
+**Estado:** Conciliado con el monorepositorio y SYSTEM-DESIGN.md §15 el 16/10/2026; revisado contra `develop` `1bc5458` el 27/11/2026. Las fuentes ejecutables siguen siendo los `package.json` y el lockfile del repositorio frontend.
 
 ## 1. Organización y gestor
 
@@ -28,7 +28,7 @@ npm run dev:repartidor
 | React Router DOM | ^6.26.0 | Navegación |
 | Axios | ^1.7.0 | Transporte desde cliente-api |
 | React Hook Form | ^7.53.0 | Formularios |
-| Zod y resolvers | ^3.23.0 / ^5.0.0 | Validación |
+| Zod y resolvers | ^4.6.7 / ^5.0.0 | Validación |
 | Day.js | ^1.11.0 | Fechas de presentación |
 | JWT Decode | ^4.0.0 | Utilidad declarada; no concede permisos |
 | Zustand | ^4.5.0 | Dependencia existente; no obliga a crear otro almacén |
@@ -46,7 +46,7 @@ Cada aplicación mantiene un `MantineProvider` y un `Notifications`; CR-15 adapt
 
 ## 4. Herramientas y comprobaciones
 
-Vitest ^3.2.0, JSDOM ^26.1.0, Testing Library React ^16.3.0, DOM ^10.4.0, jest-dom ^6.6.3 y user-event ^14.6.1 están declarados para las pruebas. JSDOM comprueba comportamiento del DOM; el layout requiere navegador.
+Vitest ^3.2.0, JSDOM ^26.1.0, Testing Library React ^16.3.0, DOM ^10.4.0, jest-dom ^6.6.3, user-event ^14.6.1 y Playwright ^1.64.1 están declarados para las pruebas. JSDOM comprueba comportamiento del DOM; el layout y los recorridos requieren navegador. CI usa Node 22 para construir y probar ambas aplicaciones; Node >=20 es el requisito mínimo declarado.
 
 ```bash
 npm test
@@ -61,10 +61,15 @@ La evidencia de implementación y los resultados reales se mantienen en `despach
 
 Cada aplicación mantiene su configuración de Vite y Vercel. Los servidores locales usan 5173 y 5174. `VITE_API_BASE_URL` identifica el origen público del Gateway, sin `/api/v1` al final; las variables `VITE_*` se exponen al navegador y no contienen secretos. Consultar los `.env.example` existentes y la guía frontend [cite: 1].
 
-La autenticación continúa siendo provisional hasta integrar Seguridad y Usuarios. Los componentes no decodifican tokens ni validan permisos del servidor. La marca inversa debe provenir del activo autorizado de Figma; el fallback textual no acredita su aprobación visual.
+La autenticación está implementada como adaptador compartido de login, OTP, renovación, cierre y perfil, con la sesión normal en memoria y renovación programada antes del vencimiento. Administración exige `GESTOR_DESPACHO` y la aplicación del repartidor resuelve su perfil local por `sub`. Esto no acredita la integración con el proveedor G7 publicado: coexisten el HTTP normal contra el origen configurado, el desarrollo local con Seguridad temporal y el modo demo sin backend. El API de negocio se consume por HTTP con un timeout de 15 segundos y una sola repetición ante rechazos explícitos del filtro JWT; no hay reintento indiscriminado de mutaciones.
+
+El estado de las pantallas se refresca con consultas periódicas de 30 segundos y al recuperar visibilidad, o con actualización manual; no hay cliente WebSocket, SSE ni STOMP. La PWA guarda la interfaz, no respuestas de negocio ni comandos offline. RabbitMQ comunica los microservicios directamente y no entrega eventos al navegador [cite: 4].
+
+La marca inversa debe provenir del activo autorizado de Figma; el fallback textual no acredita su aprobación visual.
 
 ## 6. Referencias
 
 - [cite: 1] Manifiestos, lockfile, configuraciones y README del repositorio hermano `../despacho-frontend`.
 - [cite: 2] [Sistema de diseño](../disenio/SYSTEM-DESIGN.md), §§6, 15 y 17.
 - [cite: 3] [Componentes React](../disenio/componentes-react.md), §§1.3–1.5 y 4.5.1.
+- [cite: 4] [Frontend `develop`, commit `1bc5458`](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/tree/1bc5458115ed8caf48327a06926d2700d62f468c) y [contrato externo §3.6](../integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq).

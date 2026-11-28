@@ -431,6 +431,10 @@ El orden es autenticación/autorización, formato, repetición aceptada y, para 
 - La confirmación se guarda en la solicitud local con su fecha, sin otro historial de recepción ni incremento del contador/versión del despacho. Si se pierde esa actualización local, el siguiente intento recibe la misma reserva ya liberada y completa el registro.
 - Una liberación pendiente no revierte el retorno ni bloquea por sí sola reprogramación/cierre. Operación sigue contando su reserva activa; una asignación nueva de F-02 se rechaza mientras esa reserva anterior permanezca activa. El GET no ejecuta reintentos.
 
+**Transporte alternativo y activación pendiente.** RabbitMQ está integrado en `develop`, pero deshabilitado por configuración; en el estado actual las reglas anteriores se aplican tal cual con HTTP. Tras activarlo, Gestión puede publicar la liberación como mensaje `LIBERACION_CAPACIDAD` en `despacho.capacidad`; el sobre, la topología y las garantías se definen en [Contrato externo §3.6](./api-contract.md#36-mensajería-interna-con-rabbitmq).
+
+La condición de `CONFIRMADA` y el significado de «Capacidad liberada» no cambian: requieren que Operación haya aplicado la liberación. El adaptador Rabbit actual marca la solicitud como confirmada al recibir la confirmación del broker, que solo acredita la aceptación del mensaje. Esta diferencia constituye un pendiente técnico para la activación y se registra en [ES-F04-03](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/plan.md) y [ES-F06-07](../especificaciones/ES-F06-07-LiberarReserva/plan.md); no se reinterpretará el contrato para adaptarlo al comportamiento observado.
+
 #### 5.2.2. Reprogramar un despacho fallido — ES-F04-04
 
 - **Método y ruta:** `POST /api/v1/despachos/{idDespacho}/reprogramacion`; JWT humano válido con `GESTOR_DESPACHO`. No requiere `Idempotency-Key`; utiliza la identidad de comando de §5.2.
@@ -684,7 +688,7 @@ Respuesta `200`:
 }
 ```
 
-`hitos` se calcula del historial del ciclo vigente (desde la última asignación). En la misma transacción, Gestión cambia el estado (con control de versión), escribe el historial, el intento y, si corresponde, el evento para Ventas (`DESPACHO_EN_CAMINO`, `DESPACHO_ENTREGADO` o `DESPACHO_FALLIDO`; no para despachos simulados) y la proyección para Operación (§5.3 de Operación, con `motivoFallo` y `hitos`). Operación nunca modifica directamente la base de datos de Gestión.
+`hitos` se calcula del historial del ciclo vigente (desde la última asignación). En la misma transacción, Gestión cambia el estado (con control de versión), escribe el historial, el intento y, si corresponde, el evento para Ventas (`DESPACHO_EN_CAMINO`, `DESPACHO_ENTREGADO` o `DESPACHO_FALLIDO`; no para despachos simulados) y la proyección para Operación (§5.3 de Operación, con `motivoFallo` y `hitos`). Operación nunca modifica directamente la base de datos de Gestión. La proyección se entrega por HTTP en el estado actual; tras activar RabbitMQ puede publicarse como `PROYECCION_DESPACHO` según [Contrato externo §3.6](./api-contract.md#36-mensajería-interna-con-rabbitmq), sin cambiar las reglas de versión ni la propiedad del estado.
 
 Al aceptar `FALLIDO`, Gestión crea el registro de incidencia en `intentos_entrega` y actualiza `despachos.ultima_incidencia_id` dentro de esa transacción. La misma regla se aplica a `NO_INTENTADO`, aunque no incremente el contador. Esa referencia es la utilizada por la consulta de Gestión §5.1 y no se sustituye por la jornada actual del repartidor. Referencia: [Gestión](./api-contract-gestion-despachos.md#51-consultar-entregas-fallidas--es-f04-01).
 

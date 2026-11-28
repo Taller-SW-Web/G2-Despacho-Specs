@@ -6,10 +6,12 @@ Este documento reúne las áreas funcionales del **Módulo de Despacho y Entrega
 |---|---|---|---|---|---|
 | **F-01** | Gestión de zonas geográficas y cotización | Define cobertura, tarifas, cotizaciones y mapas administrativos. | Valqui | Backend, distritos y geometrías verificados localmente al 14/11; G6/G7 publicados, calendario operativo y aceptación pendientes | [Ver especificación](./F-01-Gestor_ZonasGeograficas.md) |
 | **F-02** | Programación y asignación de despachos | Recibe solicitudes y asigna despachos con jornada y secuencia. | Tarqui | Implementación local parcial; barras verificadas con API simulada al 05/11. H y semántica D cerrados; publicación normativa G6, integración G2 y aceptación pendientes | [Ver especificación](./F-02-ProgramacionAsignacionDespachos.md) |
-| **F-03** | Operación del repartidor y evidencia de entrega | Permite ejecutar entregas y registrar estados y evidencias. | Max | En especificación | [Ver especificación](./F-03-AppMovilRepartidor.md) |
+| **F-03** | Operación del repartidor y evidencia de entrega | Permite ejecutar entregas y registrar estados y evidencias. | Max | Implementación local parcial verificada; corte de jornadas anteriores y bandeja de pendientes comprobados con emisor local; G7, despliegue y aceptación pendientes | [Ver especificación](./F-03-AppMovilRepartidor.md) |
 | **F-04** | Entregas fallidas y reprogramaciones | Recibe en el centro los paquetes no entregados y decide su reprogramación o cierre. | Gerardo | Listado, detalle, recepción, reprogramación y cierre implementados localmente; trazabilidad verificada en Gestión e integración conjunta pendiente | [Ver especificación](./F-04-GestionEntregasFallidas.md) |
 | **F-05** | Gestión de repartidores y vehículos | CRUD de repartidores con baja lógica y vinculación con Seguridad, y gestión de furgonetas con capacidades de carga. | Kevin Rhamses | Implementación y automatización verificadas; Seguridad real y aceptación pendientes | [Ver especificación](./F-05-GestionRepartidoresVehiculos.md) |
 | **F-06** | Disponibilidad y capacidad diaria de la flota | Asignación diaria repartidor – furgoneta – zona, cálculo de ocupación, disponibilidad y saturación para F-02. | Kevin Rhamses | Implementación y automatización verificadas; Seguridad real y aceptación pendientes | [Ver especificación](./F-06-DisponibilidadCapacidadDiaria.md) |
+
+La mensajería interna con RabbitMQ afecta a [ES-F04-03](../especificaciones/ES-F04-03-ConfirmarRecepcionPaquete/plan.md#41-transporte-alternativo-rabbitmq-pendiente-de-activación), [ES-F06-07](../especificaciones/ES-F06-07-LiberarReserva/plan.md#41-transporte-alternativo-rabbitmq-pendiente-de-activación) y [ES-F06-08](../especificaciones/ES-F06-08-ActualizarProyeccionDespacho/plan.md#41-transporte-alternativo-rabbitmq-pendiente-de-activación). Está integrada en `develop` y deshabilitada por configuración; no crea una nueva funcionalidad ni duplica los contratos de `integraciones/` [cite: 4].
 
 ## Especificaciones atómicas de F-01
 
@@ -90,6 +92,8 @@ Cada carpeta contiene especificación, UI, plan, tareas y evidencia propia.
 La gestión de estados del despacho y el seguimiento del pedido en ruta se especifican como requisitos transversales (RT-01 a RT-04) en la sección 6 de [overview.md](../overview.md). No constituyen una funcionalidad independiente.
 
 Los responsables deben mantener este índice actualizado cuando una especificación sea creada, revisada o cambie de estado.
+
+[cite: 4] [Contrato externo §3.6](../integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq) y [backend `develop` `859c5c3`](https://github.com/Taller-SW-Web/G2-Despacho-Backend/tree/859c5c37abd6f9543c70d6c7f456b3d7d651435a).
 
 ## Especificaciones atómicas de F-06
 

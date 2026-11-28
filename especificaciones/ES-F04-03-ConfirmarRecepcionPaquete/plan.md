@@ -62,6 +62,19 @@ Gestión confirma el retorno con una transacción local que incluye una solicitu
 - Autorización técnica/secretos y despliegue del procesador son dependencias reales; no inventar scopes ni compartir tablas. GET consulta la solicitud y no ejecuta/reencola envíos.
 - Integración: reprogramar/cerrar puede continuar con retorno confirmado; F-02 espera si existe reserva anterior activa. Verificar clave estable por operación, otra clave para otra salida y F-06 sumando reservas activas [cite: 2, 3].
 
+### 4.1. Transporte alternativo RabbitMQ (pendiente de activación)
+
+RabbitMQ está integrado en backend `859c5c3`, pero deshabilitado por configuración. El comportamiento verificado y descrito arriba corresponde al transporte HTTP vigente. Al activarse, la liberación de la recepción puede publicarse como `LIBERACION_CAPACIDAD` en `despacho.capacidad`; el sobre y la topología se definen en [Contrato externo §3.6](../../integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq) y no se duplican aquí.
+
+Antes de habilitarlo:
+
+1. Mantener el significado de `CONFIRMADA`: hoy requiere la respuesta `200` de Operación §5.2 con `estado=LIBERADA`. El adaptador Rabbit actual la marca tras el confirm del broker, que solo acredita la publicación. Resolver la discrepancia sin rebajar el contrato ni mostrar «Capacidad liberada» antes de la liberación efectiva.
+2. Verificar que la deduplicación por `eventId` y el efecto sobre la reserva sean atómicos; en el código actual el marcador se escribe antes de la operación de dominio.
+3. Comprobar mensajes no enrutables y la política de reintentos y DLQ, y definir la conciliación al volver a HTTP.
+4. Añadir evidencia específica del transporte, distinta de EV-07: productor, broker, consumidor y PostgreSQL reales para `LIBERACION_CAPACIDAD`, con Operación detenida y con rechazo a DLQ.
+
+La UI de esta especificación continúa leyendo `estado` de sincronización; no requiere un control técnico del broker.
+
 ## 5. Orden de implementación
 
 | Incremento | Resultado verificable | Tareas y dependencias | Criterios |
@@ -103,6 +116,7 @@ Comandos ejecutados el 24/10/2026: `./mvnw.cmd clean verify` desde Gestión (109
 | DT-02 | V1/V2 y reserva original verificados en base nueva y fixtures; faltan inspección/reconciliación de datos históricos reales y productores entre servicios. | Gerardo con Arquitectura y F-02/F-03; EV-01. | Habilitación de históricos afectados e I-07 real. |
 | DT-03 | Procesador y consumidor técnico implementados con dobles; falta validar credencial, proveedor y reinicios desplegados. | Gerardo con Operación y DevOps; EV-02/03/05. | I-04/05/07 con servicios reales. |
 | DT-04 | Listado/detalle conectados y probados con APIs simuladas; faltan reglas reales de nueva asignación y ocupación. | Gerardo con F-02/F-06; EV-04/05. | Aceptación integrada de I-06/07. |
+| DT-05 | RabbitMQ integrado y deshabilitado por configuración. Pendientes la semántica de `CONFIRMADA` con el confirm del broker, la atomicidad de la deduplicación, los mensajes no enrutables, la política de DLQ y la conciliación del retorno a HTTP. | Gerardo con Arquitectura y Operación; §4.1 y [contrato externo §3.6](../../integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq). | Activación del transporte interno; no bloquea el flujo HTTP vigente. |
 
 La tabla durable existente y la ejecución asíncrona están consumidas por Gestión en `31e1f6e`. Esta actualización registra decisiones verificadas y pendientes de integración; no cambia los requisitos ni el contrato y no atribuye cierre a trabajos de otros responsables.
 

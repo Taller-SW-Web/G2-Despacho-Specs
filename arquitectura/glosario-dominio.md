@@ -58,7 +58,7 @@ La tarifa base es una regla almacenada; la consulta de cobertura no devuelve un 
 | **Secuencia de ruta** | Orden operativo en el que el repartidor debe atender sus despachos. No constituye navegación GPS ni optimización automática. |
 | **Intento de entrega** | Visita real al destino que termina en entrega o fallo. Un cierre con `NO_INTENTADO` no consume un intento. |
 | **Evidencia** | Fotografía obligatoria asociada a una entrega o a un fallo con intento real. |
-| **Recepción en centro** | Confirmación de que un paquete `FALLIDO` regresó físicamente. No cambia el estado, pero libera capacidad y habilita la reprogramación o el cierre. |
+| **Recepción en centro** | Confirmación de que un paquete `FALLIDO` regresó físicamente. No cambia el estado; registra una solicitud durable de liberación y habilita la reprogramación o el cierre. La reserva deja de ocupar solo cuando Operación confirma la liberación. |
 | **Reprogramación** | Decisión que devuelve un despacho `FALLIDO` recibido en el centro a `PENDIENTE_ASIGNACION` con una nueva fecha programada. |
 | **Devolución a origen** | Cierre operativo en `DEVUELTO_A_ORIGEN`; el paquete queda en el centro a disposición de Ventas y Postventa. |
 
@@ -69,12 +69,17 @@ La tarifa base es una regla almacenada; la consulta de cobertura no devuelve un 
 | **Token de servicio** | Credencial técnica emitida por Seguridad y Usuarios mediante `client_credentials`. Identifica al módulo consumidor y sus scopes. |
 | **Idempotencia** | Propiedad que permite repetir una solicitud sin duplicar despachos, reservas, intentos, historial ni eventos. |
 | **Webhook** | Petición HTTPS saliente con la que Despacho comunica a Ventas un cambio de estado ya confirmado. |
-| **Outbox o bandeja de salida** | Registro transaccional de eventos pendientes que permite enviar y reintentar el webhook sin revertir el cambio de estado. |
-| **Proyección de despacho** | Copia mínima y versionada que Operación de Reparto utiliza para mostrar la ruta sin compartir la base de datos de Gestión. |
+| **Outbox o bandeja de salida** | Registro transaccional de eventos pendientes que permite enviar y reintentar el webhook sin revertir el cambio de estado. Gestión también lo usa para proyecciones y liberaciones internas, con destinos `OPERACION` y `OPERACION_LIBERACION`. |
+| **Publicación confirmada** | Hecho de que RabbitMQ aceptó un mensaje. No acredita que Operación haya aplicado la liberación ni la proyección. |
+| **Liberación confirmada** | Hecho de que Operación devolvió la reserva con `estado=LIBERADA`. Es la única condición que permite mostrar «Capacidad liberada» y marcar `CONFIRMADA` la solicitud de ES-F04-03. |
+| **DLQ** | Cola de mensajes rechazados por el consumidor. No es una cola de reintento: no tiene TTL ni retorno automático y requiere revisión. |
+| **Proyección de despacho** | Copia mínima y versionada que Operación de Reparto utiliza para mostrar la ruta sin compartir la base de datos de Gestión. Se actualiza con consistencia eventual; una versión repetida o anterior se ignora. |
 | **Seguimiento** | Vista resumida del estado y de los hitos del despacho consultada por `idPedido`, sin exponer evidencia, coordenadas ni datos personales. |
 | **SKU afectado por un rechazo** | Identificador solicitado que causa la condición de error devuelta. Para el padre no físico, se conservan todos y únicamente los causantes, literalmente, sin duplicados y en orden de solicitud, conforme al contrato. La correlación identifica la petición y no sustituye al SKU causante. |
 
 Estado efectivo, SKU padre y afectados se rigen por [contrato externo §§3.5, 5.2.3 y 5.2.4](../integraciones/api-contract.md#523-d-g2-01--estado-efectivo-de-variantes). H-G2-01/02/03 y semántica D-G2-01/02 están cerrados al 04/11; la sincronización normativa G6 y la compatibilidad del consumidor se siguen en §11.1. Este glosario explica términos, no amplía el esquema de G6 [cite: 2].
+
+El broker interno de Gestión y Operación, integrado y pendiente de activación, se define en [contrato externo §3.6](../integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq). No debe confundirse con el contrato RabbitMQ de eventos de usuarios que sigue pendiente de publicación por Seguridad y Usuarios.
 
 ## 6. Estados del despacho
 

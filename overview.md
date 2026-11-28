@@ -24,10 +24,11 @@ El módulo es **dueño de la entidad despacho**. No es dueño del pedido ni del 
 
 ### 1.2. Principios arquitectónicos
 
-- **Base de datos por microservicio:** cada uno de los dos microservicios usa un esquema o base PostgreSQL aislada y no accede directamente a bases ajenas.
-- **Integración asíncrona entre módulos:** los cambios de estado se comunican mediante eventos asíncronos. Las solicitudes entrantes (cotización, solicitud y cancelación de despacho, seguimiento) se responden de inmediato, sin que Despacho quede a la espera de otro módulo.
-- **Dos microservicios con persistencia aislada:** Gestión de Despachos implementa F-01, F-02 y F-04; Operación de Reparto y Flota implementa F-03 y F-05. Se comunican mediante APIs internas y no comparten tablas ni modelos JPA.
-- **Fuentes únicas:** F-01 es la única fuente de cobertura, F-05 la única de disponibilidad y ocupación, Gestión mantiene el catálogo canónico de motivos y la máquina de estados común es la única vía para cambiar el estado de un despacho.
+- **Base de datos por microservicio:** cada uno de los dos microservicios usa una base PostgreSQL lógica propia y no accede directamente a bases ajenas.
+- **Integración asíncrona entre módulos:** los cambios de estado hacia Ventas se comunican mediante webhook con outbox. Las solicitudes entrantes (cotización, solicitud y cancelación de despacho, seguimiento) se responden de inmediato.
+- **Dos microservicios con persistencia aislada:** Gestión de Despachos implementa F-01, F-02 y F-04; Operación de Reparto y Flota implementa F-03, F-05 y F-06. Se comunican mediante APIs internas y no comparten tablas ni modelos JPA.
+- **Transporte interno opcional:** RabbitMQ está integrado para proyecciones y liberaciones de Gestión hacia Operación, pero deshabilitado por configuración; su activación está pendiente. Las operaciones que requieren respuesta inmediata siguen por HTTP [cite: 3].
+- **Fuentes únicas:** F-01 es la única fuente de cobertura, F-06 la única de disponibilidad y ocupación, Gestión mantiene el catálogo canónico de motivos y la máquina de estados común es la única vía para cambiar el estado de un despacho.
 - **Desarrollo guiado por especificaciones (SDD):** las especificaciones son la fuente para el desarrollo asistido con IA y deben mantenerse coherentes entre sí.
 - **Autonomía de pruebas:** el módulo genera despachos simulados para probarse sin depender de Ventas y Postventa.
 
@@ -38,14 +39,14 @@ El módulo es **dueño de la entidad despacho**. No es dueño del pedido ni del 
 | Lineamiento del curso | Dónde se cubre |
 |---|---|
 | Generación de solicitud de despacho a partir de un pedido | F-02 (RF-01, RF-05) |
-| Asignación de despacho a operador/repartidor | F-02 (RF-03, RF-06, RF-07), apoyado por F-05 |
+| Asignación de despacho a operador/repartidor | F-02 (RF-03, RF-06, RF-07), apoyado por F-06 |
 | Gestión de estados del despacho | Requisitos transversales RT-01 a RT-03 (sección 6) |
 | Gestión de zonas y tarifas de entrega | F-01 |
 | Seguimiento del pedido en ruta | Requisito transversal RT-04 (sección 6) |
 | Registro de entrega y evidencia de recepción | F-03 (RF-05, RF-09) |
 | Gestión de entregas fallidas/reprogramaciones | F-03 (RF-06, RF-07) y F-04 |
 
-F-05 no figura como lineamiento propio; existe para que la asignación se haga sobre información confiable de disponibilidad y capacidad.
+F-05 y F-06 no figuran como lineamientos propios: existen para que la asignación se haga sobre información confiable de disponibilidad y capacidad. F-05 administra el catálogo de repartidores y vehículos; F-06 gobierna jornadas, ocupación y reservas.
 
 ---
 
@@ -57,8 +58,8 @@ F-05 no figura como lineamiento propio; existe para que la asignación se haga s
 | **F-02** | [Programación y asignación de despachos](funcionalidades/F-02-ProgramacionAsignacionDespachos.md) | Tarqui | Gestor de Despacho | Recepción, simulación, cola, asignación, secuencia, reasignación, cancelación y vista de ruta por repartidor. |
 | **F-03** | [Web responsive del repartidor y evidencia de entrega](funcionalidades/F-03-AppMovilRepartidor.md) | Max Rojas | Repartidor | Ruta de la jornada, transiciones en campo, evidencia, cierre de jornada y catálogo de motivos. |
 | **F-04** | [Entregas fallidas y reprogramaciones](funcionalidades/F-04-GestionEntregasFallidas.md) | Gerardo | Gestor de Despacho | Recepción de paquetes no entregados en el centro, reprogramación y cierre como devuelto a origen. |
-| **F-05** | [Gestión de repartidores y vehículos](funcionalidades/F-05-GestionRepartidoresVehiculos.md) | Rhamses | Gestor de Despacho | CRUD de repartidores con baja lógica y vinculación con Seguridad, y gestión de furgonetas con capacidades de carga. |
-| **F-06** | [Disponibilidad y capacidad diaria de la flota](funcionalidades/F-06-DisponibilidadCapacidadDiaria.md) | Luis | Gestor de Despacho | Asignación diaria repartidor – furgoneta – zona, cálculo de ocupación, disponibilidad y saturación para F-02. |
+| **F-05** | [Gestión de repartidores y vehículos](funcionalidades/F-05-GestionRepartidoresVehiculos.md) | Kevin Rhamses | Gestor de Despacho | CRUD de repartidores con baja lógica y vinculación con Seguridad, y gestión de furgonetas con capacidades de carga. |
+| **F-06** | [Disponibilidad y capacidad diaria de la flota](funcionalidades/F-06-DisponibilidadCapacidadDiaria.md) | Kevin Rhamses Bohorquez (antes Luis Alfonso) | Gestor de Despacho | Apertura y cierre de jornadas, asignación diaria repartidor – furgoneta – zona, cálculo de ocupación, disponibilidad, reservas y saturación para F-02. |
 
 Los requisitos transversales de la sección 6 no constituyen una funcionalidad aparte: son un componente común del backend que F-02, F-03 y F-04 utilizan, y cada una verifica en sus pruebas las transiciones que ejecuta.
 
@@ -87,13 +88,14 @@ graph TD
     CHT -->|Cotizar envío| F01
     VEN -->|Solicitud de paquete sellado y cancelación| F02
     F02 -->|Resolver zona| F01
-    F05 -->|Disponibilidad y capacidad remanente| F02
+    F06 -->|Disponibilidad y capacidad remanente| F02
     F02 -->|Despacho ASIGNADO con jornada y secuencia| F03
-    F05 -->|Habilitación del repartidor| F03
+    F05 -->|Repartidor vinculado y habilitado| F03
+    F06 -->|Jornada activa| F03
     F05 -->|Datos básicos del repartidor| F04
-    F03 -->|Cierre de turno| F05
+    F03 -->|Cierre de jornada| F06
     F03 -->|FALLIDO: paquete regresa al centro| F04
-    F04 -->|Recepción confirmada: libera ocupación| F06
+    F04 -->|Recepción confirmada: solicita liberación| F06
     F04 -->|Reprogramado| F02
     F02 -->|Transiciones| RT
     F03 -->|Transiciones| RT
@@ -110,14 +112,14 @@ graph TD
 | Origen | Destino | Qué se transfiere | Fuente |
 |---|---|---|---|
 | F-01 | F-02 | Zona del destino al registrar un despacho; rechazo si no hay cobertura. | F-01 RF-04, F-02 RF-05 |
-| F-01 | F-05 | Zonas activas para la asignación diaria del repartidor. | F-05 RF-03 |
-| F-05 | F-02 | Repartidores habilitados con capacidad remanente en kg, m³ y paquetes. | F-05 RF-05 |
+| F-01 | F-06 | Zonas activas para la asignación diaria del repartidor. | F-06 RF-03 |
+| F-06 | F-02 | Jornadas con repartidores habilitados y capacidad remanente en kg, m³ y paquetes. | F-06 RF-05 |
 | F-02 | F-03 | Despachos `ASIGNADO` con jornada, secuencia, destinatario, dirección y teléfono. | F-02 RF-06 |
 | F-05 | F-03 | Repartidor vinculado al usuario del token y su estado operativo. | F-05 RF-06, RF-07 |
 | F-05 | F-04 | Datos básicos del perfil local del repartidor asociado a un intento fallido. | F-04 RF-01, RF-02 |
-| F-03 | F-05 | Solicitud de cierre de turno al cerrar la jornada. | F-03 RF-07 |
+| F-03 | F-06 | Cierre de jornada y resolución de pendientes de jornadas anteriores. | F-03 RF-07 |
 | Gestión | F-03 y F-04 | Catálogo canónico de motivos; F-03 selecciona el motivo y Gestión lo valida al cambiar a `FALLIDO`. | F-03 RF-06 y RF-10 |
-| F-04 | F-06 | Recepción del paquete en el centro, que deja de contar en la ocupación del repartidor y la furgoneta. | F-04 RF-07, F-06 sección 4.5 |
+| F-04 | F-06 | Recepción del paquete en el centro y solicitud durable de liberación. La reserva deja de contar solo cuando Operación confirma la liberación; hasta entonces sigue ocupando. | F-04 RF-07, F-06 sección 4.5 |
 | F-04 | F-02 | Despachos reprogramados con nueva fecha programada. | F-04 RF-03 |
 | F-02 | F-04 | Anulación del pedido sobre un despacho fallido. | F-02 CA-20, F-04 CA-15 |
 | F-02, F-03, F-04 | Requisitos transversales | Solicitudes de transición de estado. | Sección 6 |
@@ -280,10 +282,12 @@ Actualización G2–G6 del 04/11/2026: H-G2-01/02/03 están homologados desde el
 - Listados paginados; operaciones de cambio de estado idempotentes y protegidas con bloqueo optimista.
 - `Idempotency-Key` es obligatorio como UUID v4 de hasta 128 caracteres en la creación y cancelación solicitadas por Ventas.
 - Los eventos hacia Ventas y Postventa se envían por webhook HTTPS mediante una bandeja de salida con reintentos y conservan el mismo `idEvento`.
+- Las proyecciones y liberaciones internas usan HTTP en el estado actual. RabbitMQ está integrado y deshabilitado por configuración; el sobre interno emplea `eventId` como identidad de reentrega. La confirmación del broker no equivale a la liberación efectiva de la reserva [cite: 3].
 
 ### 8.3. Despliegue
 
 - Backend en Render, frontend en Vercel y base de datos en Supabase. La integración sobre `main` dispara construcción y pruebas automáticas.
+- RabbitMQ se aprovisiona en local mediante Compose y su uso por las aplicaciones es opcional. Su activación en el entorno compartido requiere broker disponible, migración V8 de Operación aplicada y política definida para colas, DLQ y credenciales [cite: 3].
 
 ---
 
@@ -291,9 +295,10 @@ Actualización G2–G6 del 04/11/2026: H-G2-01/02/03 están homologados desde el
 
 | Capa | Tecnología |
 |---|---|
-| Backend | Java 21, Spring Boot 4.1.1, Maven, Spring Web MVC, Spring Data JPA con Hibernate, Spring Security con JWT, Bean Validation, Lombok |
-| Frontend | React con Vite y Tailwind CSS; dependencias en `arquitectura/stack-frontend.md` |
-| Base de datos | Dos esquemas o bases lógicas PostgreSQL aisladas en Supabase |
+| Backend | Java 21, Spring Boot 4.1.3, Maven, Spring Web MVC, Spring Data JPA con Hibernate, Spring Security con JWT, Bean Validation, Lombok |
+| Frontend | React 19 con Vite y Mantine; dependencias en `arquitectura/stack-frontend.md` |
+| Mensajería interna | RabbitMQ integrado y pendiente de activación; detalles en `integraciones/api-contract.md` §3.6 |
+| Base de datos | Dos bases lógicas PostgreSQL separadas en Supabase |
 | Evidencias | Almacenamiento de objetos privado con URL firmadas; compresión en cliente y eliminación de EXIF |
 | Pruebas | JUnit 5, Mockito, Spring Boot Test y Testcontainers |
 | Documentación de API | Swagger UI desde el backend desplegado |
@@ -319,6 +324,7 @@ No quedan decisiones funcionales pendientes con Ventas y Postventa. El acuerdo c
 - Mantener `integraciones/api-contract.md` sincronizado con las funcionalidades, el modelo de datos y los acuerdos de integración.
 - Mantener sincronizados el contrato, el modelo de datos y las proyecciones entre los dos microservicios.
 - Actualizar el skill `.agent/skills/despacho-context`, el `README.md` y las historias de usuario afectadas.
+- Antes de activar RabbitMQ: cerrar la distinción entre publicación aceptada y liberación efectiva, hacer atómica la deduplicación con el efecto de dominio, detectar mensajes no enrutables y definir reintentos, DLQ y conciliación del retorno a HTTP [cite: 3].
 
 ---
 
@@ -335,3 +341,5 @@ No quedan decisiones funcionales pendientes con Ventas y Postventa. El acuerdo c
 - **Mantenimiento, seguros y costos de la flota:** se gestionan fuera del sistema.
 
 [cite: 1] [Contrato externo: homologación física y precisiones](./integraciones/api-contract.md#111-homologación-física-g2g6-y-precisiones-de-seguimiento), con aceptación H del 02/11, cierre semántico D del 03–04/11/2026, merge G6 #162 y revisión normativa inspeccionada.
+
+[cite: 3] [Contrato externo §3.6: mensajería interna](./integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq) y [C4 de contenedores §4.2](./arquitectura/c4-contenedores.md#42-transporte-interno-rabbitmq). El código integrado no acredita la activación del broker.

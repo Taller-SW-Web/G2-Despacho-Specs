@@ -2,7 +2,7 @@
 
 **Responsable:** Max Rojas
 
-**Estado:** Pendiente de implementación
+**Estado:** Implementación local verificada; integración con identidad real, revisión humana y cierre pendientes (§7 de [evidence.md](./evidence.md)).
 
 **Plan de origen:** [plan.md](./plan.md)
 
@@ -12,8 +12,8 @@
 |---|---|---|---|---|---|
 | T-01 | Lista y bandeja con fixtures | Frontend, I-01 | ES-F03-01 T-01, DT-03 | CUI-01 a CUI-05 | Pendiente |
 | T-02 | Contrato de la ruta cerrado | Contrato | DT-01, DT-02, DT-04 | CA-01 a CA-04 | Pendiente |
-| T-03 | Consulta backend implementada y probada | Backend, I-02 | T-02, ES-F03-01 T-03 | CA-01 a CA-04 | Pendiente |
-| T-04 | Frontend conectado al backend real | Integración, I-03 | T-01, T-03 | CA-01 a CA-04; CUI-01 a CUI-05 | Pendiente |
+| T-03 | Consulta backend implementada y probada | Backend, I-02 | T-02, ES-F03-01 T-03 | CA-01 a CA-04 | Verificado localmente |
+| T-04 | Frontend conectado al backend real | Integración, I-03 | T-01, T-03 | CA-01 a CA-04; CUI-01 a CUI-05 | Verificado localmente con emisor local |
 | T-05 | Evidencia y revisión completadas | Calidad | T-04 | Todos | Pendiente |
 
 Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`.
@@ -36,17 +36,17 @@ Estados permitidos: `Pendiente`, `En curso`, `Bloqueada`, `Completada`.
 
 ### T-03. Implementar la consulta
 
-- [ ] Implementada y verificada.
-- Alcance: RN-01 a RN-07 en backend.
+- [x] Implementada y verificada localmente con base desechable (§7 de [evidence.md](./evidence.md)). La verificación con identidad real sigue pendiente.
+- Alcance: RN-01 a RN-07 en backend, con lectura independiente de los pendientes de jornadas anteriores.
 - Verificación: orden, exclusiones, dirección oculta según estado, `403` por identificador ajeno y separación de jornadas anteriores.
-- Evidencia: EV-01.
+- Evidencia: EV-01 y §7.
 
 ### T-04. Integrar con servicios reales
 
-- [ ] Implementada y verificada.
+- [x] Verificado localmente con emisor y base desechables (§7 de [evidence.md](./evidence.md)); pendiente con G7 y servicios desplegados.
 - Alcance: reemplazar fixtures por el contrato real.
-- Verificación: recorrido completo con datos sintéticos de F-02.
-- Evidencia: EV-03.
+- Verificación: recorrido completo con datos sintéticos de F-02, carga y error independientes para la bandeja y refresco conjunto de ruta y pendientes.
+- Evidencia: EV-03 y §7.
 
 ### T-05. Verificar y entregar
 

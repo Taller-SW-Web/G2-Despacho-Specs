@@ -18,7 +18,7 @@
 
 ## 2. Estrategia y responsabilidades
 
-El backend implementa un caso de uso de consulta paginada utilizando Spring Data JPA Specifications para componer dinámicamente predicados SQL sobre la tabla `despachos`. Se calculan las 3 métricas de resumen en una sola consulta de agregación o mediante queries optimizadas con índices. En el frontend, se construye la pantalla bajo la estructura `ShellAdministrativo` (CR-03) integrando componentes compartidos Mantine y sincronizando el estado con React Query y React Router.
+El backend implementa un caso de uso de consulta paginada utilizando Spring Data JPA Specifications para componer dinámicamente predicados SQL sobre la tabla `despachos`. Se calculan las 3 métricas de resumen en una sola consulta de agregación o mediante queries optimizadas con índices. En el frontend, se construye la pantalla bajo la estructura `ShellAdministrativo` (CR-03) integrando componentes compartidos Mantine y sincronizando el estado con hooks propios sobre `cliente-api` y React Router. React Query no está en la base actual; su adopción queda como decisión técnica pendiente y no altera los criterios de esta especificación [cite: 4].
 
 | Capa | Responsabilidad | Elementos previstos |
 |---|---|---|
@@ -60,3 +60,7 @@ El backend implementa un caso de uso de consulta paginada utilizando Spring Data
 - Pruebas de integración con MockMvc evaluando filtros combinados, fechas y seguridad.
 - Pruebas de rendimiento con JMeter o Gatling verificando respuesta < 250 ms con 10,000 despachos en base de datos.
 - Pruebas de componentes React con Vitest verificando renderizado de columnas y deshabilitación por fecha futura.
+
+## Referencias
+
+[cite: 4] [Stack frontend](../../arquitectura/stack-frontend.md) y [frontend `develop` `1bc5458`](https://github.com/Taller-SW-Web/G2-Despacho-Frontend/tree/1bc5458115ed8caf48327a06926d2700d62f468c).

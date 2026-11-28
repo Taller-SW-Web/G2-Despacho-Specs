@@ -1,10 +1,10 @@
 # Evidencia de ES-F03-07: Cierre de jornada y resumen del día
 
-**Estado:** Pendiente; no acredita implementación.
+**Estado:** Parcial. El corte automático y la recuperación de jornadas anteriores están verificados localmente (§7); la activación desplegada, la revisión humana y el cierre integral siguen pendientes.
 
 **Responsable de verificación:** Max Rojas
 
-**Última verificación:** Pendiente
+**Última verificación:** 26/11/2026, sección 7; el resto de los registros siguen pendientes.
 
 ## 1. Versión y entorno
 
@@ -19,7 +19,7 @@
 |---|---|---|---|---|
 | CA-01 | T-03, T-05 | Pendientes a `NO_INTENTADO` y turno cerrado | EV-01, EV-03 | Pendiente |
 | CA-02 | T-03, T-05 | Cierre sin fallos | EV-01, EV-03 | Pendiente |
-| CA-03 | T-04 | Corte automático y reejecución | EV-01 | Pendiente |
+| CA-03 | T-04 | Corte automático y reejecución | EV-01, §7 | Verificado localmente; activación desplegada pendiente |
 | CA-04 | T-03, T-05 | Cifras iguales al historial | EV-01, EV-03 | Pendiente |
 | CA-05 | T-03, T-04 | Historial manual y automático | EV-01 | Pendiente |
 | CUI-01 a CUI-05 | T-01, T-05 | Diálogo, lista, resumen y accesibilidad | EV-02, EV-03 | Pendiente |
@@ -33,7 +33,7 @@ Resultados permitidos: `Pendiente`, `Aprobado`, `Fallido`, `No ejecutado`. Una c
 - Criterios: CA-01 a CA-05.
 - Resultado esperado: RN-01 a RN-10 cumplidas.
 - Dependencias simuladas: F-05 y reloj (identificar si son dobles).
-- Resultado observado: pendiente.
+- Resultado observado: verificado localmente el 26/11/2026 para el corte y la recuperación; ver sección 7. No acredita la activación en el entorno publicado.
 
 ### EV-02. UI con fixtures
 
@@ -70,7 +70,7 @@ Cada registro ejecutado indica fecha, persona, commit, entorno, pasos, resultado
 
 - PR de implementación: pendiente.
 - Revisor y fecha: pendientes.
-- Estado del alcance: Pendiente.
+- Estado del alcance: Parcial; corte local verificado, revisión y despliegue pendientes.
 
 ## 7. Verificación local del corte automático y la recuperación
 

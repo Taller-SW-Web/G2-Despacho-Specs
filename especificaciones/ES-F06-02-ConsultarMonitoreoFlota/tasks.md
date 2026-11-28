@@ -20,7 +20,7 @@
 - [x] Implementada y verificada localmente.
 - Incremento: I-01; área: Documentación; depende de Ninguna.
 - Entradas: spec.md, contrato canónico y plan.md.
-- Criterios: CA-01, CA-02, CA-03; CUI-01 a CUI-06.
+- Criterios: CA-01 a CA-04; CUI-01 a CUI-07, incluido el aviso de jornadas anteriores activas.
 - Verificación: contrastar el resultado observable del criterio y sus efectos; guardar reporte de ejecución y commit en evidence.md.
 - Cierre: resultado reproducible sin atribuir aceptación real a un doble.
 - Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), verificación local registrada; límites pendientes.
@@ -31,7 +31,7 @@
 - [x] Implementada y verificada localmente.
 - Incremento: I-02; área: Frontend; depende de T-01.
 - Entradas: spec.md, contrato canónico y plan.md.
-- Criterios: CA-01, CA-02, CA-03; CUI-01 a CUI-06.
+- Criterios: CA-01 a CA-04; CUI-01 a CUI-07, incluido el aviso de jornadas anteriores activas.
 - Verificación: contrastar el resultado observable del criterio y sus efectos; guardar reporte de ejecución y commit en evidence.md.
 - Cierre: resultado reproducible sin atribuir aceptación real a un doble.
 - Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), verificación local registrada; límites pendientes.
@@ -42,7 +42,7 @@
 - [x] Implementada y verificada localmente.
 - Incremento: I-03; área: Backend; depende de T-01.
 - Entradas: spec.md, contrato canónico y plan.md.
-- Criterios: CA-01, CA-02, CA-03; CUI-01 a CUI-06.
+- Criterios: CA-01 a CA-04; CUI-01 a CUI-07, incluido el aviso de jornadas anteriores activas.
 - Verificación: contrastar el resultado observable del criterio y sus efectos; guardar reporte de ejecución y commit en evidence.md.
 - Cierre: resultado reproducible sin atribuir aceptación real a un doble.
 - Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), verificación local registrada; límites pendientes.
@@ -53,7 +53,7 @@
 - [ ] Implementada y verificada.
 - Incremento: I-04; área: Calidad; depende de T-02 y T-03.
 - Entradas: spec.md, contrato canónico y plan.md.
-- Criterios: CA-01, CA-02, CA-03; CUI-01 a CUI-06.
+- Criterios: CA-01 a CA-04; CUI-01 a CUI-07, incluido el aviso de jornadas anteriores activas.
 - Verificación: contrastar el resultado observable del criterio y sus efectos; guardar reporte de ejecución y commit en evidence.md.
 - Cierre: resultado reproducible sin atribuir aceptación real a un doble.
 - Evidencia: [EV-01](./evidence.md#ev-01-verificación-del-incremento), verificación local registrada; límites pendientes.
@@ -88,4 +88,4 @@
 
 ## Revisión automatizada del 26/10/2026
 
-Ver [EV-02](./evidence.md#ev-02-revision-f05-f06) y el [reporte común](../ES-F06-01-AbrirJornada/evidencia/validacion.md#revision-f05-f06-2026-10-26). Las suites de código y navegador aprobaron en CI; esto no completa la revisión humana ni la integración con Seguridad real. No se aplicaron migraciones sobre bases compartidas.
+Ver [EV-02](./evidence.md#ev-02-revisión-de-f-05-y-f-06-26102026) y el [reporte común](../ES-F06-01-AbrirJornada/evidencia/validacion.md#revisión-de-f-05-y-f-06-26102026). Las suites de código y navegador aprobaron en CI; esto no completa la revisión humana ni la integración con Seguridad real. No se aplicaron migraciones sobre bases compartidas.

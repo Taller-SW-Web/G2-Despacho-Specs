@@ -22,7 +22,7 @@ La reasignación utiliza la transferencia local atómica de [Operación §5.5](.
 
 | Capa | Responsabilidad | Elementos previstos |
 |---|---|---|
-| Frontend | Modal de reasignación, validación de motivo y llamada React Query. | `ModalReasignacionDespacho.tsx`, `useReasignarDespacho`. |
+| Frontend | Modal de reasignación, validación de motivo y llamada con hooks propios sobre `cliente-api`. React Query no forma parte de la base actual y su adopción queda como decisión pendiente. | `ModalReasignacionDespacho.tsx`, `useReasignarDespacho`. |
 | API / Web | Endpoint `POST /api/v1/despachos/{idDespacho}/reasignacion`. | `ReasignacionController`, `ReasignarDespachoRequestDTO`. |
 | Aplicación | Coordinación con F-06, validación de estado `ASIGNADO` y recálculo de secuencia. | `ReasignarDespachoUseCase`. |
 | Dominio | Reglas de reasignación y preservación de inmutabilidad en estados posteriores. | `Despacho`, `MotivoReasignacionValidador`. |

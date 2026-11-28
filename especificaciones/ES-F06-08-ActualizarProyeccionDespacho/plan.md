@@ -24,6 +24,12 @@ Recibir la versión canónica confirmada por Gestión; conservar destinatario, d
 
 Implementar paquete `jornadas` con controladores, servicio, modelos y repositorio JDBC. Reutilizar el bloqueo `bloquear_operacion_flota()` para mantener el orden de F-05. No invocar HTTP manteniendo bloqueos de tablas. Auditoría en la misma transacción. Migración aditiva para índices, compatibilidad de proyecciones y respuestas idempotentes; script separado revisable para Supabase heredado con Flyway desactivado. No ejecutar automáticamente sobre producción.
 
+### 4.1. Transporte alternativo RabbitMQ (pendiente de activación)
+
+La proyección se entrega por HTTP en el estado actual. RabbitMQ está integrado en backend `859c5c3`, pero deshabilitado por configuración. Al activarse, el mensaje `PROYECCION_DESPACHO` en `despacho.estado` es una alternativa al endpoint de §5.3 de Operación; el sobre y la topología se definen en [Contrato externo §3.6](../../integraciones/api-contract.md#36-mensajería-interna-con-rabbitmq). El payload canónico no se duplica y la versión sigue gobernando las actualizaciones: una versión repetida o anterior no reemplaza la copia vigente.
+
+La verificación de esta vía requiere productor, broker y consumidor reales con PostgreSQL, comprobación de deduplicación por `eventId`, proyecciones desordenadas y repetidas, y regresión con el flag deshabilitado. La tabla `eventos_procesados` debe existir mediante la migración V8 de Operación antes de activar el consumidor. Las comprobaciones siguen pendientes: no se atribuye procesamiento exactamente una vez hasta que marcador y efecto sean atómicos.
+
 ## 5. Orden de implementación
 
 | Incremento | Resultado | Dependencia |
@@ -49,6 +55,7 @@ Frontend: tipos, pruebas de interacción y construcción. Backend: unitarias, HT
 - DT-01: Seguridad real y concesión de scopes pendientes, propietarios de Seguridad; bloquea aceptación desplegada.
 - DT-02: comprobar script sobre copia del esquema Supabase antes de aplicar; responsable Kevin, bloquea despliegue de nuevas estructuras.
 - DT-03: rendimiento menor de 200 ms y revisión visual humana pendientes; no inferirlos de pruebas con dobles.
+- DT-04: RabbitMQ integrado y deshabilitado. Antes de activarlo faltan la migración V8 en el entorno compartido, la atomicidad entre `eventos_procesados` y la actualización de la proyección, y la política de errores y DLQ del consumidor. Responsables: Kevin con Arquitectura; bloquea la activación, no el flujo HTTP vigente.
 
 ## 8. Condiciones para iniciar y cerrar
 
